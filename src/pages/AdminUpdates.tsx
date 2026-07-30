@@ -35,18 +35,18 @@ const typeOptions = [
 ];
 
 const priorityOptions = [
-  { value: 'low', label: 'Low', color: 'bg-gray-200 text-gray-700' },
-  { value: 'normal', label: 'Normal', color: 'bg-secondary-100 text-secondary-700' },
-  { value: 'high', label: 'High', color: 'bg-amber-100 text-amber-700' },
-  { value: 'critical', label: 'Critical', color: 'bg-red-100 text-red-700' },
+  { value: 'low', label: 'Low', color: 'bg-ct-line text-ct-mute-2' },
+  { value: 'normal', label: 'Normal', color: 'bg-ct-surface-2 text-ct-mute-2' },
+  { value: 'high', label: 'High', color: 'bg-ct-amber/[0.13] text-ct-amber' },
+  { value: 'critical', label: 'Critical', color: 'bg-ct-rose/[0.13] text-ct-rose' },
 ];
 
 const typeColors: Record<string, string> = {
-  tos: 'bg-secondary-100 text-secondary-700',
-  policy: 'bg-purple-100 text-purple-700',
-  feature: 'bg-warm-100 text-warm-700',
-  recommendation: 'bg-amber-100 text-amber-700',
-  maintenance: 'bg-gray-100 text-gray-700',
+  tos: 'bg-ct-surface-2 text-ct-mute-2',
+  policy: 'bg-ct-surface-2 text-ct-mute-2',
+  feature: 'bg-ct-amber/[0.13] text-ct-amber',
+  recommendation: 'bg-ct-amber/[0.13] text-ct-amber',
+  maintenance: 'bg-ct-surface-2 text-ct-mute-2',
 };
 
 export default function AdminUpdates() {
@@ -208,12 +208,12 @@ export default function AdminUpdates() {
       <div>
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Platform Updates</h1>
-            <p className="text-sm text-gray-500 mt-1">Manage announcements, policy changes, and feature updates</p>
+            <h1 className="text-2xl font-bold text-ct-paper">Platform Updates</h1>
+            <p className="text-sm text-ct-mute mt-1">Manage announcements, policy changes, and feature updates</p>
           </div>
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-2 px-5 py-2 bg-primary-700 text-white rounded-xl hover:bg-primary-800 transition-colors text-sm font-medium"
+            className="inline-flex items-center gap-2 px-5 py-2 bg-ct-teal text-ct-ink rounded-ct-md hover:bg-ct-teal/[0.14] transition-colors text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
             New Update
@@ -221,13 +221,13 @@ export default function AdminUpdates() {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-1 mb-4 bg-gray-100 rounded-lg p-1 w-fit">
+        <div className="flex gap-1 mb-4 bg-ct-surface-2 rounded-ct-sm p-1 w-fit">
           {(['active', 'inactive', 'all'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors capitalize ${
-                filter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                filter === f ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'
               }`}
             >
               {f}
@@ -237,15 +237,15 @@ export default function AdminUpdates() {
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+            <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
           </div>
         ) : updates.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-            <Sparkles className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 text-sm">No {filter !== 'all' ? filter : ''} updates yet</p>
+          <div className="text-center py-16 bg-ct-surface rounded-ct-lg border border-ct-line">
+            <Sparkles className="w-10 h-10 text-ct-mute mx-auto mb-3" />
+            <p className="text-ct-mute text-sm">No {filter !== 'all' ? filter : ''} updates yet</p>
             <button
               onClick={openCreate}
-              className="mt-3 text-sm font-medium text-primary-600 hover:text-primary-700"
+              className="mt-3 text-sm font-medium text-ct-mute-2 hover:text-ct-mute-2"
             >
               Create your first update
             </button>
@@ -260,35 +260,35 @@ export default function AdminUpdates() {
               return (
                 <div
                   key={update.id}
-                  className={`bg-white rounded-xl border border-gray-200 p-4 transition-opacity ${
+                  className={`bg-ct-surface rounded-ct-lg border border-ct-line p-4 transition-opacity ${
                     !update.is_active ? 'opacity-60' : ''
                   }`}
                 >
                   <div className="flex items-start gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase ${typeColors[update.type] || 'bg-gray-100 text-gray-600'}`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase ${typeColors[update.type] || 'bg-ct-surface-2 text-ct-mute-2'}`}>
                           {typeOptions.find(t => t.value === update.type)?.label || update.type}
                         </span>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${pConfig?.color || ''}`}>
                           {update.priority}
                         </span>
                         {update.requires_acknowledgment && (
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200">
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34]">
                             Requires Acknowledgment
                           </span>
                         )}
                         {!update.is_active && (
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute">
                             Inactive
                           </span>
                         )}
                       </div>
 
-                      <h3 className="font-semibold text-gray-900 text-sm">{update.title}</h3>
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">{update.content}</p>
+                      <h3 className="font-semibold text-ct-paper text-sm">{update.title}</h3>
+                      <p className="text-xs text-ct-mute mt-1 line-clamp-2">{update.content}</p>
 
-                      <div className="flex items-center gap-4 mt-3 text-[11px] text-gray-400">
+                      <div className="flex items-center gap-4 mt-3 text-[11px] text-ct-mute">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {new Date(update.published_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -311,9 +311,9 @@ export default function AdminUpdates() {
                       </div>
 
                       {/* Read progress bar */}
-                      <div className="mt-2 h-1 bg-gray-100 rounded-full overflow-hidden w-48">
+                      <div className="mt-2 h-1 bg-ct-surface-2 rounded-full overflow-hidden w-48">
                         <div
-                          className="h-full bg-primary-500 rounded-full transition-all"
+                          className="h-full bg-ct-surface-20 rounded-full transition-all"
                           style={{ width: `${readPct}%` }}
                         />
                       </div>
@@ -322,21 +322,21 @@ export default function AdminUpdates() {
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         onClick={() => toggleActive(update)}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                         title={update.is_active ? 'Deactivate' : 'Activate'}
                       >
                         {update.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                       <button
                         onClick={() => openEdit(update)}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                         title="Edit"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => deleteUpdate(update.id)}
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -352,14 +352,14 @@ export default function AdminUpdates() {
         {/* Create/Edit Modal */}
         <Modal isOpen={showCreateModal} onClose={() => { setShowCreateModal(false); resetForm(); }}>
           <div className="p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">
+            <h2 className="text-lg font-bold text-ct-paper mb-4">
               {editingUpdate ? 'Edit Update' : 'Create Platform Update'}
             </h2>
 
             <div className="space-y-4">
               {/* Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Type</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Type</label>
                 <div className="grid grid-cols-3 gap-2">
                   {typeOptions.map((opt) => {
                     const Icon = opt.icon;
@@ -368,10 +368,10 @@ export default function AdminUpdates() {
                         key={opt.value}
                         type="button"
                         onClick={() => setType(opt.value)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                        className={`flex items-center gap-2 px-3 py-2 rounded-ct-sm border text-sm font-medium transition-colors ${
                           type === opt.value
-                            ? 'border-primary-500 bg-primary-50 text-primary-700'
-                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                            ? 'border-ct-teal bg-ct-surface-2 text-ct-mute-2'
+                            : 'border-ct-line text-ct-mute-2 hover:border-ct-line'
                         }`}
                       >
                         <Icon className="w-4 h-4" />
@@ -384,41 +384,41 @@ export default function AdminUpdates() {
 
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Title</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Title</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Updated Privacy Policy"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                 />
               </div>
 
               {/* Content */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Content</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Content</label>
                 <textarea {...proseInputProps}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Describe the update in detail..."
                   rows={5}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal resize-none"
                 />
               </div>
 
               {/* Priority */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Priority</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Priority</label>
                 <div className="flex gap-2">
                   {priorityOptions.map((opt) => (
                     <button
                       key={opt.value}
                       type="button"
                       onClick={() => setPriority(opt.value)}
-                      className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-ct-sm border text-sm font-medium transition-colors ${
                         priority === opt.value
-                          ? 'border-primary-500 bg-primary-50 text-primary-700'
-                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                          ? 'border-ct-teal bg-ct-surface-2 text-ct-mute-2'
+                          : 'border-ct-line text-ct-mute-2 hover:border-ct-line'
                       }`}
                     >
                       {opt.label}
@@ -434,30 +434,30 @@ export default function AdminUpdates() {
                     type="checkbox"
                     checked={requiresAck}
                     onChange={(e) => setRequiresAck(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    className="w-4 h-4 rounded border-ct-line text-ct-mute-2 focus:ring-ct-teal"
                   />
-                  <span className="text-sm text-gray-700">Requires acknowledgment</span>
+                  <span className="text-sm text-ct-mute-2">Requires acknowledgment</span>
                 </label>
               </div>
 
               {/* Expires */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Expires on <span className="text-gray-400 font-normal">(optional)</span>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
+                  Expires on <span className="text-ct-mute font-normal">(optional)</span>
                 </label>
                 <input
                   type="date"
                   value={expiresAt}
                   onChange={(e) => setExpiresAt(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                 />
               </div>
 
               {/* Info for ToS/Policy */}
               {(type === 'tos' || type === 'policy') && !requiresAck && (
-                <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-700">
+                <div className="flex items-start gap-2 px-3 py-2.5 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm">
+                  <AlertTriangle className="w-4 h-4 text-ct-amber flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-ct-amber">
                     ToS and policy updates typically require user acknowledgment. Consider enabling "Requires acknowledgment" so users must confirm they've read the changes.
                   </p>
                 </div>
@@ -467,14 +467,14 @@ export default function AdminUpdates() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => { setShowCreateModal(false); resetForm(); }}
-                className="px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                className="px-5 py-2 text-sm font-medium text-ct-mute-2 hover:text-ct-paper transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={!title.trim() || !content.trim() || saving}
-                className="inline-flex items-center gap-2 px-5 py-2 bg-primary-700 text-white rounded-xl hover:bg-primary-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+                className="inline-flex items-center gap-2 px-5 py-2 bg-ct-teal text-ct-ink rounded-ct-md hover:bg-ct-teal/[0.14] disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm font-medium"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {editingUpdate ? 'Save Changes' : 'Publish Update'}

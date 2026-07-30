@@ -34,9 +34,9 @@ const toLocalYmd = (d: Date): string => {
 };
 
 const STATUS_CLS: Record<string, string> = {
-  approved: 'bg-green-100 text-green-700',
-  rejected: 'bg-red-100 text-red-700',
-  pending: 'bg-yellow-100 text-yellow-700',
+  approved: 'bg-ct-teal/[0.14] text-ct-teal',
+  rejected: 'bg-ct-rose/[0.13] text-ct-rose',
+  pending: 'bg-ct-amber/[0.13] text-ct-amber',
 };
 
 export default function MyHoursTab() {
@@ -98,17 +98,17 @@ export default function MyHoursTab() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => { const d = new Date(weekStart); d.setDate(d.getDate() - 7); setWeekStart(d); }}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
+          className="p-1.5 rounded-ct-sm hover:bg-ct-surface-2 text-ct-mute"
           aria-label="Previous week"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h3 className="text-sm font-semibold text-gray-900">
+        <h3 className="text-sm font-semibold text-ct-paper">
           Week of {weekStart.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
         </h3>
         <button
           onClick={() => { const d = new Date(weekStart); d.setDate(d.getDate() + 7); setWeekStart(d); }}
-          className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
+          className="p-1.5 rounded-ct-sm hover:bg-ct-surface-2 text-ct-mute"
           aria-label="Next week"
         >
           <ChevronRight className="w-5 h-5" />
@@ -117,60 +117,60 @@ export default function MyHoursTab() {
 
       {!loading && entries.length > 0 && (
         <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-2 px-3 py-2 bg-primary-50 rounded-lg border border-primary-100">
-            <Timer className="w-4 h-4 text-primary-600" />
-            <span className="text-sm text-gray-700">This week</span>
-            <span className="text-sm font-bold text-primary-700">{totalHours}h</span>
+          <div className="flex items-center gap-2 px-3 py-2 bg-ct-surface-2 rounded-ct-sm border border-ct-teal/30">
+            <Timer className="w-4 h-4 text-ct-mute-2" />
+            <span className="text-sm text-ct-mute-2">This week</span>
+            <span className="text-sm font-bold text-ct-mute-2">{totalHours}h</span>
           </div>
-          <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-100">
-            <span className="text-sm text-gray-700">Approved</span>
-            <span className="text-sm font-bold text-green-700">{approvedHours}h</span>
+          <div className="flex items-center gap-2 px-3 py-2 bg-ct-teal/[0.14] rounded-ct-sm border border-ct-teal/30">
+            <span className="text-sm text-ct-mute-2">Approved</span>
+            <span className="text-sm font-bold text-ct-teal">{approvedHours}h</span>
           </div>
         </div>
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400 text-sm">Loading your hours…</div>
+        <div className="text-center py-12 text-ct-mute text-sm">Loading your hours…</div>
       ) : entries.length === 0 ? (
-        <div className="text-center py-12 text-gray-400 text-sm">
-          <Timer className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-          <p className="font-medium text-gray-600">No hours recorded this week</p>
+        <div className="text-center py-12 text-ct-mute text-sm">
+          <Timer className="w-10 h-10 mx-auto mb-3 text-ct-mute" />
+          <p className="font-medium text-ct-mute-2">No hours recorded this week</p>
           <p className="text-xs mt-1">On-site hours are logged automatically when you check in at a booked job site.</p>
         </div>
       ) : (
-        <div className="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+        <div className="divide-y divide-ct-line-soft border border-ct-line rounded-ct-md overflow-hidden">
           {entries.map(entry => (
-            <div key={entry.id} className="flex items-center gap-4 p-4 bg-white">
-              <div className="w-9 h-9 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
-                <Briefcase className="w-4 h-4 text-secondary-600" />
+            <div key={entry.id} className="flex items-center gap-4 p-4 bg-ct-surface">
+              <div className="w-9 h-9 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                <Briefcase className="w-4 h-4 text-ct-mute-2" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium text-gray-900 text-sm truncate">{entry.job_title || 'On-site work'}</span>
+                  <span className="font-medium text-ct-paper text-sm truncate">{entry.job_title || 'On-site work'}</span>
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_CLS[entry.status] || STATUS_CLS.pending}`}>
                     {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
                   </span>
                   {entry.source === 'geofence' && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-50 text-secondary-700" title="Auto-logged from on-site check-in">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute-2" title="Auto-logged from on-site check-in">
                       <MapPin className="w-3 h-3" /> Auto
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500 flex-wrap">
+                <div className="flex items-center gap-3 mt-0.5 text-xs text-ct-mute flex-wrap">
                   <span>{new Date(`${entry.entry_date}T00:00:00`).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-                  <span className="font-semibold text-gray-700">{entry.hours}h</span>
+                  <span className="font-semibold text-ct-mute-2">{entry.hours}h</span>
                   {entry.employer_name && <span className="truncate">for {entry.employer_name}</span>}
                 </div>
                 {entry.source === 'geofence' && entry.arrived_at && (
-                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500 flex-wrap">
+                  <div className="flex items-center gap-3 mt-1 text-xs text-ct-mute flex-wrap">
                     <span className="inline-flex items-center gap-1" title="Arrived on site">
-                      <LogIn className="w-3.5 h-3.5 text-gray-400" /> {formatTime(entry.arrived_at)}
+                      <LogIn className="w-3.5 h-3.5 text-ct-mute" /> {formatTime(entry.arrived_at)}
                     </span>
                     <span className="inline-flex items-center gap-1" title="Left site">
-                      <LogOut className="w-3.5 h-3.5 text-gray-400" /> {entry.departed_at ? formatTime(entry.departed_at) : '—'}
+                      <LogOut className="w-3.5 h-3.5 text-ct-mute" /> {entry.departed_at ? formatTime(entry.departed_at) : '—'}
                     </span>
                     {travelMs[entry.id] != null && (
-                      <span className="inline-flex items-center gap-1 text-secondary-600" title="Travel from the previous site">
+                      <span className="inline-flex items-center gap-1 text-ct-mute-2" title="Travel from the previous site">
                         <Navigation className="w-3.5 h-3.5" /> {formatDuration(travelMs[entry.id])} drive from last site
                       </span>
                     )}

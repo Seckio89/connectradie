@@ -141,30 +141,30 @@ export default function NewGroupModal({ isOpen, onClose, currentUserId, onCreate
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="md">
       <div className="p-6 space-y-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-secondary-50 flex items-center justify-center flex-shrink-0">
-            <Users className="w-5 h-5 text-secondary-600" />
+          <div className="w-10 h-10 rounded-ct-md bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+            <Users className="w-5 h-5 text-ct-mute-2" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">New group</h2>
-            <p className="text-sm text-gray-500">Add clients, team members or subcontractors to one thread.</p>
+            <h2 className="text-lg font-semibold text-ct-paper">New group</h2>
+            <p className="text-sm text-ct-mute">Add clients, team members or subcontractors to one thread.</p>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Group name <span className="text-gray-400 font-normal">(optional)</span></label>
+          <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Group name <span className="text-ct-mute font-normal">(optional)</span></label>
           <input
             type="text" value={groupName} onChange={(e) => setGroupName(e.target.value)}
             placeholder="e.g. Granville site team"
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
           />
-          <p className="mt-1 text-xs text-gray-400">Leave blank to name it after the participants.</p>
+          <p className="mt-1 text-xs text-ct-mute">Leave blank to name it after the participants.</p>
         </div>
 
         {jobs.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1.5"><Briefcase className="w-3.5 h-3.5 text-gray-400" /> Link to a job <span className="text-gray-400 font-normal">(optional)</span></label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5 flex items-center gap-1.5"><Briefcase className="w-3.5 h-3.5 text-ct-mute" /> Link to a job <span className="text-ct-mute font-normal">(optional)</span></label>
             <select value={jobId} onChange={(e) => setJobId(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white">
+              className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm bg-ct-surface">
               <option value="">No job</option>
               {jobs.map((j) => <option key={j.id} value={j.id}>{j.title || 'Untitled job'}</option>)}
             </select>
@@ -173,40 +173,40 @@ export default function NewGroupModal({ isOpen, onClose, currentUserId, onCreate
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-sm font-medium text-gray-700">Participants</label>
-            <span className="text-xs text-gray-400">{selected.size} selected</span>
+            <label className="block text-sm font-medium text-ct-mute-2">Participants</label>
+            <span className="text-xs text-ct-mute">{selected.size} selected</span>
           </div>
           <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
             <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search people…"
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-50" />
+              className="w-full pl-9 pr-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal bg-ct-surface-2" />
           </div>
 
-          <div className="max-h-64 overflow-y-auto rounded-xl border border-gray-200 divide-y divide-gray-100">
+          <div className="max-h-64 overflow-y-auto rounded-ct-md border border-ct-line divide-y divide-ct-line-soft">
             {loading ? (
-              <div className="flex items-center justify-center py-10 text-gray-400"><Loader2 className="w-5 h-5 animate-spin" /></div>
+              <div className="flex items-center justify-center py-10 text-ct-mute"><Loader2 className="w-5 h-5 animate-spin" /></div>
             ) : filtered.length === 0 ? (
-              <div className="py-10 text-center text-sm text-gray-500">
+              <div className="py-10 text-center text-sm text-ct-mute">
                 {candidates.length === 0 ? 'No registered clients or team members yet.' : 'No matches.'}
               </div>
             ) : (
               Object.entries(grouped).map(([group, items]) => (
                 <div key={group}>
-                  <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400 bg-gray-50">{group}</p>
+                  <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-ct-mute bg-ct-surface-2">{group}</p>
                   {items.map((c) => {
                     const on = selected.has(c.userId);
                     return (
                       <button key={c.userId} type="button" onClick={() => toggle(c.userId)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50">
-                        <span className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 ${on ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300'}`}>
-                          {on && <Check className="w-3.5 h-3.5 text-white" />}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-ct-surface-2">
+                        <span className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 ${on ? 'bg-ct-teal border-ct-teal' : 'border-ct-line'}`}>
+                          {on && <Check className="w-3.5 h-3.5 text-ct-ink" />}
                         </span>
-                        <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-bold text-primary-600">{c.name.charAt(0).toUpperCase()}</span>
+                        <div className="w-8 h-8 rounded-full bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-bold text-ct-mute-2">{c.name.charAt(0).toUpperCase()}</span>
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
-                          {c.subtitle && <p className="text-xs text-gray-400 truncate">{c.subtitle}</p>}
+                          <p className="text-sm font-medium text-ct-paper truncate">{c.name}</p>
+                          {c.subtitle && <p className="text-xs text-ct-mute truncate">{c.subtitle}</p>}
                         </div>
                       </button>
                     );
@@ -217,12 +217,12 @@ export default function NewGroupModal({ isOpen, onClose, currentUserId, onCreate
           </div>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-ct-rose">{error}</p>}
 
         <div className="flex gap-3 pt-1">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-md font-medium hover:bg-ct-surface-2 transition-colors">Cancel</button>
           <button onClick={create} disabled={creating || selected.size < 1}
-            className="flex-1 px-4 py-2.5 bg-secondary-600 text-white rounded-xl font-medium hover:bg-secondary-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+            className="flex-1 px-4 py-2.5 bg-ct-surface-2 text-ct-ink rounded-ct-md font-medium hover:bg-ct-surface-2 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
             {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />} Create group
           </button>
         </div>

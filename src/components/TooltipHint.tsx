@@ -39,17 +39,17 @@ export default function TooltipHint({
   const { user } = useAuth();
 
   const themeClasses = {
-    blue: 'from-secondary-50 to-secondary-50 border-secondary-200 text-secondary-900',
-    green: 'from-green-50 to-secondary-50 border-green-200 text-green-900',
-    amber: 'from-warm-50 to-warm-50 border-warm-200 text-warm-900',
-    purple: 'from-warm-50 to-warm-50 border-warm-200 text-warm-900',
+    blue: 'from-ct-surface-2 to-ct-surface-2 border-ct-line text-ct-paper',
+    green: 'from-ct-teal to-ct-surface-2 border-ct-teal/30 text-ct-teal',
+    amber: 'from-ct-teal to-ct-teal border-ct-amber/[0.34] text-ct-teal',
+    purple: 'from-ct-teal to-ct-teal border-ct-amber/[0.34] text-ct-teal',
   };
 
   const iconColors = {
-    blue: 'bg-secondary-100 text-secondary-600',
-    green: 'bg-green-100 text-green-600',
-    amber: 'bg-warm-100 text-warm-600',
-    purple: 'bg-warm-100 text-warm-600',
+    blue: 'bg-ct-surface-2 text-ct-mute-2',
+    green: 'bg-ct-teal/[0.14] text-ct-teal',
+    amber: 'bg-ct-amber/[0.13] text-ct-amber',
+    purple: 'bg-ct-amber/[0.13] text-ct-amber',
   };
 
   useEffect(() => {
@@ -125,9 +125,9 @@ export default function TooltipHint({
   };
 
   const content = (
-    <div className={`bg-gradient-to-br ${themeClasses[theme]} border rounded-xl p-4 shadow-lg max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+    <div className={`bg-gradient-to-br ${themeClasses[theme]} border rounded-ct-md p-4 shadow-lg max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-300`}>
       <div className="flex items-start gap-3">
-        <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${iconColors[theme]}`}>
+        <div className={`flex-shrink-0 w-8 h-8 rounded-ct-sm flex items-center justify-center ${iconColors[theme]}`}>
           <Lightbulb className="w-5 h-5" />
         </div>
         <div className="flex-1">
@@ -139,7 +139,7 @@ export default function TooltipHint({
                 action.onClick();
                 handleDismiss();
               }}
-              className={`text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/60 hover:bg-white transition-colors`}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-ct-sm bg-ct-surface/60 hover:bg-ct-surface transition-colors`}
             >
               {action.label}
             </button>
@@ -147,7 +147,7 @@ export default function TooltipHint({
         </div>
         <button
           onClick={handleDismiss}
-          className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 hover:bg-white/40 rounded transition-colors"
+          className="flex-shrink-0 p-1 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface/40 rounded transition-colors"
         >
           <X className="w-4 h-4" />
         </button>

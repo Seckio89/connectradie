@@ -721,12 +721,12 @@ export default function ClientDashboard() {
       <WelcomeGuide role="client" userName={profile?.full_name} />
       {showOnboardedBanner && (
         <div className="mb-4">
-          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-gradient-to-r from-ct-teal to-ct-surface-2 border border-ct-line rounded-ct-lg p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-primary-900 mb-1">Welcome to ConnecTradie!</h3>
-              <p className="text-sm text-primary-800">Post your first job to get quotes from verified tradies in your area.</p>
+              <h3 className="font-bold text-ct-teal mb-1">Welcome to ConnecTradie!</h3>
+              <p className="text-sm text-ct-teal">Post your first job to get quotes from verified tradies in your area.</p>
             </div>
-            <Link to="/post-lead" className="flex-shrink-0 px-4 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors text-sm text-center min-h-[44px] inline-flex items-center justify-center">
+            <Link to="/post-lead" className="flex-shrink-0 px-4 py-2.5 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors text-sm text-center min-h-[44px] inline-flex items-center justify-center">
               Post a Job
             </Link>
           </div>
@@ -735,15 +735,15 @@ export default function ClientDashboard() {
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-ct-paper">
               Welcome back, {profile?.full_name?.split(' ')[0]}!
             </h1>
-            <p className="text-gray-600 mt-1">Your jobs, quotes, and personalised recommendations</p>
+            <p className="text-ct-mute-2 mt-1">Your jobs, quotes, and personalised recommendations</p>
           </div>
           <Link
             to="/search"
             data-tour="find-tradie"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors min-h-[44px]"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors min-h-[44px]"
           >
             <Plus className="w-5 h-5" />
             Find New Tradie
@@ -761,30 +761,30 @@ export default function ClientDashboard() {
           if (totalItems === 0) return null;
 
           return (
-            <div id="attention-section" className="mb-8 bg-white border-2 border-amber-200 rounded-2xl overflow-hidden shadow-sm">
-              <div className="px-5 py-3 bg-amber-50 border-b border-amber-200 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-600" />
-                <h2 className="text-sm font-semibold text-amber-900">
+            <div id="attention-section" className="mb-8 bg-ct-surface border-2 border-ct-amber/[0.34] rounded-ct-lg overflow-hidden shadow-sm">
+              <div className="px-5 py-3 bg-ct-amber/[0.13] border-b border-ct-amber/[0.34] flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-ct-amber" />
+                <h2 className="text-sm font-semibold text-ct-paper">
                   {totalItems === 1 ? '1 item needs your attention' : `${totalItems} items need your attention`}
                 </h2>
               </div>
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-ct-line-soft">
                 {awaitingRelease.map(job => {
                   const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
                   const label = (job.title || category || 'Job').toString();
                   return (
-                    <div key={`release-${job.id}`} className="px-3 sm:px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
-                      <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <div key={`release-${job.id}`} className="px-3 sm:px-5 py-3 flex items-center gap-3 hover:bg-ct-surface-2 transition-colors">
+                      <div className="w-8 h-8 bg-ct-teal/[0.14] rounded-full flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 className="w-4 h-4 text-ct-teal" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate capitalize">{label}</p>
-                        <p className="text-xs text-gray-500">Tradie finished — release payment & leave a review</p>
+                        <p className="text-sm font-medium text-ct-paper truncate capitalize">{label}</p>
+                        <p className="text-xs text-ct-mute">Tradie finished — release payment & leave a review</p>
                       </div>
                       <button
                         onClick={() => handleReleasePayment(job.id)}
                         disabled={releasingJobId === job.id}
-                        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors min-h-[44px]"
+                        className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-ct-teal text-ct-ink text-xs font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-60 transition-colors min-h-[44px]"
                       >
                         {releasingJobId === job.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                         Release & Review
@@ -797,26 +797,26 @@ export default function ClientDashboard() {
                   const label = (job.title || category || 'Job').toString();
                   const isRecurring = recurringJobIds.has(job.id);
                   return (
-                    <Link key={`quote-${job.id}`} to={isRecurring ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`} className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
-                      <div className="w-8 h-8 bg-secondary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <FileText className="w-4 h-4 text-secondary-600" />
+                    <Link key={`quote-${job.id}`} to={isRecurring ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`} className="px-5 py-3 flex items-center gap-3 hover:bg-ct-surface-2 transition-colors">
+                      <div className="w-8 h-8 bg-ct-surface-2 rounded-full flex items-center justify-center flex-shrink-0">
+                        <FileText className="w-4 h-4 text-ct-mute-2" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate capitalize">{label}</p>
-                        <p className="text-xs text-gray-500">{job.quote_count} quote{job.quote_count !== 1 ? 's' : ''} received — review & accept</p>
+                        <p className="text-sm font-medium text-ct-paper truncate capitalize">{label}</p>
+                        <p className="text-xs text-ct-mute">{job.quote_count} quote{job.quote_count !== 1 ? 's' : ''} received — review & accept</p>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <ArrowRight className="w-4 h-4 text-ct-mute flex-shrink-0" />
                     </Link>
                   );
                 })}
                 {pendingPayments.map(pp => (
-                  <div key={`pay-${pp.id}`} className="px-3 sm:px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
-                    <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <CreditCard className="w-4 h-4 text-amber-600" />
+                  <div key={`pay-${pp.id}`} className="px-3 sm:px-5 py-3 flex items-center gap-3 hover:bg-ct-surface-2 transition-colors">
+                    <div className="w-8 h-8 bg-ct-amber/[0.13] rounded-full flex items-center justify-center flex-shrink-0">
+                      <CreditCard className="w-4 h-4 text-ct-amber" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{pp.jobTitle}</p>
-                      <p className="text-xs text-gray-500">${(pp.amount / 100).toFixed(2)} — payment incomplete</p>
+                      <p className="text-sm font-medium text-ct-paper truncate">{pp.jobTitle}</p>
+                      <p className="text-xs text-ct-mute">${(pp.amount / 100).toFixed(2)} — payment incomplete</p>
                     </div>
                     <button
                       onClick={async () => {
@@ -831,7 +831,7 @@ export default function ClientDashboard() {
                         }
                       }}
                       disabled={payingPendingId === pp.id}
-                      className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 disabled:opacity-60 transition-colors min-h-[44px]"
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-ct-amber/[0.13]0 text-ct-ink text-xs font-medium rounded-ct-sm hover:bg-ct-amber disabled:opacity-60 transition-colors min-h-[44px]"
                     >
                       {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
                       Pay Now
@@ -839,15 +839,15 @@ export default function ClientDashboard() {
                   </div>
                 ))}
                 {invoices.map(inv => (
-                  <Link key={`inv-${inv.id}`} to="/payments" className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-4 h-4 text-purple-600" />
+                  <Link key={`inv-${inv.id}`} to="/payments" className="px-5 py-3 flex items-center gap-3 hover:bg-ct-surface-2 transition-colors">
+                    <div className="w-8 h-8 bg-ct-surface-2 rounded-full flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-4 h-4 text-ct-mute-2" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">Invoice — {(inv as unknown as Record<string, unknown>).status === 'overdue' ? 'Overdue' : 'Needs approval'}</p>
-                      <p className="text-xs text-gray-500">Review and approve or dispute</p>
+                      <p className="text-sm font-medium text-ct-paper truncate">Invoice — {(inv as unknown as Record<string, unknown>).status === 'overdue' ? 'Overdue' : 'Needs approval'}</p>
+                      <p className="text-xs text-ct-mute">Review and approve or dispute</p>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <ArrowRight className="w-4 h-4 text-ct-mute flex-shrink-0" />
                   </Link>
                 ))}
               </div>
@@ -856,15 +856,15 @@ export default function ClientDashboard() {
         })()}
 
         {availableThisWeek > 0 && showSlotsBanner && (
-          <div className="mb-8 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-300 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <Bell className="w-5 h-5 text-amber-600 animate-pulse" />
+          <div className="mb-8 p-4 bg-gradient-to-r from-ct-amber to-ct-amber border border-ct-amber/[0.34] rounded-ct-md flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="w-10 h-10 bg-ct-amber/[0.13] rounded-full flex items-center justify-center flex-shrink-0">
+              <Bell className="w-5 h-5 text-ct-amber animate-pulse" />
             </div>
             <div className="flex-1">
-              <p className="font-semibold text-amber-900">
+              <p className="font-semibold text-ct-paper">
                 One of your saved tradies opened up slots this week
               </p>
-              <p className="text-sm text-amber-800 mt-0.5">
+              <p className="text-sm text-ct-paper mt-0.5">
                 Check their calendars now — popular times fill up fast
               </p>
             </div>
@@ -875,7 +875,7 @@ export default function ClientDashboard() {
                 try { sessionStorage.setItem('dismissed_slots_banner', '1'); } catch { /* private mode — non-critical */ }
               }}
               aria-label="Dismiss"
-              className="p-1.5 -m-1 text-amber-600 hover:text-amber-800 hover:bg-amber-100 rounded-lg transition-colors flex-shrink-0"
+              className="p-1.5 -m-1 text-ct-amber hover:text-ct-paper hover:bg-ct-amber/[0.13] rounded-ct-sm transition-colors flex-shrink-0"
             >
               <X className="w-4 h-4" />
             </button>
@@ -887,12 +887,12 @@ export default function ClientDashboard() {
             {/* My Recent Jobs */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-warm-500" />
+                <h2 className="text-lg font-semibold text-ct-paper flex items-center gap-2">
+                  <Briefcase className="w-5 h-5 text-ct-teal" />
                   My Jobs
                 </h2>
                 <div className="flex items-center gap-3">
-                  <Link to="/leads" className="text-sm font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                  <Link to="/leads" className="text-sm font-medium text-ct-mute-2 hover:text-ct-mute-2 flex items-center gap-1">
                     View All <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -900,7 +900,7 @@ export default function ClientDashboard() {
 
               {/* Job tabs — underline style, matching the client My Jobs page (/leads)
                   and every other tab strip in the app. */}
-              <div className="overflow-x-auto -mx-1 px-1 border-b border-gray-200 mb-4 scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <div className="overflow-x-auto -mx-1 px-1 border-b border-ct-line mb-4 scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
                 <div className="flex items-center gap-3 sm:gap-6 flex-nowrap">
                   {([
                     { key: 'active' as const, label: 'Active', count: recentJobs.filter(j => !j.archived_at && j.status === 'pending').length },
@@ -921,10 +921,10 @@ export default function ClientDashboard() {
                         onClick={() => { setJobTab(tab.key); setShowArchived(false); }}
                         className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                           isActive
-                            ? 'border-warm-500 text-warm-600'
+                            ? 'border-ct-teal text-ct-amber'
                             : needsAttention
-                              ? 'border-amber-300 text-gray-400 hover:text-gray-600'
-                              : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                              ? 'border-ct-amber/[0.34] text-ct-mute hover:text-ct-mute-2'
+                              : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
                         }`}
                       >
                         {tab.label} {tab.count > 0 && `(${tab.count})`}
@@ -936,8 +936,8 @@ export default function ClientDashboard() {
                       onClick={() => { setShowArchived(!showArchived); setJobTab('active'); }}
                       className={`inline-flex items-center gap-1.5 pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                         showArchived
-                          ? 'border-warm-500 text-warm-600'
-                          : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                          ? 'border-ct-teal text-ct-amber'
+                          : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
                       }`}
                     >
                       <Archive className="w-3.5 h-3.5" />
@@ -955,51 +955,51 @@ export default function ClientDashboard() {
                     ? !j.archived_at && !recurringJobIds.has(j.id) && ((j.status !== null && ['accepted', 'funded', 'in_progress'].includes(j.status)) || (j.status === 'completed' && (!releasedJobIds.has(j.id) || !reviewedJobIds.has(j.id))))
                     : !j.archived_at && j.status === 'completed' && releasedJobIds.has(j.id) && reviewedJobIds.has(j.id)
               ).length === 0 && recentJobs.length > 0 ? (
-                <div className="bg-gray-50 rounded-2xl border border-gray-200 p-8 text-center">
-                  <Archive className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-600 font-medium">
+                <div className="bg-ct-surface-2 rounded-ct-lg border border-ct-line p-8 text-center">
+                  <Archive className="w-10 h-10 text-ct-mute mx-auto mb-3" />
+                  <p className="text-ct-mute-2 font-medium">
                     {showArchived ? 'No archived jobs' : jobTab === 'completed' ? 'No completed jobs yet' : jobTab === 'accepted' ? 'No accepted jobs' : 'No active jobs'}
                   </p>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-ct-mute mt-1">
                     {showArchived ? 'Archived jobs will appear here' : jobTab === 'completed' ? 'Jobs will appear here once payment is released' : jobTab === 'accepted' ? 'Jobs will move here once a quote is accepted' : 'Post a job to get started'}
                   </p>
                 </div>
               ) : recentJobs.length === 0 ? (
-                <div className="bg-gradient-to-br from-warm-50 to-secondary-50 rounded-2xl border border-warm-200 p-8 sm:p-10">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">Get started</h3>
-                  <p className="text-gray-600 mb-6 max-w-lg">
+                <div className="bg-gradient-to-br from-ct-teal to-ct-surface-2 rounded-ct-lg border border-ct-amber/[0.34] p-8 sm:p-10">
+                  <h3 className="text-lg font-bold text-ct-paper mb-2">Get started</h3>
+                  <p className="text-ct-mute-2 mb-6 max-w-lg">
                     Post a job to get quotes from verified tradies, or browse and save tradies you like.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     <Link
                       to="/post-lead"
                       data-tour="post-job"
-                      className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-warm-300 hover:shadow-sm transition-all"
+                      className="flex items-center gap-4 p-4 bg-ct-surface rounded-ct-lg border border-ct-line hover:border-ct-teal/30 hover:shadow-sm transition-all"
                     >
-                      <div className="w-10 h-10 bg-warm-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <span className="text-lg font-bold text-warm-600">1</span>
+                      <div className="w-10 h-10 bg-ct-amber/[0.13] rounded-ct-md flex items-center justify-center flex-shrink-0">
+                        <span className="text-lg font-bold text-ct-amber">1</span>
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">Post a Job</p>
-                        <p className="text-sm text-gray-500">Describe what you need — takes 60 seconds</p>
+                        <p className="font-semibold text-ct-paper">Post a Job</p>
+                        <p className="text-sm text-ct-mute">Describe what you need — takes 60 seconds</p>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-gray-400 ml-auto flex-shrink-0" />
+                      <ArrowRight className="w-4 h-4 text-ct-mute ml-auto flex-shrink-0" />
                     </Link>
                     <Link
                       to="/search"
-                      className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-sm transition-all"
+                      className="flex items-center gap-4 p-4 bg-ct-surface rounded-ct-lg border border-ct-line hover:border-ct-teal/30 hover:shadow-sm transition-all"
                     >
-                      <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <span className="text-lg font-bold text-primary-600">2</span>
+                      <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-md flex items-center justify-center flex-shrink-0">
+                        <span className="text-lg font-bold text-ct-mute-2">2</span>
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">Find a Tradie</p>
-                        <p className="text-sm text-gray-500">Find and save tradies near you</p>
+                        <p className="font-semibold text-ct-paper">Find a Tradie</p>
+                        <p className="text-sm text-ct-mute">Find and save tradies near you</p>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-gray-400 ml-auto flex-shrink-0" />
+                      <ArrowRight className="w-4 h-4 text-ct-mute ml-auto flex-shrink-0" />
                     </Link>
                   </div>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-ct-mute">
                     Once you post a job, tradies will send you quotes. Compare them side by side, then accept the best one and message the tradie to confirm details.
                   </p>
                 </div>
@@ -1033,12 +1033,12 @@ export default function ClientDashboard() {
                         const monthLabel = new Date(Number(yr), Number(mo) - 1).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
                         return (
                           <details key={monthKey} open={idx === 0} className="group/month">
-                            <summary className="flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors select-none list-none mb-2">
+                            <summary className="flex items-center justify-between px-4 py-2.5 bg-ct-surface-2 rounded-ct-md cursor-pointer hover:bg-ct-surface-2 transition-colors select-none list-none mb-2">
                               <div className="flex items-center gap-2">
-                                <ChevronDown className="w-4 h-4 text-gray-400 transition-transform group-open/month:rotate-0 -rotate-90" />
-                                <span className="text-sm font-semibold text-gray-800">{monthLabel}</span>
+                                <ChevronDown className="w-4 h-4 text-ct-mute transition-transform group-open/month:rotate-0 -rotate-90" />
+                                <span className="text-sm font-semibold text-ct-paper">{monthLabel}</span>
                               </div>
-                              <span className="text-xs text-gray-400">{monthJobs.length} job{monthJobs.length !== 1 ? 's' : ''}</span>
+                              <span className="text-xs text-ct-mute">{monthJobs.length} job{monthJobs.length !== 1 ? 's' : ''}</span>
                             </summary>
                             <div className="space-y-3 mb-4">
                               {monthJobs.map((job) => {
@@ -1049,30 +1049,30 @@ export default function ClientDashboard() {
                                 const isReleased = releasedJobIds.has(job.id);
                                 const isReviewed = reviewedJobIds.has(job.id);
                                 const statusLabel = 'Paid';
-                                const statusColor = 'bg-green-100 text-green-700 border-green-200';
-                                const accentColor = 'bg-green-400';
+                                const statusColor = 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30';
+                                const accentColor = 'bg-ct-teal';
                                 return (
-                                  <Link key={job.id} to={recurringJobIds.has(job.id) ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`} className="group block rounded-2xl overflow-hidden border bg-white shadow-sm hover:shadow-lg hover:border-gray-300 transition-all">
+                                  <Link key={job.id} to={recurringJobIds.has(job.id) ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`} className="group block rounded-ct-lg overflow-hidden border bg-ct-surface shadow-sm hover:shadow-lg hover:border-ct-line transition-all">
                                     <div className="flex">
                                       <div className={`w-1.5 flex-shrink-0 ${accentColor}`} />
                                       <div className="flex-1 min-w-0">
                                         <div className="px-5 py-4">
                                           <div className="flex items-start justify-between gap-3 mb-2">
-                                            <h3 className="text-base font-bold text-gray-900 leading-snug capitalize line-clamp-2">{(job.title || category || 'Untitled Job').replace(/_/g, ' ')}</h3>
+                                            <h3 className="text-base font-bold text-ct-paper leading-snug capitalize line-clamp-2">{(job.title || category || 'Untitled Job').replace(/_/g, ' ')}</h3>
                                             <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${statusColor}`}>{statusLabel}</span>
                                           </div>
-                                          <p className="text-sm text-gray-500 line-clamp-3">{desc}</p>
+                                          <p className="text-sm text-ct-mute line-clamp-3">{desc}</p>
                                         </div>
                                         {isReleased && isReviewed && (
-                                          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
-                                            <span className="text-xs text-gray-400">Payment released to tradie</span>
+                                          <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3 border-t border-ct-line-soft">
+                                            <span className="text-xs text-ct-mute">Payment released to tradie</span>
                                             <div className="flex items-center gap-2 flex-wrap">
                                               {!recurringJobIds.has(job.id) && (
-                                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setBonusTarget({ jobId: job.id, jobLabel: (job.title || category || 'the job').toString() }); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-warm-200 text-warm-700 text-xs font-semibold rounded-lg hover:bg-warm-50 transition-colors">
+                                                <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setBonusTarget({ jobId: job.id, jobLabel: (job.title || category || 'the job').toString() }); }} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface border border-ct-amber/[0.34] text-ct-amber text-xs font-semibold rounded-ct-sm hover:bg-ct-amber/[0.13] transition-colors">
                                                   <Gift className="w-3.5 h-3.5" /> Give extra
                                                 </button>
                                               )}
-                                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg"><CheckCircle2 className="w-3.5 h-3.5" /> Paid</span>
+                                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm"><CheckCircle2 className="w-3.5 h-3.5" /> Paid</span>
                                             </div>
                                           </div>
                                         )}
@@ -1107,23 +1107,23 @@ export default function ClientDashboard() {
                       : job.quote_count > 0 ? `${job.quote_count} Quote${job.quote_count !== 1 ? 's' : ''}`
                       : 'Waiting';
 
-                    const statusColor = isArchived ? 'bg-gray-100 text-gray-600 border-gray-200'
-                      : job.status === 'completed' && isReleased ? 'bg-green-100 text-green-700 border-green-200'
-                      : job.status === 'completed' ? 'bg-amber-100 text-amber-700 border-amber-200'
-                      : job.status === 'in_progress' ? 'bg-secondary-100 text-secondary-700 border-secondary-200'
-                      : job.status === 'funded' ? 'bg-green-100 text-green-700 border-green-200'
-                      : job.quoting_status === 'awarded' ? 'bg-green-100 text-green-700 border-green-200'
-                      : job.quote_count > 0 ? 'bg-secondary-100 text-secondary-700 border-secondary-200'
-                      : 'bg-gray-100 text-gray-600 border-gray-200';
+                    const statusColor = isArchived ? 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'
+                      : job.status === 'completed' && isReleased ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30'
+                      : job.status === 'completed' ? 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]'
+                      : job.status === 'in_progress' ? 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'
+                      : job.status === 'funded' ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30'
+                      : job.quoting_status === 'awarded' ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30'
+                      : job.quote_count > 0 ? 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'
+                      : 'bg-ct-surface-2 text-ct-mute-2 border-ct-line';
 
-                    const accentColor = isArchived ? 'bg-gray-300'
-                      : job.status === 'completed' && isReleased ? 'bg-green-400'
-                      : job.status === 'completed' ? 'bg-amber-400'
-                      : job.status === 'in_progress' ? 'bg-secondary-400'
-                      : job.status === 'funded' ? 'bg-green-400'
-                      : job.quoting_status === 'awarded' ? 'bg-green-400'
-                      : job.quote_count > 0 ? 'bg-secondary-400'
-                      : 'bg-primary-400';
+                    const accentColor = isArchived ? 'bg-ct-line'
+                      : job.status === 'completed' && isReleased ? 'bg-ct-teal'
+                      : job.status === 'completed' ? 'bg-ct-amber'
+                      : job.status === 'in_progress' ? 'bg-ct-surface-2'
+                      : job.status === 'funded' ? 'bg-ct-teal'
+                      : job.quoting_status === 'awarded' ? 'bg-ct-teal'
+                      : job.quote_count > 0 ? 'bg-ct-surface-2'
+                      : 'bg-ct-teal';
 
                     const SLOT_LABELS: Record<string, string> = { morning: '7-9 AM', midday: '10 AM-12 PM', afternoon: '1-5 PM' };
 
@@ -1131,7 +1131,7 @@ export default function ClientDashboard() {
                       <React.Fragment key={job.id}>
                         <Link
                           to={recurringJobIds.has(job.id) ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`}
-                          className={`group block rounded-2xl overflow-hidden border bg-white shadow-sm hover:shadow-lg hover:border-gray-300 transition-all ${isArchived ? 'opacity-75' : ''}`}
+                          className={`group block rounded-ct-lg overflow-hidden border bg-ct-surface shadow-sm hover:shadow-lg hover:border-ct-line transition-all ${isArchived ? 'opacity-75' : ''}`}
                         >
                         <div className="flex">
                           {/* Left accent bar */}
@@ -1140,7 +1140,7 @@ export default function ClientDashboard() {
                             <div className="px-4 sm:px-5 py-4">
                               {/* Header: title + status badge + archive icon */}
                               <div className="flex items-start justify-between gap-3 mb-2">
-                                <h3 className="text-base font-bold text-gray-900 leading-snug capitalize line-clamp-2">
+                                <h3 className="text-base font-bold text-ct-paper leading-snug capitalize line-clamp-2">
                                   {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
                                 </h3>
                                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -1150,7 +1150,7 @@ export default function ClientDashboard() {
                                   {!isArchived && job.status === 'pending' && !job.tradie_id && (
                                     <button
                                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCancelJobTarget(job); }}
-                                      className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors sm:opacity-0 sm:group-hover:opacity-100"
+                                      className="p-1.5 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors sm:opacity-0 sm:group-hover:opacity-100"
                                       title="Cancel job"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
@@ -1159,7 +1159,7 @@ export default function ClientDashboard() {
                                   {!isArchived && (
                                     <button
                                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); archiveJob(job.id); }}
-                                      className="p-1.5 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors sm:opacity-0 sm:group-hover:opacity-100"
+                                      className="p-1.5 text-ct-mute hover:text-ct-mute hover:bg-ct-surface-2 rounded-ct-sm transition-colors sm:opacity-0 sm:group-hover:opacity-100"
                                       title="Archive job"
                                     >
                                       <Archive className="w-3.5 h-3.5" />
@@ -1168,7 +1168,7 @@ export default function ClientDashboard() {
                                   {isArchived && (
                                     <button
                                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); unarchiveJob(job.id); }}
-                                      className="p-1.5 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-lg transition-colors sm:opacity-0 sm:group-hover:opacity-100"
+                                      className="p-1.5 text-ct-mute hover:text-ct-mute hover:bg-ct-surface-2 rounded-ct-sm transition-colors sm:opacity-0 sm:group-hover:opacity-100"
                                       title="Restore job"
                                     >
                                       <ArchiveRestore className="w-3.5 h-3.5" />
@@ -1178,38 +1178,38 @@ export default function ClientDashboard() {
                               </div>
 
                               {/* Description */}
-                              <p className="text-sm text-gray-500 mb-3 line-clamp-3 leading-relaxed">{desc}</p>
+                              <p className="text-sm text-ct-mute mb-3 line-clamp-3 leading-relaxed">{desc}</p>
 
                               {/* Details row */}
-                              <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-gray-500">
+                              <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-ct-mute">
                                 {category && (
-                                  <span className="inline-flex items-center gap-1 text-gray-600 font-medium">
-                                    <Briefcase className="w-3 h-3 text-gray-400" />
+                                  <span className="inline-flex items-center gap-1 text-ct-mute-2 font-medium">
+                                    <Briefcase className="w-3 h-3 text-ct-mute" />
                                     {category}
                                   </span>
                                 )}
                                 {job.location_address && (
                                   <span className="inline-flex items-center gap-1">
-                                    <MapPin className="w-3 h-3 text-gray-400" />
+                                    <MapPin className="w-3 h-3 text-ct-mute" />
                                     {job.location_address.split(',')[0]}
                                   </span>
                                 )}
                                 {job.scheduled_date && (
                                   <span className="inline-flex items-center gap-1">
-                                    <CalendarClock className="w-3 h-3 text-secondary-500" />
-                                    <span className="text-secondary-700 font-medium">
+                                    <CalendarClock className="w-3 h-3 text-ct-mute-2" />
+                                    <span className="text-ct-mute-2 font-medium">
                                       {new Date(job.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                                     </span>
                                   </span>
                                 )}
                                 {job.preferred_time_slot && SLOT_LABELS[job.preferred_time_slot] && (
                                   <span className="inline-flex items-center gap-1">
-                                    <Clock className="w-3 h-3 text-gray-400" />
+                                    <Clock className="w-3 h-3 text-ct-mute" />
                                     {SLOT_LABELS[job.preferred_time_slot]}
                                   </span>
                                 )}
                                 {job.budget_amount ? (
-                                  <span className="inline-flex items-center font-bold text-emerald-700">
+                                  <span className="inline-flex items-center font-bold text-ct-teal">
                                     ${job.budget_amount.toLocaleString()}
                                   </span>
                                 ) : null}
@@ -1218,8 +1218,8 @@ export default function ClientDashboard() {
 
                             {/* Footer with action */}
                             {job.status === 'completed' && !isReleased && (
-                              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-                                <span className="text-xs text-gray-400">Tradie finished the work</span>
+                              <div className="flex items-center justify-between px-5 py-3 border-t border-ct-line-soft">
+                                <span className="text-xs text-ct-mute">Tradie finished the work</span>
                                 <button
                                   onClick={(e) => {
                                     e.preventDefault();
@@ -1227,7 +1227,7 @@ export default function ClientDashboard() {
                                     handleReleasePayment(job.id);
                                   }}
                                   disabled={releasingJobId === job.id}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-600 text-white text-xs font-semibold rounded-lg hover:bg-warm-700 disabled:opacity-60 transition-colors"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:bg-ct-teal disabled:opacity-60 transition-colors"
                                 >
                                   {releasingJobId === job.id ? (
                                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1239,8 +1239,8 @@ export default function ClientDashboard() {
                               </div>
                             )}
                             {job.status === 'completed' && isReleased && !isReviewed && (
-                              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
-                                <span className="text-xs text-gray-400">Payment released — how was the job?</span>
+                              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3 border-t border-ct-line-soft">
+                                <span className="text-xs text-ct-mute">Payment released — how was the job?</span>
                                 <div className="flex items-center gap-2">
                                   {!recurringJobIds.has(job.id) && (
                                     <button
@@ -1252,7 +1252,7 @@ export default function ClientDashboard() {
                                           jobLabel: (job.title || category || 'the job').toString(),
                                         });
                                       }}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-warm-200 text-warm-700 text-xs font-semibold rounded-lg hover:bg-warm-50 transition-colors"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface border border-ct-amber/[0.34] text-ct-amber text-xs font-semibold rounded-ct-sm hover:bg-ct-amber/[0.13] transition-colors"
                                     >
                                       <Gift className="w-3.5 h-3.5" />
                                       Give extra
@@ -1261,7 +1261,7 @@ export default function ClientDashboard() {
                                   <Link
                                     to={`/review/${job.id}`}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-warm-500 text-white text-xs font-semibold rounded-lg hover:bg-warm-600 transition-colors"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:brightness-110 transition-colors"
                                   >
                                     <Star className="w-3.5 h-3.5" />
                                     Leave a Review
@@ -1270,8 +1270,8 @@ export default function ClientDashboard() {
                               </div>
                             )}
                             {job.status === 'completed' && isReleased && isReviewed && (
-                              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100">
-                                <span className="text-xs text-gray-400">Payment released to tradie</span>
+                              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 px-4 sm:px-5 py-3 border-t border-ct-line-soft">
+                                <span className="text-xs text-ct-mute">Payment released to tradie</span>
                                 <div className="flex items-center gap-2 flex-wrap">
                                   {!recurringJobIds.has(job.id) && (
                                     <button
@@ -1283,13 +1283,13 @@ export default function ClientDashboard() {
                                           jobLabel: (job.title || category || 'the job').toString(),
                                         });
                                       }}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-warm-200 text-warm-700 text-xs font-semibold rounded-lg hover:bg-warm-50 transition-colors"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface border border-ct-amber/[0.34] text-ct-amber text-xs font-semibold rounded-ct-sm hover:bg-ct-amber/[0.13] transition-colors"
                                     >
                                       <Gift className="w-3.5 h-3.5" />
                                       Give extra
                                     </button>
                                   )}
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg">
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm">
                                     <CheckCircle2 className="w-3.5 h-3.5" />
                                     Paid
                                   </span>
@@ -1297,17 +1297,17 @@ export default function ClientDashboard() {
                               </div>
                             )}
                             {pendingIncreases[job.id] && (job.status !== null && ['funded', 'in_progress', 'completed'].includes(job.status)) && (
-                              <div className="px-5 py-3 border-t border-amber-200 bg-amber-50">
-                                <div className="flex items-center gap-2 text-sm font-medium text-amber-800 mb-2">
+                              <div className="px-5 py-3 border-t border-ct-amber/[0.34] bg-ct-amber/[0.13]">
+                                <div className="flex items-center gap-2 text-sm font-medium text-ct-paper mb-2">
                                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                                   <span>Price adjusted after site visit</span>
                                 </div>
-                                <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-amber-700 mb-3 ml-6">
+                                <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-ct-amber mb-3 ml-6">
                                   <span>Original: <span className="font-semibold">${pendingIncreases[job.id].originalAmount.toFixed(2)}</span></span>
-                                  <span className="text-amber-400">→</span>
+                                  <span className="text-ct-amber">→</span>
                                   <span>Final: <span className="font-semibold">${pendingIncreases[job.id].finalAmount.toFixed(2)}</span></span>
-                                  <span className="text-amber-400">|</span>
-                                  <span>Additional: <span className="font-semibold text-amber-900">${pendingIncreases[job.id].amount.toFixed(2)}</span></span>
+                                  <span className="text-ct-amber">|</span>
+                                  <span>Additional: <span className="font-semibold text-ct-paper">${pendingIncreases[job.id].amount.toFixed(2)}</span></span>
                                 </div>
                                 <div className="flex justify-end">
                                   <button
@@ -1325,7 +1325,7 @@ export default function ClientDashboard() {
                                         });
                                     }}
                                     disabled={payingIncreaseJobId === job.id}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-60"
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13]0 text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-amber transition-colors disabled:opacity-60"
                                   >
                                     {payingIncreaseJobId === job.id ? (
                                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1338,10 +1338,10 @@ export default function ClientDashboard() {
                               </div>
                             )}
                             {job.status === 'in_progress' && !pendingIncreases[job.id] && (
-                              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-                                <span className="text-xs text-gray-400">Click to check progress</span>
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-600 !text-white text-xs font-semibold rounded-lg">
-                                  <Eye className="w-3.5 h-3.5 text-white" />
+                              <div className="flex items-center justify-between px-5 py-3 border-t border-ct-line-soft">
+                                <span className="text-xs text-ct-mute">Click to check progress</span>
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 !text-ct-ink text-xs font-semibold rounded-ct-sm">
+                                  <Eye className="w-3.5 h-3.5 text-ct-ink" />
                                   In Progress
                                 </span>
                               </div>
@@ -1356,7 +1356,7 @@ export default function ClientDashboard() {
 
                   <Link
                     to="/post-lead"
-                    className="flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 border-dashed border-gray-200 text-sm font-medium text-gray-500 hover:border-warm-300 hover:text-warm-600 transition-colors"
+                    className="flex items-center justify-center gap-2 p-2.5 rounded-ct-md border-2 border-dashed border-ct-line text-sm font-medium text-ct-mute hover:border-ct-teal/30 hover:text-ct-amber transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     Post Another Job
@@ -1368,15 +1368,15 @@ export default function ClientDashboard() {
 
 
             {/* Ongoing Services */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-5">
+            <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
               <div className="flex items-center justify-between mb-4">
-                <Link to="/leads?tab=services" className="font-semibold text-gray-900 flex items-center gap-2 hover:text-primary-600 transition-colors">
-                  <Repeat className="w-4 h-4 text-secondary-600" />
+                <Link to="/leads?tab=services" className="font-semibold text-ct-paper flex items-center gap-2 hover:text-ct-mute-2 transition-colors">
+                  <Repeat className="w-4 h-4 text-ct-mute-2" />
                   Ongoing Services
                 </Link>
                 <button
                   onClick={() => setShowRecurringForm(!showRecurringForm)}
-                  className="p-1.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-lg text-primary-600 hover:bg-primary-50 transition-colors"
+                  className="p-1.5 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-ct-sm text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -1385,7 +1385,7 @@ export default function ClientDashboard() {
               {!showRecurringForm && recurringJobs.length > 0 && (
                 <button
                   onClick={() => setShowRecurringForm(true)}
-                  className="w-full text-center text-xs text-primary-600 hover:text-primary-700 font-medium py-1.5 mb-3 hover:bg-primary-50 rounded-lg transition-colors"
+                  className="w-full text-center text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium py-1.5 mb-3 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                 >
                   + Set up a new ongoing service
                 </button>
@@ -1434,13 +1434,13 @@ export default function ClientDashboard() {
               )}
 
               {recurringJobs.filter(j => j.is_active).length === 0 && !showRecurringForm ? (
-                <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 text-center">
-                  <RefreshCw className="w-7 h-7 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-gray-800">Set up an ongoing service</p>
-                  <p className="text-xs text-gray-500 mt-1">Schedule regular cleaning, lawn mowing, pool service and more. One setup, automatic reminders every cycle.</p>
+                <div className="bg-ct-surface-2 rounded-ct-md p-5 border border-ct-line-soft text-center">
+                  <RefreshCw className="w-7 h-7 text-ct-mute mx-auto mb-2" />
+                  <p className="text-sm font-semibold text-ct-paper">Set up an ongoing service</p>
+                  <p className="text-xs text-ct-mute mt-1">Schedule regular cleaning, lawn mowing, pool service and more. One setup, automatic reminders every cycle.</p>
                   <button
                     onClick={() => setShowRecurringForm(true)}
-                    className="mt-3 inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors"
+                    className="mt-3 inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-medium hover:brightness-110 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     Schedule a Service
@@ -1484,33 +1484,33 @@ export default function ClientDashboard() {
 
 
                     return (
-                      <div key={job.id} className={`rounded-xl border transition-all ${isOverdue ? 'border-red-200 bg-red-50/50' : isDueSoon ? 'border-amber-100 bg-amber-50/30' : 'border-gray-200 bg-white'}`}>
-                        <div className="p-3 cursor-pointer hover:bg-white/50 transition-colors rounded-t-xl" onClick={() => navigate('/leads?tab=services')} role="button" tabIndex={0}>
+                      <div key={job.id} className={`rounded-ct-md border transition-all ${isOverdue ? 'border-ct-rose/[0.34] bg-ct-rose/[0.13]/50' : isDueSoon ? 'border-ct-amber/[0.34] bg-ct-amber/[0.13]/30' : 'border-ct-line bg-ct-surface'}`}>
+                        <div className="p-3 cursor-pointer hover:bg-ct-surface/50 transition-colors rounded-t-xl" onClick={() => navigate('/leads?tab=services')} role="button" tabIndex={0}>
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-900 truncate capitalize">
+                              <p className="text-sm font-medium text-ct-paper truncate capitalize">
                                 {job.service_subtype || job.trade_category.replace(/_/g, ' ')}
-                                <span className="text-xs text-gray-400 font-normal ml-1">
+                                <span className="text-xs text-ct-mute font-normal ml-1">
                                   {job.service_subtype && <>{' · '}<span className="capitalize">{job.trade_category.replace(/_/g, ' ')}</span></>}
                                   {' · '}{job.frequency_months === -3 ? 'Daily' : job.frequency_months === -1 ? 'Weekly' : job.frequency_months === -2 ? 'Fortnightly' : job.frequency_months === 1 ? 'Monthly' : job.frequency_months === 3 ? 'Quarterly' : job.frequency_months === 6 ? 'Every 6mo' : job.frequency_months === 12 ? 'Annually' : `Every ${job.frequency_months}mo`}
                                 </span>
                               </p>
-                              <p className="text-xs text-gray-500 truncate">{job.description}</p>
+                              <p className="text-xs text-ct-mute truncate">{job.description}</p>
                               {job.location && (
-                                <p className="text-xs text-gray-400 mt-1 flex items-center gap-1 truncate">
+                                <p className="text-xs text-ct-mute mt-1 flex items-center gap-1 truncate">
                                   <MapPin className="w-3 h-3 flex-shrink-0" />
                                   {job.location}
                                 </p>
                               )}
                               {job.tradie?.full_name ? (
-                                <p className="text-xs text-gray-600 mt-1">
-                                  Assigned: <span className="font-medium text-gray-800">{job.tradie.full_name}</span>
+                                <p className="text-xs text-ct-mute-2 mt-1">
+                                  Assigned: <span className="font-medium text-ct-paper">{job.tradie.full_name}</span>
                                 </p>
                               ) : (
-                                <p className="text-xs text-gray-400 mt-1 italic">No tradie assigned</p>
+                                <p className="text-xs text-ct-mute mt-1 italic">No tradie assigned</p>
                               )}
                               <div className="flex items-center gap-2 mt-1.5">
-                                <span className={`text-xs ${isOverdue ? 'font-medium text-red-600' : isDueSoon ? 'text-amber-600' : 'text-gray-400'}`}>
+                                <span className={`text-xs ${isOverdue ? 'font-medium text-ct-rose' : isDueSoon ? 'text-ct-amber' : 'text-ct-mute'}`}>
                                   {isOverdue ? `Overdue by ${Math.abs(daysUntil)} days` : isDueSoon ? `Due in ${daysUntil} days` : `Next: ${dueDate.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`}
                                 </span>
                               </div>
@@ -1518,7 +1518,7 @@ export default function ClientDashboard() {
                             <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
                               <button
                                 onClick={() => setEditingJobId(job.id)}
-                                className="p-2 text-gray-300 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                                 title="Edit ongoing service"
                               >
                                 <Pencil className="w-4 h-4" />
@@ -1533,7 +1533,7 @@ export default function ClientDashboard() {
                                     showToast('Failed to pause service', true);
                                   }
                                 }}
-                                className="p-2 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition-colors"
+                                className="p-2 text-ct-mute hover:text-ct-amber hover:bg-ct-amber/[0.13] rounded-ct-sm transition-colors"
                                 title="Pause ongoing service"
                               >
                                 <Pause className="w-4 h-4" />
@@ -1556,7 +1556,7 @@ export default function ClientDashboard() {
 
                             if (sentRecurringIds.has(job.id)) {
                               return (
-                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-gray-100 text-gray-500 rounded-lg text-xs font-medium border border-gray-200 cursor-not-allowed">
+                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-ct-surface-2 text-ct-mute rounded-ct-sm text-xs font-medium border border-ct-line cursor-not-allowed">
                                   <Clock className="w-3.5 h-3.5" />
                                   Awaiting Quote...
                                 </div>
@@ -1565,7 +1565,7 @@ export default function ClientDashboard() {
                             if (pendingSession) {
                               const pendingDate = new Date(pendingSession.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
                               return (
-                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-medium border border-amber-200">
+                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-ct-amber/[0.13] text-ct-amber rounded-ct-sm text-xs font-medium border border-ct-amber/[0.34]">
                                   <Clock className="w-3.5 h-3.5" />
                                   Next: {pendingDate} — awaiting tradie confirmation
                                 </div>
@@ -1573,7 +1573,7 @@ export default function ClientDashboard() {
                             }
                             if (nextSessionDays !== null && nextSessionDays <= 3 && nextSessionDays >= 0) {
                               return (
-                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-xs font-medium border border-amber-200">
+                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-ct-amber/[0.13] text-ct-amber rounded-ct-sm text-xs font-medium border border-ct-amber/[0.34]">
                                   <CalendarClock className="w-3.5 h-3.5" />
                                   Session in {nextSessionDays === 0 ? 'today' : `${nextSessionDays} day${nextSessionDays !== 1 ? 's' : ''}`}
                                 </div>
@@ -1582,7 +1582,7 @@ export default function ClientDashboard() {
                             if (nextSession) {
                               const nextDate = new Date(nextSession.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
                               return (
-                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium border border-emerald-200">
+                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-ct-teal/[0.14] text-ct-teal rounded-ct-sm text-xs font-medium border border-ct-teal/30">
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   Next session: {nextDate}
                                 </div>
@@ -1598,7 +1598,7 @@ export default function ClientDashboard() {
                                     else next.add(job.id);
                                     return next;
                                   })}
-                                  className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 border border-emerald-300 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-50 transition-colors"
+                                  className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 border border-ct-teal/30 text-ct-teal rounded-ct-sm text-xs font-medium hover:bg-ct-teal/[0.14] transition-colors"
                                 >
                                   <Eye className="w-3.5 h-3.5" />
                                   {isExpanded ? 'Hide Sessions' : `View ${sessions.length} Sessions`}
@@ -1608,7 +1608,7 @@ export default function ClientDashboard() {
                             // Service has completed work — next session will be auto-created
                             if (hasCompletedWork && job.tradie?.full_name) {
                               return (
-                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium border border-emerald-200">
+                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-ct-teal/[0.14] text-ct-teal rounded-ct-sm text-xs font-medium border border-ct-teal/30">
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   Active with {job.tradie.full_name.split(' ')[0]} — next session auto-scheduled
                                 </div>
@@ -1619,7 +1619,7 @@ export default function ClientDashboard() {
                             // The first session is auto-scheduled by the recurring cron.
                             if (job.tradie?.full_name && job.agreed_price && job.agreed_price > 0) {
                               return (
-                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium border border-emerald-200">
+                                <div className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-ct-teal/[0.14] text-ct-teal rounded-ct-sm text-xs font-medium border border-ct-teal/30">
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   Active with {job.tradie.full_name.split(' ')[0]} · ${job.agreed_price.toFixed(0)}/visit
                                 </div>
@@ -1630,7 +1630,7 @@ export default function ClientDashboard() {
                               return (
                                 <button
                                   onClick={() => sendQuoteRequest(job, 'saved')}
-                                  className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 transition-colors"
+                                  className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-ct-teal text-ct-ink rounded-ct-sm text-xs font-medium hover:brightness-110 transition-colors"
                                 >
                                   <Send className="w-3.5 h-3.5" />
                                   Send to {job.tradie.full_name.split(' ')[0]} & Request Quote
@@ -1640,7 +1640,7 @@ export default function ClientDashboard() {
                             return (
                               <Link
                                 to={`/search?trade=${encodeURIComponent(job.trade_category)}`}
-                                className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-emerald-500 text-white rounded-lg text-xs font-medium hover:bg-emerald-600 transition-colors"
+                                className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-ct-teal text-ct-ink rounded-ct-sm text-xs font-medium hover:brightness-110 transition-colors"
                               >
                                 <Briefcase className="w-3.5 h-3.5" />
                                 Find a Tradie
@@ -1685,7 +1685,7 @@ export default function ClientDashboard() {
                               {/* Upcoming sessions — next one shown, rest behind toggle */}
                               {upcoming.length > 0 && (
                                 <>
-                                  <p className="text-xs font-medium text-gray-500 mb-2">Upcoming Sessions</p>
+                                  <p className="text-xs font-medium text-ct-mute mb-2">Upcoming Sessions</p>
                                   <div className="space-y-2 mb-2">
                                     {visibleUpcoming.map(session => (
                                       <RecurringSessionCard
@@ -1710,7 +1710,7 @@ export default function ClientDashboard() {
                                         else next.add(upcomingKey);
                                         return next;
                                       })}
-                                      className="w-full text-center text-xs font-medium text-primary-600 hover:text-primary-700 py-1.5 mb-3 hover:bg-primary-50 rounded-lg transition-colors"
+                                      className="w-full text-center text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 py-1.5 mb-3 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                                     >
                                       {isUpcomingExpanded ? 'Show less' : `View ${hiddenUpcomingCount} more upcoming`}
                                     </button>
@@ -1725,13 +1725,13 @@ export default function ClientDashboard() {
                                   {!isExpanded ? (
                                     <button
                                       onClick={() => setExpandedSessions(prev => new Set([...prev, job.id]))}
-                                      className="w-full text-center text-xs font-medium text-primary-600 hover:text-primary-700 py-1.5 hover:bg-primary-50 rounded-lg transition-colors"
+                                      className="w-full text-center text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 py-1.5 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                                     >
                                       View past sessions ({past.length}) &rarr;
                                     </button>
                                   ) : (
                                     <>
-                                      <p className="text-xs font-medium text-gray-500 mb-2">Past Sessions</p>
+                                      <p className="text-xs font-medium text-ct-mute mb-2">Past Sessions</p>
                                       <div className="space-y-2">
                                         {sortedMonths.map(monthKey => {
                                           const sessions = monthGroups[monthKey];
@@ -1744,7 +1744,7 @@ export default function ClientDashboard() {
                                           const isMonthExpanded = expandedSessions.has(`${job.id}_${monthKey}`);
 
                                           return (
-                                            <div key={monthKey} className="border border-gray-100 rounded-lg overflow-hidden">
+                                            <div key={monthKey} className="border border-ct-line-soft rounded-ct-sm overflow-hidden">
                                               <button
                                                 onClick={() => setExpandedSessions(prev => {
                                                   const next = new Set(prev);
@@ -1753,11 +1753,11 @@ export default function ClientDashboard() {
                                                   else next.add(key);
                                                   return next;
                                                 })}
-                                                className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 transition-colors"
+                                                className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-ct-surface-2 transition-colors"
                                               >
                                                 <div className="flex items-center gap-2 min-w-0">
-                                                  <span className="text-xs font-semibold text-gray-900">{monthLabel}</span>
-                                                  <span className="text-xs text-gray-400">
+                                                  <span className="text-xs font-semibold text-ct-paper">{monthLabel}</span>
+                                                  <span className="text-xs text-ct-mute">
                                                     {completed.length} session{completed.length !== 1 ? 's' : ''}
                                                     {extras.length > 0 ? ` + ${extras.length} extra` : ''}
                                                     {skipped.length > 0 ? ` · ${skipped.length} skipped` : ''}
@@ -1765,7 +1765,7 @@ export default function ClientDashboard() {
                                                 </div>
                                                 <div className="flex items-center gap-2 flex-shrink-0">
                                                   {totalCost > 0 && (
-                                                    <span className="text-xs font-semibold text-gray-700">${totalCost.toFixed(2)}</span>
+                                                    <span className="text-xs font-semibold text-ct-mute-2">${totalCost.toFixed(2)}</span>
                                                   )}
                                                   {invoice && (
                                                     invoice.status === 'sent' && invoice.stripe_payment_url ? (
@@ -1774,7 +1774,7 @@ export default function ClientDashboard() {
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         onClick={(e) => e.stopPropagation()}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-ct-teal text-ct-ink hover:brightness-110 transition-colors"
                                                       >
                                                         Pay Now
                                                         <ExternalLink className="w-2.5 h-2.5" />
@@ -1783,46 +1783,46 @@ export default function ClientDashboard() {
                                                       <Link
                                                         to="/payments"
                                                         onClick={(e) => e.stopPropagation()}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-ct-teal text-ct-ink hover:brightness-110 transition-colors"
                                                       >
                                                         Pay Now
                                                       </Link>
                                                     ) : (
                                                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                                        invoice.status === 'paid' ? 'bg-green-100 text-green-700' :
-                                                        'bg-gray-100 text-gray-600'
+                                                        invoice.status === 'paid' ? 'bg-ct-teal/[0.14] text-ct-teal' :
+                                                        'bg-ct-surface-2 text-ct-mute-2'
                                                       }`}>
                                                         {invoice.status === 'paid' ? 'Paid' : invoice.status.replace(/_/g, ' ')}
                                                       </span>
                                                     )
                                                   )}
-                                                  <svg className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isMonthExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                                                  <svg className={`w-3.5 h-3.5 text-ct-mute transition-transform ${isMonthExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                                                 </div>
                                               </button>
                                               {isMonthExpanded && (
-                                                <div className="px-3 pb-3 space-y-1.5 border-t border-gray-100 pt-2">
+                                                <div className="px-3 pb-3 space-y-1.5 border-t border-ct-line-soft pt-2">
                                                   {sessions.map(s => {
                                                     const sDate = new Date((s.actual_date || s.scheduled_date) + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
                                                     const statusMap: Record<string, { text: string; label: string }> = {
-                                                      completed: { text: 'text-green-700', label: 'Completed' },
-                                                      scheduled: { text: 'text-secondary-700', label: 'Scheduled' },
-                                                      skipped: { text: 'text-gray-500', label: 'Skipped' },
-                                                      extra: { text: 'text-amber-700', label: 'Extra' },
-                                                      rescheduled: { text: 'text-yellow-700', label: 'Rescheduled' },
-                                                      pending_confirmation: { text: 'text-amber-700', label: 'Pending' },
+                                                      completed: { text: 'text-ct-teal', label: 'Completed' },
+                                                      scheduled: { text: 'text-ct-mute-2', label: 'Scheduled' },
+                                                      skipped: { text: 'text-ct-mute', label: 'Skipped' },
+                                                      extra: { text: 'text-ct-amber', label: 'Extra' },
+                                                      rescheduled: { text: 'text-ct-amber', label: 'Rescheduled' },
+                                                      pending_confirmation: { text: 'text-ct-amber', label: 'Pending' },
                                                     };
-                                                    const sStyle = statusMap[s.status] || { text: 'text-gray-500', label: s.status };
+                                                    const sStyle = statusMap[s.status] || { text: 'text-ct-mute', label: s.status };
                                                     return (
-                                                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-gray-50">
+                                                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 rounded-ct-sm hover:bg-ct-surface-2">
                                                         <div className="flex items-center gap-2 min-w-0">
-                                                          <span className="text-xs text-gray-700">{sDate}</span>
-                                                          {s.notes && <span className="text-xs text-gray-400 truncate max-w-[120px]">— {s.notes}</span>}
+                                                          <span className="text-xs text-ct-mute-2">{sDate}</span>
+                                                          {s.notes && <span className="text-xs text-ct-mute truncate max-w-[120px]">— {s.notes}</span>}
                                                         </div>
                                                         <div className="flex items-center gap-2 flex-shrink-0">
                                                           {s.status === 'extra' && s.extra_cost ? (
-                                                            <span className="text-xs font-medium text-amber-700">${Number(s.extra_cost).toFixed(2)}</span>
+                                                            <span className="text-xs font-medium text-ct-amber">${Number(s.extra_cost).toFixed(2)}</span>
                                                           ) : s.status === 'completed' && job.agreed_price ? (
-                                                            <span className="text-xs font-medium text-gray-600">${job.agreed_price.toFixed(2)}</span>
+                                                            <span className="text-xs font-medium text-ct-mute-2">${job.agreed_price.toFixed(2)}</span>
                                                           ) : null}
                                                           <span className={`text-[10px] font-medium ${sStyle.text}`}>{sStyle.label}</span>
                                                         </div>
@@ -1843,7 +1843,7 @@ export default function ClientDashboard() {
                                           sortedMonths.forEach(m => next.delete(`${job.id}_${m}`));
                                           return next;
                                         })}
-                                        className="w-full text-center text-xs font-medium text-gray-500 hover:text-gray-700 py-1.5 mt-2 hover:bg-gray-50 rounded-lg transition-colors"
+                                        className="w-full text-center text-xs font-medium text-ct-mute hover:text-ct-mute-2 py-1.5 mt-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                                       >
                                         Show less
                                       </button>
@@ -1856,7 +1856,7 @@ export default function ClientDashboard() {
                         })()}
                         {sessionsLoading.has(job.id) && (
                           <div className="px-3 pb-3 flex items-center justify-center py-3">
-                            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                            <Loader2 className="w-4 h-4 animate-spin text-ct-mute" />
                           </div>
                         )}
                       </div>
@@ -1865,7 +1865,7 @@ export default function ClientDashboard() {
                   {hiddenRecurringCount > 0 && (
                     <Link
                       to="/leads?tab=services"
-                      className="block w-full text-center text-xs font-semibold text-primary-600 hover:text-primary-700 py-2.5 hover:bg-primary-50 rounded-lg transition-colors"
+                      className="block w-full text-center text-xs font-semibold text-ct-mute-2 hover:text-ct-mute-2 py-2.5 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                     >
                       View all {activeRecurring.length} ongoing services →
                     </Link>
@@ -1877,24 +1877,24 @@ export default function ClientDashboard() {
             </div>
 
               {/* Invoices */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-5">
-                <Link to="/payments" className="font-semibold text-gray-900 flex items-center gap-2 mb-4 hover:text-primary-600 transition-colors">
-                  <DollarSign className="w-4 h-4 text-secondary-600" />
+              <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
+                <Link to="/payments" className="font-semibold text-ct-paper flex items-center gap-2 mb-4 hover:text-ct-mute-2 transition-colors">
+                  <DollarSign className="w-4 h-4 text-ct-mute-2" />
                   Invoices
                 </Link>
                 {/* Pending job payments — abandoned or stale checkouts */}
                 {pendingPayments.length > 0 && (
                   <div className="mb-3">
-                    <p className="text-xs font-medium text-amber-700 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    <p className="text-xs font-medium text-ct-amber uppercase tracking-wide mb-2 flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5" />
                       Awaiting payment
                     </p>
                     <div className="space-y-2">
                       {pendingPayments.map(pp => (
-                        <div key={pp.id} className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div key={pp.id} className="flex items-center gap-3 p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{pp.jobTitle}</p>
-                            <p className="text-xs text-gray-500">${(pp.amount / 100).toFixed(2)}</p>
+                            <p className="text-sm font-medium text-ct-paper truncate">{pp.jobTitle}</p>
+                            <p className="text-xs text-ct-mute">${(pp.amount / 100).toFixed(2)}</p>
                           </div>
                           <button
                             onClick={async () => {
@@ -1909,7 +1909,7 @@ export default function ClientDashboard() {
                               }
                             }}
                             disabled={payingPendingId === pp.id}
-                            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-60 transition-colors"
+                            className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-60 transition-colors"
                           >
                             {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
                             Pay Now
@@ -1976,9 +1976,9 @@ export default function ClientDashboard() {
                   </div>
                 ) : pendingPayments.length === 0 ? (
                   <div className="text-center py-4">
-                    <DollarSign className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">No invoices yet</p>
-                    <p className="text-xs text-gray-400 mt-1">Generated at the end of each billing cycle</p>
+                    <DollarSign className="w-8 h-8 text-ct-mute mx-auto mb-2" />
+                    <p className="text-sm text-ct-mute">No invoices yet</p>
+                    <p className="text-xs text-ct-mute mt-1">Generated at the end of each billing cycle</p>
                   </div>
                 ) : null}
               </div>
@@ -1998,26 +1998,26 @@ export default function ClientDashboard() {
               const pastCount = inactive.length - resumable.length;
 
               return (
-                <details className="bg-white rounded-2xl border border-gray-200 overflow-hidden group">
-                  <summary className="px-5 py-4 border-b border-gray-100 cursor-pointer list-none flex items-center justify-between hover:bg-gray-50 transition-colors">
-                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                      <Pause className="w-4 h-4 text-amber-500" />
+                <details className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden group">
+                  <summary className="px-5 py-4 border-b border-ct-line-soft cursor-pointer list-none flex items-center justify-between hover:bg-ct-surface-2 transition-colors">
+                    <h3 className="font-semibold text-ct-paper flex items-center gap-2">
+                      <Pause className="w-4 h-4 text-ct-amber" />
                       Paused Services
-                      <span className="text-xs font-normal text-gray-400">({resumable.length})</span>
+                      <span className="text-xs font-normal text-ct-mute">({resumable.length})</span>
                     </h3>
-                    <ChevronDown className="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" />
+                    <ChevronDown className="w-4 h-4 text-ct-mute transition-transform group-open:rotate-180" />
                   </summary>
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-ct-line-soft">
                     {resumable.map(job => {
                       const tradeLabel = (job.service_subtype || job.trade_category || '').replace(/_/g, ' ');
                       const freqLabel = job.frequency_months === 1 ? 'Monthly' : job.frequency_months === 3 ? 'Quarterly' : job.frequency_months === 6 ? 'Half-yearly' : job.frequency_months === 12 ? 'Yearly' : job.frequency_months < 0 ? (job.frequency_months === -1 ? 'Monthly' : job.frequency_months === -2 ? 'Fortnightly' : 'Weekly') : `Every ${job.frequency_months}mo`;
                       return (
                         <details key={job.id} className="group/paused">
-                          <summary className="px-5 py-3 flex items-center justify-between cursor-pointer list-none hover:bg-gray-50 transition-colors">
+                          <summary className="px-5 py-3 flex items-center justify-between cursor-pointer list-none hover:bg-ct-surface-2 transition-colors">
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-900 capitalize">{tradeLabel}</p>
+                              <p className="text-sm font-medium text-ct-paper capitalize">{tradeLabel}</p>
                               {job.tradie && (
-                                <p className="text-xs text-gray-600 mt-0.5">
+                                <p className="text-xs text-ct-mute-2 mt-0.5">
                                   {(job.tradie as { full_name?: string }).full_name}
                                   {job.agreed_price ? ` · $${job.agreed_price.toFixed(2)}/visit` : ''}
                                 </p>
@@ -2035,18 +2035,18 @@ export default function ClientDashboard() {
                                     showToast('Failed to resume service', true);
                                   }
                                 }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal hover:brightness-110 text-ct-ink rounded-ct-sm text-xs font-medium transition-colors"
                               >
                                 <Play className="w-3 h-3" />
                                 Resume
                               </button>
-                              <ChevronDown className="w-3.5 h-3.5 text-gray-400 transition-transform group-open/paused:rotate-180" />
+                              <ChevronDown className="w-3.5 h-3.5 text-ct-mute transition-transform group-open/paused:rotate-180" />
                             </div>
                           </summary>
                           <div className="px-5 pb-4 pt-2">
                             {job.description && (
                               <div className="mb-2.5">
-                                <div className={`text-xs text-gray-800 ${expandedDescs.has(job.id) ? '' : 'line-clamp-2'}`}>
+                                <div className={`text-xs text-ct-paper ${expandedDescs.has(job.id) ? '' : 'line-clamp-2'}`}>
                                   {job.description.split(/(?=\d+\.\s)/).filter(Boolean).map((line, i) => (
                                     <p key={i}>{line.trim()}</p>
                                   ))}
@@ -2062,7 +2062,7 @@ export default function ClientDashboard() {
                                         return next;
                                       });
                                     }}
-                                    className="text-[11px] text-secondary-500 hover:text-secondary-600 font-medium mt-0.5"
+                                    className="text-[11px] text-ct-mute-2 hover:text-ct-mute-2 font-medium mt-0.5"
                                   >
                                     {expandedDescs.has(job.id) ? 'Show less' : 'Show more'}
                                   </button>
@@ -2070,30 +2070,30 @@ export default function ClientDashboard() {
                               </div>
                             )}
                             <div className="grid grid-cols-2 gap-2 mb-2.5">
-                              <div className="bg-gray-50 rounded-lg px-2.5 py-1.5">
-                                <p className="text-[10px] text-gray-500 leading-tight">Frequency</p>
-                                <p className="text-xs font-medium text-gray-800">{freqLabel}</p>
+                              <div className="bg-ct-surface-2 rounded-ct-sm px-2.5 py-1.5">
+                                <p className="text-[10px] text-ct-mute leading-tight">Frequency</p>
+                                <p className="text-xs font-medium text-ct-paper">{freqLabel}</p>
                               </div>
                               {job.location && (
-                                <div className="bg-gray-50 rounded-lg px-2.5 py-1.5 min-w-0">
-                                  <p className="text-[10px] text-gray-500 leading-tight">Location</p>
-                                  <p className="text-xs font-medium text-gray-800 truncate">{job.location}</p>
+                                <div className="bg-ct-surface-2 rounded-ct-sm px-2.5 py-1.5 min-w-0">
+                                  <p className="text-[10px] text-ct-mute leading-tight">Location</p>
+                                  <p className="text-xs font-medium text-ct-paper truncate">{job.location}</p>
                                 </div>
                               )}
                               {job.times_completed > 0 && (
-                                <div className="bg-gray-50 rounded-lg px-2.5 py-1.5">
-                                  <p className="text-[10px] text-gray-500 leading-tight">Sessions</p>
-                                  <p className="text-xs font-medium text-gray-800">{job.times_completed}</p>
+                                <div className="bg-ct-surface-2 rounded-ct-sm px-2.5 py-1.5">
+                                  <p className="text-[10px] text-ct-mute leading-tight">Sessions</p>
+                                  <p className="text-xs font-medium text-ct-paper">{job.times_completed}</p>
                                 </div>
                               )}
-                              <div className="bg-gray-50 rounded-lg px-2.5 py-1.5">
-                                <p className="text-[10px] text-gray-500 leading-tight">Created</p>
-                                <p className="text-xs font-medium text-gray-800">{new Date(job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                              <div className="bg-ct-surface-2 rounded-ct-sm px-2.5 py-1.5">
+                                <p className="text-[10px] text-ct-mute leading-tight">Created</p>
+                                <p className="text-xs font-medium text-ct-paper">{new Date(job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                               </div>
                             </div>
                             <button
                               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCancelServiceTarget({ id: job.id, label: tradeLabel }); setCancelReason(''); }}
-                              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 font-medium rounded-lg transition-colors min-h-[44px]"
+                              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs text-ct-rose hover:text-ct-rose hover:bg-ct-rose/[0.13] font-medium rounded-ct-sm transition-colors min-h-[44px]"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               Cancel Service
@@ -2104,15 +2104,15 @@ export default function ClientDashboard() {
                     })}
                     {pastCount > 0 && (
                       <div className="px-5 py-3">
-                        <p className="text-xs text-gray-400">
-                          {pastCount} past service{pastCount !== 1 ? 's' : ''} ended · <Link to="/leads?tab=services" className="text-primary-600 hover:text-primary-700">View all</Link>
+                        <p className="text-xs text-ct-mute">
+                          {pastCount} past service{pastCount !== 1 ? 's' : ''} ended · <Link to="/leads?tab=services" className="text-ct-mute-2 hover:text-ct-mute-2">View all</Link>
                         </p>
                       </div>
                     )}
                     {resumable.length === 0 && (
                       <div className="px-5 py-3">
-                        <p className="text-xs text-gray-400">
-                          {inactive.length} past service{inactive.length !== 1 ? 's' : ''} · <Link to="/leads?tab=services" className="text-primary-600 hover:text-primary-700">View all</Link>
+                        <p className="text-xs text-ct-mute">
+                          {inactive.length} past service{inactive.length !== 1 ? 's' : ''} · <Link to="/leads?tab=services" className="text-ct-mute-2 hover:text-ct-mute-2">View all</Link>
                         </p>
                       </div>
                     )}
@@ -2125,8 +2125,8 @@ export default function ClientDashboard() {
             {savedTradies.length > 0 && (
               <div>
                 <div className="flex items-center justify-center sm:justify-between mb-4 gap-2" data-tour="saved-tradies">
-                  <h2 className="text-lg font-semibold text-gray-900">Saved Tradies</h2>
-                  <span className="text-sm text-gray-600">{savedTradies.length} saved</span>
+                  <h2 className="text-lg font-semibold text-ct-paper">Saved Tradies</h2>
+                  <span className="text-sm text-ct-mute-2">{savedTradies.length} saved</span>
                 </div>
                 {loading ? (
                   <div className="space-y-6">
@@ -2172,23 +2172,23 @@ export default function ClientDashboard() {
             {trainingModeEnabled && (
               <button
                 onClick={() => setShowSubscriptionModal(true)}
-                className={`w-full rounded-2xl border p-5 text-left transition-all hover:shadow-lg ${
+                className={`w-full rounded-ct-lg border p-5 text-left transition-all hover:shadow-lg ${
                   isClientPro
-                    ? 'bg-gradient-to-br from-warm-50 to-yellow-50 border-warm-300'
-                    : 'bg-gradient-to-br from-gray-50 to-primary-50 border-gray-200 hover:border-warm-300'
+                    ? 'bg-gradient-to-br from-ct-teal to-ct-amber border-ct-teal/30'
+                    : 'bg-gradient-to-br from-ct-surface-2 to-ct-teal border-ct-line hover:border-ct-teal/30'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                    isClientPro ? 'bg-warm-200' : 'bg-gray-200'
+                  <div className={`w-10 h-10 rounded-ct-md flex items-center justify-center ${
+                    isClientPro ? 'bg-ct-teal/[0.14]' : 'bg-ct-line'
                   }`}>
-                    <Crown className={`w-5 h-5 ${isClientPro ? 'text-warm-700' : 'text-gray-500'}`} />
+                    <Crown className={`w-5 h-5 ${isClientPro ? 'text-ct-amber' : 'text-ct-mute'}`} />
                   </div>
                   <div>
-                    <p className={`text-sm font-semibold ${isClientPro ? 'text-warm-900' : 'text-gray-900'}`}>
+                    <p className={`text-sm font-semibold ${isClientPro ? 'text-ct-teal' : 'text-ct-paper'}`}>
                       {isClientPro ? 'Pro Member' : 'Upgrade to Pro'}
                     </p>
-                    <p className="text-xs text-gray-600">
+                    <p className="text-xs text-ct-mute-2">
                       {isClientPro ? 'All features unlocked' : 'Get premium features'}
                     </p>
                   </div>
@@ -2196,30 +2196,30 @@ export default function ClientDashboard() {
               </button>
             )}
             {/* Spending Summary */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-4">
-                <DollarSign className="w-4 h-4 text-green-600" />
+            <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
+              <h3 className="font-semibold text-ct-paper flex items-center gap-2 mb-4">
+                <DollarSign className="w-4 h-4 text-ct-teal" />
                 Spending Summary
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">This Month</span>
-                  <span className="text-sm font-semibold text-gray-900">${(spendingSummary.thisMonth / 100).toFixed(2)}</span>
+                  <span className="text-sm text-ct-mute-2">This Month</span>
+                  <span className="text-sm font-semibold text-ct-paper">${(spendingSummary.thisMonth / 100).toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">All Time</span>
-                  <span className="text-sm font-semibold text-gray-900">${(spendingSummary.total / 100).toFixed(2)}</span>
+                  <span className="text-sm text-ct-mute-2">All Time</span>
+                  <span className="text-sm font-semibold text-ct-paper">${(spendingSummary.total / 100).toFixed(2)}</span>
                 </div>
-                <Link to="/leads" className="flex items-center justify-between min-h-[44px] pt-2 border-t border-gray-100 hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors">
-                  <span className="text-sm text-gray-600">Active Jobs</span>
-                  <span className="text-sm font-semibold text-warm-600">{spendingSummary.pendingJobs}</span>
+                <Link to="/leads" className="flex items-center justify-between min-h-[44px] pt-2 border-t border-ct-line-soft hover:bg-ct-surface-2 -mx-2 px-2 rounded-ct-sm transition-colors">
+                  <span className="text-sm text-ct-mute-2">Active Jobs</span>
+                  <span className="text-sm font-semibold text-ct-amber">{spendingSummary.pendingJobs}</span>
                 </Link>
-                <Link to="/leads?tab=services" className="flex items-center justify-between min-h-[44px] hover:bg-gray-50 -mx-2 px-2 rounded-lg transition-colors">
-                  <span className="text-sm text-gray-600">Ongoing Services</span>
-                  <span className="text-sm font-semibold text-secondary-600">{spendingSummary.activeServices}</span>
+                <Link to="/leads?tab=services" className="flex items-center justify-between min-h-[44px] hover:bg-ct-surface-2 -mx-2 px-2 rounded-ct-sm transition-colors">
+                  <span className="text-sm text-ct-mute-2">Ongoing Services</span>
+                  <span className="text-sm font-semibold text-ct-mute-2">{spendingSummary.activeServices}</span>
                 </Link>
               </div>
-              <Link to="/payments" className="mt-4 block text-center text-xs font-medium text-primary-600 hover:text-primary-700">
+              <Link to="/payments" className="mt-4 block text-center text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2">
                 View Payment History
               </Link>
             </div>
@@ -2255,21 +2255,21 @@ export default function ClientDashboard() {
       {cancelServiceTarget && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="fixed inset-0 bg-black/50" onClick={() => setCancelServiceTarget(null)} />
-          <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setCancelServiceTarget(null)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-lg">
+          <div className="relative bg-ct-surface rounded-t-2xl sm:rounded-ct-lg shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setCancelServiceTarget(null)} className="absolute top-4 right-4 p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm">
               <X className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <Trash2 className="w-5 h-5 text-red-600" />
+              <div className="w-10 h-10 bg-ct-rose/[0.13] rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-ct-rose" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Cancel Service</h2>
-                <p className="text-sm text-gray-500 capitalize">{cancelServiceTarget.label}</p>
+                <h2 className="text-lg font-bold text-ct-paper">Cancel Service</h2>
+                <p className="text-sm text-ct-mute capitalize">{cancelServiceTarget.label}</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600 mb-4">This will permanently cancel this service. It cannot be resumed after cancellation.</p>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Reason for cancellation</label>
+            <p className="text-sm text-ct-mute-2 mb-4">This will permanently cancel this service. It cannot be resumed after cancellation.</p>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Reason for cancellation</label>
             <div className="flex flex-wrap gap-2 mb-3">
               {['No longer needed', 'Found another provider', 'Too expensive', 'Poor quality', 'Moving house', 'Other'].map(reason => (
                 <button
@@ -2278,8 +2278,8 @@ export default function ClientDashboard() {
                   onClick={() => setCancelReason(reason)}
                   className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
                     cancelReason === reason
-                      ? 'bg-red-500 text-white border-red-500'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-red-300'
+                      ? 'bg-ct-rose/[0.13]0 text-ct-ink border-ct-rose'
+                      : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:border-ct-rose/40'
                   }`}
                 >
                   {reason}
@@ -2292,13 +2292,13 @@ export default function ClientDashboard() {
                 onChange={(e) => setCancelReason(e.target.value || 'Other')}
                 placeholder="Please describe the reason..."
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 resize-none mb-3"
+                className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-rose0 resize-none mb-3"
               />
             )}
             <div className="flex gap-3 mt-4">
               <button
                 onClick={() => setCancelServiceTarget(null)}
-                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-md text-sm font-medium hover:bg-ct-surface-2 transition-colors"
               >
                 Keep Service
               </button>
@@ -2317,7 +2317,7 @@ export default function ClientDashboard() {
                   setCancellingService(false);
                 }}
                 disabled={!cancelReason || cancellingService}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-rose text-ct-ink rounded-ct-md text-sm font-semibold hover:brightness-110 transition-colors disabled:opacity-50"
               >
                 {cancellingService ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 Cancel Service
@@ -2330,27 +2330,27 @@ export default function ClientDashboard() {
       {quoteRequestTradie && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/50" onClick={() => setQuoteRequestTradie(null)} />
-          <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <button onClick={() => setQuoteRequestTradie(null)} className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-lg">
+          <div className="relative bg-ct-surface rounded-ct-lg shadow-xl max-w-md w-full p-6">
+            <button onClick={() => setQuoteRequestTradie(null)} className="absolute top-4 right-4 p-1 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm">
               <X className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                <FileText className="w-5 h-5 text-emerald-600" />
+              <div className="w-10 h-10 bg-ct-teal/[0.14] rounded-full flex items-center justify-center">
+                <FileText className="w-5 h-5 text-ct-teal" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Request Quote</h2>
-                <p className="text-sm text-gray-500">from {quoteRequestTradie.tradie_details?.business_name || quoteRequestTradie.full_name}</p>
+                <h2 className="text-lg font-bold text-ct-paper">Request Quote</h2>
+                <p className="text-sm text-ct-mute">from {quoteRequestTradie.tradie_details?.business_name || quoteRequestTradie.full_name}</p>
               </div>
             </div>
 
             {loadingQuoteJobs ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+                <Loader2 className="w-6 h-6 text-ct-teal animate-spin" />
               </div>
             ) : clientPendingJobs.length > 0 ? (
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-3">Select a job to invite them to quote on:</p>
+                <p className="text-sm font-medium text-ct-mute-2 mb-3">Select a job to invite them to quote on:</p>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {clientPendingJobs.map(job => {
                     const categoryMatch = job.description?.match(/^\[([^\]]+)\]/);
@@ -2361,14 +2361,14 @@ export default function ClientDashboard() {
                         key={job.id}
                         onClick={() => sendQuoteInvitation(job.id)}
                         disabled={sendingInvite}
-                        className="w-full text-left p-3 rounded-xl border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/50 transition-colors disabled:opacity-50"
+                        className="w-full text-left p-3 rounded-ct-md border border-ct-line hover:border-ct-teal/30 hover:bg-ct-teal/[0.14]/50 transition-colors disabled:opacity-50"
                       >
-                        <p className="text-sm font-semibold text-gray-900 capitalize truncate">
+                        <p className="text-sm font-semibold text-ct-paper capitalize truncate">
                           {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
                         </p>
-                        <p className="text-xs text-gray-500 truncate mt-0.5">{desc}</p>
+                        <p className="text-xs text-ct-mute truncate mt-0.5">{desc}</p>
                         {job.location_address && (
-                          <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                          <p className="text-xs text-ct-mute mt-1 flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
                             {job.location_address.split(',')[0]}
                           </p>
@@ -2377,10 +2377,10 @@ export default function ClientDashboard() {
                     );
                   })}
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100">
+                <div className="mt-4 pt-4 border-t border-ct-line-soft">
                   <button
                     onClick={() => { setQuoteRequestTradie(null); navigate(`/post-lead?category=${encodeURIComponent(quoteRequestTradie.tradie_details?.trade_category || quoteRequestTradie.tradie_details?.trade_type || '')}&tradie=${quoteRequestTradie.id}`); }}
-                    className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+                    className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-ct-line text-ct-mute-2 text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     Post a New Job Instead
@@ -2389,10 +2389,10 @@ export default function ClientDashboard() {
               </div>
             ) : (
               <div className="text-center py-4">
-                <p className="text-sm text-gray-600 mb-4">You don't have any open jobs yet. Post one and this tradie will be invited to quote.</p>
+                <p className="text-sm text-ct-mute-2 mb-4">You don't have any open jobs yet. Post one and this tradie will be invited to quote.</p>
                 <button
                   onClick={() => { setQuoteRequestTradie(null); navigate(`/post-lead?category=${encodeURIComponent(quoteRequestTradie.tradie_details?.trade_category || quoteRequestTradie.tradie_details?.trade_type || '')}&tradie=${quoteRequestTradie.id}`); }}
-                  className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-emerald-500 text-white text-sm font-medium rounded-xl hover:bg-emerald-600 transition-colors"
+                  className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-md hover:brightness-110 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                   Post a Job
@@ -2414,8 +2414,8 @@ export default function ClientDashboard() {
       )}
 
       {toast.show && (
-        <div className={`fixed bottom-20 sm:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm ${toast.isError ? 'bg-red-600' : 'bg-green-600'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
-          <div className={`w-2 h-2 ${toast.isError ? 'bg-red-300' : 'bg-green-300'} rounded-full animate-pulse`} />
+        <div className={`fixed bottom-20 sm:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm ${toast.isError ? 'bg-ct-rose' : 'bg-ct-teal'} text-ct-ink px-6 py-3 rounded-ct-md shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
+          <div className={`w-2 h-2 ${toast.isError ? 'bg-ct-rose/[0.13]' : 'bg-ct-teal/[0.14]'} rounded-full animate-pulse`} />
           <span className="font-medium">{toast.message}</span>
         </div>
       )}
@@ -2594,40 +2594,40 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
     const freqLabel = formatFrequency(successState.frequency);
 
     return (
-      <div className="border border-emerald-200 rounded-xl p-4 mb-3 bg-emerald-50/50 space-y-3">
+      <div className="border border-ct-teal/30 rounded-ct-md p-4 mb-3 bg-ct-teal/[0.14]/50 space-y-3">
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+          <div className="w-8 h-8 bg-ct-teal/[0.14] rounded-full flex items-center justify-center flex-shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-ct-teal" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900 capitalize">{tradeLabel}</p>
-            <p className="text-xs text-gray-500">{successState.category.replace(/_/g, ' ')} &middot; {freqLabel}</p>
+            <p className="text-sm font-semibold text-ct-paper capitalize">{tradeLabel}</p>
+            <p className="text-xs text-ct-mute">{successState.category.replace(/_/g, ' ')} &middot; {freqLabel}</p>
           </div>
         </div>
 
         {quoteSent ? (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-emerald-700 font-medium">
+            <div className="flex items-center gap-2 text-sm text-ct-teal font-medium">
               <CheckCircle2 className="w-4 h-4" />
               Quote request sent to {successState.tradieName.split(' ')[0]}
             </div>
-            <p className="text-xs text-gray-500">We'll notify you when they respond.</p>
+            <p className="text-xs text-ct-mute">We'll notify you when they respond.</p>
             <button
               onClick={onDone}
-              className="px-4 py-1.5 border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              className="px-4 py-1.5 border border-ct-line text-ct-mute-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               Done
             </button>
           </div>
         ) : successState.tradieId && successState.tradieName ? (
           <div className="space-y-2">
-            <div className="flex items-center gap-2 p-2 bg-white rounded-lg border border-gray-100">
-              <div className="w-7 h-7 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-bold text-primary-600">{successState.tradieName.charAt(0)}</span>
+            <div className="flex items-center gap-2 p-2 bg-ct-surface rounded-ct-sm border border-ct-line-soft">
+              <div className="w-7 h-7 bg-ct-surface-2 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-bold text-ct-mute-2">{successState.tradieName.charAt(0)}</span>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">{successState.tradieName}</p>
-                <p className="text-xs text-gray-500 capitalize">{successState.category.replace(/_/g, ' ')}</p>
+                <p className="text-sm font-medium text-ct-paper">{successState.tradieName}</p>
+                <p className="text-xs text-ct-mute capitalize">{successState.category.replace(/_/g, ' ')}</p>
               </div>
             </div>
             <button
@@ -2661,14 +2661,14 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
                 setSendingQuote(false);
               }}
               disabled={sendingQuote}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-medium hover:brightness-110 disabled:opacity-50 transition-colors"
             >
               {sendingQuote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               Send to {successState.tradieName.split(' ')[0]} & Request Quote
             </button>
             <Link
               to={`/search?trade=${encodeURIComponent(successState.category)}`}
-              className="block text-center text-xs font-medium text-primary-600 hover:text-primary-700"
+              className="block text-center text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2"
             >
               Or find other tradies &rarr;
             </Link>
@@ -2677,14 +2677,14 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
           <div className="space-y-2">
             <Link
               to={`/search?trade=${encodeURIComponent(successState.category)}`}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors"
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-medium hover:brightness-110 transition-colors"
             >
               Find a Tradie for this Job
               <ArrowRight className="w-4 h-4" />
             </Link>
             <button
               onClick={onDone}
-              className="w-full px-4 py-1.5 border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              className="w-full px-4 py-1.5 border border-ct-line text-ct-mute-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               Done
             </button>
@@ -2695,13 +2695,13 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
   }
 
   return (
-    <div className="border border-primary-200 rounded-xl p-3 mb-3 bg-primary-50/30 space-y-2">
+    <div className="border border-ct-line rounded-ct-md p-3 mb-3 bg-ct-surface-2/30 space-y-2">
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Trade</label>
+        <label className="block text-xs font-medium text-ct-mute-2 mb-1">Trade</label>
         <select
           value={category}
           onChange={e => setCategory(e.target.value)}
-          className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 bg-white"
+          className="w-full px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal bg-ct-surface"
         >
           <option value="">Select a trade...</option>
           {tradeKeys.map(trade => (
@@ -2712,12 +2712,12 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
 
       {category && (
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Service Type</label>
+          <label className="block text-xs font-medium text-ct-mute-2 mb-1">Service Type</label>
           {hasSubcategories ? (
             <select
               value={serviceSubtype}
               onChange={e => setServiceSubtype(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 bg-white"
+              className="w-full px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal bg-ct-surface"
             >
               <option value="">Select a service type...</option>
               {subcategories.map(sub => (
@@ -2730,7 +2730,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
               value={customSubtype}
               onChange={e => setCustomSubtype(e.target.value)}
               placeholder="e.g., Annual roof inspection"
-              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal"
             />
           )}
         </div>
@@ -2739,7 +2739,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
       {category && (hasSubcategories ? serviceSubtype : customSubtype.trim()) && (
         <>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+            <label className="block text-xs font-medium text-ct-mute-2 mb-1">Description</label>
             <div className="relative">
               <textarea {...proseInputProps}
                 value={description}
@@ -2747,24 +2747,24 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
                 placeholder="What needs to be done..."
                 onFocus={() => setDescFocused(true)}
                 onBlur={() => setDescFocused(false)}
-                className={`w-full px-3 py-2 border rounded-lg text-sm resize-none transition-all duration-200 ${
+                className={`w-full px-3 py-2 border rounded-ct-sm text-sm resize-none transition-all duration-200 ${
                   descFocused
-                    ? 'min-h-[200px] ring-2 ring-emerald-500 ring-offset-1 border-emerald-500'
-                    : 'min-h-[120px] border-gray-200'
+                    ? 'min-h-[200px] ring-2 ring-ct-teal0 ring-offset-1 border-ct-teal'
+                    : 'min-h-[120px] border-ct-line'
                 }`}
               />
               <span className={`absolute bottom-1.5 right-2.5 text-xs ${
-                description.length > 500 ? 'text-red-500 font-medium' : description.length > 400 ? 'text-amber-500' : 'text-gray-400'
+                description.length > 500 ? 'text-ct-rose font-medium' : description.length > 400 ? 'text-ct-amber' : 'text-ct-mute'
               }`}>
                 {description.length} / 500
               </span>
             </div>
             {serviceSubtype && RECURRING_SERVICE_DESCRIPTIONS[serviceSubtype] && (
-              <p className="text-xs text-gray-400 mt-1">Pre-filled based on your service type — edit as needed</p>
+              <p className="text-xs text-ct-mute mt-1">Pre-filled based on your service type — edit as needed</p>
             )}
             {keywords.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1.5">
-                <span className="text-xs text-gray-400 mr-0.5 self-center">Popular:</span>
+                <span className="text-xs text-ct-mute mr-0.5 self-center">Popular:</span>
                 {keywords.map(kw => {
                   const isIncluded = description.toLowerCase().includes(kw.keyword.toLowerCase());
                   return (
@@ -2778,8 +2778,8 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
                       }}
                       className={`px-2 py-0.5 rounded-full text-xs font-medium border transition-colors ${
                         isIncluded
-                          ? 'bg-emerald-100 text-emerald-700 border-emerald-200 cursor-default'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300 hover:text-primary-700 cursor-pointer'
+                          ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30 cursor-default'
+                          : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:border-ct-teal/30 hover:text-ct-mute-2 cursor-pointer'
                       }`}
                     >
                       {kw.keyword}
@@ -2791,15 +2791,15 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Budget</label>
+            <label className="block text-xs font-medium text-ct-mute-2 mb-1">Budget</label>
             <div className="grid grid-cols-2 gap-1.5 mb-1.5">
               <button
                 type="button"
                 onClick={() => { setBudgetType('quote'); setBudget(''); }}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                className={`px-2.5 py-1.5 rounded-ct-sm text-xs font-medium border transition-colors ${
                   budgetType === 'quote'
-                    ? 'bg-primary-50 border-primary-300 text-primary-700'
-                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                    ? 'bg-ct-surface-2 border-ct-teal/30 text-ct-mute-2'
+                    : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:border-ct-line'
                 }`}
               >
                 Require a Quote
@@ -2807,10 +2807,10 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
               <button
                 type="button"
                 onClick={() => setBudgetType('set')}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                className={`px-2.5 py-1.5 rounded-ct-sm text-xs font-medium border transition-colors ${
                   budgetType === 'set'
-                    ? 'bg-primary-50 border-primary-300 text-primary-700'
-                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                    ? 'bg-ct-surface-2 border-ct-teal/30 text-ct-mute-2'
+                    : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:border-ct-line'
                 }`}
               >
                 Set a Budget
@@ -2818,25 +2818,25 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
             </div>
             {budgetType === 'set' && (
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm">$</span>
                 <input
                   type="number"
                   value={budget}
                   onChange={e => setBudget(e.target.value)}
                   placeholder={suggestion?.priceRange ? `${suggestion.priceRange.min} – ${suggestion.priceRange.max}` : 'Enter budget'}
-                  className="w-full pl-7 pr-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                  className="w-full pl-7 pr-3 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal"
                 />
               </div>
             )}
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Location / Address</label>
+            <label className="block text-xs font-medium text-ct-mute-2 mb-1">Location / Address</label>
             <AddressAutocomplete
               value={location}
               onChange={(val) => setLocation(val)}
               placeholder="Start typing an address..."
-              className="!py-1.5 !text-sm !rounded-lg"
+              className="!py-1.5 !text-sm !rounded-ct-sm"
             />
           </div>
 
@@ -2849,16 +2849,16 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
             );
             return savedTradies.length > 0 ? (
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-xs font-medium text-ct-mute-2 mb-1">
                   Preferred Tradie
                   {matchingTradies.length > 0 && (
-                    <span className="text-warm-600 ml-1">({matchingTradies.length} matching)</span>
+                    <span className="text-ct-amber ml-1">({matchingTradies.length} matching)</span>
                   )}
                 </label>
                 <select
                   value={selectedTradieId}
                   onChange={e => setSelectedTradieId(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 bg-white"
+                  className="w-full px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal bg-ct-surface"
                 >
                   <option value="">Any available tradie</option>
                   {matchingTradies.length > 0 && (
@@ -2886,7 +2886,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
 
           {/* Frequency */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">How often?</label>
+            <label className="block text-xs font-medium text-ct-mute-2 mb-1.5">How often?</label>
             <div className="flex flex-wrap gap-1.5">
               {([
                 { value: -3, label: 'Daily' },
@@ -2901,10 +2901,10 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
                   key={opt.value}
                   type="button"
                   onClick={() => setFrequency(opt.value)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  className={`px-2.5 py-1.5 rounded-ct-sm text-xs font-medium border transition-colors ${
                     frequency === opt.value
-                      ? 'bg-primary-50 border-primary-300 text-primary-700'
-                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                      ? 'bg-ct-surface-2 border-ct-teal/30 text-ct-mute-2'
+                      : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:border-ct-line'
                   }`}
                 >
                   {opt.label}
@@ -2915,21 +2915,21 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">First date</label>
+              <label className="block text-xs font-medium text-ct-mute-2 mb-1">First date</label>
               <input
                 type="date"
                 value={nextDate}
                 min={new Date().toISOString().split('T')[0]}
                 onChange={e => setNextDate(e.target.value)}
-                className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Preferred time</label>
+              <label className="block text-xs font-medium text-ct-mute-2 mb-1">Preferred time</label>
               <select
                 value={preferredTime}
                 onChange={e => setPreferredTime(e.target.value)}
-                className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 bg-white"
+                className="w-full px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal bg-ct-surface"
               >
                 <option value="">Flexible</option>
                 <option value="07:00">7:00 AM</option>
@@ -2946,25 +2946,25 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
             </div>
           </div>
 
-          <label className="flex items-start gap-3 p-3 rounded-xl border border-gray-200 hover:border-emerald-300 cursor-pointer transition-colors">
+          <label className="flex items-start gap-3 p-3 rounded-ct-md border border-ct-line hover:border-ct-teal/30 cursor-pointer transition-colors">
             <input
               type="checkbox"
               checked={allowsSiteInspection}
               onChange={e => setAllowsSiteInspection(e.target.checked)}
-              className="mt-0.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              className="mt-0.5 rounded border-ct-line text-ct-teal focus:ring-ct-teal"
             />
             <div>
-              <span className="text-sm font-medium text-gray-700">Allow on-site quote</span>
-              <p className="text-xs text-gray-500 mt-0.5">Let the tradie visit before giving a firm price.</p>
+              <span className="text-sm font-medium text-ct-mute-2">Allow on-site quote</span>
+              <p className="text-xs text-ct-mute mt-0.5">Let the tradie visit before giving a firm price.</p>
             </div>
           </label>
 
           <div className="flex gap-2 pt-1">
-            <button onClick={onCancel} className="flex-1 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">Cancel</button>
+            <button onClick={onCancel} className="flex-1 px-3 py-1.5 bg-ct-surface border border-ct-line text-ct-mute-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors">Cancel</button>
             <button
               onClick={handleSubmit}
               disabled={saving || !description.trim() || (hasSubcategories ? !serviceSubtype : !customSubtype.trim())}
-              className="flex-1 px-3 py-1.5 bg-warm-500 text-white rounded-lg text-xs font-medium hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 px-3 py-1.5 bg-ct-teal text-ct-ink rounded-ct-sm text-xs font-medium hover:brightness-110 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Schedule Service
@@ -3002,33 +3002,33 @@ function RecurringJobEditForm({ job, savedTradies, onSave, onCancel }: {
   };
 
   return (
-    <div className="p-3 rounded-xl border border-primary-300 bg-primary-50/40 space-y-2">
+    <div className="p-3 rounded-ct-md border border-ct-teal/30 bg-ct-surface-2/40 space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-primary-700 uppercase tracking-wide">
+        <p className="text-xs font-semibold text-ct-mute-2 uppercase tracking-wide">
           Edit: {job.service_subtype || job.trade_category.replace(/_/g, ' ')}
         </p>
-        <button onClick={onCancel} className="p-1 text-gray-400 hover:text-gray-600">
+        <button onClick={onCancel} className="p-1 text-ct-mute hover:text-ct-mute-2">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+        <label className="block text-xs font-medium text-ct-mute-2 mb-1">Description</label>
         <input
           type="text"
           value={description}
           onChange={e => setDescription(e.target.value)}
-          className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+          className="w-full px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal"
         />
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Location / Address</label>
+        <label className="block text-xs font-medium text-ct-mute-2 mb-1">Location / Address</label>
         <AddressAutocomplete
           value={location}
           onChange={(val) => setLocation(val)}
           placeholder="Start typing an address..."
-          className="!py-1.5 !text-sm !rounded-lg"
+          className="!py-1.5 !text-sm !rounded-ct-sm"
         />
       </div>
 
@@ -3041,16 +3041,16 @@ function RecurringJobEditForm({ job, savedTradies, onSave, onCancel }: {
         );
         return (
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-ct-mute-2 mb-1">
               Assigned Tradie
               {matchingTradies.length > 0 && (
-                <span className="text-warm-600 ml-1">({matchingTradies.length} matching)</span>
+                <span className="text-ct-amber ml-1">({matchingTradies.length} matching)</span>
               )}
             </label>
             <select
               value={selectedTradieId}
               onChange={e => setSelectedTradieId(e.target.value)}
-              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 bg-white"
+              className="w-full px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal bg-ct-surface"
             >
               <option value="">No tradie assigned</option>
               {matchingTradies.length > 0 && (
@@ -3078,11 +3078,11 @@ function RecurringJobEditForm({ job, savedTradies, onSave, onCancel }: {
 
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Frequency</label>
+          <label className="block text-xs font-medium text-ct-mute-2 mb-1">Frequency</label>
           <select
             value={frequency}
             onChange={e => setFrequency(Number(e.target.value))}
-            className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 bg-white"
+            className="w-full px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal bg-ct-surface"
           >
             <option value={-3}>Daily</option>
             <option value={-1}>Weekly</option>
@@ -3098,24 +3098,24 @@ function RecurringJobEditForm({ job, savedTradies, onSave, onCancel }: {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Next due date</label>
+          <label className="block text-xs font-medium text-ct-mute-2 mb-1">Next due date</label>
           <input
             type="date"
             value={nextDate}
             onChange={e => setNextDate(e.target.value)}
-            className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal"
           />
         </div>
       </div>
 
       <div className="flex gap-2 pt-1">
-        <button onClick={onCancel} className="flex-1 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors">
+        <button onClick={onCancel} className="flex-1 px-3 py-1.5 bg-ct-surface border border-ct-line text-ct-mute-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors">
           Cancel
         </button>
         <button
           onClick={handleSave}
           disabled={saving || !description.trim()}
-          className="flex-1 px-3 py-1.5 bg-warm-500 text-white rounded-lg text-xs font-medium hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
+          className="flex-1 px-3 py-1.5 bg-ct-teal text-ct-ink rounded-ct-sm text-xs font-medium hover:brightness-110 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
         >
           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
           Save Changes

@@ -44,8 +44,8 @@ export default function Breadcrumbs() {
   if (segments.length <= 1) return null;
 
   return (
-    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-xs whitespace-nowrap overflow-hidden text-gray-500 mb-4">
-      <Link to="/dashboard" className="hidden sm:flex hover:text-gray-700 transition-colors">
+    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-xs whitespace-nowrap overflow-hidden text-ct-mute mb-4">
+      <Link to="/dashboard" className="hidden sm:flex hover:text-ct-mute-2 transition-colors">
         <Home className="w-3.5 h-3.5" />
       </Link>
       {segments.map((segment, index) => {
@@ -55,11 +55,11 @@ export default function Breadcrumbs() {
 
         return (
           <span key={path} className="flex items-center gap-1.5">
-            <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+            <ChevronRight className="w-3.5 h-3.5 text-ct-mute" />
             {isLast ? (
-              <span className="font-medium text-gray-900">{label}</span>
+              <span className="font-medium text-ct-paper">{label}</span>
             ) : (
-              <Link to={path} className="hover:text-gray-700 transition-colors">{label}</Link>
+              <Link to={path} className="hover:text-ct-mute-2 transition-colors">{label}</Link>
             )}
           </span>
         );

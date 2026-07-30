@@ -210,7 +210,7 @@ export default function LeaveReview() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
         </div>
       </DashboardLayout>
     );
@@ -220,8 +220,8 @@ export default function LeaveReview() {
     return (
       <DashboardLayout>
         <div className="max-w-lg mx-auto py-12 text-center">
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Link to="/payments" className="text-primary-600 hover:text-primary-700 font-medium text-sm">
+          <p className="text-ct-mute-2 mb-4">{error}</p>
+          <Link to="/payments" className="text-ct-mute-2 hover:text-ct-mute-2 font-medium text-sm">
             Back to Payments
           </Link>
         </div>
@@ -242,15 +242,15 @@ export default function LeaveReview() {
     return (
       <DashboardLayout>
         <div className="max-w-lg mx-auto py-12">
-          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-            <div className="w-16 h-16 bg-warm-100 rounded-full flex items-center justify-center mx-auto mb-5">
-              <CheckCircle2 className="w-8 h-8 text-warm-600" />
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-8 text-center">
+            <div className="w-16 h-16 bg-ct-amber/[0.13] rounded-full flex items-center justify-center mx-auto mb-5">
+              <CheckCircle2 className="w-8 h-8 text-ct-amber" />
             </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">Review Submitted{paymentReleased ? ' & Payment Released' : ''}</h1>
-            <p className="text-sm text-gray-600 mb-1">
+            <h1 className="text-xl font-bold text-ct-paper mb-2">Review Submitted{paymentReleased ? ' & Payment Released' : ''}</h1>
+            <p className="text-sm text-ct-mute-2 mb-1">
               Thank you for reviewing <span className="font-semibold">{tradieName}</span>.
             </p>
-            <p className="text-sm text-gray-500 mb-6">
+            <p className="text-sm text-ct-mute mb-6">
               {paymentReleased
                 ? 'Your feedback has been recorded and payment has been released to your tradie.'
                 : 'Your feedback helps other clients find quality tradies.'}
@@ -260,22 +260,22 @@ export default function LeaveReview() {
               {[1, 2, 3, 4, 5].map(star => (
                 <Star
                   key={star}
-                  className={`w-6 h-6 ${star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                  className={`w-6 h-6 ${star <= rating ? 'fill-yellow-400 text-ct-amber' : 'text-ct-mute'}`}
                 />
               ))}
-              <span className="ml-2 text-sm font-medium text-gray-700">{RATING_LABELS[rating]}</span>
+              <span className="ml-2 text-sm font-medium text-ct-mute-2">{RATING_LABELS[rating]}</span>
             </div>
 
             <div className="flex gap-3">
               <Link
                 to="/payments"
-                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors text-center"
+                className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors text-center"
               >
                 View Payments
               </Link>
               <Link
                 to="/dashboard"
-                className="flex-1 px-4 py-2.5 bg-warm-500 text-white rounded-lg text-sm font-semibold hover:bg-warm-600 transition-colors text-center"
+                className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 transition-colors text-center"
               >
                 Back to Dashboard
               </Link>
@@ -291,17 +291,17 @@ export default function LeaveReview() {
     return (
       <DashboardLayout>
         <div className="max-w-lg mx-auto py-12">
-          <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-5">
-              <CheckCircle2 className="w-8 h-8 text-gray-400" />
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-8 text-center">
+            <div className="w-16 h-16 bg-ct-surface-2 rounded-full flex items-center justify-center mx-auto mb-5">
+              <CheckCircle2 className="w-8 h-8 text-ct-mute" />
             </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">Already Reviewed</h1>
-            <p className="text-sm text-gray-600 mb-6">
+            <h1 className="text-xl font-bold text-ct-paper mb-2">Already Reviewed</h1>
+            <p className="text-sm text-ct-mute-2 mb-6">
               You've already submitted a review for this job. Thank you for your feedback!
             </p>
             <Link
               to="/payments"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-warm-500 text-white rounded-lg text-sm font-semibold hover:bg-warm-600 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 transition-colors"
             >
               Back to Payments
             </Link>
@@ -315,49 +315,49 @@ export default function LeaveReview() {
     <DashboardLayout>
       <div className="max-w-xl mx-auto">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-4">
-          <Link to="/payments" className="hover:text-gray-600 transition-colors">Payments</Link>
+        <nav className="flex items-center gap-1.5 text-xs text-ct-mute mb-4">
+          <Link to="/payments" className="hover:text-ct-mute-2 transition-colors">Payments</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-gray-800 font-medium">Leave a Review</span>
+          <span className="text-ct-paper font-medium">Leave a Review</span>
         </nav>
 
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-ct-mute hover:text-ct-mute-2 mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
           {/* Header */}
           <div className="px-6 pt-6 pb-4">
-            <h1 className="text-lg font-bold text-gray-900 mb-1">Rate Your Experience</h1>
-            <p className="text-sm text-gray-500">Help other clients by sharing your experience.</p>
+            <h1 className="text-lg font-bold text-ct-paper mb-1">Rate Your Experience</h1>
+            <p className="text-sm text-ct-mute">Help other clients by sharing your experience.</p>
           </div>
 
-          <div className="h-px bg-gray-100 mx-6" />
+          <div className="h-px bg-ct-surface-2 mx-6" />
 
           {/* Tradie Info Card */}
           <div className="px-6 py-4">
-            <div className="flex items-center gap-3 p-3 bg-surface-50 border border-surface-200 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm">
               {job.tradie?.avatar_url ? (
                 <img src={job.tradie.avatar_url} alt={tradieName} className="w-11 h-11 rounded-full object-cover" />
               ) : (
-                <div className="w-11 h-11 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
-                  <span className="text-primary-700 font-bold text-lg">{tradieInitial}</span>
+                <div className="w-11 h-11 rounded-full bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                  <span className="text-ct-mute-2 font-bold text-lg">{tradieInitial}</span>
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">{tradieName}</p>
+                <p className="text-sm font-semibold text-ct-paper truncate">{tradieName}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   {category && (
-                    <span className="px-2 py-0.5 bg-secondary-50 text-secondary-700 rounded text-xs font-medium border border-secondary-200">
+                    <span className="px-2 py-0.5 bg-ct-surface-2 text-ct-mute-2 rounded text-xs font-medium border border-ct-line">
                       {category}
                     </span>
                   )}
                   {job.location_address && (
-                    <span className="flex items-center gap-1 text-xs text-gray-400">
+                    <span className="flex items-center gap-1 text-xs text-ct-mute">
                       <MapPin className="w-3 h-3" />
                       {job.location_address.split(',')[0]}
                     </span>
@@ -367,16 +367,16 @@ export default function LeaveReview() {
             </div>
 
             {/* Job description */}
-            <p className="text-sm text-gray-600 mt-3 line-clamp-2">{desc}</p>
+            <p className="text-sm text-ct-mute-2 mt-3 line-clamp-2">{desc}</p>
           </div>
 
-          <div className="h-px bg-gray-100 mx-6" />
+          <div className="h-px bg-ct-surface-2 mx-6" />
 
           {/* Review Form */}
           <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
             {/* Star Rating */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-2">Rating</label>
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map(star => (
                   <button
@@ -390,21 +390,21 @@ export default function LeaveReview() {
                     <Star
                       className={`w-8 h-8 transition-colors ${
                         star <= displayRating
-                          ? 'fill-yellow-400 text-yellow-400'
-                          : 'text-gray-300'
+                          ? 'fill-yellow-400 text-ct-amber'
+                          : 'text-ct-mute'
                       }`}
                     />
                   </button>
                 ))}
                 {displayRating > 0 && (
-                  <span className="ml-2 text-sm font-medium text-gray-600">{RATING_LABELS[displayRating]}</span>
+                  <span className="ml-2 text-sm font-medium text-ct-mute-2">{RATING_LABELS[displayRating]}</span>
                 )}
               </div>
             </div>
 
             {/* Tags */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">What stood out? <span className="text-gray-400 font-normal">(optional)</span></label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-2">What stood out? <span className="text-ct-mute font-normal">(optional)</span></label>
               <div className="flex flex-wrap gap-2">
                 {REVIEW_TAGS.map(tag => {
                   const isSelected = selectedTags.includes(tag.key);
@@ -415,8 +415,8 @@ export default function LeaveReview() {
                       onClick={() => toggleTag(tag.key)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                         isSelected
-                          ? 'bg-warm-50 text-warm-700 border-warm-300'
-                          : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:text-gray-700'
+                          ? 'bg-ct-amber/[0.13] text-ct-amber border-ct-teal/30'
+                          : 'bg-ct-surface text-ct-mute border-ct-line hover:border-ct-line hover:text-ct-mute-2'
                       }`}
                     >
                       {isSelected && <span className="mr-1">&#10003;</span>}
@@ -429,8 +429,8 @@ export default function LeaveReview() {
 
             {/* Comment */}
             <div>
-              <label htmlFor="review-comment" className="block text-sm font-medium text-gray-700 mb-2">
-                Review <span className="text-gray-400 font-normal">(optional)</span>
+              <label htmlFor="review-comment" className="block text-sm font-medium text-ct-mute-2 mb-2">
+                Review <span className="text-ct-mute font-normal">(optional)</span>
               </label>
               <textarea
                 {...proseInputProps}
@@ -439,24 +439,24 @@ export default function LeaveReview() {
                 onChange={e => setComment(e.target.value)}
                 rows={3}
                 maxLength={1000}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-warm-500 focus:border-transparent resize-none placeholder-gray-400"
+                className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal resize-none placeholder-ct-placeholder"
                 placeholder="Tell others about your experience with this tradie..."
               />
-              <p className="text-xs text-gray-400 mt-1 text-right">{comment.length}/1000</p>
+              <p className="text-xs text-ct-mute mt-1 text-right">{comment.length}/1000</p>
             </div>
 
             {/* Error */}
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              <div className="p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-ct-rose text-sm">
                 {error}
               </div>
             )}
 
             {/* Payment release info */}
             {!alreadyReleased && (
-              <div className="flex items-center gap-2 px-3 py-2.5 bg-emerald-50 border border-emerald-200 rounded-lg">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <p className="text-xs text-emerald-700">
+              <div className="flex items-center gap-2 px-3 py-2.5 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm">
+                <CheckCircle2 className="w-4 h-4 text-ct-teal flex-shrink-0" />
+                <p className="text-xs text-ct-teal">
                   Submitting your review will also release the payment to your tradie.
                 </p>
               </div>
@@ -467,14 +467,14 @@ export default function LeaveReview() {
               <button
                 type="button"
                 onClick={() => navigate('/leads')}
-                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors"
               >
                 Skip for Now
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || rating === 0}
-                className="flex-1 px-4 py-2.5 bg-warm-500 text-white rounded-lg text-sm font-semibold hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {isSubmitting ? 'Submitting...' : alreadyReleased ? 'Submit Review' : 'Submit Review & Release Payment'}

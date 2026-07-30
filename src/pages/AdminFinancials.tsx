@@ -287,14 +287,14 @@ export default function AdminFinancials() {
 
   const metricCards = metrics
     ? [
-        { label: 'Total GMV', value: formatCurrency(metrics.totalGmv), icon: DollarSign, iconBg: 'bg-green-50', iconColor: 'text-green-600' },
-        { label: 'Platform Revenue', value: formatCurrency(metrics.platformRevenue), icon: TrendingUp, iconBg: 'bg-primary-50', iconColor: 'text-primary-600' },
-        { label: 'This Month Revenue', value: formatCurrency(metrics.thisMonthRevenue), icon: BarChart3, iconBg: 'bg-secondary-50', iconColor: 'text-secondary-600' },
-        { label: 'Active Tradies', value: metrics.activeTradies.toLocaleString(), icon: Users, iconBg: 'bg-secondary-50', iconColor: 'text-secondary-600' },
-        { label: 'Active Clients', value: metrics.activeClients.toLocaleString(), icon: Users, iconBg: 'bg-warm-50', iconColor: 'text-warm-600' },
-        { label: 'Pro Subscribers', value: metrics.proSubscribers.toLocaleString(), icon: CreditCard, iconBg: 'bg-warm-50', iconColor: 'text-warm-600' },
-        { label: 'Avg Job Value', value: formatCurrency(metrics.avgJobValue), icon: Briefcase, iconBg: 'bg-primary-50', iconColor: 'text-primary-600' },
-        { label: 'Jobs This Month', value: metrics.jobsThisMonth.toLocaleString(), icon: Calculator, iconBg: 'bg-green-50', iconColor: 'text-green-600' },
+        { label: 'Total GMV', value: formatCurrency(metrics.totalGmv), icon: DollarSign, iconBg: 'bg-ct-teal/[0.14]', iconColor: 'text-ct-teal' },
+        { label: 'Platform Revenue', value: formatCurrency(metrics.platformRevenue), icon: TrendingUp, iconBg: 'bg-ct-surface-2', iconColor: 'text-ct-mute-2' },
+        { label: 'This Month Revenue', value: formatCurrency(metrics.thisMonthRevenue), icon: BarChart3, iconBg: 'bg-ct-surface-2', iconColor: 'text-ct-mute-2' },
+        { label: 'Active Tradies', value: metrics.activeTradies.toLocaleString(), icon: Users, iconBg: 'bg-ct-surface-2', iconColor: 'text-ct-mute-2' },
+        { label: 'Active Clients', value: metrics.activeClients.toLocaleString(), icon: Users, iconBg: 'bg-ct-amber/[0.13]', iconColor: 'text-ct-amber' },
+        { label: 'Pro Subscribers', value: metrics.proSubscribers.toLocaleString(), icon: CreditCard, iconBg: 'bg-ct-amber/[0.13]', iconColor: 'text-ct-amber' },
+        { label: 'Avg Job Value', value: formatCurrency(metrics.avgJobValue), icon: Briefcase, iconBg: 'bg-ct-surface-2', iconColor: 'text-ct-mute-2' },
+        { label: 'Jobs This Month', value: metrics.jobsThisMonth.toLocaleString(), icon: Calculator, iconBg: 'bg-ct-teal/[0.14]', iconColor: 'text-ct-teal' },
       ]
     : [];
 
@@ -302,7 +302,7 @@ export default function AdminFinancials() {
     return (
       <DashboardLayout wide>
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
         </div>
       </DashboardLayout>
     );
@@ -312,8 +312,8 @@ export default function AdminFinancials() {
     <DashboardLayout wide>
       <div>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Financial Projections</h1>
-          <p className="text-gray-600 mt-1">Real platform metrics and interactive revenue modelling</p>
+          <h1 className="text-2xl font-bold text-ct-paper">Financial Projections</h1>
+          <p className="text-ct-mute-2 mt-1">Real platform metrics and interactive revenue modelling</p>
         </div>
 
         {/* Metric Cards */}
@@ -321,30 +321,30 @@ export default function AdminFinancials() {
           {metricCards.map((card) => {
             const Icon = card.icon;
             return (
-              <div key={card.label} className="bg-white rounded-2xl border border-gray-200 p-5">
+              <div key={card.label} className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className={`p-2.5 ${card.iconBg} rounded-xl`}>
+                  <div className={`p-2.5 ${card.iconBg} rounded-ct-md`}>
                     <Icon className={`w-5 h-5 ${card.iconColor}`} />
                   </div>
-                  <span className="text-sm font-medium text-gray-500">{card.label}</span>
+                  <span className="text-sm font-medium text-ct-mute">{card.label}</span>
                 </div>
-                <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                <p className="text-2xl font-bold text-ct-paper">{card.value}</p>
               </div>
             );
           })}
         </div>
 
         {/* Financial Model */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 mb-6">
           <div className="flex items-center gap-2 mb-6">
-            <Calculator className="w-5 h-5 text-primary-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Revenue Model</h2>
+            <Calculator className="w-5 h-5 text-ct-mute-2" />
+            <h2 className="text-lg font-semibold text-ct-paper">Revenue Model</h2>
           </div>
 
           {/* Sliders */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              <label className="text-xs font-medium text-ct-mute uppercase tracking-wide">
                 Active Tradies: {activeTradiesSlider}
               </label>
               <input
@@ -355,14 +355,14 @@ export default function AdminFinancials() {
                 onChange={(e) => setActiveTradiesSlider(Number(e.target.value))}
                 className="w-full mt-2 accent-emerald-500"
               />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <div className="flex justify-between text-xs text-ct-mute mt-1">
                 <span>1</span>
                 <span>500</span>
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              <label className="text-xs font-medium text-ct-mute uppercase tracking-wide">
                 Jobs per Tradie/Month: {jobsPerTradie}
               </label>
               <input
@@ -373,14 +373,14 @@ export default function AdminFinancials() {
                 onChange={(e) => setJobsPerTradie(Number(e.target.value))}
                 className="w-full mt-2 accent-emerald-500"
               />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <div className="flex justify-between text-xs text-ct-mute mt-1">
                 <span>1</span>
                 <span>30</span>
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              <label className="text-xs font-medium text-ct-mute uppercase tracking-wide">
                 Avg Job Value: {formatCurrencyDollars(avgJobValueSlider)}
               </label>
               <input
@@ -392,14 +392,14 @@ export default function AdminFinancials() {
                 onChange={(e) => setAvgJobValueSlider(Number(e.target.value))}
                 className="w-full mt-2 accent-emerald-500"
               />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <div className="flex justify-between text-xs text-ct-mute mt-1">
                 <span>$50</span>
                 <span>$5,000</span>
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              <label className="text-xs font-medium text-ct-mute uppercase tracking-wide">
                 Pro Subscription %: {proSubscriptionPct}%
               </label>
               <input
@@ -410,14 +410,14 @@ export default function AdminFinancials() {
                 onChange={(e) => setProSubscriptionPct(Number(e.target.value))}
                 className="w-full mt-2 accent-emerald-500"
               />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <div className="flex justify-between text-xs text-ct-mute mt-1">
                 <span>0%</span>
                 <span>100%</span>
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              <label className="text-xs font-medium text-ct-mute uppercase tracking-wide">
                 Monthly Costs: {formatCurrencyDollars(monthlyCosts)}
               </label>
               <input
@@ -429,7 +429,7 @@ export default function AdminFinancials() {
                 onChange={(e) => setMonthlyCosts(Number(e.target.value))}
                 className="w-full mt-2 accent-emerald-500"
               />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <div className="flex justify-between text-xs text-ct-mute mt-1">
                 <span>$50</span>
                 <span>$10,000</span>
               </div>
@@ -438,73 +438,73 @@ export default function AdminFinancials() {
 
           {/* Revenue Breakdown Table */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div className="bg-gray-50 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Revenue Breakdown</h3>
+            <div className="bg-ct-surface-2 rounded-ct-md p-5">
+              <h3 className="text-sm font-semibold text-ct-paper mb-4">Revenue Breakdown</h3>
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Free tradie commission (10%)</span>
-                  <span className="font-medium text-gray-900">{formatCurrencyDollars(freeCommission)}</span>
+                  <span className="text-ct-mute-2">Free tradie commission (10%)</span>
+                  <span className="font-medium text-ct-paper">{formatCurrencyDollars(freeCommission)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Pro tradie commission (7%)</span>
-                  <span className="font-medium text-gray-900">{formatCurrencyDollars(proCommission)}</span>
+                  <span className="text-ct-mute-2">Pro tradie commission (7%)</span>
+                  <span className="font-medium text-ct-paper">{formatCurrencyDollars(proCommission)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Stripe surcharge pass-through (1.75%)</span>
-                  <span className="font-medium text-gray-900">{formatCurrencyDollars(stripeSurcharge)}</span>
+                  <span className="text-ct-mute-2">Stripe surcharge pass-through (1.75%)</span>
+                  <span className="font-medium text-ct-paper">{formatCurrencyDollars(stripeSurcharge)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Pro subscriptions ({proTradies} x $49)</span>
-                  <span className="font-medium text-gray-900">{formatCurrencyDollars(subscriptionRevenue)}</span>
+                  <span className="text-ct-mute-2">Pro subscriptions ({proTradies} x $49)</span>
+                  <span className="font-medium text-ct-paper">{formatCurrencyDollars(subscriptionRevenue)}</span>
                 </div>
-                <div className="border-t border-gray-200 pt-3 flex justify-between text-sm font-semibold">
-                  <span className="text-gray-900">Total Monthly Revenue</span>
-                  <span className="text-emerald-600">{formatCurrencyDollars(monthlyRevenue)}</span>
+                <div className="border-t border-ct-line pt-3 flex justify-between text-sm font-semibold">
+                  <span className="text-ct-paper">Total Monthly Revenue</span>
+                  <span className="text-ct-teal">{formatCurrencyDollars(monthlyRevenue)}</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-xl p-5">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Cost Breakdown</h3>
+            <div className="bg-ct-surface-2 rounded-ct-md p-5">
+              <h3 className="text-sm font-semibold text-ct-paper mb-4">Cost Breakdown</h3>
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Stripe processing (1.75% GMV)</span>
-                  <span className="font-medium text-gray-900">{formatCurrencyDollars(totalGmvProjected * 0.0175)}</span>
+                  <span className="text-ct-mute-2">Stripe processing (1.75% GMV)</span>
+                  <span className="font-medium text-ct-paper">{formatCurrencyDollars(totalGmvProjected * 0.0175)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Stripe per-txn ({totalJobs} x $0.30)</span>
-                  <span className="font-medium text-gray-900">{formatCurrencyDollars(totalJobs * 0.30)}</span>
+                  <span className="text-ct-mute-2">Stripe per-txn ({totalJobs} x $0.30)</span>
+                  <span className="font-medium text-ct-paper">{formatCurrencyDollars(totalJobs * 0.30)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Operating costs</span>
-                  <span className="font-medium text-gray-900">{formatCurrencyDollars(monthlyCosts)}</span>
+                  <span className="text-ct-mute-2">Operating costs</span>
+                  <span className="font-medium text-ct-paper">{formatCurrencyDollars(monthlyCosts)}</span>
                 </div>
-                <div className="border-t border-gray-200 pt-3 flex justify-between text-sm font-semibold">
-                  <span className="text-gray-900">Total Monthly Costs</span>
-                  <span className="text-red-600">{formatCurrencyDollars(stripeFees + monthlyCosts)}</span>
+                <div className="border-t border-ct-line pt-3 flex justify-between text-sm font-semibold">
+                  <span className="text-ct-paper">Total Monthly Costs</span>
+                  <span className="text-ct-rose">{formatCurrencyDollars(stripeFees + monthlyCosts)}</span>
                 </div>
               </div>
 
               {/* Break-even & Profit */}
-              <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+              <div className="mt-4 pt-4 border-t border-ct-line space-y-3">
                 <div className="flex justify-between text-sm font-semibold">
-                  <span className="text-gray-900">Monthly Profit</span>
-                  <span className={monthlyProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}>
+                  <span className="text-ct-paper">Monthly Profit</span>
+                  <span className={monthlyProfit >= 0 ? 'text-ct-teal' : 'text-ct-rose'}>
                     {formatCurrencyDollars(monthlyProfit)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">GMV (projected)</span>
-                  <span className="font-medium text-gray-900">{formatCurrencyDollars(totalGmvProjected)}</span>
+                  <span className="text-ct-mute-2">GMV (projected)</span>
+                  <span className="font-medium text-ct-paper">{formatCurrencyDollars(totalGmvProjected)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Break-even jobs/month</span>
-                  <span className="font-medium text-gray-900">{breakEvenJobs > 0 ? breakEvenJobs : 'N/A'}</span>
+                  <span className="text-ct-mute-2">Break-even jobs/month</span>
+                  <span className="font-medium text-ct-paper">{breakEvenJobs > 0 ? breakEvenJobs : 'N/A'}</span>
                 </div>
-                <div className={`mt-2 px-3 py-2 rounded-lg text-xs font-medium ${
+                <div className={`mt-2 px-3 py-2 rounded-ct-sm text-xs font-medium ${
                   monthlyProfit >= 0
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : 'bg-red-100 text-red-700'
+                    ? 'bg-ct-teal/[0.14] text-ct-teal'
+                    : 'bg-ct-rose/[0.13] text-ct-rose'
                 }`}>
                   {monthlyProfit >= 0
                     ? `Profitable at ${totalJobs} jobs/month`
@@ -517,8 +517,8 @@ export default function AdminFinancials() {
 
           {/* 12-Month Projection Chart */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">12-Month Projection (15% MoM Growth)</h3>
-            <div className="bg-gray-50 rounded-xl p-5" style={{ height: '360px' }}>
+            <h3 className="text-lg font-semibold text-ct-paper mb-4">12-Month Projection (15% MoM Growth)</h3>
+            <div className="bg-ct-surface-2 rounded-ct-md p-5" style={{ height: '360px' }}>
               <canvas ref={chartCanvasRef} />
             </div>
           </div>

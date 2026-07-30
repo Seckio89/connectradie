@@ -254,13 +254,13 @@ export default function ConversationSettingsModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="p-5 border-b border-gray-200">
+      <div className="bg-ct-surface rounded-ct-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="p-5 border-b border-ct-line">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Conversation Settings</h2>
+            <h2 className="text-xl font-bold text-ct-paper">Conversation Settings</h2>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2"
             >
               <X className="w-5 h-5" />
             </button>
@@ -275,10 +275,10 @@ export default function ConversationSettingsModal({
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
-                className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-ct-sm text-xs sm:text-sm font-medium transition-colors ${
                   activeTab === key
-                    ? 'bg-emerald-500 text-white shadow-sm'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-ct-teal text-ct-ink shadow-sm'
+                    : 'bg-ct-surface-2 text-ct-mute-2 hover:bg-ct-line'
                 }`}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
@@ -292,7 +292,7 @@ export default function ConversationSettingsModal({
           {activeTab === 'general' && (
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-ct-mute-2 mb-2">
                   Conversation Name
                 </label>
                 <div className="flex items-center gap-2">
@@ -303,13 +303,13 @@ export default function ConversationSettingsModal({
                         value={conversationTitle}
                         onChange={(e) => setConversationTitle(e.target.value)}
                         placeholder="Enter a name for this chat..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="flex-1 px-4 py-2 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                         autoFocus
                       />
                       <button
                         onClick={handleSaveTitle}
                         disabled={savingTitle}
-                        className="p-2 bg-warm-500 text-white rounded-lg hover:bg-warm-600 transition-colors disabled:opacity-50"
+                        className="p-2 bg-ct-teal text-ct-ink rounded-ct-sm hover:brightness-110 transition-colors disabled:opacity-50"
                       >
                         {savingTitle ? (
                           <Loader2 className="w-5 h-5 animate-spin" />
@@ -322,48 +322,48 @@ export default function ConversationSettingsModal({
                           setEditingTitle(false);
                           loadConversationTitle();
                         }}
-                        className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 text-ct-mute hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                       >
                         <X className="w-5 h-5" />
                       </button>
                     </>
                   ) : (
                     <>
-                      <div className="flex-1 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-700">
+                      <div className="flex-1 px-4 py-2 bg-ct-surface-2 border border-ct-line rounded-ct-sm text-ct-mute-2">
                         {conversationTitle || 'No custom name set'}
                       </div>
                       <button
                         onClick={() => setEditingTitle(true)}
-                        className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 text-ct-mute hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                       >
                         <Pencil className="w-5 h-5" />
                       </button>
                     </>
                   )}
                 </div>
-                <p className="mt-2 text-xs text-gray-500">
+                <p className="mt-2 text-xs text-ct-mute">
                   Set a custom name to easily identify this conversation
                 </p>
               </div>
 
-              <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Delete Conversation</h3>
+              <div className="border-t border-ct-line pt-6">
+                <h3 className="text-sm font-medium text-ct-paper mb-3">Delete Conversation</h3>
                 {showDeleteConfirm ? (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                    <p className="text-sm text-red-700 mb-4">
+                  <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-4">
+                    <p className="text-sm text-ct-rose mb-4">
                       Are you sure you want to delete this conversation? This will remove all messages and cannot be undone.
                     </p>
                     <div className="flex gap-3">
                       <button
                         onClick={() => setShowDeleteConfirm(false)}
-                        className="flex-1 px-4 py-2 text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex-1 px-4 py-2 text-ct-mute-2 font-medium border border-ct-line rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleDeleteConversation}
                         disabled={deleting}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-ct-rose text-ct-ink font-medium rounded-ct-sm hover:brightness-110 transition-colors disabled:opacity-50"
                       >
                         {deleting ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -377,7 +377,7 @@ export default function ConversationSettingsModal({
                 ) : (
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 text-ct-rose border border-ct-rose/[0.34] rounded-ct-sm hover:bg-ct-rose/[0.13] transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                     Delete Conversation
@@ -391,7 +391,7 @@ export default function ConversationSettingsModal({
             <div className="space-y-6">
               {isAdmin && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">
                     Add Participant
                   </label>
                   <div className="relative">
@@ -403,26 +403,26 @@ export default function ConversationSettingsModal({
                         handleSearchUsers(e.target.value);
                       }}
                       placeholder="Search by email..."
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                     />
                     {searching && (
-                      <Loader2 className="absolute right-3 top-3 w-5 h-5 text-gray-400 animate-spin" />
+                      <Loader2 className="absolute right-3 top-3 w-5 h-5 text-ct-mute animate-spin" />
                     )}
                   </div>
 
                   {searchResults.length > 0 && (
-                    <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg">
+                    <div className="mt-2 bg-ct-surface border border-ct-line rounded-ct-sm shadow-lg">
                       {searchResults.map((user) => (
                         <button
                           key={user.id}
                           onClick={() => handleAddParticipant(user.id)}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between border-b border-gray-100 last:border-b-0"
+                          className="w-full px-4 py-3 text-left hover:bg-ct-surface-2 flex items-center justify-between border-b border-ct-line-soft last:border-b-0"
                         >
                           <div>
-                            <p className="font-medium text-gray-900">{user.full_name}</p>
-                            <p className="text-sm text-gray-500"><span className="break-words">{user.email}</span></p>
+                            <p className="font-medium text-ct-paper">{user.full_name}</p>
+                            <p className="text-sm text-ct-mute"><span className="break-words">{user.email}</span></p>
                           </div>
-                          <UserPlus className="w-5 h-5 text-primary-600" />
+                          <UserPlus className="w-5 h-5 text-ct-mute-2" />
                         </button>
                       ))}
                     </div>
@@ -431,40 +431,40 @@ export default function ConversationSettingsModal({
               )}
 
               <div>
-                <h3 className="text-sm font-bold text-gray-900 mb-3">Current Participants</h3>
+                <h3 className="text-sm font-bold text-ct-paper mb-3">Current Participants</h3>
                 {loading ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+                    <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {participants.map((participant) => (
                       <div
                         key={participant.id}
-                        className="flex items-center justify-between gap-2 p-3 bg-primary-50 border border-primary-100 rounded-xl"
+                        className="flex items-center justify-between gap-2 p-3 bg-ct-surface-2 border border-ct-teal/30 rounded-ct-md"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-11 h-11 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-base font-bold text-primary-600">
+                          <div className="w-11 h-11 bg-ct-surface-2 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-base font-bold text-ct-mute-2">
                               {participant.profile?.full_name?.charAt(0)?.toUpperCase() || '?'}
                             </span>
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <p className="font-semibold text-gray-900 break-words">
+                              <p className="font-semibold text-ct-paper break-words">
                                 {participant.profile?.full_name || 'Unknown'}
                                 {participant.user_id === currentUserId && (
-                                  <span className="ml-1.5 text-xs font-normal text-gray-500">(You)</span>
+                                  <span className="ml-1.5 text-xs font-normal text-ct-mute">(You)</span>
                                 )}
                               </p>
                               <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
-                                participant.is_admin ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'
+                                participant.is_admin ? 'bg-ct-teal/[0.14] text-ct-teal' : 'bg-ct-surface-2 text-ct-mute-2'
                               }`}>
                                 {participant.is_admin ? 'Owner' : 'Member'}
                               </span>
                             </div>
                             {participant.profile?.email && (
-                              <p className="text-sm text-gray-500 break-all">{participant.profile.email}</p>
+                              <p className="text-sm text-ct-mute break-all">{participant.profile.email}</p>
                             )}
                           </div>
                         </div>
@@ -472,7 +472,7 @@ export default function ConversationSettingsModal({
                           <button
                             onClick={() => handleRemoveParticipant(participant.id, participant.user_id)}
                             aria-label={`Remove ${participant.profile?.full_name || 'participant'}`}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                            className="p-2 text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors flex-shrink-0"
                           >
                             <UserMinus className="w-4 h-4" />
                           </button>
@@ -487,13 +487,13 @@ export default function ConversationSettingsModal({
 
           {activeTab === 'permissions' && (
             <div className="space-y-4">
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-ct-mute-2 mb-4">
                 Control what information each participant can see in this conversation.
               </p>
 
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+                  <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -502,24 +502,24 @@ export default function ConversationSettingsModal({
                     .map((participant) => (
                       <div
                         key={participant.id}
-                        className="border border-gray-200 rounded-lg p-4"
+                        className="border border-ct-line rounded-ct-sm p-4"
                       >
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                            <span className="text-xs font-bold text-primary-600">
+                          <div className="w-8 h-8 bg-ct-surface-2 rounded-full flex items-center justify-center">
+                            <span className="text-xs font-bold text-ct-mute-2">
                               {participant.profile?.full_name?.charAt(0) || '?'}
                             </span>
                           </div>
                           <div>
-                            <p className="font-medium text-gray-900">{participant.profile?.full_name}</p>
+                            <p className="font-medium text-ct-paper">{participant.profile?.full_name}</p>
                           </div>
                         </div>
 
                         <div className="space-y-2">
-                          <label className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                          <label className="flex items-center justify-between p-2 hover:bg-ct-surface-2 rounded-ct-sm cursor-pointer">
                             <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4 text-gray-500" />
-                              <span className="text-sm text-gray-700">Can see phone numbers</span>
+                              <Phone className="w-4 h-4 text-ct-mute" />
+                              <span className="text-sm text-ct-mute-2">Can see phone numbers</span>
                             </div>
                             <input
                               type="checkbox"
@@ -532,14 +532,14 @@ export default function ConversationSettingsModal({
                                 )
                               }
                               disabled={!isAdmin}
-                              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                              className="w-4 h-4 text-ct-mute-2 rounded focus:ring-ct-teal"
                             />
                           </label>
 
-                          <label className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                          <label className="flex items-center justify-between p-2 hover:bg-ct-surface-2 rounded-ct-sm cursor-pointer">
                             <div className="flex items-center gap-2">
-                              <Mail className="w-4 h-4 text-gray-500" />
-                              <span className="text-sm text-gray-700">Can see email addresses</span>
+                              <Mail className="w-4 h-4 text-ct-mute" />
+                              <span className="text-sm text-ct-mute-2">Can see email addresses</span>
                             </div>
                             <input
                               type="checkbox"
@@ -552,14 +552,14 @@ export default function ConversationSettingsModal({
                                 )
                               }
                               disabled={!isAdmin}
-                              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                              className="w-4 h-4 text-ct-mute-2 rounded focus:ring-ct-teal"
                             />
                           </label>
 
-                          <label className="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
+                          <label className="flex items-center justify-between p-2 hover:bg-ct-surface-2 rounded-ct-sm cursor-pointer">
                             <div className="flex items-center gap-2">
-                              <MapPin className="w-4 h-4 text-gray-500" />
-                              <span className="text-sm text-gray-700">Can see addresses</span>
+                              <MapPin className="w-4 h-4 text-ct-mute" />
+                              <span className="text-sm text-ct-mute-2">Can see addresses</span>
                             </div>
                             <input
                               type="checkbox"
@@ -572,7 +572,7 @@ export default function ConversationSettingsModal({
                                 )
                               }
                               disabled={!isAdmin}
-                              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                              className="w-4 h-4 text-ct-mute-2 rounded focus:ring-ct-teal"
                             />
                           </label>
                         </div>
@@ -580,7 +580,7 @@ export default function ConversationSettingsModal({
                     ))}
 
                   {participants.length <= 1 && (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-ct-mute">
                       No other participants to manage permissions for
                     </div>
                   )}
@@ -590,11 +590,11 @@ export default function ConversationSettingsModal({
           )}
         </div>
 
-        <div className="p-5 border-t border-gray-200 bg-gray-50 space-y-2.5">
+        <div className="p-5 border-t border-ct-line bg-ct-surface-2 space-y-2.5">
           {isAdmin && (
             <button
               onClick={() => setActiveTab('participants')}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-lg font-medium hover:bg-emerald-600 transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm font-medium hover:brightness-110 transition-colors"
             >
               <UserPlus className="w-4 h-4" />
               Add Participant
@@ -605,7 +605,7 @@ export default function ConversationSettingsModal({
               <button
                 onClick={handleLeaveGroup}
                 disabled={leaving}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-ct-rose/[0.34] text-ct-rose rounded-ct-sm font-medium hover:bg-ct-rose/[0.13] transition-colors disabled:opacity-50"
               >
                 {leaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
                 Leave Group
@@ -614,7 +614,7 @@ export default function ConversationSettingsModal({
             {isArchived ? (
               <button
                 onClick={handleUnarchiveConversation}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-amber-300 text-amber-700 rounded-lg font-medium hover:bg-amber-50 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-ct-amber/[0.34] text-ct-amber rounded-ct-sm font-medium hover:bg-ct-amber/[0.13] transition-colors"
               >
                 <Archive className="w-4 h-4" />
                 Unarchive
@@ -622,7 +622,7 @@ export default function ConversationSettingsModal({
             ) : (
               <button
                 onClick={handleArchiveConversation}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-amber-300 text-amber-700 rounded-lg font-medium hover:bg-amber-50 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-ct-amber/[0.34] text-ct-amber rounded-ct-sm font-medium hover:bg-ct-amber/[0.13] transition-colors"
               >
                 <Archive className="w-4 h-4" />
                 Archive

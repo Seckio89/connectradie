@@ -113,14 +113,14 @@ function parseJobInfo(job: JobData) {
 
 function getStatusConfig(status: string) {
   switch (status) {
-    case 'pending': return { label: 'Pending', color: 'bg-amber-100 text-amber-800 border-amber-200', dot: 'bg-amber-500' };
-    case 'accepted': return { label: 'Accepted', color: 'bg-secondary-100 text-secondary-800 border-secondary-200', dot: 'bg-secondary-500' };
-    case 'funded': return { label: 'Funded', color: 'bg-green-100 text-green-800 border-green-200', dot: 'bg-green-500' };
-    case 'in_progress': return { label: 'In Progress', color: 'bg-secondary-100 text-secondary-800 border-secondary-200', dot: 'bg-secondary-500' };
-    case 'completed': return { label: 'Completed', color: 'bg-green-100 text-green-800 border-green-200', dot: 'bg-green-500' };
-    case 'cancelled': return { label: 'Cancelled', color: 'bg-red-100 text-red-700 border-red-200', dot: 'bg-red-500' };
-    case 'declined': return { label: 'Declined', color: 'bg-red-100 text-red-700 border-red-200', dot: 'bg-red-500' };
-    default: return { label: status, color: 'bg-gray-100 text-gray-700 border-gray-200', dot: 'bg-gray-500' };
+    case 'pending': return { label: 'Pending', color: 'bg-ct-amber/[0.13] text-ct-paper border-ct-amber/[0.34]', dot: 'bg-ct-amber/[0.13]0' };
+    case 'accepted': return { label: 'Accepted', color: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line', dot: 'bg-ct-surface-20' };
+    case 'funded': return { label: 'Funded', color: 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30', dot: 'bg-ct-teal/[0.14]0' };
+    case 'in_progress': return { label: 'In Progress', color: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line', dot: 'bg-ct-surface-20' };
+    case 'completed': return { label: 'Completed', color: 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30', dot: 'bg-ct-teal/[0.14]0' };
+    case 'cancelled': return { label: 'Cancelled', color: 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose/[0.34]', dot: 'bg-ct-rose/[0.13]0' };
+    case 'declined': return { label: 'Declined', color: 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose/[0.34]', dot: 'bg-ct-rose/[0.13]0' };
+    default: return { label: status, color: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line', dot: 'bg-ct-surface-20' };
   }
 }
 
@@ -594,43 +594,43 @@ export default function JobManagementModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 modal-sheet-overlay">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-2xl w-full max-h-[92vh] overflow-hidden flex flex-col modal-sheet">
+      <div className="bg-ct-surface rounded-t-2xl sm:rounded-ct-lg max-w-2xl w-full max-h-[92vh] overflow-hidden flex flex-col modal-sheet">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+            <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
           </div>
         ) : job && parsed && statusConfig ? (
           <>
             {/* ── Header ── */}
-            <div className="p-6 pb-4 border-b border-gray-100">
+            <div className="p-6 pb-4 border-b border-ct-line-soft">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-5 h-5 text-secondary-600" />
+                  <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-md flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-5 h-5 text-ct-mute-2" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 capitalize">{parsed.displayTitle}</h2>
+                    <h2 className="text-xl font-bold text-ct-paper capitalize">{parsed.displayTitle}</h2>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusConfig.color}`}>
                         {statusConfig.label}
                       </span>
                       {job.priority === 'high' && (
-                        <span className="px-3 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full border border-orange-200">HIGH PRIORITY</span>
+                        <span className="px-3 py-1 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-full border border-ct-amber/[0.34]">HIGH PRIORITY</span>
                       )}
                       {job.is_emergency && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-50 text-red-600 rounded-full text-xs font-medium border border-red-200">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-rose/[0.13] text-ct-rose rounded-full text-xs font-medium border border-ct-rose/[0.34]">
                           <Zap className="w-3 h-3" /> Emergency
                         </span>
                       )}
                       {isRecurring && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-surface-2 text-ct-mute-2 rounded-full text-xs font-medium border border-ct-line">
                           <Repeat className="w-3 h-3" /> Ongoing
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
-                <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg flex-shrink-0">
+                <button onClick={onClose} className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm flex-shrink-0">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -645,16 +645,16 @@ export default function JobManagementModal({
                       return (
                         <div key={step} className="flex-1 flex flex-col items-center relative">
                           {i > 0 && (
-                            <div className={`absolute top-3 right-1/2 w-full h-0.5 -translate-y-1/2 ${i <= currentStepIndex ? 'bg-emerald-500' : 'bg-gray-200'}`} />
+                            <div className={`absolute top-3 right-1/2 w-full h-0.5 -translate-y-1/2 ${i <= currentStepIndex ? 'bg-ct-teal' : 'bg-ct-line'}`} />
                           )}
                           <div className={`relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 ${
-                            isCurrent ? 'bg-emerald-500 border-emerald-500 text-white' :
-                            isActive ? 'bg-emerald-500 border-emerald-500 text-white' :
-                            'bg-white border-gray-300 text-gray-400'
+                            isCurrent ? 'bg-ct-teal border-ct-teal text-ct-ink' :
+                            isActive ? 'bg-ct-teal border-ct-teal text-ct-ink' :
+                            'bg-ct-surface border-ct-line text-ct-mute'
                           }`}>
                             {isActive ? <Check className="w-3 h-3" /> : i + 1}
                           </div>
-                          <span className={`text-[10px] mt-1 font-medium ${isCurrent ? 'text-emerald-700' : isActive ? 'text-gray-600' : 'text-gray-400'}`}>
+                          <span className={`text-[10px] mt-1 font-medium ${isCurrent ? 'text-ct-teal' : isActive ? 'text-ct-mute-2' : 'text-ct-mute'}`}>
                             {STEP_LABELS[step]}
                           </span>
                         </div>
@@ -667,9 +667,9 @@ export default function JobManagementModal({
 
             <div className="flex-1 overflow-y-auto">
               {isLicenseExpired && (
-                <div className="mx-6 mt-4 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2.5">
-                  <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-red-700">License expired — renew to manage jobs.</p>
+                <div className="mx-6 mt-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-3 flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-ct-rose flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-ct-rose">License expired — renew to manage jobs.</p>
                 </div>
               )}
 
@@ -679,14 +679,14 @@ export default function JobManagementModal({
                   {job.status === 'pending' && !quote && (
                     <button
                       onClick={() => setShowQuoteModal(true)}
-                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 bg-secondary-500 text-white rounded-xl text-sm font-semibold hover:bg-secondary-600 transition-colors shadow-sm"
+                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 bg-ct-surface-20 text-ct-ink rounded-ct-md text-sm font-semibold hover:bg-ct-surface-2 transition-colors shadow-sm"
                     >
                       <Send className="w-4 h-4" />
                       Quote Now
                     </button>
                   )}
                   {job.status === 'pending' && quote && (
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-100 text-gray-600">
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-ct-md bg-ct-surface-2 text-ct-mute-2">
                       <Clock className="w-4 h-4 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-semibold">Waiting for Client</p>
@@ -697,8 +697,8 @@ export default function JobManagementModal({
                   {job.status === 'accepted' && (job.client_contact_id && !job.client_id ? (
                     /* Off-app client: they have no account to pay from — the tradie
                        emails them a Stripe payment link for the accepted amount. */
-                    <div className="px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2">
-                      <div className="flex items-center gap-3 text-emerald-800">
+                    <div className="px-4 py-3 rounded-ct-md bg-ct-teal/[0.14] border border-ct-teal/30 space-y-2">
+                      <div className="flex items-center gap-3 text-ct-teal">
                         <DollarSign className="w-4 h-4 flex-shrink-0" />
                         <div>
                           <p className="text-sm font-semibold">Quote accepted — get paid</p>
@@ -713,21 +713,21 @@ export default function JobManagementModal({
                           else { setPayLinkState('error'); setPayLinkError(res.error || 'Could not send the payment link.'); }
                         }}
                         disabled={payLinkState === 'sending'}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 disabled:opacity-50 transition-colors"
                       >
                         {payLinkState === 'sending' ? (<><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>)
                           : payLinkState === 'sent' ? (<><CheckCircle2 className="w-4 h-4" /> Payment link sent — resend</>)
                           : (<><Send className="w-4 h-4" /> Email Payment Link</>)}
                       </button>
                       {payLinkState === 'sent' && (
-                        <p className="text-xs text-emerald-700">You'll be notified as soon as they pay — the job then starts automatically.</p>
+                        <p className="text-xs text-ct-teal">You'll be notified as soon as they pay — the job then starts automatically.</p>
                       )}
                       {payLinkState === 'error' && payLinkError && (
-                        <p className="text-xs text-red-600">{payLinkError}</p>
+                        <p className="text-xs text-ct-rose">{payLinkError}</p>
                       )}
                     </div>
                   ) : (
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 text-amber-700">
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-ct-md bg-ct-amber/[0.13] text-ct-amber">
                       <Clock className="w-4 h-4 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-semibold">Awaiting Payment</p>
@@ -736,7 +736,7 @@ export default function JobManagementModal({
                     </div>
                   ))}
                   {job.status === 'funded' && (
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 text-green-700">
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-ct-md bg-ct-teal/[0.14] text-ct-teal">
                       <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-semibold">Payment Secured — Job Active</p>
@@ -745,7 +745,7 @@ export default function JobManagementModal({
                     </div>
                   )}
                   {job.status === 'completed' && (
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary-50 text-secondary-700">
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-ct-md bg-ct-surface-2 text-ct-mute-2">
                       <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                       <div>
                         <p className="text-sm font-semibold">Job Complete</p>
@@ -759,40 +759,40 @@ export default function JobManagementModal({
               <div className="px-6 pt-4 space-y-4">
                 {/* ── Description ── */}
                 {parsed.cleanDescription && parsed.cleanDescription !== parsed.displayTitle && (
-                  <div className="bg-gray-50 rounded-xl p-4">
+                  <div className="bg-ct-surface-2 rounded-ct-md p-4">
                     {parsed.category && (
-                      <span className="inline-block px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200 mb-2">
+                      <span className="inline-block px-3 py-1 bg-ct-surface-2 text-ct-mute-2 rounded-full text-xs font-medium border border-ct-line mb-2">
                         {parsed.category}
                       </span>
                     )}
-                    <p className="text-sm text-gray-700 leading-relaxed">{parsed.cleanDescription}</p>
+                    <p className="text-sm text-ct-mute-2 leading-relaxed">{parsed.cleanDescription}</p>
                   </div>
                 )}
 
                 {/* ── Client & Contact ── */}
-                <div className="border border-gray-200 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Client</p>
+                <div className="border border-ct-line rounded-ct-md p-4">
+                  <p className="text-xs font-semibold text-ct-mute uppercase tracking-wider mb-2">Client</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-secondary-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="w-4 h-4 text-secondary-600" />
+                    <div className="w-9 h-9 bg-ct-surface-2 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-ct-mute-2" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 text-sm">{job.profiles?.full_name || 'Client'}</p>
+                      <p className="font-medium text-ct-paper text-sm">{job.profiles?.full_name || 'Client'}</p>
                       {canSeeContact ? (
                         <div className="flex items-center gap-3 mt-1">
                           {job.profiles?.phone && (
-                            <a href={`tel:${job.profiles.phone}`} className="flex items-center gap-1 text-xs text-secondary-600 hover:text-secondary-700">
+                            <a href={`tel:${job.profiles.phone}`} className="flex items-center gap-1 text-xs text-ct-mute-2 hover:text-ct-mute-2">
                               <Phone className="w-3 h-3" />{job.profiles.phone}
                             </a>
                           )}
                           {job.profiles?.email && (
-                            <a href={`mailto:${job.profiles.email}`} className="flex items-center gap-1 text-xs text-secondary-600 hover:text-secondary-700">
+                            <a href={`mailto:${job.profiles.email}`} className="flex items-center gap-1 text-xs text-ct-mute-2 hover:text-ct-mute-2">
                               <Mail className="w-3 h-3" />{job.profiles.email}
                             </a>
                           )}
                         </div>
                       ) : (
-                        <p className="text-xs text-gray-400 mt-0.5">Contact visible after payment is secured</p>
+                        <p className="text-xs text-ct-mute mt-0.5">Contact visible after payment is secured</p>
                       )}
                     </div>
                   </div>
@@ -814,47 +814,47 @@ export default function JobManagementModal({
                     : (isGstRegistered ? pendingDiffDollars * 0.1 : 0);
                   const pendingTopUp = pendingDiffDollars + pendingGstDollars;
                   return (
-                    <div className="border border-gray-200 rounded-xl p-4">
+                    <div className="border border-ct-line rounded-ct-md p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <DollarSign className="w-4 h-4 text-emerald-600" />
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Payment Status</p>
+                        <DollarSign className="w-4 h-4 text-ct-teal" />
+                        <p className="text-xs font-semibold text-ct-mute uppercase tracking-wider">Payment Status</p>
                         <span className={`ml-auto px-3 py-1 rounded-full text-xs font-medium ${
-                          payment.status === 'completed' ? 'bg-green-100 text-green-700' :
-                          payment.status === 'released' ? 'bg-emerald-100 text-emerald-700' :
-                          'bg-amber-100 text-amber-700'
+                          payment.status === 'completed' ? 'bg-ct-teal/[0.14] text-ct-teal' :
+                          payment.status === 'released' ? 'bg-ct-teal/[0.14] text-ct-teal' :
+                          'bg-ct-amber/[0.13] text-ct-amber'
                         }`}>
                           {payment.status === 'completed' ? 'Secured' : payment.status === 'released' ? 'Released' : payment.status}
                         </span>
                       </div>
                       <div className="space-y-1.5 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-gray-500">{isGstRegistered ? 'Paid (ex. GST)' : 'Paid'}</span>
-                          <span className="font-medium text-gray-900">${paymentAmountDollars.toFixed(2)}</span>
+                          <span className="text-ct-mute">{isGstRegistered ? 'Paid (ex. GST)' : 'Paid'}</span>
+                          <span className="font-medium text-ct-paper">${paymentAmountDollars.toFixed(2)}</span>
                         </div>
                         {isGstRegistered && (
                           <div className="flex justify-between">
-                            <span className="text-gray-500">GST (10%)</span>
-                            <span className="font-medium text-gray-900">${gstDollars.toFixed(2)}</span>
+                            <span className="text-ct-mute">GST (10%)</span>
+                            <span className="font-medium text-ct-paper">${gstDollars.toFixed(2)}</span>
                           </div>
                         )}
-                        <div className={`${isGstRegistered ? 'border-t border-gray-200 pt-1.5' : ''} flex justify-between`}>
-                          <span className="font-semibold text-gray-700">Secured with Stripe</span>
-                          <span className="font-bold text-emerald-700">${totalPaid.toFixed(2)}</span>
+                        <div className={`${isGstRegistered ? 'border-t border-ct-line pt-1.5' : ''} flex justify-between`}>
+                          <span className="font-semibold text-ct-mute-2">Secured with Stripe</span>
+                          <span className="font-bold text-ct-teal">${totalPaid.toFixed(2)}</span>
                         </div>
                         {pendingInc && pendingTopUp > 0 && (
                           <>
-                            <div className="border-t border-amber-200 mt-2 pt-2 flex justify-between">
-                              <span className="text-amber-700">Awaiting top-up from client</span>
-                              <span className="font-medium text-amber-700">+${pendingTopUp.toFixed(2)}</span>
+                            <div className="border-t border-ct-amber/[0.34] mt-2 pt-2 flex justify-between">
+                              <span className="text-ct-amber">Awaiting top-up from client</span>
+                              <span className="font-medium text-ct-amber">+${pendingTopUp.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="font-semibold text-amber-800">Final once paid</span>
-                              <span className="font-bold text-amber-800">${(totalPaid + pendingTopUp).toFixed(2)}</span>
+                              <span className="font-semibold text-ct-paper">Final once paid</span>
+                              <span className="font-bold text-ct-paper">${(totalPaid + pendingTopUp).toFixed(2)}</span>
                             </div>
                           </>
                         )}
                       </div>
-                      <div className="mt-3 flex items-center gap-1.5 text-xs text-secondary-500">
+                      <div className="mt-3 flex items-center gap-1.5 text-xs text-ct-mute-2">
                         <Shield className="w-3 h-3" />
                         <span>{pendingInc ? 'Payment updates once the client pays the difference' : 'Funds secured with Stripe until job completion'}</span>
                       </div>
@@ -872,19 +872,19 @@ export default function JobManagementModal({
                   const proposedDollars = (pr.proposed_amount_cents ?? 0) / 100;
                   const refundDollars = (pr.diff_cents ?? 0) / 100;
                   return (
-                    <div className="bg-secondary-50 border border-secondary-200 rounded-xl p-4">
+                    <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md p-4">
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="w-8 h-8 rounded-lg bg-secondary-100 flex items-center justify-center flex-shrink-0">
-                          <DollarSign className="w-4 h-4 text-secondary-600" />
+                        <div className="w-8 h-8 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                          <DollarSign className="w-4 h-4 text-ct-mute-2" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-semibold text-secondary-900">Client Requested a Price Reduction</p>
-                          <p className="text-xs text-secondary-700 mt-0.5">
+                          <p className="text-sm font-semibold text-ct-paper">Client Requested a Price Reduction</p>
+                          <p className="text-xs text-ct-mute-2 mt-0.5">
                             The client wants to reduce the payment from <span className="font-semibold">${originalDollars.toFixed(2)}</span> to <span className="font-semibold">${proposedDollars.toFixed(2)}</span>.
                             If you approve, ${refundDollars.toFixed(2)} will be refunded to their card and your payout drops accordingly.
                           </p>
                           {pr.reason && (
-                            <p className="text-xs text-secondary-600 mt-1 italic">Client note: "{pr.reason}"</p>
+                            <p className="text-xs text-ct-mute-2 mt-1 italic">Client note: "{pr.reason}"</p>
                           )}
                         </div>
                       </div>
@@ -892,27 +892,27 @@ export default function JobManagementModal({
                         <button
                           onClick={() => handleReductionResponse(false)}
                           disabled={reductionLoading}
-                          className="flex-1 px-3 py-2 bg-white border border-secondary-200 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-100 disabled:opacity-50 transition-colors"
+                          className="flex-1 px-3 py-2 bg-ct-surface border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 disabled:opacity-50 transition-colors"
                         >
                           Decline
                         </button>
                         <button
                           onClick={() => handleReductionResponse(true)}
                           disabled={reductionLoading}
-                          className="flex-1 px-3 py-2 bg-secondary-600 text-white rounded-lg text-sm font-medium hover:bg-secondary-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+                          className="flex-1 px-3 py-2 bg-ct-surface-2 text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
                         >
                           {reductionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                           Approve & refund
                         </button>
                       </div>
                       {reductionError && (
-                        <div className="flex items-start gap-1.5 mt-2 text-xs text-red-600">
+                        <div className="flex items-start gap-1.5 mt-2 text-xs text-ct-rose">
                           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                           <span>{reductionError}</span>
                         </div>
                       )}
                       {reductionSuccess && (
-                        <div className="flex items-start gap-1.5 mt-2 text-xs text-green-700 bg-green-50 rounded-lg p-2 border border-green-200">
+                        <div className="flex items-start gap-1.5 mt-2 text-xs text-ct-teal bg-ct-teal/[0.14] rounded-ct-sm p-2 border border-ct-teal/30">
                           <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                           <span>{reductionSuccess}</span>
                         </div>
@@ -922,7 +922,7 @@ export default function JobManagementModal({
                 })()}
 
                 {reductionSuccess && !(payment?.metadata as Record<string, unknown> | null)?.pending_reduction && (
-                  <div className="flex items-start gap-1.5 text-xs text-green-700 bg-green-50 rounded-lg p-3 border border-green-200">
+                  <div className="flex items-start gap-1.5 text-xs text-ct-teal bg-ct-teal/[0.14] rounded-ct-sm p-3 border border-ct-teal/30">
                     <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                     <span>{reductionSuccess}</span>
                   </div>
@@ -964,14 +964,14 @@ export default function JobManagementModal({
                     : `Enter your final ${isGstRegistered ? 'ex-GST' : ''} price. If higher than the amount paid, the client approves and pays the difference before work continues. If lower, the client gets a refund.`;
 
                   return (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-4">
                     <div className="flex items-start gap-3 mb-3">
-                      <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                        <DollarSign className="w-4 h-4 text-amber-600" />
+                      <div className="w-8 h-8 rounded-ct-sm bg-ct-amber/[0.13] flex items-center justify-center flex-shrink-0">
+                        <DollarSign className="w-4 h-4 text-ct-amber" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-amber-900">{title}</p>
-                        <p className="text-xs text-amber-700 mt-0.5">{helper}</p>
+                        <p className="text-sm font-semibold text-ct-paper">{title}</p>
+                        <p className="text-xs text-ct-amber mt-0.5">{helper}</p>
                       </div>
                     </div>
 
@@ -981,7 +981,7 @@ export default function JobManagementModal({
                             a sliver by the button ("$ Fin…"); row on ≥sm. */}
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-3">
                           <div className="relative flex-1 w-full">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm font-medium">$</span>
                             <input
                               type="number"
                               min="1"
@@ -989,29 +989,29 @@ export default function JobManagementModal({
                               value={finalPriceInput}
                               onChange={(e) => { setFinalPriceInput(e.target.value); setFinalPriceError(null); }}
                               placeholder={isGstRegistered ? 'Final price (ex. GST)' : 'Final price'}
-                              className="w-full pl-7 pr-3 py-2.5 border border-amber-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                              className="w-full pl-7 pr-3 py-2.5 border border-ct-amber/[0.34] rounded-ct-sm text-sm text-ct-paper focus:outline-none focus:ring-2 focus:ring-ct-amber bg-ct-surface"
                             />
                           </div>
                           <button
                             onClick={handleSetFinalPrice}
                             disabled={finalPriceLoading || !finalPriceInput}
-                            className={`w-full sm:w-auto px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                            className={`w-full sm:w-auto px-4 py-2.5 text-sm font-medium rounded-ct-sm transition-colors ${
                               finalPriceLoading || !finalPriceInput
-                                ? 'bg-amber-300 text-amber-100 cursor-not-allowed'
-                                : 'bg-amber-500 text-white hover:bg-amber-600'
+                                ? 'bg-ct-amber/[0.13] text-ct-amber cursor-not-allowed'
+                                : 'bg-ct-amber/[0.13]0 text-ct-ink hover:bg-ct-amber'
                             }`}
                           >
                             {finalPriceLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
                           </button>
                         </div>
                         {isGstRegistered && parseFloat(finalPriceInput) > 0 && (
-                          <p className="mt-1.5 text-xs text-amber-700">
+                          <p className="mt-1.5 text-xs text-ct-amber">
                             Client pays <span className="font-semibold">${(parseFloat(finalPriceInput) * 1.1).toFixed(2)}</span> total
-                            <span className="text-amber-500"> (${parseFloat(finalPriceInput).toFixed(2)} + ${(parseFloat(finalPriceInput) * 0.1).toFixed(2)} GST)</span>
+                            <span className="text-ct-amber"> (${parseFloat(finalPriceInput).toFixed(2)} + ${(parseFloat(finalPriceInput) * 0.1).toFixed(2)} GST)</span>
                           </p>
                         )}
                         {finalPriceError && (
-                          <div className="flex items-start gap-1.5 mt-2 text-xs text-red-600">
+                          <div className="flex items-start gap-1.5 mt-2 text-xs text-ct-rose">
                             <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                             <span>{finalPriceError}</span>
                           </div>
@@ -1020,7 +1020,7 @@ export default function JobManagementModal({
                     )}
 
                     {finalPriceSuccess && (
-                      <div className="flex items-start gap-1.5 mt-2 text-xs text-green-700 bg-green-50 rounded-lg p-2 border border-green-200">
+                      <div className="flex items-start gap-1.5 mt-2 text-xs text-ct-teal bg-ct-teal/[0.14] rounded-ct-sm p-2 border border-ct-teal/30">
                         <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                         <span>{finalPriceSuccess}</span>
                       </div>
@@ -1036,8 +1036,8 @@ export default function JobManagementModal({
                     path when no visit was required). The component is a no-op
                     on flow_version=1 so v1 surfaces continue unchanged. */}
                 {quote && !payment && job?.flow_version === 2 && (
-                  <div className="bg-white border border-secondary-200 rounded-xl p-4">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Next step</p>
+                  <div className="bg-ct-surface border border-ct-line rounded-ct-md p-4">
+                    <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-3">Next step</p>
                     <TradieQuoteActions
                       quote={quote as unknown as Quote}
                       job={{ id: job.id, flow_version: job.flow_version }}
@@ -1048,31 +1048,31 @@ export default function JobManagementModal({
 
                 {/* ── Your Quote (only when no payment record yet — avoids duplicate price display) ── */}
                 {quote && !payment && (
-                  <div className="bg-secondary-50 border border-secondary-200 rounded-xl px-4 py-3">
-                    <p className="text-xs text-gray-500 mb-0.5">Your Quote</p>
-                    <p className="text-sm font-semibold text-secondary-800">
+                  <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md px-4 py-3">
+                    <p className="text-xs text-ct-mute mb-0.5">Your Quote</p>
+                    <p className="text-sm font-semibold text-ct-mute-2">
                       {quote.firm_price
                         ? `$${quote.firm_price.toLocaleString()}`
                         : `$${quote.price_min.toLocaleString()} – $${quote.price_max.toLocaleString()}`}
-                      {isGstRegistered && <span className="text-xs font-normal text-gray-500 ml-1">+ GST</span>}
+                      {isGstRegistered && <span className="text-xs font-normal text-ct-mute ml-1">+ GST</span>}
                     </p>
-                    {quote.message && <p className="text-xs text-gray-500 mt-1 line-clamp-2">{quote.message}</p>}
+                    {quote.message && <p className="text-xs text-ct-mute mt-1 line-clamp-2">{quote.message}</p>}
                   </div>
                 )}
                 {/* ── Quote message (when payment exists, show message without duplicate price) ── */}
                 {quote?.message && payment && (
-                  <div className="bg-secondary-50 border border-secondary-200 rounded-xl px-4 py-3">
-                    <p className="text-xs font-medium text-gray-600 mb-1">Your Quote Message</p>
-                    <p className="text-sm text-gray-700 leading-relaxed">{quote.message}</p>
+                  <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md px-4 py-3">
+                    <p className="text-xs font-medium text-ct-mute-2 mb-1">Your Quote Message</p>
+                    <p className="text-sm text-ct-mute-2 leading-relaxed">{quote.message}</p>
                   </div>
                 )}
 
                 {/* ── Budget & Quotes (for pending jobs without own quote) ── */}
                 {job.status === 'pending' && !quote && (
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-xl px-3 py-2.5 bg-gray-50 border border-gray-200">
-                      <p className="text-xs text-gray-500 mb-0.5">Budget</p>
-                      <p className="text-sm font-semibold text-gray-800">
+                    <div className="rounded-ct-md px-3 py-2.5 bg-ct-surface-2 border border-ct-line">
+                      <p className="text-xs text-ct-mute mb-0.5">Budget</p>
+                      <p className="text-sm font-semibold text-ct-paper">
                         {job.budget_amount
                           ? `$${job.budget_amount.toLocaleString()}${job.budget_type === 'hourly_rate' ? '/hr' : ''}`
                           : job.budget_type === 'request_quote'
@@ -1081,16 +1081,16 @@ export default function JobManagementModal({
                       </p>
                     </div>
                     {job.tradie_id ? (
-                      <div className="rounded-xl px-3 py-2.5 bg-secondary-50 border border-secondary-200">
-                        <p className="text-xs text-gray-500 mb-0.5">Sent To You</p>
-                        <p className="text-sm font-semibold text-secondary-700 flex items-center gap-1">
+                      <div className="rounded-ct-md px-3 py-2.5 bg-ct-surface-2 border border-ct-line">
+                        <p className="text-xs text-ct-mute mb-0.5">Sent To You</p>
+                        <p className="text-sm font-semibold text-ct-mute-2 flex items-center gap-1">
                           <User className="w-3.5 h-3.5" /> Private request
                         </p>
                       </div>
                     ) : (
-                      <div className="rounded-xl px-3 py-2.5 bg-gray-50 border border-gray-200">
-                        <p className="text-xs text-gray-500 mb-0.5">Quotes</p>
-                        <p className="text-sm font-semibold text-gray-700 flex items-center gap-1">
+                      <div className="rounded-ct-md px-3 py-2.5 bg-ct-surface-2 border border-ct-line">
+                        <p className="text-xs text-ct-mute mb-0.5">Quotes</p>
+                        <p className="text-sm font-semibold text-ct-mute-2 flex items-center gap-1">
                           <Users className="w-3.5 h-3.5" />
                           {quoteCount} of {job.max_quotes || 5}
                         </p>
@@ -1102,10 +1102,10 @@ export default function JobManagementModal({
                 {/* ── Key Info Grid ── */}
                 <div className="grid grid-cols-2 gap-2.5">
                   {job.location_address && (
-                    <div className="border border-gray-200 rounded-xl px-3 py-2.5">
-                      <p className="text-xs text-gray-400 mb-0.5">Area</p>
-                      <p className="text-sm text-gray-800 flex items-start gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400" />
+                    <div className="border border-ct-line rounded-ct-md px-3 py-2.5">
+                      <p className="text-xs text-ct-mute mb-0.5">Area</p>
+                      <p className="text-sm text-ct-paper flex items-start gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-ct-mute" />
                         <span className="line-clamp-2">
                           {canSeeContact ? job.location_address : extractSuburb(job.location_address) || 'Suburb hidden'}
                         </span>
@@ -1113,33 +1113,33 @@ export default function JobManagementModal({
                     </div>
                   )}
                   {job.preferred_time_slot && (
-                    <div className="border border-gray-200 rounded-xl px-3 py-2.5">
-                      <p className="text-xs text-gray-400 mb-0.5">Preferred Time</p>
-                      <p className="text-sm text-gray-800 flex items-center gap-1.5 capitalize">
-                        <Clock className="w-3.5 h-3.5 text-gray-400" /> {job.preferred_time_slot}
+                    <div className="border border-ct-line rounded-ct-md px-3 py-2.5">
+                      <p className="text-xs text-ct-mute mb-0.5">Preferred Time</p>
+                      <p className="text-sm text-ct-paper flex items-center gap-1.5 capitalize">
+                        <Clock className="w-3.5 h-3.5 text-ct-mute" /> {job.preferred_time_slot}
                       </p>
                     </div>
                   )}
                   {(job.scheduled_date || job.scheduled_time) && (
-                    <div className="border border-gray-200 rounded-xl px-3 py-2.5">
-                      <p className="text-xs text-gray-400 mb-0.5">Scheduled</p>
-                      <p className="text-sm text-gray-800 flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                    <div className="border border-ct-line rounded-ct-md px-3 py-2.5">
+                      <p className="text-xs text-ct-mute mb-0.5">Scheduled</p>
+                      <p className="text-sm text-ct-paper flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-ct-mute" />
                         {new Date(job.scheduled_date || job.scheduled_time!).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
                     </div>
                   )}
                   {job.estimated_duration && (
-                    <div className="border border-gray-200 rounded-xl px-3 py-2.5">
-                      <p className="text-xs text-gray-400 mb-0.5">Est. Duration</p>
-                      <p className="text-sm text-gray-800 flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-gray-400" /> {job.estimated_duration}
+                    <div className="border border-ct-line rounded-ct-md px-3 py-2.5">
+                      <p className="text-xs text-ct-mute mb-0.5">Est. Duration</p>
+                      <p className="text-sm text-ct-paper flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-ct-mute" /> {job.estimated_duration}
                       </p>
                     </div>
                   )}
-                  <div className="border border-gray-200 rounded-xl px-3 py-2.5">
-                    <p className="text-xs text-gray-400 mb-0.5">Posted</p>
-                    <p className="text-sm text-gray-800">
+                  <div className="border border-ct-line rounded-ct-md px-3 py-2.5">
+                    <p className="text-xs text-ct-mute mb-0.5">Posted</p>
+                    <p className="text-sm text-ct-paper">
                       {new Date(job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
@@ -1153,17 +1153,17 @@ export default function JobManagementModal({
                 {/* ── Photos ── */}
                 {job.images_url && job.images_url.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                    <p className="text-xs font-semibold text-ct-mute uppercase tracking-wider mb-1.5 flex items-center gap-1">
                       <Image className="w-3 h-3" /> Photos ({job.images_url.length})
                     </p>
                     <div className="grid grid-cols-3 gap-1.5">
                       {job.images_url.slice(0, 6).map((_, i) => {
                         const signedUrl = photoSignedUrls[i];
                         return (
-                          <a key={i} href={signedUrl ?? '#'} target="_blank" rel="noopener noreferrer" className="block aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-primary-300 transition-colors">
+                          <a key={i} href={signedUrl ?? '#'} target="_blank" rel="noopener noreferrer" className="block aspect-square rounded-ct-sm overflow-hidden border border-ct-line hover:border-ct-teal/30 transition-colors">
                             {signedUrl
                               ? <img src={signedUrl} alt={`Job photo ${i + 1}`} className="w-full h-full object-cover" />
-                              : <div className="w-full h-full bg-gray-100" />}
+                              : <div className="w-full h-full bg-ct-surface-2" />}
                           </a>
                         );
                       })}
@@ -1173,14 +1173,14 @@ export default function JobManagementModal({
 
                 {/* ── Completion Form (only for in_progress jobs) ── */}
                 {(job.status === 'in_progress' || job.status === 'funded') && !isLicenseExpired && (
-                  <div className="border-2 border-emerald-200 rounded-xl p-4 bg-emerald-50/50">
-                    <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-3">
-                      <Camera className="w-4 h-4 text-emerald-600" />
+                  <div className="border-2 border-ct-teal/30 rounded-ct-md p-4 bg-ct-teal/[0.14]/50">
+                    <h3 className="text-sm font-bold text-ct-paper flex items-center gap-2 mb-3">
+                      <Camera className="w-4 h-4 text-ct-teal" />
                       Complete This Job
                     </h3>
 
                     {/* Completion prompts */}
-                    <p className="text-xs text-gray-500 mb-2">Select what was completed:</p>
+                    <p className="text-xs text-ct-mute mb-2">Select what was completed:</p>
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {prompts.map((prompt) => (
                         <button
@@ -1194,8 +1194,8 @@ export default function JobManagementModal({
                           }}
                           className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border ${
                             selectedPrompts.has(prompt)
-                              ? 'bg-emerald-500 text-white border-emerald-500'
-                              : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300'
+                              ? 'bg-ct-teal text-ct-ink border-ct-teal'
+                              : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:border-ct-teal/30'
                           }`}
                         >
                           {selectedPrompts.has(prompt) && <Check className="w-3 h-3 inline mr-1" />}
@@ -1210,7 +1210,7 @@ export default function JobManagementModal({
                       onChange={(e) => setCompletionCustomNotes(e.target.value)}
                       placeholder="Add any additional notes..."
                       rows={2}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 resize-none mb-3"
+                      className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal resize-none mb-3"
                     />
 
                     {/* Photo upload */}
@@ -1225,7 +1225,7 @@ export default function JobManagementModal({
                       />
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 border border-ct-line rounded-ct-sm text-xs font-medium text-ct-mute-2 hover:bg-ct-surface-2"
                       >
                         <Plus className="w-3 h-3" /> Add Photos ({completionPhotos.length}/15)
                       </button>
@@ -1234,11 +1234,11 @@ export default function JobManagementModal({
                     {completionPhotos.length > 0 && (
                       <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5 mb-3">
                         {completionPhotos.map((photo, i) => (
-                          <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200">
+                          <div key={i} className="relative aspect-square rounded-ct-sm overflow-hidden border border-ct-line">
                             <img src={photo.preview} alt="" className="w-full h-full object-cover" />
                             <button
                               onClick={() => setCompletionPhotos(prev => prev.filter((_, idx) => idx !== i))}
-                              className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
+                              className="absolute top-0.5 right-0.5 w-5 h-5 bg-ct-rose/[0.13]0 text-ct-ink rounded-full flex items-center justify-center"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -1248,13 +1248,13 @@ export default function JobManagementModal({
                     )}
 
                     {completionError && (
-                      <p className="text-xs text-red-600 mb-2">{completionError}</p>
+                      <p className="text-xs text-ct-rose mb-2">{completionError}</p>
                     )}
 
                     <button
                       onClick={handleCompletion}
                       disabled={saving || (!combinedCompletionNotes.trim())}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-ct-teal text-ct-ink rounded-ct-md text-sm font-semibold hover:bg-ct-teal transition-colors disabled:opacity-50"
                     >
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                       {/* Off-app clients pay by emailed link after completion, and
@@ -1262,24 +1262,24 @@ export default function JobManagementModal({
                       {(isOffApp || jobPaid) ? 'Mark Complete' : 'Mark Complete & Request Payout'}
                     </button>
                     {isOffApp && (
-                      <p className="mt-2 text-xs text-gray-500 text-center">You'll email {job.profiles?.full_name ? job.profiles.full_name.split(' ')[0] : 'the client'} a payment link once the job is marked complete.</p>
+                      <p className="mt-2 text-xs text-ct-mute text-center">You'll email {job.profiles?.full_name ? job.profiles.full_name.split(' ')[0] : 'the client'} a payment link once the job is marked complete.</p>
                     )}
                   </div>
                 )}
 
                 {/* ── Completion Summary (for completed jobs) ── */}
                 {job.status === 'completed' && job.completion_notes && (
-                  <div className="border border-green-200 rounded-xl p-4 bg-green-50/50">
-                    <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-2">
-                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <div className="border border-ct-teal/30 rounded-ct-md p-4 bg-ct-teal/[0.14]/50">
+                    <h3 className="text-sm font-bold text-ct-paper flex items-center gap-2 mb-2">
+                      <CheckCircle2 className="w-4 h-4 text-ct-teal" />
                       Completion Notes
                     </h3>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{job.completion_notes}</p>
+                    <p className="text-sm text-ct-mute-2 whitespace-pre-wrap">{job.completion_notes}</p>
                     {job.completion_photo_url && (
-                      <img src={job.completion_photo_url} alt="Completion" className="mt-2 rounded-lg max-h-32 object-cover" />
+                      <img src={job.completion_photo_url} alt="Completion" className="mt-2 rounded-ct-sm max-h-32 object-cover" />
                     )}
                     {job.completed_at && (
-                      <p className="text-xs text-gray-400 mt-2">
+                      <p className="text-xs text-ct-mute mt-2">
                         Completed {new Date(job.completed_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
                     )}
@@ -1288,12 +1288,12 @@ export default function JobManagementModal({
 
                 {/* Off-app + completed + unpaid → get paid: email a card link. */}
                 {job.status === 'completed' && isOffApp && !jobPaid && (
-                  <div className="border border-emerald-200 rounded-xl p-4 bg-emerald-50/50">
+                  <div className="border border-ct-teal/30 rounded-ct-md p-4 bg-ct-teal/[0.14]/50">
                     <div className="flex items-center gap-2 mb-2">
-                      <DollarSign className="w-4 h-4 text-emerald-600" />
-                      <h3 className="text-sm font-bold text-gray-900">Get paid</h3>
+                      <DollarSign className="w-4 h-4 text-ct-teal" />
+                      <h3 className="text-sm font-bold text-ct-paper">Get paid</h3>
                     </div>
-                    <p className="text-xs text-gray-600 mb-3">Email your client a secure card payment link for this job.</p>
+                    <p className="text-xs text-ct-mute-2 mb-3">Email your client a secure card payment link for this job.</p>
                     <button
                       onClick={async () => {
                         setPayLinkState('sending'); setPayLinkError('');
@@ -1302,14 +1302,14 @@ export default function JobManagementModal({
                         else { setPayLinkState('error'); setPayLinkError(res.error || 'Could not send the invoice.'); }
                       }}
                       disabled={payLinkState === 'sending'}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 disabled:opacity-50 transition-colors"
                     >
                       {payLinkState === 'sending' ? (<><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>)
                         : payLinkState === 'sent' ? (<><CheckCircle2 className="w-4 h-4" /> Invoice sent — resend</>)
                         : (<><Send className="w-4 h-4" /> Send Invoice by Email</>)}
                     </button>
                     {payLinkState === 'error' && payLinkError && (
-                      <p className="mt-2 text-xs text-red-600">{payLinkError}</p>
+                      <p className="mt-2 text-xs text-ct-rose">{payLinkError}</p>
                     )}
                   </div>
                 )}
@@ -1317,12 +1317,12 @@ export default function JobManagementModal({
                 {/* ── Your Notes ── */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider">Your Notes</label>
+                    <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wider">Your Notes</label>
                     {notes.trim() && (
                       <button
                         type="button"
                         onClick={() => setShowNotesFull(true)}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-secondary-600 hover:text-secondary-700"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2"
                       >
                         <Maximize2 className="w-3.5 h-3.5" /> View full
                       </button>
@@ -1333,10 +1333,10 @@ export default function JobManagementModal({
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Add private notes about this job..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 resize-none"
+                    className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal resize-none"
                   />
                   {notes.trim() && (
-                    <p className="mt-1 text-[11px] text-gray-400">Long notes? Tap “View full” to read them all.</p>
+                    <p className="mt-1 text-[11px] text-ct-mute">Long notes? Tap “View full” to read them all.</p>
                   )}
                 </div>
 
@@ -1349,15 +1349,15 @@ export default function JobManagementModal({
                     onClick={() => setShowNotesFull(false)}
                   >
                     <div
-                      className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl h-[85vh] sm:h-auto sm:max-h-[85vh] flex flex-col"
+                      className="bg-ct-surface w-full sm:max-w-lg rounded-t-2xl sm:rounded-ct-lg h-[85vh] sm:h-auto sm:max-h-[85vh] flex flex-col"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
-                        <h3 className="text-base font-semibold text-gray-900">Your notes</h3>
+                      <div className="flex items-center justify-between px-5 py-4 border-b border-ct-line-soft flex-shrink-0">
+                        <h3 className="text-base font-semibold text-ct-paper">Your notes</h3>
                         <button
                           onClick={() => setShowNotesFull(false)}
                           aria-label="Close notes"
-                          className="p-1.5 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-50"
+                          className="p-1.5 text-ct-mute hover:text-ct-mute-2 rounded-md hover:bg-ct-surface-2"
                         >
                           <X className="w-5 h-5" />
                         </button>
@@ -1372,7 +1372,7 @@ export default function JobManagementModal({
                 {/* ── Preferences (collapsible) ── */}
                 <button
                   onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-ct-mute hover:text-ct-mute-2 transition-colors"
                 >
                   Your Preferences
                   {showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -1382,31 +1382,31 @@ export default function JobManagementModal({
                   <div className="space-y-3 pb-1">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-medium text-gray-500">Priority</label>
-                        <span className="flex items-center gap-1 text-[11px] text-gray-400"><EyeOff className="w-3 h-3" /> Only visible to you</span>
+                        <label className="block text-xs font-medium text-ct-mute">Priority</label>
+                        <span className="flex items-center gap-1 text-[11px] text-ct-mute"><EyeOff className="w-3 h-3" /> Only visible to you</span>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         {(['low', 'normal', 'high'] as const).map((p) => (
                           <button
                             key={p}
                             onClick={() => setPriority(p)}
-                            className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border capitalize ${
+                            className={`px-3 py-2 rounded-ct-sm text-xs font-medium transition-all border capitalize ${
                               priority === p
-                                ? p === 'low' ? 'bg-secondary-500 text-white border-secondary-500'
-                                  : p === 'high' ? 'bg-orange-500 text-white border-orange-500'
-                                  : 'bg-gray-600 text-white border-gray-600'
-                                : 'bg-white text-gray-500 border-gray-200'
+                                ? p === 'low' ? 'bg-ct-surface-20 text-ct-ink border-ct-teal'
+                                  : p === 'high' ? 'bg-ct-amber text-ct-ink border-ct-amber/[0.34]0'
+                                  : 'bg-ct-surface-2 text-ct-ink border-ct-line'
+                                : 'bg-ct-surface text-ct-mute border-ct-line'
                             }`}
                           >{p}</button>
                         ))}
                       </div>
                     </div>
-                    <label className="flex items-center gap-2.5 cursor-pointer border border-gray-200 rounded-lg p-3">
-                      <input type="checkbox" checked={isDelayed} onChange={(e) => setIsDelayed(e.target.checked)} className="w-4 h-4 text-secondary-600 rounded focus:ring-secondary-500" />
-                      <Clock className="w-4 h-4 text-gray-400" />
+                    <label className="flex items-center gap-2.5 cursor-pointer border border-ct-line rounded-ct-sm p-3">
+                      <input type="checkbox" checked={isDelayed} onChange={(e) => setIsDelayed(e.target.checked)} className="w-4 h-4 text-ct-mute-2 rounded focus:ring-ct-teal" />
+                      <Clock className="w-4 h-4 text-ct-mute" />
                       <div className="flex-1">
-                        <span className="text-sm text-gray-700">Can&apos;t start yet</span>
-                        <p className="flex items-center gap-1 text-xs text-gray-400"><Eye className="w-3 h-3" /> Client will see your earliest available date</p>
+                        <span className="text-sm text-ct-mute-2">Can&apos;t start yet</span>
+                        <p className="flex items-center gap-1 text-xs text-ct-mute"><Eye className="w-3 h-3" /> Client will see your earliest available date</p>
                       </div>
                     </label>
                     {isDelayed && (
@@ -1415,7 +1415,7 @@ export default function JobManagementModal({
                         value={delayedUntil ? delayedUntil.slice(0, 10) : ''}
                         onChange={(e) => setDelayedUntil(e.target.value ? `${e.target.value}T00:00` : '')}
                         min={new Date().toISOString().slice(0, 10)}
-                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500"
+                        className="w-full px-3 py-2.5 border border-ct-line rounded-ct-md text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                       />
                     )}
                   </div>
@@ -1424,26 +1424,26 @@ export default function JobManagementModal({
             </div>
 
             {/* ── Footer ── */}
-            <div className="px-6 pt-4 border-t border-gray-100 space-y-2" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
+            <div className="px-6 pt-4 border-t border-ct-line-soft space-y-2" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
               {isFinished && (
                 <button
                   onClick={handleArchiveToggle}
                   disabled={saving}
-                  className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50 ${
-                    isArchived ? 'bg-secondary-50 text-secondary-700 border border-secondary-200 hover:bg-secondary-100' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-ct-md text-sm font-medium transition-colors disabled:opacity-50 ${
+                    isArchived ? 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line hover:bg-ct-surface-2' : 'bg-ct-surface text-ct-mute-2 border border-ct-line hover:bg-ct-surface-2'
                   }`}
                 >
                   {isArchived ? <><ArchiveRestore className="w-4 h-4" /> Unarchive</> : <><Archive className="w-4 h-4" /> Archive Job</>}
                 </button>
               )}
               <div className="flex gap-3">
-                <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
+                <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-md text-sm font-medium hover:bg-ct-surface-2 transition-colors">
                   Close
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving || isLicenseExpired}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-secondary-600 text-white rounded-xl text-sm font-medium hover:bg-secondary-700 transition-colors disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-surface-2 text-ct-ink rounded-ct-md text-sm font-medium hover:bg-ct-surface-2 transition-colors disabled:opacity-50"
                 >
                   {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Notes'}
                 </button>
@@ -1451,7 +1451,7 @@ export default function JobManagementModal({
             </div>
           </>
         ) : (
-          <div className="p-6 text-center text-gray-500">Job not found</div>
+          <div className="p-6 text-center text-ct-mute">Job not found</div>
         )}
       </div>
 

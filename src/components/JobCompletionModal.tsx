@@ -724,17 +724,17 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
         <div className="p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                <RefreshCw className="w-5 h-5 text-emerald-600" />
+              <div className="w-10 h-10 rounded-ct-md bg-ct-teal/[0.14] flex items-center justify-center">
+                <RefreshCw className="w-5 h-5 text-ct-teal" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-gray-900">Offer Ongoing Service?</h2>
-                <p className="text-xs text-gray-500">Set up a recurring schedule with {clientName}</p>
+                <h2 className="text-base font-bold text-ct-paper">Offer Ongoing Service?</h2>
+                <p className="text-xs text-ct-mute">Set up a recurring schedule with {clientName}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
               aria-label="Close"
             >
               <X className="w-4 h-4" />
@@ -742,16 +742,16 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
           </div>
 
           {ongoingError && (
-            <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-              <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
-              <p className="text-xs text-red-700">{ongoingError}</p>
+            <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm">
+              <AlertCircle className="w-3.5 h-3.5 text-ct-rose flex-shrink-0" />
+              <p className="text-xs text-ct-rose">{ongoingError}</p>
             </div>
           )}
 
           <div className="space-y-4">
             {/* Frequency */}
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wide mb-1.5">
                 How often?
               </label>
               <div className="grid grid-cols-4 gap-2">
@@ -765,10 +765,10 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                     key={opt.value}
                     type="button"
                     onClick={() => setOngoingFrequency(opt.value)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    className={`px-3 py-2 rounded-ct-sm text-sm font-medium border transition-colors ${
                       ongoingFrequency === opt.value
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                        ? 'border-ct-teal bg-ct-teal/[0.14] text-ct-teal'
+                        : 'border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                     }`}
                   >
                     {opt.label}
@@ -779,11 +779,11 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
 
             {/* Price per visit */}
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wide mb-1.5">
                 Price per visit (AUD)
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm">$</span>
                 <input
                   type="number"
                   min="1"
@@ -791,14 +791,14 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                   value={ongoingPrice}
                   onChange={(e) => setOngoingPrice(e.target.value)}
                   placeholder={quoteAmount ? quoteAmount.toFixed(2) : '0.00'}
-                  className="w-full pl-7 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                  className="w-full pl-7 pr-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-colors"
                 />
               </div>
             </div>
 
             {/* First visit date */}
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+              <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wide mb-1.5">
                 First visit date
               </label>
               <input
@@ -806,22 +806,22 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                 min={minDateStr}
                 value={ongoingFirstDate}
                 onChange={(e) => setOngoingFirstDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-colors"
               />
             </div>
           </div>
 
-          <div className="mt-5 pt-4 border-t border-gray-100 flex gap-3">
+          <div className="mt-5 pt-4 border-t border-ct-line-soft flex gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium"
+              className="px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-md hover:bg-ct-surface-2 transition-colors text-sm font-medium"
             >
               Skip
             </button>
             <button
               onClick={handleCreateOngoing}
               disabled={ongoingSaving}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors disabled:opacity-50"
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-ct-md text-sm font-semibold bg-ct-teal text-ct-ink hover:brightness-110 transition-colors disabled:opacity-50"
             >
               {ongoingSaving ? (
                 <>
@@ -847,35 +847,35 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-bold text-gray-900">{noPaymentRequest ? 'Complete Job' : 'Request Payment'}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {jobCategory && <span className="text-secondary-600 font-medium">{jobCategory}</span>}
+            <h2 className="text-base font-bold text-ct-paper">{noPaymentRequest ? 'Complete Job' : 'Request Payment'}</h2>
+            <p className="text-xs text-ct-mute mt-0.5">
+              {jobCategory && <span className="text-ct-mute-2 font-medium">{jobCategory}</span>}
               {jobCategory && ' — '}{jobDesc}
             </p>
           </div>
           <button
             onClick={onClose}
             disabled={submitting}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {error && (
-          <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-            <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0" />
-            <p className="text-xs text-red-700">{error}</p>
+          <div className="mb-3 flex items-center gap-2 px-3 py-2 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm">
+            <AlertCircle className="w-3.5 h-3.5 text-ct-rose flex-shrink-0" />
+            <p className="text-xs text-ct-rose">{error}</p>
           </div>
         )}
 
         <div className="space-y-4">
           {/* Work completed checklist */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">
               What was completed
             </label>
-            <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+            <div className="border border-ct-line rounded-ct-md overflow-hidden divide-y divide-ct-line-soft">
               {prompts.map((prompt) => {
                 const isActive = selectedPrompts.has(prompt);
                 return (
@@ -886,18 +886,18 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                     disabled={submitting}
                     className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-left transition-colors ${
                       isActive
-                        ? 'bg-green-50'
-                        : 'bg-white hover:bg-gray-50'
+                        ? 'bg-ct-teal/[0.14]'
+                        : 'bg-ct-surface hover:bg-ct-surface-2'
                     }`}
                   >
                     <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
                       isActive
-                        ? 'bg-green-600 text-white'
-                        : 'border-2 border-gray-300'
+                        ? 'bg-ct-teal text-ct-ink'
+                        : 'border-2 border-ct-line'
                     }`}>
                       {isActive && <Check className="w-3.5 h-3.5" />}
                     </div>
-                    <span className={`text-sm ${isActive ? 'text-green-900 font-medium' : 'text-gray-700'}`}>
+                    <span className={`text-sm ${isActive ? 'text-ct-teal font-medium' : 'text-ct-mute-2'}`}>
                       {prompt}
                     </span>
                   </button>
@@ -908,8 +908,8 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
 
           {/* Additional notes */}
           <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-              Additional notes <span className="text-gray-400 font-normal normal-case">(optional)</span>
+            <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wide mb-1.5">
+              Additional notes <span className="text-ct-mute font-normal normal-case">(optional)</span>
             </label>
             <textarea {...proseInputProps}
               value={customNotes}
@@ -917,19 +917,19 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
               rows={2}
               disabled={submitting}
               placeholder="Any extra details, issues found, or recommendations..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none disabled:bg-gray-50 disabled:text-gray-400"
+              className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal transition-colors resize-none disabled:bg-ct-surface-2 disabled:text-ct-mute"
             />
           </div>
 
           {/* Photos — multi upload */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wide">
                 Photos
-                <span className="text-gray-400 font-normal normal-case ml-1">— up to 15</span>
+                <span className="text-ct-mute font-normal normal-case ml-1">— up to 15</span>
               </label>
               {photos.length > 0 && (
-                <span className="text-xs text-gray-400">{photos.length}/15</span>
+                <span className="text-xs text-ct-mute">{photos.length}/15</span>
               )}
             </div>
 
@@ -937,7 +937,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
               {photos.map((p, i) => (
                 <div
                   key={i}
-                  className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0"
+                  className="relative w-20 h-20 rounded-ct-sm overflow-hidden border border-ct-line bg-ct-surface-2 flex-shrink-0"
                 >
                   <img
                     src={p.preview}
@@ -947,7 +947,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                   <button
                     onClick={() => removePhoto(i)}
                     disabled={submitting}
-                    className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 text-white rounded-md hover:bg-black/80 transition-colors"
+                    className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 text-ct-ink rounded-md hover:bg-black/80 transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -958,14 +958,14 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={submitting}
-                  className="w-20 h-20 flex-shrink-0 flex flex-col items-center justify-center gap-1 border border-dashed border-gray-300 rounded-lg hover:border-green-400 hover:bg-green-50/30 transition-colors group"
+                  className="w-20 h-20 flex-shrink-0 flex flex-col items-center justify-center gap-1 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-teal/30 hover:bg-ct-teal/[0.14]/30 transition-colors group"
                 >
                   {photos.length === 0 ? (
-                    <Camera className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+                    <Camera className="w-5 h-5 text-ct-mute group-hover:text-ct-teal transition-colors" />
                   ) : (
-                    <Plus className="w-5 h-5 text-gray-400 group-hover:text-green-600 transition-colors" />
+                    <Plus className="w-5 h-5 text-ct-mute group-hover:text-ct-teal transition-colors" />
                   )}
-                  <span className="text-xs text-gray-400 group-hover:text-green-600">
+                  <span className="text-xs text-ct-mute group-hover:text-ct-teal">
                     {photos.length === 0 ? 'Add' : 'More'}
                   </span>
                 </button>
@@ -984,25 +984,25 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
         </div>
 
         {/* Actions */}
-        <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+        <div className="mt-4 pt-4 border-t border-ct-line-soft space-y-2">
           {!notesValue.trim() && (
-            <p className="text-xs text-gray-400 text-center">Select at least one item or add notes to continue</p>
+            <p className="text-xs text-ct-mute text-center">Select at least one item or add notes to continue</p>
           )}
           <div className="flex gap-3">
             <button
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2.5 border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium disabled:opacity-50"
+              className="px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-md hover:bg-ct-surface-2 transition-colors text-sm font-medium disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
               disabled={submitting || !notesValue.trim()}
-              className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+              className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-ct-md text-sm font-semibold transition-colors ${
                 notesValue.trim()
-                  ? 'bg-green-600 text-white hover:bg-green-700'
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  ? 'bg-ct-teal text-ct-ink hover:brightness-110'
+                  : 'bg-ct-line text-ct-mute cursor-not-allowed'
               }`}
             >
               {submitting ? (

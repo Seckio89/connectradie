@@ -144,17 +144,17 @@ export default function AdminOverview() {
 
   const getStatusBadge = (status: string) => {
     const map: Record<string, string> = {
-      pending: 'bg-warm-100 text-warm-700',
-      accepted: 'bg-secondary-100 text-secondary-700',
-      in_progress: 'bg-warm-100 text-warm-700',
-      completed: 'bg-green-100 text-green-700',
-      cancelled: 'bg-gray-100 text-gray-600',
-      declined: 'bg-red-100 text-red-700',
-      funded: 'bg-warm-100 text-warm-700',
-      failed: 'bg-red-100 text-red-700',
+      pending: 'bg-ct-amber/[0.13] text-ct-amber',
+      accepted: 'bg-ct-surface-2 text-ct-mute-2',
+      in_progress: 'bg-ct-amber/[0.13] text-ct-amber',
+      completed: 'bg-ct-teal/[0.14] text-ct-teal',
+      cancelled: 'bg-ct-surface-2 text-ct-mute-2',
+      declined: 'bg-ct-rose/[0.13] text-ct-rose',
+      funded: 'bg-ct-amber/[0.13] text-ct-amber',
+      failed: 'bg-ct-rose/[0.13] text-ct-rose',
     };
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[status] || 'bg-ct-surface-2 text-ct-mute-2'}`}>
         {status.replace('_', ' ')}
       </span>
     );
@@ -165,7 +165,7 @@ export default function AdminOverview() {
       <DashboardLayout wide>
         <SectionErrorBoundary>
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
         </div>
         </SectionErrorBoundary>
       </DashboardLayout>
@@ -177,69 +177,69 @@ export default function AdminOverview() {
       <SectionErrorBoundary>
       <div>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Platform Overview</h1>
-          <p className="text-gray-600 mt-1">Key metrics and recent activity across the platform</p>
+          <h1 className="text-2xl font-bold text-ct-paper">Platform Overview</h1>
+          <p className="text-ct-mute-2 mt-1">Key metrics and recent activity across the platform</p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-secondary-50 rounded-xl">
-                <Users className="w-5 h-5 text-secondary-600" />
+              <div className="p-2.5 bg-ct-surface-2 rounded-ct-md">
+                <Users className="w-5 h-5 text-ct-mute-2" />
               </div>
-              <span className="text-sm font-medium text-gray-500">Total Users</span>
+              <span className="text-sm font-medium text-ct-mute">Total Users</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stats?.totalUsers}</p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-2xl font-bold text-ct-paper">{stats?.totalUsers}</p>
+            <p className="text-xs text-ct-mute mt-1">
               {stats?.clientCount} clients, {stats?.tradieCount} tradies, {stats?.adminCount} admins
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-primary-50 rounded-xl">
-                <Briefcase className="w-5 h-5 text-primary-600" />
+              <div className="p-2.5 bg-ct-surface-2 rounded-ct-md">
+                <Briefcase className="w-5 h-5 text-ct-mute-2" />
               </div>
-              <span className="text-sm font-medium text-gray-500">Total Jobs</span>
+              <span className="text-sm font-medium text-ct-mute">Total Jobs</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stats?.totalJobs}</p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-2xl font-bold text-ct-paper">{stats?.totalJobs}</p>
+            <p className="text-xs text-ct-mute mt-1">
               {stats?.pendingJobs} pending, {stats?.activeJobs} active, {stats?.completedJobs} completed
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-green-50 rounded-xl">
-                <DollarSign className="w-5 h-5 text-green-600" />
+              <div className="p-2.5 bg-ct-teal/[0.14] rounded-ct-md">
+                <DollarSign className="w-5 h-5 text-ct-teal" />
               </div>
-              <span className="text-sm font-medium text-gray-500">Total Revenue</span>
+              <span className="text-sm font-medium text-ct-mute">Total Revenue</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats?.totalRevenue || 0)}</p>
-            <p className="text-xs text-gray-500 mt-1">From completed payments</p>
+            <p className="text-2xl font-bold text-ct-paper">{formatCurrency(stats?.totalRevenue || 0)}</p>
+            <p className="text-xs text-ct-mute mt-1">From completed payments</p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-warm-50 rounded-xl">
-                <CreditCard className="w-5 h-5 text-warm-600" />
+              <div className="p-2.5 bg-ct-amber/[0.13] rounded-ct-md">
+                <CreditCard className="w-5 h-5 text-ct-amber" />
               </div>
-              <span className="text-sm font-medium text-gray-500">Active Subs</span>
+              <span className="text-sm font-medium text-ct-mute">Active Subs</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stats?.activeSubscriptions}</p>
-            <p className="text-xs text-gray-500 mt-1">Stripe subscriptions</p>
+            <p className="text-2xl font-bold text-ct-paper">{stats?.activeSubscriptions}</p>
+            <p className="text-xs text-ct-mute mt-1">Stripe subscriptions</p>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-warm-50 rounded-xl">
-                <ShieldCheck className="w-5 h-5 text-warm-600" />
+              <div className="p-2.5 bg-ct-amber/[0.13] rounded-ct-md">
+                <ShieldCheck className="w-5 h-5 text-ct-amber" />
               </div>
-              <span className="text-sm font-medium text-gray-500">Pending Verif.</span>
+              <span className="text-sm font-medium text-ct-mute">Pending Verif.</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stats?.pendingVerifications}</p>
-            <p className="text-xs text-gray-500 mt-1">Awaiting review</p>
+            <p className="text-2xl font-bold text-ct-paper">{stats?.pendingVerifications}</p>
+            <p className="text-xs text-ct-mute mt-1">Awaiting review</p>
           </div>
         </div>
 
@@ -251,27 +251,27 @@ export default function AdminOverview() {
         {/* Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Signups */}
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-ct-line-soft">
               <div className="flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-secondary-600" />
-                <h3 className="font-semibold text-gray-900">Recent Signups</h3>
+                <UserPlus className="w-4 h-4 text-ct-mute-2" />
+                <h3 className="font-semibold text-ct-paper">Recent Signups</h3>
               </div>
-              <Link to="/admin/users" className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
+              <Link to="/admin/users" className="text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 flex items-center gap-1">
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-ct-line-soft">
               {recentSignups.length === 0 ? (
-                <div className="p-8 text-center text-gray-500 text-sm">No signups yet</div>
+                <div className="p-8 text-center text-ct-mute text-sm">No signups yet</div>
               ) : (
                 recentSignups.map(user => (
                   <div key={user.id} className="px-5 py-3 flex items-center justify-between">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{user.full_name || 'Unknown'}</p>
-                      <p className="text-xs text-gray-500">{formatDate(user.created_at)}</p>
+                      <p className="text-sm font-medium text-ct-paper truncate">{user.full_name || 'Unknown'}</p>
+                      <p className="text-xs text-ct-mute">{formatDate(user.created_at)}</p>
                     </div>
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 capitalize">
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute-2 capitalize">
                       {user.role}
                     </span>
                   </div>
@@ -281,29 +281,29 @@ export default function AdminOverview() {
           </div>
 
           {/* Recent Jobs */}
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-ct-line-soft">
               <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-primary-600" />
-                <h3 className="font-semibold text-gray-900">Recent Jobs</h3>
+                <FileText className="w-4 h-4 text-ct-mute-2" />
+                <h3 className="font-semibold text-ct-paper">Recent Jobs</h3>
               </div>
-              <Link to="/admin/moderation" className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
+              <Link to="/admin/moderation" className="text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 flex items-center gap-1">
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-ct-line-soft">
               {recentJobs.length === 0 ? (
-                <div className="p-8 text-center text-gray-500 text-sm">No jobs yet</div>
+                <div className="p-8 text-center text-ct-mute text-sm">No jobs yet</div>
               ) : (
                 recentJobs.map(job => (
                   <div key={job.id} className="px-5 py-3">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-sm font-medium text-gray-900 truncate max-w-[200px]">
+                      <p className="text-sm font-medium text-ct-paper truncate max-w-[200px]">
                         {job.description?.slice(0, 50)}{(job.description?.length || 0) > 50 ? '...' : ''}
                       </p>
                       {getStatusBadge(job.status)}
                     </div>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-ct-mute">
                       {job.profiles?.full_name || 'Unknown'} &middot; {formatDate(job.created_at)}
                     </p>
                   </div>
@@ -313,32 +313,32 @@ export default function AdminOverview() {
           </div>
 
           {/* Recent Payments */}
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-ct-line-soft">
               <div className="flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-green-600" />
-                <h3 className="font-semibold text-gray-900">Recent Payments</h3>
+                <Receipt className="w-4 h-4 text-ct-teal" />
+                <h3 className="font-semibold text-ct-paper">Recent Payments</h3>
               </div>
-              <Link to="/admin/payments" className="text-xs font-medium text-primary-600 hover:text-primary-700 flex items-center gap-1">
+              <Link to="/admin/payments" className="text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 flex items-center gap-1">
                 View all <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-ct-line-soft">
               {recentPayments.length === 0 ? (
-                <div className="p-8 text-center text-gray-500 text-sm">No payments yet</div>
+                <div className="p-8 text-center text-ct-mute text-sm">No payments yet</div>
               ) : (
                 recentPayments.map(payment => (
                   <div key={payment.id} className="px-5 py-3 flex items-center justify-between">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-ct-paper truncate">
                         {payment.profiles?.full_name || 'Unknown'}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-ct-mute">
                         {payment.payment_type.replace('_', ' ')} &middot; {formatDate(payment.created_at)}
                       </p>
                     </div>
                     <div className="text-right flex-shrink-0 ml-3">
-                      <p className="text-sm font-semibold text-gray-900">{formatCurrency(payment.amount)}</p>
+                      <p className="text-sm font-semibold text-ct-paper">{formatCurrency(payment.amount)}</p>
                       {getStatusBadge(payment.status)}
                     </div>
                   </div>
@@ -349,43 +349,43 @@ export default function AdminOverview() {
         </div>
 
         {/* Quick Links */}
-        <div className="mt-8 bg-white rounded-2xl border border-gray-200 p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Quick Links</h3>
+        <div className="mt-8 bg-ct-surface rounded-ct-lg border border-ct-line p-6">
+          <h3 className="font-semibold text-ct-paper mb-4">Quick Links</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Link
               to="/admin/users"
-              className="flex items-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 py-3 bg-ct-surface-2 hover:bg-ct-surface-2 rounded-ct-md transition-colors"
             >
-              <Users className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Manage Users</span>
+              <Users className="w-4 h-4 text-ct-mute-2" />
+              <span className="text-sm font-medium text-ct-mute-2">Manage Users</span>
             </Link>
             <Link
               to="/admin/verifications"
-              className="flex items-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 py-3 bg-ct-surface-2 hover:bg-ct-surface-2 rounded-ct-md transition-colors"
             >
-              <ShieldCheck className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Verifications</span>
+              <ShieldCheck className="w-4 h-4 text-ct-mute-2" />
+              <span className="text-sm font-medium text-ct-mute-2">Verifications</span>
             </Link>
             <Link
               to="/admin/payments"
-              className="flex items-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 py-3 bg-ct-surface-2 hover:bg-ct-surface-2 rounded-ct-md transition-colors"
             >
-              <DollarSign className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Payments</span>
+              <DollarSign className="w-4 h-4 text-ct-mute-2" />
+              <span className="text-sm font-medium text-ct-mute-2">Payments</span>
             </Link>
             <Link
               to="/admin/moderation"
-              className="flex items-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 py-3 bg-ct-surface-2 hover:bg-ct-surface-2 rounded-ct-md transition-colors"
             >
-              <BarChart3 className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Moderation</span>
+              <BarChart3 className="w-4 h-4 text-ct-mute-2" />
+              <span className="text-sm font-medium text-ct-mute-2">Moderation</span>
             </Link>
             <Link
               to="/admin/custom-tasks"
-              className="flex items-center gap-2 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors"
+              className="flex items-center gap-2 px-4 py-3 bg-ct-surface-2 hover:bg-ct-surface-2 rounded-ct-md transition-colors"
             >
-              <Lightbulb className="w-4 h-4 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Task Requests</span>
+              <Lightbulb className="w-4 h-4 text-ct-mute-2" />
+              <span className="text-sm font-medium text-ct-mute-2">Task Requests</span>
             </Link>
           </div>
         </div>

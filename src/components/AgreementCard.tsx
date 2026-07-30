@@ -47,53 +47,53 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
 
   return (
     <>
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-gray-900 truncate">{agreement.title}</h3>
-            <p className="text-xs text-gray-500 truncate">{otherPartyName}</p>
+            <h3 className="text-sm font-semibold text-ct-paper truncate">{agreement.title}</h3>
+            <p className="text-xs text-ct-mute truncate">{otherPartyName}</p>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+            <span className="px-3 py-1 bg-ct-teal/[0.14] text-ct-teal text-xs font-medium rounded-full">
               Active
             </span>
             {userRole === 'tradie' && (
               <div className="relative">
-                <button onClick={() => setShowMenu(!showMenu)} className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors">
+                <button onClick={() => setShowMenu(!showMenu)} className="p-1 text-ct-mute hover:text-ct-mute-2 rounded transition-colors">
                   <MoreVertical className="w-4 h-4" />
                 </button>
                 {showMenu && (
                   <>
                     <div className="fixed inset-0 z-10" onClick={() => { setShowMenu(false); setConfirmEnd(false); }} />
-                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20 py-1">
+                    <div className="absolute right-0 mt-1 w-48 bg-ct-surface rounded-ct-sm shadow-lg border border-ct-line z-20 py-1">
                       <button
                         onClick={async () => { await pauseAgreement(agreement.id); setShowMenu(false); onRefresh(); }}
-                        className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        className="w-full px-3 py-2 text-left text-sm text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2"
                       >
-                        <Pause className="w-3.5 h-3.5 text-gray-400" />
+                        <Pause className="w-3.5 h-3.5 text-ct-mute" />
                         Pause
                       </button>
                       {!confirmEnd ? (
                         <button
                           onClick={() => setConfirmEnd(true)}
-                          className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                          className="w-full px-3 py-2 text-left text-sm text-ct-rose hover:bg-ct-rose/[0.13] flex items-center gap-2"
                         >
                           End Agreement
                         </button>
                       ) : (
                         <div className="px-3 py-2 space-y-2">
-                          <p className="text-xs text-gray-600">Are you sure?</p>
+                          <p className="text-xs text-ct-mute-2">Are you sure?</p>
                           <div className="flex gap-2">
                             <button
                               onClick={async () => { await endAgreement(agreement.id); setShowMenu(false); setConfirmEnd(false); onRefresh(); }}
-                              className="px-2.5 py-1 bg-red-500 text-white text-xs font-medium rounded-md hover:bg-red-600 transition-colors"
+                              className="px-2.5 py-1 bg-ct-rose/[0.13]0 text-ct-ink text-xs font-medium rounded-md hover:bg-ct-rose transition-colors"
                             >
                               Yes, end it
                             </button>
                             <button
                               onClick={() => setConfirmEnd(false)}
-                              className="text-xs text-gray-500 hover:text-gray-700 font-medium"
+                              className="text-xs text-ct-mute hover:text-ct-mute-2 font-medium"
                             >
                               No
                             </button>
@@ -109,7 +109,7 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
         </div>
 
         {/* Rate & Schedule */}
-        <div className="flex items-center gap-3 mb-2 text-xs text-gray-500">
+        <div className="flex items-center gap-3 mb-2 text-xs text-ct-mute">
           <span className="inline-flex items-center gap-1">
             <DollarSign className="w-3 h-3" />
             ${agreement.rate_per_visit}/visit
@@ -123,21 +123,21 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
 
         {/* Address */}
         {agreement.address && (
-          <p className="text-xs text-gray-400 mb-3 truncate">
+          <p className="text-xs text-ct-mute mb-3 truncate">
             {[agreement.address, agreement.suburb, agreement.state].filter(Boolean).join(', ')}
           </p>
         )}
 
         {/* This Month Summary */}
         {monthlyStats && (
-          <div className="p-3 bg-gray-50 rounded-lg mb-3">
+          <div className="p-3 bg-ct-surface-2 rounded-ct-sm mb-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-gray-600">{currentMonth}</span>
-              <span className="text-xs text-gray-500">{monthlyStats.visitCount} visit{monthlyStats.visitCount !== 1 ? 's' : ''}</span>
+              <span className="text-xs font-medium text-ct-mute-2">{currentMonth}</span>
+              <span className="text-xs text-ct-mute">{monthlyStats.visitCount} visit{monthlyStats.visitCount !== 1 ? 's' : ''}</span>
             </div>
-            <p className="text-lg font-semibold text-gray-900">
+            <p className="text-lg font-semibold text-ct-paper">
               ${monthlyStats.total.toFixed(2)}
-              <span className="text-xs font-normal text-gray-500 ml-1">inc. GST</span>
+              <span className="text-xs font-normal text-ct-mute ml-1">inc. GST</span>
             </p>
           </div>
         )}
@@ -148,7 +148,7 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
             <>
               <button
                 onClick={() => setShowLogVisit(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-emerald-300 text-emerald-700 text-xs font-medium rounded-lg hover:bg-emerald-50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-ct-teal/30 text-ct-teal text-xs font-medium rounded-ct-sm hover:bg-ct-teal/[0.14] transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 Log Extra Visit
@@ -156,7 +156,7 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
               {onGenerateInvoice && (
                 <button
                   onClick={() => onGenerateInvoice(agreement)}
-                  className="px-3 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-3 py-2 border border-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                   title="Generate Invoice"
                 >
                   <FileText className="w-4 h-4" />

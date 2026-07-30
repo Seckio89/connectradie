@@ -79,10 +79,10 @@ export default function WorkforceClaim() {
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-xl shadow-sm p-6 w-full max-w-md">
+    <div className="min-h-screen bg-ct-surface-2 flex items-center justify-center px-4 py-12">
+      <div className="bg-ct-surface rounded-ct-md shadow-sm p-6 w-full max-w-md">
         {phase === 'checking' && (
-          <div className="flex items-center justify-center py-8 text-gray-500">
+          <div className="flex items-center justify-center py-8 text-ct-mute">
             <Loader2 className="w-5 h-5 animate-spin mr-2" />
             <span className="text-sm">Checking your invite…</span>
           </div>
@@ -90,12 +90,12 @@ export default function WorkforceClaim() {
 
         {(phase === 'ready' || phase === 'claiming') && (
           <div className="text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-primary-50 flex items-center justify-center mx-auto">
-              <ShieldCheck className="w-8 h-8 text-primary-400" />
+            <div className="w-16 h-16 rounded-full bg-ct-surface-2 flex items-center justify-center mx-auto">
+              <ShieldCheck className="w-8 h-8 text-ct-mute" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">Join your team</h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <h1 className="text-lg font-semibold text-ct-paper">Join your team</h1>
+              <p className="text-sm text-ct-mute-2 mt-1">
                 Accepting links this account to the business's roster so you can keep your own
                 tickets, licences and certificates up to date.
               </p>
@@ -103,7 +103,7 @@ export default function WorkforceClaim() {
             <button
               onClick={() => void claim()}
               disabled={phase === 'claiming'}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2 min-h-[44px] bg-warm-500 hover:bg-warm-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2 min-h-[44px] bg-ct-teal hover:brightness-110 disabled:opacity-50 text-ct-ink rounded-ct-sm text-sm font-medium"
             >
               {phase === 'claiming' && <Loader2 className="w-4 h-4 animate-spin" />}
               Accept invite
@@ -113,18 +113,18 @@ export default function WorkforceClaim() {
 
         {phase === 'done' && (
           <div className="text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+            <div className="w-16 h-16 rounded-full bg-ct-teal/[0.14] flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-8 h-8 text-ct-teal" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">You're on the team</h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <h1 className="text-lg font-semibold text-ct-paper">You're on the team</h1>
+              <p className="text-sm text-ct-mute-2 mt-1">
                 Your invite has been accepted. Your account role on the marketplace is unchanged.
               </p>
             </div>
             <Link
               to={teamMemberId ? `/workforce/${teamMemberId}` : '/dashboard'}
-              className="inline-flex items-center justify-center px-5 py-2 min-h-[44px] bg-warm-500 hover:bg-warm-600 text-white rounded-lg text-sm font-medium"
+              className="inline-flex items-center justify-center px-5 py-2 min-h-[44px] bg-ct-teal hover:brightness-110 text-ct-ink rounded-ct-sm text-sm font-medium"
             >
               Continue
             </Link>
@@ -133,16 +133,16 @@ export default function WorkforceClaim() {
 
         {phase === 'error' && (
           <div className="text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto">
-              <XCircle className="w-8 h-8 text-red-600" />
+            <div className="w-16 h-16 rounded-full bg-ct-rose/[0.13] flex items-center justify-center mx-auto">
+              <XCircle className="w-8 h-8 text-ct-rose" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">We couldn't accept this invite</h1>
-              <p className="text-sm text-gray-600 mt-1">{message}</p>
+              <h1 className="text-lg font-semibold text-ct-paper">We couldn't accept this invite</h1>
+              <p className="text-sm text-ct-mute-2 mt-1">{message}</p>
             </div>
             <Link
               to="/dashboard"
-              className="inline-flex items-center justify-center px-4 py-2 min-h-[44px] border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+              className="inline-flex items-center justify-center px-4 py-2 min-h-[44px] border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2"
             >
               Go to dashboard
             </Link>

@@ -28,7 +28,7 @@ export function BarChart({ data, height = 200, showValues = true }: BarChartProp
               {showValues && (
                 <span
                   className={`text-[10px] sm:text-xs font-medium transition-opacity duration-200 ${
-                    isHovered ? 'text-gray-900 opacity-100' : 'text-gray-600 opacity-70'
+                    isHovered ? 'text-ct-paper opacity-100' : 'text-ct-mute-2 opacity-70'
                   }`}
                 >
                   {d.value}
@@ -38,12 +38,12 @@ export function BarChart({ data, height = 200, showValues = true }: BarChartProp
                 className="w-full max-w-[40px] rounded-t-lg transition-all duration-500 min-h-[4px] cursor-pointer"
                 style={{
                   height: `${barHeight}%`,
-                  backgroundColor: d.color || '#3b82f6',
+                  backgroundColor: d.color || 'var(--teal)',
                   opacity: isHovered ? 1 : 0.85,
                   transform: isHovered ? 'scaleX(1.1)' : 'scaleX(1)',
                 }}
               />
-              <span className="text-[9px] sm:text-xs text-gray-500 truncate w-full text-center leading-tight">{d.label}</span>
+              <span className="text-[9px] sm:text-xs text-ct-mute truncate w-full text-center leading-tight">{d.label}</span>
             </div>
           );
         })}
@@ -61,7 +61,7 @@ interface LineChartProps {
   formatValue?: (v: number) => string;
 }
 
-export function LineChart({ data, height = 200, color = '#06D6A0', formatValue }: LineChartProps) {
+export function LineChart({ data, height = 200, color = 'var(--teal)', formatValue }: LineChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const max = Math.max(...data.map(d => d.value), 1);
   const paddingX = 10;
@@ -72,7 +72,7 @@ export function LineChart({ data, height = 200, color = '#06D6A0', formatValue }
   const chartH = viewHeight - paddingY * 2;
 
   if (data.length === 0) {
-    return <div className="text-center text-gray-400 py-8 text-sm">No data</div>;
+    return <div className="text-center text-ct-mute py-8 text-sm">No data</div>;
   }
 
   const coords = data.map((d, i) => {
@@ -91,7 +91,7 @@ export function LineChart({ data, height = 200, color = '#06D6A0', formatValue }
         {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
           const y = paddingY + chartH - pct * chartH;
           return (
-            <line key={pct} x1={paddingX} y1={y} x2={viewWidth - paddingX} y2={y} stroke="#f3f4f6" strokeWidth="1" aria-hidden="true" />
+            <line key={pct} x1={paddingX} y1={y} x2={viewWidth - paddingX} y2={y} stroke="var(--line)" strokeWidth="1" aria-hidden="true" />
           );
         })}
         {/* Area fill */}
@@ -148,7 +148,7 @@ export function LineChart({ data, height = 200, color = '#06D6A0', formatValue }
         {data.map((d, i) => (
           <span
             key={i}
-            className={`text-[9px] sm:text-xs truncate ${hoveredIndex === i ? 'text-gray-900 font-medium' : 'text-gray-400'}`}
+            className={`text-[9px] sm:text-xs truncate ${hoveredIndex === i ? 'text-ct-paper font-medium' : 'text-ct-mute'}`}
           >
             {d.label}
           </span>
@@ -240,11 +240,11 @@ export function DonutChart({ data, size = 160, centerLabel = 'Total' }: DonutCha
                 style={{ backgroundColor: d.color }}
                 aria-hidden="true"
               />
-              <span className={`${isHovered ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+              <span className={`${isHovered ? 'text-ct-paper font-medium' : 'text-ct-mute-2'}`}>
                 {d.label}
               </span>
-              <span className="font-medium text-gray-900 ml-auto">{d.value}</span>
-              <span className="text-xs text-gray-400">({pct}%)</span>
+              <span className="font-medium text-ct-paper ml-auto">{d.value}</span>
+              <span className="text-xs text-ct-mute">({pct}%)</span>
             </div>
           );
         })}

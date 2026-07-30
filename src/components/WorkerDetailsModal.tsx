@@ -85,36 +85,36 @@ export default function WorkerDetailsModal({ isOpen, onClose, recurringJobId }: 
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="md">
       <div className="p-6 space-y-5">
         {loading ? (
-          <div className="flex items-center justify-center py-10 text-gray-400">
+          <div className="flex items-center justify-center py-10 text-ct-mute">
             <Loader2 className="w-5 h-5 animate-spin mr-2" />
             <span className="text-sm">Loading worker details…</span>
           </div>
         ) : error ? (
           <div className="text-center py-8">
-            <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <HardHat className="w-6 h-6 text-gray-300" />
+            <div className="w-12 h-12 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mx-auto mb-3">
+              <HardHat className="w-6 h-6 text-ct-mute" />
             </div>
-            <p className="text-sm text-gray-500 max-w-xs mx-auto">{error}</p>
+            <p className="text-sm text-ct-mute max-w-xs mx-auto">{error}</p>
           </div>
         ) : details ? (
           <>
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
-                <span className="text-xl font-bold text-secondary-800">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-ct-surface-2 to-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                <span className="text-xl font-bold text-ct-mute-2">
                   {(details.worker_name || '?').charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wide">Coming to your service</p>
-                <h2 className="text-lg font-semibold text-gray-900 truncate">{details.worker_name}</h2>
+                <p className="text-xs font-semibold text-ct-teal uppercase tracking-wide">Coming to your service</p>
+                <h2 className="text-lg font-semibold text-ct-paper truncate">{details.worker_name}</h2>
                 <div className="flex items-center gap-2 flex-wrap mt-0.5">
                   {details.employment_type && ROLE_LABELS[details.employment_type] && (
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-700">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute-2">
                       {ROLE_LABELS[details.employment_type]}
                     </span>
                   )}
                   {details.business_name && (
-                    <span className="text-xs text-gray-500">of {details.business_name}</span>
+                    <span className="text-xs text-ct-mute">of {details.business_name}</span>
                   )}
                 </div>
               </div>
@@ -122,12 +122,12 @@ export default function WorkerDetailsModal({ isOpen, onClose, recurringJobId }: 
 
             {badges.length > 0 && (
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Verified by ConnecTradie</p>
+                <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-1.5">Verified by ConnecTradie</p>
                 <div className="flex flex-wrap gap-2">
                   {badges.map(({ icon: Icon, label }) => (
                     <span
                       key={label}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700"
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-ct-teal/[0.14] text-ct-teal"
                     >
                       <Icon className="w-3.5 h-3.5" />
                       {label}
@@ -139,15 +139,15 @@ export default function WorkerDetailsModal({ isOpen, onClose, recurringJobId }: 
 
             {(details.trade_specialty || trades.length > 0) && (
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Trade</p>
+                <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-1.5">Trade</p>
                 <div className="flex flex-wrap gap-1.5">
                   {details.trade_specialty && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs bg-gray-100 text-gray-700">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-ct-sm text-xs bg-ct-surface-2 text-ct-mute-2">
                       <Briefcase className="w-3 h-3" /> {details.trade_specialty}
                     </span>
                   )}
                   {trades.filter(t => t !== details.trade_specialty).map((t) => (
-                    <span key={t} className="px-2.5 py-1 rounded-lg text-xs bg-gray-100 text-gray-700 capitalize">
+                    <span key={t} className="px-2.5 py-1 rounded-ct-sm text-xs bg-ct-surface-2 text-ct-mute-2 capitalize">
                       {t.replace(/-/g, ' ')}
                     </span>
                   ))}
@@ -157,30 +157,30 @@ export default function WorkerDetailsModal({ isOpen, onClose, recurringJobId }: 
 
             {(details.qualifications.length > 0 || details.white_card) && (
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Certificates</p>
+                <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-1.5">Certificates</p>
                 <ul className="space-y-1">
                   {details.white_card && (
-                    <li className="flex items-center gap-2 text-sm text-gray-700">
-                      <HardHat className="w-4 h-4 text-gray-400" /> White Card
+                    <li className="flex items-center gap-2 text-sm text-ct-mute-2">
+                      <HardHat className="w-4 h-4 text-ct-mute" /> White Card
                     </li>
                   )}
                   {details.qualifications.map((q) => (
-                    <li key={q} className="flex items-center gap-2 text-sm text-gray-700">
-                      <GraduationCap className="w-4 h-4 text-gray-400" /> {q}
+                    <li key={q} className="flex items-center gap-2 text-sm text-ct-mute-2">
+                      <GraduationCap className="w-4 h-4 text-ct-mute" /> {q}
                     </li>
                   ))}
                 </ul>
               </div>
             )}
 
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-ct-mute">
               Questions about a visit? Message the business through the app — workers are contacted via
               {details.business_name ? ` ${details.business_name}` : ' the business'}.
             </p>
 
             <button
               onClick={onClose}
-              className="w-full py-3 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+              className="w-full py-3 border border-ct-line text-ct-mute-2 rounded-ct-md font-medium hover:bg-ct-surface-2 transition-colors"
             >
               Close
             </button>

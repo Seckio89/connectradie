@@ -160,7 +160,7 @@ export default function PublicTradieProfile() {
   };
 
   const content = (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-ct-surface">
       <SEO
         title={seoTitle}
         description={seoDescription}
@@ -169,23 +169,23 @@ export default function PublicTradieProfile() {
         jsonLd={tradieJsonLd}
       />
       {!isLoggedIn && (
-        <header className="sticky top-0 z-30 bg-white border-b border-gray-100">
+        <header className="sticky top-0 z-30 bg-ct-surface border-b border-ct-line-soft">
           <div className="max-w-[1600px] mx-auto px-4 py-3 flex items-center justify-between">
             <Link to="/" className="flex items-center">
               <span className="text-2xl font-extrabold tracking-tight text-black">
-                Connec<span className="text-warm-500">Tradie</span>
+                Connec<span className="text-ct-teal">Tradie</span>
               </span>
             </Link>
             <div className="flex items-center gap-3">
               <Link
                 to="/search"
-                className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                className="text-sm text-ct-mute-2 hover:text-ct-paper font-medium transition-colors"
               >
                 Find Tradies
               </Link>
               <Link
                 to="/login"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-warm-500 text-white text-sm font-medium rounded-lg hover:bg-warm-600 transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 transition-colors"
               >
                 <LogIn className="w-4 h-4" />
                 Sign In
@@ -204,14 +204,14 @@ export default function PublicTradieProfile() {
 
       {notFound && !loading && (
         <div className="max-w-2xl mx-auto px-4 py-20 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Users className="w-8 h-8 text-gray-400" />
+          <div className="w-16 h-16 bg-ct-surface-2 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users className="w-8 h-8 text-ct-mute" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Profile Not Found</h1>
-          <p className="text-gray-500 mb-6">This tradie profile doesn't exist or is no longer available.</p>
+          <h1 className="text-2xl font-bold text-ct-paper mb-2">Profile Not Found</h1>
+          <p className="text-ct-mute mb-6">This tradie profile doesn't exist or is no longer available.</p>
           <button
             onClick={() => navigate('/search')}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-warm-500 text-white font-medium rounded-lg hover:bg-warm-600 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-teal text-ct-ink font-medium rounded-ct-sm hover:brightness-110 transition-colors"
           >
             Browse Tradies
           </button>
@@ -229,13 +229,13 @@ export default function PublicTradieProfile() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary-800 via-primary-900 to-navy-900" />
+              <div className="w-full h-full bg-gradient-to-br from-ct-teal via-ct-teal to-ct-ink" />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
 
             <button
               onClick={() => navigate(-1)}
-              className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 backdrop-blur-sm border border-white/20 text-white/90 text-sm font-medium rounded-lg hover:bg-white/25 hover:text-white transition-colors"
+              className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface/15 backdrop-blur-sm border border-white/20 text-ct-ink/90 text-sm font-medium rounded-ct-sm hover:bg-ct-surface/25 hover:text-ct-ink transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back
@@ -244,7 +244,7 @@ export default function PublicTradieProfile() {
 
           {/* Profile header card - overlaps cover */}
           <div className="relative px-4 sm:px-6 -mt-16">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+            <div className="bg-ct-surface rounded-ct-lg border border-ct-line-soft shadow-sm p-6 sm:p-8">
               <div className="flex flex-col sm:flex-row items-start gap-5">
                 {/* Avatar */}
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden ring-4 ring-white shadow-lg flex-shrink-0 -mt-16 sm:-mt-20">
@@ -255,8 +255,8 @@ export default function PublicTradieProfile() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-primary-700 flex items-center justify-center">
-                      <span className="text-4xl font-bold text-white">
+                    <div className="w-full h-full bg-ct-teal flex items-center justify-center">
+                      <span className="text-4xl font-bold text-ct-ink">
                         {tradie.full_name?.charAt(0) || 'T'}
                       </span>
                     </div>
@@ -266,17 +266,17 @@ export default function PublicTradieProfile() {
                 {/* Name & info */}
                 <div className="flex-1 min-w-0 sm:-mt-2">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-ct-paper tracking-tight">
                       {displayName}
                     </h1>
                     {isPro && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-warm-50 text-warm-700 text-xs font-semibold rounded-full border border-warm-200">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-ct-amber/[0.13] text-ct-amber text-xs font-semibold rounded-full border border-ct-amber/[0.34]">
                         <Crown className="w-3.5 h-3.5" />
                         PRO
                       </span>
                     )}
                     {!isPro && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-surface-2 text-ct-mute text-xs font-medium rounded-full">
                         <Lock className="w-3 h-3" />
                         Free listing
                       </span>
@@ -284,35 +284,35 @@ export default function PublicTradieProfile() {
                   </div>
 
                   {isPro && details?.business_name && personalName && (
-                    <p className="text-gray-500 mt-0.5 text-sm">{personalName}</p>
+                    <p className="text-ct-mute mt-0.5 text-sm">{personalName}</p>
                   )}
 
-                  <p className="text-primary-600 font-semibold capitalize mt-1 text-sm">
+                  <p className="text-ct-mute-2 font-semibold capitalize mt-1 text-sm">
                     {tradeCategory || 'Trade Professional'}
-                    {suburb && <span className="text-gray-400 font-normal"> · {suburb}</span>}
+                    {suburb && <span className="text-ct-mute font-normal"> · {suburb}</span>}
                   </p>
 
                   <div className="flex flex-wrap items-center gap-2 mt-3">
                     {isIdentityVerified && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 text-xs font-semibold rounded-full border border-green-200">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-ct-teal/[0.14] text-ct-teal text-xs font-semibold rounded-full border border-ct-teal/30">
                         <ShieldCheck className="w-3.5 h-3.5" />
                         ID Verified
                       </span>
                     )}
                     {details?.is_insured && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-secondary-50 text-secondary-700 text-xs font-semibold rounded-full border border-secondary-200">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-ct-surface-2 text-ct-mute-2 text-xs font-semibold rounded-full border border-ct-line">
                         <Shield className="w-3.5 h-3.5" />
                         Insured
                       </span>
                     )}
                     {details?.is_licensed && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-warm-50 text-warm-700 text-xs font-semibold rounded-full border border-warm-200">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-ct-amber/[0.13] text-ct-amber text-xs font-semibold rounded-full border border-ct-amber/[0.34]">
                         <FileCheck className="w-3.5 h-3.5" />
                         Licensed
                       </span>
                     )}
                     {tradie.is_emergency_available && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-700 text-xs font-semibold rounded-full border border-red-200">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-ct-rose/[0.13] text-ct-rose text-xs font-semibold rounded-full border border-ct-rose/[0.34]">
                         <Zap className="w-3.5 h-3.5" />
                         Emergency
                       </span>
@@ -332,48 +332,48 @@ export default function PublicTradieProfile() {
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4 px-4 sm:px-6">
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-warm-50 flex items-center justify-center flex-shrink-0">
-                <Star className="w-5 h-5 text-yellow-500" />
+            <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm px-4 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-ct-sm bg-ct-amber/[0.13] flex items-center justify-center flex-shrink-0">
+                <Star className="w-5 h-5 text-ct-amber" />
               </div>
               <div>
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-lg font-bold text-ct-paper">
                   {totalReviews > 0 ? avgRating.toFixed(1) : '--'}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-ct-mute">
                   {totalReviews > 0 ? `${totalReviews} reviews` : 'Rating'}
                 </p>
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
+            <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm px-4 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-ct-sm bg-ct-teal/[0.14] flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-ct-teal" />
               </div>
               <div>
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-lg font-bold text-ct-paper">
                   {completedJobs > 0 ? completedJobs : '--'}
                 </p>
-                <p className="text-xs text-gray-500">Jobs Completed</p>
+                <p className="text-xs text-ct-mute">Jobs Completed</p>
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-secondary-600" />
+            <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm px-4 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5 text-ct-mute-2" />
               </div>
               <div>
-                <p className="text-lg font-bold text-gray-900">&lt; 1 hr</p>
-                <p className="text-xs text-gray-500">Response Time</p>
+                <p className="text-lg font-bold text-ct-paper">&lt; 1 hr</p>
+                <p className="text-xs text-ct-mute">Response Time</p>
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-secondary-50 flex items-center justify-center flex-shrink-0">
-                <MapPin className="w-5 h-5 text-secondary-600" />
+            <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm px-4 py-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-5 h-5 text-ct-mute-2" />
               </div>
               <div>
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-lg font-bold text-ct-paper">
                   {tradie.service_radius_km || 20}km
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-ct-mute">
                   {suburb ? `from ${suburb}` : 'Service Radius'}
                 </p>
               </div>
@@ -384,24 +384,24 @@ export default function PublicTradieProfile() {
             <div className="lg:col-span-2 space-y-8">
 
               {(tradie.bio || details?.bio) && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-gray-100">
-                    <h2 className="text-lg font-semibold text-gray-900">About</h2>
+                <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-ct-line-soft">
+                    <h2 className="text-lg font-semibold text-ct-paper">About</h2>
                   </div>
                   <div className="p-6">
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-line text-[15px]">
+                    <p className="text-ct-mute-2 leading-relaxed whitespace-pre-line text-[15px]">
                       {tradie.bio || details?.bio}
                     </p>
                   </div>
                 </div>
               )}
 
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100">
-                  <h2 className="text-lg font-semibold text-gray-900">
+              <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-ct-line-soft">
+                  <h2 className="text-lg font-semibold text-ct-paper">
                     Portfolio
                     {portfolio.length > 0 && (
-                      <span className="text-sm font-normal text-gray-400 ml-2">
+                      <span className="text-sm font-normal text-ct-mute ml-2">
                         {portfolio.length} {portfolio.length === 1 ? 'photo' : 'photos'}
                       </span>
                     )}
@@ -414,7 +414,7 @@ export default function PublicTradieProfile() {
                         <button
                           key={img.id}
                           onClick={() => setLightboxImage(img.image_url)}
-                          className="group aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 relative focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                          className="group aspect-[4/3] rounded-ct-md overflow-hidden bg-ct-surface-2 relative focus:outline-none focus:ring-2 focus:ring-ct-teal focus:ring-offset-2"
                         >
                           <img
                             src={img.image_url}
@@ -424,7 +424,7 @@ export default function PublicTradieProfile() {
                           />
                           {img.caption && (
                             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                              <p className="text-white text-xs leading-snug">{img.caption}</p>
+                              <p className="text-ct-ink text-xs leading-snug">{img.caption}</p>
                             </div>
                           )}
                         </button>
@@ -432,16 +432,16 @@ export default function PublicTradieProfile() {
                     </div>
                   ) : (
                     <div className="text-center py-8">
-                      <ImageIcon className="w-10 h-10 text-gray-200 mx-auto mb-2" />
-                      <p className="text-gray-500 text-sm">No portfolio images yet.</p>
+                      <ImageIcon className="w-10 h-10 text-ct-paper mx-auto mb-2" />
+                      <p className="text-ct-mute text-sm">No portfolio images yet.</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100">
-                  <h2 className="text-lg font-semibold text-gray-900">Client Reviews</h2>
+              <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-ct-line-soft">
+                  <h2 className="text-lg font-semibold text-ct-paper">Client Reviews</h2>
                 </div>
                 <div className="p-6">
                   {rating && rating.total_reviews > 0 ? (
@@ -453,9 +453,9 @@ export default function PublicTradieProfile() {
                     </>
                   ) : (
                     <div className="text-center py-8">
-                      <Star className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                      <p className="text-gray-500 font-medium mb-1">No reviews yet</p>
-                      <p className="text-sm text-gray-400">
+                      <Star className="w-10 h-10 text-ct-paper mx-auto mb-3" />
+                      <p className="text-ct-mute font-medium mb-1">No reviews yet</p>
+                      <p className="text-sm text-ct-mute">
                         Reviews will appear here once clients leave feedback
                       </p>
                     </div>
@@ -467,32 +467,32 @@ export default function PublicTradieProfile() {
             <div className="lg:col-span-1">
               <div className="lg:sticky lg:top-24 space-y-6">
 
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm overflow-hidden">
                   <div className="p-5">
-                    <h3 className="font-semibold text-gray-900 mb-1">
+                    <h3 className="font-semibold text-ct-paper mb-1">
                       Get a quote from {displayName}
                     </h3>
-                    <p className="text-sm text-gray-500 mb-4">
+                    <p className="text-sm text-ct-mute mb-4">
                       Describe your job and receive a personalised quote directly.
                     </p>
                     <button
                       onClick={handleRequestQuote}
-                      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors min-h-[48px] shadow-sm"
+                      className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors min-h-[48px] shadow-sm"
                     >
                       <Send className="w-4 h-4" />
                       Request a Quote
                     </button>
                     {!isLoggedIn && (
-                      <p className="text-xs text-gray-400 text-center mt-3">
+                      <p className="text-xs text-ct-mute text-center mt-3">
                         You'll need to sign in to send a request.
                       </p>
                     )}
 
                     {details?.hourly_rate && (
-                      <div className="mt-4 pt-4 border-t border-gray-100">
+                      <div className="mt-4 pt-4 border-t border-ct-line-soft">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-500">Starting from</span>
-                          <span className="font-semibold text-gray-900">
+                          <span className="text-ct-mute">Starting from</span>
+                          <span className="font-semibold text-ct-paper">
                             ${details.hourly_rate}/hr
                           </span>
                         </div>
@@ -500,13 +500,13 @@ export default function PublicTradieProfile() {
                     )}
 
                     {rating && rating.total_reviews > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="mt-3 pt-3 border-t border-ct-line-soft">
                         <div className="flex items-center gap-1.5">
-                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          <span className="font-semibold text-gray-900 text-sm">
+                          <Star className="w-4 h-4 fill-yellow-400 text-ct-amber" />
+                          <span className="font-semibold text-ct-paper text-sm">
                             {rating.average_rating.toFixed(1)}
                           </span>
-                          <span className="text-gray-500 text-sm">
+                          <span className="text-ct-mute text-sm">
                             ({rating.total_reviews} {rating.total_reviews === 1 ? 'review' : 'reviews'})
                           </span>
                         </div>
@@ -515,44 +515,44 @@ export default function PublicTradieProfile() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-5 py-4 border-b border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Details</h3>
+                <div className="bg-ct-surface rounded-ct-md border border-ct-line-soft shadow-sm overflow-hidden">
+                  <div className="px-5 py-4 border-b border-ct-line-soft">
+                    <h3 className="text-sm font-semibold text-ct-paper uppercase tracking-wider">Details</h3>
                   </div>
-                  <div className="divide-y divide-gray-50">
+                  <div className="divide-y divide-ct-line-soft">
                     <DetailRow
-                      icon={<CircleDollarSign className="w-4.5 h-4.5 text-green-600" />}
-                      iconBg="bg-green-50"
+                      icon={<CircleDollarSign className="w-4.5 h-4.5 text-ct-teal" />}
+                      iconBg="bg-ct-teal/[0.14]"
                       label="Hourly Rate"
                       value={details?.hourly_rate ? `$${details.hourly_rate}/hr` : null}
                     />
 
                     <DetailRow
-                      icon={<Briefcase className="w-4 h-4 text-secondary-600" />}
-                      iconBg="bg-secondary-50"
+                      icon={<Briefcase className="w-4 h-4 text-ct-mute-2" />}
+                      iconBg="bg-ct-surface-2"
                       label="Business Type"
                       value={details?.contractor_type || null}
                     />
                     <DetailRow
-                      icon={<Users className="w-4 h-4 text-secondary-600" />}
-                      iconBg="bg-secondary-50"
+                      icon={<Users className="w-4 h-4 text-ct-mute-2" />}
+                      iconBg="bg-ct-surface-2"
                       label="Team Size"
                       value={tradie.team_size || null}
                     />
                     <DetailRow
-                      icon={<MapPin className="w-4 h-4 text-gray-500" />}
-                      iconBg="bg-gray-50"
+                      icon={<MapPin className="w-4 h-4 text-ct-mute" />}
+                      iconBg="bg-ct-surface-2"
                       label="Service Radius"
                       value={tradie.service_radius_km ? `${tradie.service_radius_km}km` : null}
                     />
 
                     {tradie.is_emergency_available && (
                       <div className="px-5 py-3.5 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
-                          <Zap className="w-4 h-4 text-red-600" />
+                        <div className="w-8 h-8 rounded-ct-sm bg-ct-rose/[0.13] flex items-center justify-center flex-shrink-0">
+                          <Zap className="w-4 h-4 text-ct-rose" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-green-700">Emergency Available</p>
+                          <p className="text-sm font-semibold text-ct-teal">Emergency Available</p>
                         </div>
                       </div>
                     )}
@@ -560,16 +560,16 @@ export default function PublicTradieProfile() {
                     {details?.qualifications && details.qualifications.length > 0 && (
                       <div className="px-5 py-3.5">
                         <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center flex-shrink-0">
-                            <GraduationCap className="w-4 h-4 text-gray-600" />
+                          <div className="w-8 h-8 rounded-ct-sm bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                            <GraduationCap className="w-4 h-4 text-ct-mute-2" />
                           </div>
-                          <p className="text-xs text-gray-500">Qualifications</p>
+                          <p className="text-xs text-ct-mute">Qualifications</p>
                         </div>
                         <div className="flex flex-wrap gap-1.5 ml-11">
                           {details.qualifications.map((qual, i) => (
                             <span
                               key={i}
-                              className="inline-flex items-center px-2.5 py-1 bg-gray-50 text-gray-700 text-xs font-medium rounded-lg border border-gray-100"
+                              className="inline-flex items-center px-2.5 py-1 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-ct-sm border border-ct-line-soft"
                             >
                               {qual}
                             </span>
@@ -581,12 +581,12 @@ export default function PublicTradieProfile() {
                 </div>
 
                 {(isIdentityVerified || details?.is_insured || details?.is_licensed) && (
-                  <div className="bg-green-50 rounded-xl border border-green-200 p-4">
+                  <div className="bg-ct-teal/[0.14] rounded-ct-md border border-ct-teal/30 p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <ShieldCheck className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-semibold text-green-800">Verified Professional</span>
+                      <ShieldCheck className="w-4 h-4 text-ct-teal" />
+                      <span className="text-sm font-semibold text-ct-teal">Verified Professional</span>
                     </div>
-                    <ul className="space-y-1.5 text-sm text-green-700">
+                    <ul className="space-y-1.5 text-sm text-ct-teal">
                       {isIdentityVerified && (
                         <li className="flex items-center gap-1.5">
                           <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
@@ -612,14 +612,14 @@ export default function PublicTradieProfile() {
             </div>
           </div>
 
-          <div className="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-gray-200 p-4 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          <div className="lg:hidden fixed bottom-0 inset-x-0 bg-ct-surface border-t border-ct-line p-4 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
             <div className="flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 text-sm truncate">{displayName}</p>
+                <p className="font-semibold text-ct-paper text-sm truncate">{displayName}</p>
                 {rating && rating.total_reviews > 0 && (
                   <div className="flex items-center gap-1">
-                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                    <span className="text-xs text-gray-600">
+                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-ct-amber" />
+                    <span className="text-xs text-ct-mute-2">
                       {rating.average_rating.toFixed(1)} ({rating.total_reviews})
                     </span>
                   </div>
@@ -627,7 +627,7 @@ export default function PublicTradieProfile() {
               </div>
               <button
                 onClick={handleRequestQuote}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors min-h-[48px] shadow-sm"
+                className="inline-flex items-center gap-2 px-5 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors min-h-[48px] shadow-sm"
               >
                 <Send className="w-4 h-4" />
                 Request a Quote
@@ -642,14 +642,14 @@ export default function PublicTradieProfile() {
             >
               <button
                 onClick={() => setLightboxImage(null)}
-                className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors p-2"
+                className="absolute top-4 right-4 text-ct-ink/80 hover:text-ct-ink transition-colors p-2"
               >
                 <X className="w-6 h-6" />
               </button>
               <img
                 src={lightboxImage}
                 alt="Portfolio full view"
-                className="max-w-full max-h-[85vh] rounded-lg object-contain"
+                className="max-w-full max-h-[85vh] rounded-ct-sm object-contain"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>
@@ -668,7 +668,7 @@ export default function PublicTradieProfile() {
 
 function DetailRow({
   icon,
-  iconBg = 'bg-gray-50',
+  iconBg = 'bg-ct-surface-2',
   label,
   value,
 }: {
@@ -679,15 +679,15 @@ function DetailRow({
 }) {
   return (
     <div className="px-5 py-3.5 flex items-center gap-3">
-      <div className={`w-8 h-8 rounded-lg ${iconBg} flex items-center justify-center flex-shrink-0`}>
+      <div className={`w-8 h-8 rounded-ct-sm ${iconBg} flex items-center justify-center flex-shrink-0`}>
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-xs text-ct-mute">{label}</p>
         {value ? (
-          <p className="text-sm font-semibold text-gray-900">{value}</p>
+          <p className="text-sm font-semibold text-ct-paper">{value}</p>
         ) : (
-          <p className="text-sm text-gray-400 italic">Not listed</p>
+          <p className="text-sm text-ct-mute italic">Not listed</p>
         )}
       </div>
     </div>

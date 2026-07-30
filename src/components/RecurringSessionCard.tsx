@@ -16,13 +16,13 @@ import { supabase } from '../lib/supabase';
 import { getBlockedDates, checkClash } from '../lib/availability';
 
 const STATUS_STYLES: Record<RecurringSessionStatus, { bg: string; text: string; label: string }> = {
-  pending_confirmation: { bg: 'bg-amber-50 border-amber-300', text: 'text-amber-700', label: 'Awaiting Confirmation' },
-  scheduled: { bg: 'bg-secondary-50 border-secondary-200', text: 'text-secondary-700', label: 'Scheduled' },
-  awaiting_completion: { bg: 'bg-orange-50 border-orange-300', text: 'text-orange-700', label: 'Confirm Completion' },
-  completed: { bg: 'bg-green-50 border-green-200', text: 'text-green-700', label: 'Completed' },
-  rescheduled: { bg: 'bg-yellow-50 border-yellow-200', text: 'text-yellow-700', label: 'Rescheduled' },
-  skipped: { bg: 'bg-gray-50 border-gray-200', text: 'text-gray-500', label: 'Skipped' },
-  extra: { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700', label: 'Extra Session' },
+  pending_confirmation: { bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', text: 'text-ct-amber', label: 'Awaiting Confirmation' },
+  scheduled: { bg: 'bg-ct-surface-2 border-ct-line', text: 'text-ct-mute-2', label: 'Scheduled' },
+  awaiting_completion: { bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', text: 'text-ct-amber', label: 'Confirm Completion' },
+  completed: { bg: 'bg-ct-teal/[0.14] border-ct-teal/30', text: 'text-ct-teal', label: 'Completed' },
+  rescheduled: { bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', text: 'text-ct-amber', label: 'Rescheduled' },
+  skipped: { bg: 'bg-ct-surface-2 border-ct-line', text: 'text-ct-mute', label: 'Skipped' },
+  extra: { bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', text: 'text-ct-amber', label: 'Extra Session' },
 };
 
 const DEFAULT_SESSION_DURATION_HOURS = 2;
@@ -193,7 +193,7 @@ export default function RecurringSessionCard({
   }, [isOverdue, session.id, session.scheduled_date, today, onUpdate]);
 
   const style = isOverdue
-    ? { bg: 'bg-red-50 border-red-300', text: 'text-red-700', label: 'Not Completed' }
+    ? { bg: 'bg-ct-rose/[0.13] border-ct-rose/40', text: 'text-ct-rose', label: 'Not Completed' }
     : STATUS_STYLES[session.status];
   const displayDate = session.actual_date || session.scheduled_date;
   const formattedDate = new Date(displayDate + 'T00:00:00').toLocaleDateString('en-AU', {
@@ -680,23 +680,23 @@ export default function RecurringSessionCard({
     (isClientProposal && isTradie && !showCounterPropose);
 
   return (
-    <div className={`rounded-xl border p-4 ${style.bg} transition-all`}>
+    <div className={`rounded-ct-md border p-4 ${style.bg} transition-all`}>
       {/* Header */}
       <div className="space-y-1.5">
         {/* Row 1: Date + Price + Status */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-            <span className="text-sm font-medium text-gray-900">{formattedDate}</span>
+            <Calendar className="w-4 h-4 text-ct-mute flex-shrink-0" />
+            <span className="text-sm font-medium text-ct-paper">{formattedDate}</span>
             {session.status === 'rescheduled' && session.scheduled_date !== session.actual_date && (
-              <span className="text-xs text-gray-400 line-through">
+              <span className="text-xs text-ct-mute line-through">
                 {new Date(session.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
               </span>
             )}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {agreedPrice != null && agreedPrice > 0 && session.status !== 'extra' && (
-              <span className="text-xs font-semibold text-emerald-700">${agreedPrice.toFixed(2)}</span>
+              <span className="text-xs font-semibold text-ct-teal">${agreedPrice.toFixed(2)}</span>
             )}
             <span className={`px-3 py-1 rounded-full text-xs font-medium border ${style.bg} ${style.text}`}>
               {style.label}
@@ -709,14 +709,14 @@ export default function RecurringSessionCard({
           const finish = session.end_time?.slice(0, 5) || (arrival ? addHoursToTime(arrival, DEFAULT_SESSION_DURATION_HOURS).slice(0, 5) : null);
           return arrival ? (
             <div className="flex items-center gap-2 ml-6">
-              <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1.5 font-semibold">
+              <span className="text-xs text-ct-amber bg-ct-amber/[0.13] border border-ct-amber/[0.34] px-2 py-0.5 rounded-md inline-flex items-center gap-1.5 font-semibold">
                 <Clock className="w-3 h-3" />
                 {formatTime12h(arrival)}{finish ? ` – ${formatTime12h(finish)}` : ''}
               </span>
               {showApplyToAll && onApplyToAll && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onApplyToAll(arrival, finish); }}
-                  className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 underline underline-offset-2 transition-colors"
+                  className="text-[11px] font-semibold text-ct-teal hover:text-ct-teal underline underline-offset-2 transition-colors"
                 >
                   Apply to All
                 </button>
@@ -725,22 +725,22 @@ export default function RecurringSessionCard({
           ) : null;
         })()}
         {serviceName && (
-          <p className="text-xs text-gray-500 capitalize truncate ml-6">{serviceName}</p>
+          <p className="text-xs text-ct-mute capitalize truncate ml-6">{serviceName}</p>
         )}
       </div>
 
       {/* Notes / Reason */}
       {session.reschedule_reason && (
-        <p className="mt-2 text-xs text-gray-500 italic">
+        <p className="mt-2 text-xs text-ct-mute italic">
           {session.reschedule_by === 'client' ? 'Client' : 'Tradie'}: {session.reschedule_reason}
         </p>
       )}
       {session.notes && (
-        <p className="mt-1 text-xs text-gray-500">{session.notes}</p>
+        <p className="mt-1 text-xs text-ct-mute">{session.notes}</p>
       )}
       {session.status === 'extra' && (
         <div className="mt-2">
-          <div className="flex gap-3 text-xs font-medium text-amber-700">
+          <div className="flex gap-3 text-xs font-medium text-ct-amber">
             {session.extra_hours ? <span>{session.extra_hours}h extra</span> : null}
             {session.extra_cost ? <span>${Number(session.extra_cost).toFixed(2)}</span> : null}
           </div>
@@ -749,15 +749,15 @@ export default function RecurringSessionCard({
 
       {/* Pending Confirmation — tradie must confirm or decline */}
       {isPendingConfirmation && isTradie && !showDeclineForm && (
-        <div className="mt-3 p-3 bg-white rounded-lg border border-amber-200">
+        <div className="mt-3 p-3 bg-ct-surface rounded-ct-sm border border-ct-amber/[0.34]">
           {agreedPrice != null && agreedPrice > 0 && (
-            <p className="text-sm font-semibold text-emerald-600 mb-1">
-              ${agreedPrice.toFixed(2)} <span className="text-xs font-normal text-gray-500">agreed rate</span>
+            <p className="text-sm font-semibold text-ct-teal mb-1">
+              ${agreedPrice.toFixed(2)} <span className="text-xs font-normal text-ct-mute">agreed rate</span>
             </p>
           )}
-          <p className="text-xs font-medium text-gray-900 mb-1">
+          <p className="text-xs font-medium text-ct-paper mb-1">
             Please confirm this session by{' '}
-            <span className="text-amber-700 font-semibold">
+            <span className="text-ct-amber font-semibold">
               {session.confirmation_deadline
                 ? new Date(session.confirmation_deadline).toLocaleDateString('en-AU', {
                     weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
@@ -769,7 +769,7 @@ export default function RecurringSessionCard({
             <button
               onClick={() => handleConfirm(false)}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-xs font-medium disabled:opacity-50 transition-colors"
             >
               <CheckCircle2 className="w-3 h-3" />
               {loading ? 'Confirming...' : 'Confirm'}
@@ -777,14 +777,14 @@ export default function RecurringSessionCard({
             <button
               onClick={() => handleConfirm(true)}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-emerald-100 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 bg-ct-teal/[0.14] border border-ct-teal/30 text-ct-teal px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-teal/[0.14] disabled:opacity-50 transition-colors"
             >
               <CheckCircle2 className="w-3 h-3" />
               Confirm & Auto Accept
             </button>
             <button
               onClick={() => setShowDeclineForm(true)}
-              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               <X className="w-3 h-3" />
               Can't Do This One
@@ -795,14 +795,14 @@ export default function RecurringSessionCard({
 
       {/* Pending Confirmation — client sees waiting state */}
       {isPendingConfirmation && isClient && (
-        <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
-          <p className="text-xs text-amber-700 font-medium">
+        <div className="mt-3 p-3 bg-ct-amber/[0.13] rounded-ct-sm border border-ct-amber/[0.34]">
+          <p className="text-xs text-ct-amber font-medium">
             <Clock className="w-3 h-3 inline mr-1" />
             {tradieId
               ? 'Waiting for tradie to confirm this session'
               : 'Waiting for a tradie to be assigned to this service'}
             {agreedPrice != null && agreedPrice > 0 && tradieId && (
-              <span className="text-gray-600"> — ${agreedPrice.toFixed(2)} agreed rate</span>
+              <span className="text-ct-mute-2"> — ${agreedPrice.toFixed(2)} agreed rate</span>
             )}
           </p>
         </div>
@@ -811,8 +811,8 @@ export default function RecurringSessionCard({
       {/* Awaiting Completion — tradie opted out of auto-complete; cron parked
           this session here and is waiting for the tradie to confirm in person. */}
       {isAwaitingCompletion && isTradie && !showSkip && (
-        <div className="mt-3 p-3 bg-white rounded-lg border border-orange-200">
-          <p className="text-xs font-medium text-orange-800 mb-2">
+        <div className="mt-3 p-3 bg-ct-surface rounded-ct-sm border border-ct-amber/[0.34]">
+          <p className="text-xs font-medium text-ct-paper mb-2">
             <AlertTriangle className="w-3 h-3 inline mr-1" />
             Did you finish this visit? Mark it complete so the client can be invoiced.
           </p>
@@ -820,14 +820,14 @@ export default function RecurringSessionCard({
             <button
               onClick={handleComplete}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-xs font-medium disabled:opacity-50 transition-colors"
             >
               <CheckCircle2 className="w-3 h-3" />
               {loading ? 'Confirming...' : 'Mark Complete'}
             </button>
             <button
               onClick={() => { resetForms(); setShowSkip(true); }}
-              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               <SkipForward className="w-3 h-3" />
               Didn't Happen
@@ -838,8 +838,8 @@ export default function RecurringSessionCard({
 
       {/* Awaiting Completion — client view: explain we're waiting on the tradie */}
       {isAwaitingCompletion && isClient && (
-        <div className="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-          <p className="text-xs text-orange-800 font-medium">
+        <div className="mt-3 p-3 bg-ct-amber/[0.13] rounded-ct-sm border border-ct-amber/[0.34]">
+          <p className="text-xs text-ct-paper font-medium">
             <Clock className="w-3 h-3 inline mr-1" />
             Waiting for your tradie to confirm this visit was completed before invoicing.
           </p>
@@ -850,25 +850,25 @@ export default function RecurringSessionCard({
       {showDeclineForm && (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5 flex-1 min-w-[160px]">
-            <label className="text-[10px] font-medium text-gray-400 uppercase flex-shrink-0">Reason</label>
+            <label className="text-[10px] font-medium text-ct-mute uppercase flex-shrink-0">Reason</label>
             <input
               type="text"
               value={declineReason}
               onChange={(e) => setDeclineReason(e.target.value)}
               placeholder="Optional — schedule conflict..."
-              className="flex-1 min-w-0 px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
             />
           </div>
           <button
             onClick={handleDecline}
             disabled={loading}
-            className="inline-flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1 bg-ct-rose/[0.13]0 hover:bg-ct-rose text-ct-ink px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
           >
             {loading ? 'Declining...' : 'Decline'}
           </button>
           <button
             onClick={() => { setShowDeclineForm(false); setDeclineReason(''); }}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-xs text-ct-mute hover:text-ct-mute-2 transition-colors"
           >
             Cancel
           </button>
@@ -877,10 +877,10 @@ export default function RecurringSessionCard({
 
       {/* Proposal Response (homeowner sees tradie's proposal, or tradie sees client's proposal) */}
       {showProposalResponse && (
-        <div className="mt-3 p-3 bg-white rounded-lg border border-gray-200">
-          <p className="text-xs font-medium text-gray-900 mb-2">
+        <div className="mt-3 p-3 bg-ct-surface rounded-ct-sm border border-ct-line">
+          <p className="text-xs font-medium text-ct-paper mb-2">
             {isTradieProposal ? 'Your tradie proposed' : 'Your client proposed'} a new date:{' '}
-            <span className="text-emerald-700 font-semibold">
+            <span className="text-ct-teal font-semibold">
               {new Date(displayDate + 'T00:00:00').toLocaleDateString('en-AU', {
                 weekday: 'short', day: 'numeric', month: 'short',
               })}
@@ -890,14 +890,14 @@ export default function RecurringSessionCard({
             <button
               onClick={handleAcceptReschedule}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-xs font-medium disabled:opacity-50 transition-colors"
             >
               <CheckCircle2 className="w-3 h-3" />
               {loading ? 'Accepting...' : 'Accept New Date'}
             </button>
             <button
               onClick={() => { resetForms(); setShowCounterPropose(true); }}
-              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               <Clock className="w-3 h-3" />
               Propose Different Date
@@ -908,10 +908,10 @@ export default function RecurringSessionCard({
 
       {/* Time Proposal Response — client sees tradie's proposed time */}
       {session.time_proposal_by === 'tradie' && isClient && (
-        <div className="mt-3 p-3 bg-white rounded-lg border border-gray-200">
-          <p className="text-xs font-medium text-gray-900 mb-2">
+        <div className="mt-3 p-3 bg-ct-surface rounded-ct-sm border border-ct-line">
+          <p className="text-xs font-medium text-ct-paper mb-2">
             Your tradie proposed a new time:{' '}
-            <span className="text-emerald-700 font-semibold">
+            <span className="text-ct-teal font-semibold">
               {session.proposed_start_time ? formatTime12h(session.proposed_start_time) : ''}
               {session.proposed_end_time ? ` – ${formatTime12h(session.proposed_end_time)}` : ''}
             </span>
@@ -920,7 +920,7 @@ export default function RecurringSessionCard({
             <button
               onClick={handleAcceptTimeProposal}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-xs font-medium disabled:opacity-50 transition-colors"
             >
               <CheckCircle2 className="w-3 h-3" />
               {loading ? 'Accepting...' : 'Accept Time'}
@@ -928,14 +928,14 @@ export default function RecurringSessionCard({
             <button
               onClick={handleDeclineTimeProposal}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               <X className="w-3 h-3" />
               Decline
             </button>
             <button
               onClick={() => { resetForms(); setShowChangeTime(true); }}
-              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               <Clock className="w-3 h-3" />
               Set Different Time
@@ -946,8 +946,8 @@ export default function RecurringSessionCard({
 
       {/* Time Proposal Pending — tradie sees their pending proposal */}
       {session.time_proposal_by === 'tradie' && isTradie && (
-        <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
-          <p className="text-xs font-medium text-amber-800">
+        <div className="mt-3 p-3 bg-ct-amber/[0.13] rounded-ct-sm border border-ct-amber/[0.34]">
+          <p className="text-xs font-medium text-ct-paper">
             <Clock className="w-3 h-3 inline mr-1" />
             Time proposal pending — {session.proposed_start_time ? formatTime12h(session.proposed_start_time) : ''}
             {session.proposed_end_time ? ` – ${formatTime12h(session.proposed_end_time)}` : ''}
@@ -961,48 +961,48 @@ export default function RecurringSessionCard({
         <div className="mt-2.5 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5">
-              <label className="text-[10px] font-medium text-gray-400 uppercase">Date</label>
+              <label className="text-[10px] font-medium text-ct-mute uppercase">Date</label>
               <input
                 type="date"
                 value={rescheduleDate}
                 min={minDate}
                 onChange={(e) => setRescheduleDate(e.target.value)}
-                className={`w-[140px] px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 ${
-                  clashWarning ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                className={`w-[140px] px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal ${
+                  clashWarning ? 'border-ct-rose/40 bg-ct-rose/[0.13]' : 'border-ct-line'
                 }`}
               />
             </div>
             <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
-              <label className="text-[10px] font-medium text-gray-400 uppercase">Reason</label>
+              <label className="text-[10px] font-medium text-ct-mute uppercase">Reason</label>
               <input
                 type="text"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="That date doesn't work..."
-                className="flex-1 min-w-0 px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
               />
             </div>
             <button
               onClick={handleReschedule}
               disabled={loading || !rescheduleDate || !reason.trim() || !!clashWarning || checkingClash}
-              className="inline-flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
             >
               {loading ? 'Sending...' : 'Propose'}
             </button>
             <button
               onClick={() => { setShowCounterPropose(false); setReason(''); setClashWarning(''); setRescheduleDate(''); }}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs text-ct-mute hover:text-ct-mute-2 transition-colors"
             >
               Cancel
             </button>
           </div>
           {checkingClash && (
-            <p className="text-[10px] text-gray-400 animate-pulse">Checking availability...</p>
+            <p className="text-[10px] text-ct-mute animate-pulse">Checking availability...</p>
           )}
           {clashWarning && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 border border-red-200 rounded-md">
-              <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" />
-              <p className="text-[10px] text-red-600 font-medium">{clashWarning}</p>
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-md">
+              <AlertTriangle className="w-3 h-3 text-ct-rose flex-shrink-0" />
+              <p className="text-[10px] text-ct-rose font-medium">{clashWarning}</p>
             </div>
           )}
         </div>
@@ -1010,8 +1010,8 @@ export default function RecurringSessionCard({
 
       {/* Overdue Completion Prompt — session end time has passed, tradie must confirm */}
       {isOverdue && isTradie && !showReschedule && !showSkip && (
-        <div className="mt-3 p-3 bg-white rounded-lg border border-red-200">
-          <p className="text-xs font-medium text-red-800 mb-2">
+        <div className="mt-3 p-3 bg-ct-surface rounded-ct-sm border border-ct-rose/[0.34]">
+          <p className="text-xs font-medium text-ct-paper mb-2">
             <AlertTriangle className="w-3 h-3 inline mr-1" />
             This visit's scheduled time has passed. Please confirm the job status.
           </p>
@@ -1019,14 +1019,14 @@ export default function RecurringSessionCard({
             <button
               onClick={handleComplete}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-xs font-medium disabled:opacity-50 transition-colors"
             >
               <CheckCircle2 className="w-3 h-3" />
               {loading ? 'Confirming...' : 'Job Completed'}
             </button>
             <button
               onClick={() => { resetForms(); setShowSkip(true); }}
-              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               <SkipForward className="w-3 h-3" />
               Skip / Not Done
@@ -1037,8 +1037,8 @@ export default function RecurringSessionCard({
 
       {/* Overdue — client can confirm completion or flag as not done */}
       {isOverdue && isClient && !showReschedule && !showSkip && (
-        <div className="mt-3 p-3 bg-white rounded-lg border border-amber-200">
-          <p className="text-xs font-medium text-amber-800 mb-2">
+        <div className="mt-3 p-3 bg-ct-surface rounded-ct-sm border border-ct-amber/[0.34]">
+          <p className="text-xs font-medium text-ct-paper mb-2">
             <AlertTriangle className="w-3 h-3 inline mr-1" />
             This visit's scheduled time has passed. Was the job completed?
           </p>
@@ -1046,14 +1046,14 @@ export default function RecurringSessionCard({
             <button
               onClick={handleComplete}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-xs font-medium disabled:opacity-50 transition-colors"
             >
               <CheckCircle2 className="w-3 h-3" />
               {loading ? 'Confirming...' : 'Completed'}
             </button>
             <button
               onClick={() => { resetForms(); setShowSkip(true); }}
-              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               <SkipForward className="w-3 h-3" />
               Not Done
@@ -1070,7 +1070,7 @@ export default function RecurringSessionCard({
               <button
                 onClick={handleComplete}
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1.5 rounded-ct-sm text-xs font-medium disabled:opacity-50 transition-colors"
               >
                 <CheckCircle2 className="w-3 h-3" />
                 Mark Complete
@@ -1079,39 +1079,39 @@ export default function RecurringSessionCard({
               <div className="relative" ref={actionsMenuRef}>
                 <button
                   onClick={() => setShowActionsMenu(!showActionsMenu)}
-                  className="p-1.5 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
+                  className="p-1.5 border border-ct-line rounded-ct-sm text-ct-mute hover:bg-ct-surface-2 hover:text-ct-mute-2 transition-colors"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
                 {showActionsMenu && (
-                  <div className="absolute right-0 bottom-full mb-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-30">
+                  <div className="absolute right-0 bottom-full mb-1 w-44 bg-ct-surface rounded-ct-sm shadow-lg border border-ct-line py-1 z-30">
                     <button
                       onClick={() => { setShowActionsMenu(false); resetForms(); setShowSkip(true); }}
-                      className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                      className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                     >
-                      <SkipForward className="w-3.5 h-3.5 text-gray-400" />
+                      <SkipForward className="w-3.5 h-3.5 text-ct-mute" />
                       Skip This Visit
                     </button>
                     <button
                       onClick={() => { setShowActionsMenu(false); resetForms(); setShowReschedule(true); }}
-                      className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                      className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                     >
-                      <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                      <Calendar className="w-3.5 h-3.5 text-ct-mute" />
                       Change Date
                     </button>
                     <button
                       onClick={() => { setShowActionsMenu(false); resetForms(); setShowChangeTime(true); }}
-                      className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                      className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                     >
-                      <Clock className="w-3.5 h-3.5 text-gray-400" />
+                      <Clock className="w-3.5 h-3.5 text-ct-mute" />
                       {session.start_time ? 'Edit Time' : 'Set Time'}
                     </button>
                     {session.status !== 'extra' && (
                       <button
                         onClick={() => { setShowActionsMenu(false); resetForms(); setShowExtra(true); }}
-                        className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                        className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                       >
-                        <Plus className="w-3.5 h-3.5 text-gray-400" />
+                        <Plus className="w-3.5 h-3.5 text-ct-mute" />
                         Add Extra Session
                       </button>
                     )}
@@ -1119,7 +1119,7 @@ export default function RecurringSessionCard({
                       <button
                         onClick={() => { setShowActionsMenu(false); handleCancelExtra(); }}
                         disabled={loading}
-                        className="w-full px-3 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors disabled:opacity-50"
+                        className="w-full px-3 py-2 text-left text-xs text-ct-rose hover:bg-ct-rose/[0.13] flex items-center gap-2 transition-colors disabled:opacity-50"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         Cancel Extra
@@ -1135,40 +1135,40 @@ export default function RecurringSessionCard({
               <div className="relative" ref={actionsMenuRef}>
                 <button
                   onClick={() => setShowActionsMenu(!showActionsMenu)}
-                  className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 transition-colors"
+                  className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-3 py-1.5 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
                 >
                   Actions
                   <MoreVertical className="w-3.5 h-3.5" />
                 </button>
                 {showActionsMenu && (
-                  <div className="absolute left-0 bottom-full mb-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-30">
+                  <div className="absolute left-0 bottom-full mb-1 w-44 bg-ct-surface rounded-ct-sm shadow-lg border border-ct-line py-1 z-30">
                     <button
                       onClick={() => { setShowActionsMenu(false); resetForms(); setShowReschedule(true); }}
-                      className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                      className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                     >
-                      <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                      <Calendar className="w-3.5 h-3.5 text-ct-mute" />
                       Change Date
                     </button>
                     <button
                       onClick={() => { setShowActionsMenu(false); resetForms(); setShowChangeTime(true); }}
-                      className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                      className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                     >
-                      <Clock className="w-3.5 h-3.5 text-gray-400" />
+                      <Clock className="w-3.5 h-3.5 text-ct-mute" />
                       {session.start_time ? 'Edit Time' : 'Change Time'}
                     </button>
                     <button
                       onClick={() => { setShowActionsMenu(false); resetForms(); setShowSkip(true); }}
-                      className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                      className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                     >
-                      <SkipForward className="w-3.5 h-3.5 text-gray-400" />
+                      <SkipForward className="w-3.5 h-3.5 text-ct-mute" />
                       Skip This Visit
                     </button>
                     {session.status !== 'extra' && (
                       <button
                         onClick={() => { setShowActionsMenu(false); resetForms(); setShowExtra(true); }}
-                        className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                        className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                       >
-                        <Plus className="w-3.5 h-3.5 text-gray-400" />
+                        <Plus className="w-3.5 h-3.5 text-ct-mute" />
                         New Request
                       </button>
                     )}
@@ -1185,48 +1185,48 @@ export default function RecurringSessionCard({
         <div className="mt-2.5 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5">
-              <label className="text-[10px] font-medium text-gray-400 uppercase">Date</label>
+              <label className="text-[10px] font-medium text-ct-mute uppercase">Date</label>
               <input
                 type="date"
                 value={rescheduleDate}
                 min={minDate}
                 onChange={(e) => setRescheduleDate(e.target.value)}
-                className={`w-[140px] px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 ${
-                  clashWarning ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                className={`w-[140px] px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal ${
+                  clashWarning ? 'border-ct-rose/40 bg-ct-rose/[0.13]' : 'border-ct-line'
                 }`}
               />
             </div>
             <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
-              <label className="text-[10px] font-medium text-gray-400 uppercase">Reason</label>
+              <label className="text-[10px] font-medium text-ct-mute uppercase">Reason</label>
               <input
                 type="text"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder={isTradie ? 'Schedule conflict' : 'Not available'}
-                className="flex-1 min-w-0 px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
               />
             </div>
             <button
               onClick={handleReschedule}
               disabled={loading || !rescheduleDate || !reason.trim() || !!clashWarning || checkingClash}
-              className="inline-flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
             >
               {loading ? 'Sending...' : isTradie ? 'Propose' : 'Confirm'}
             </button>
             <button
               onClick={() => { setShowReschedule(false); setReason(''); setClashWarning(''); setRescheduleDate(''); }}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs text-ct-mute hover:text-ct-mute-2 transition-colors"
             >
               Cancel
             </button>
           </div>
           {checkingClash && (
-            <p className="text-[10px] text-gray-400 animate-pulse">Checking availability...</p>
+            <p className="text-[10px] text-ct-mute animate-pulse">Checking availability...</p>
           )}
           {clashWarning && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 border border-red-200 rounded-md">
-              <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" />
-              <p className="text-[10px] text-red-600 font-medium">{clashWarning}</p>
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-md">
+              <AlertTriangle className="w-3 h-3 text-ct-rose flex-shrink-0" />
+              <p className="text-[10px] text-ct-rose font-medium">{clashWarning}</p>
             </div>
           )}
         </div>
@@ -1236,25 +1236,25 @@ export default function RecurringSessionCard({
       {showSkip && (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5 flex-1 min-w-[160px]">
-            <label className="text-[10px] font-medium text-gray-400 uppercase flex-shrink-0">Reason</label>
+            <label className="text-[10px] font-medium text-ct-mute uppercase flex-shrink-0">Reason</label>
             <input
               type="text"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder={isTradie ? 'Schedule conflict, on leave...' : 'Away, not available...'}
-              className="flex-1 min-w-0 px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
             />
           </div>
           <button
             onClick={handleSkip}
             disabled={loading || !reason.trim()}
-            className="inline-flex items-center gap-1 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1 bg-ct-amber/[0.13]0 hover:bg-ct-amber text-ct-ink px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
           >
             {loading ? 'Skipping...' : 'Skip'}
           </button>
           <button
             onClick={() => { setShowSkip(false); setReason(''); }}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-xs text-ct-mute hover:text-ct-mute-2 transition-colors"
           >
             Cancel
           </button>
@@ -1265,34 +1265,34 @@ export default function RecurringSessionCard({
       {showChangeTime && (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5">
-            <label className="text-[10px] font-medium text-gray-400 uppercase">Start</label>
+            <label className="text-[10px] font-medium text-ct-mute uppercase">Start</label>
             <input
               type="time"
               value={newStartTime}
               onChange={(e) => setNewStartTime(e.target.value)}
-              className="w-[110px] px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-[110px] px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
             />
           </div>
-          <span className="text-gray-300 text-xs">–</span>
+          <span className="text-ct-mute text-xs">–</span>
           <div className="flex items-center gap-1.5">
-            <label className="text-[10px] font-medium text-gray-400 uppercase">End</label>
+            <label className="text-[10px] font-medium text-ct-mute uppercase">End</label>
             <input
               type="time"
               value={newEndTime}
               onChange={(e) => setNewEndTime(e.target.value)}
-              className="w-[110px] px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-[110px] px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
             />
           </div>
           <button
             onClick={handleSaveTime}
             disabled={loading || !newStartTime}
-            className="inline-flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
           >
             {loading ? 'Saving...' : 'Save'}
           </button>
           <button
             onClick={() => setShowChangeTime(false)}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-xs text-ct-mute hover:text-ct-mute-2 transition-colors"
           >
             Cancel
           </button>
@@ -1304,19 +1304,19 @@ export default function RecurringSessionCard({
         <div className="mt-2.5 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5">
-              <label className="text-[10px] font-medium text-gray-400 uppercase">Date</label>
+              <label className="text-[10px] font-medium text-ct-mute uppercase">Date</label>
               <input
                 type="date"
                 value={extraDate}
                 min={minDate}
                 onChange={(e) => setExtraDate(e.target.value)}
-                className={`w-[140px] px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500 ${
-                  extraClashWarning ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                className={`w-[140px] px-2 py-1 text-xs border rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal ${
+                  extraClashWarning ? 'border-ct-rose/40 bg-ct-rose/[0.13]' : 'border-ct-line'
                 }`}
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <label className="text-[10px] font-medium text-gray-400 uppercase">Hrs</label>
+              <label className="text-[10px] font-medium text-ct-mute uppercase">Hrs</label>
               <input
                 type="number"
                 step="0.5"
@@ -1325,11 +1325,11 @@ export default function RecurringSessionCard({
                 value={extraHours}
                 onChange={(e) => setExtraHours(e.target.value)}
                 placeholder="2"
-                className="w-[60px] px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-[60px] px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <label className="text-[10px] font-medium text-gray-400 uppercase">$</label>
+              <label className="text-[10px] font-medium text-ct-mute uppercase">$</label>
               <input
                 type="number"
                 step="0.01"
@@ -1337,40 +1337,40 @@ export default function RecurringSessionCard({
                 value={extraCost}
                 onChange={(e) => setExtraCost(e.target.value)}
                 placeholder="0.00"
-                className="w-[80px] px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-[80px] px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
               />
             </div>
             <button
               onClick={handleAddExtra}
               disabled={loading || !extraDate || !!extraClashWarning || checkingExtraClash}
-              className="inline-flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1 rounded-md text-xs font-medium disabled:opacity-50 transition-colors"
             >
               {loading ? 'Adding...' : 'Add'}
             </button>
             <button
               onClick={() => { setShowExtra(false); setExtraDate(''); setExtraHours(''); setExtraCost(''); setExtraNotes(''); setExtraClashWarning(''); }}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs text-ct-mute hover:text-ct-mute-2 transition-colors"
             >
               Cancel
             </button>
           </div>
           <div className="flex items-center gap-1.5">
-            <label className="text-[10px] font-medium text-gray-400 uppercase flex-shrink-0">Notes</label>
+            <label className="text-[10px] font-medium text-ct-mute uppercase flex-shrink-0">Notes</label>
             <input
               type="text"
               value={extraNotes}
               onChange={(e) => setExtraNotes(e.target.value)}
               placeholder="Optional — e.g., Emergency callout"
-              className="flex-1 min-w-0 px-2 py-1 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="flex-1 min-w-0 px-2 py-1 text-xs border border-ct-line rounded-md focus:outline-none focus:ring-1 focus:ring-ct-teal"
             />
           </div>
           {checkingExtraClash && (
-            <p className="text-[10px] text-gray-400 animate-pulse">Checking availability...</p>
+            <p className="text-[10px] text-ct-mute animate-pulse">Checking availability...</p>
           )}
           {extraClashWarning && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-red-50 border border-red-200 rounded-md">
-              <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" />
-              <p className="text-[10px] text-red-600 font-medium">{extraClashWarning}</p>
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-md">
+              <AlertTriangle className="w-3 h-3 text-ct-rose flex-shrink-0" />
+              <p className="text-[10px] text-ct-rose font-medium">{extraClashWarning}</p>
             </div>
           )}
         </div>

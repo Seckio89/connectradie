@@ -36,16 +36,16 @@ const comparisons = [
 
 export default function HowItWorksClientsSection() {
   return (
-    <section id="how-it-works-clients" className="py-20 lg:py-28 bg-navy-900">
+    <section id="how-it-works-clients" className="py-20 lg:py-28 bg-ct-ink">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-navy-800 text-gray-300 rounded-full text-sm font-semibold mb-5 border border-navy-700">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-ct-surface text-ct-mute rounded-full text-sm font-semibold mb-5 border border-ct-line">
             Why Switch to ConnecTradie
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-[-0.02em]">
-            Built Different. <span className="text-warm-500">Here's the Proof.</span>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-ct-ink tracking-[-0.02em]">
+            Built Different. <span className="text-ct-teal">Here's the Proof.</span>
           </h2>
-          <p className="mt-4 text-lg text-gray-400">
+          <p className="mt-4 text-lg text-ct-mute">
             We didn't copy the old model. We replaced it.
           </p>
         </div>
@@ -54,26 +54,26 @@ export default function HowItWorksClientsSection() {
           {comparisons.map((row) => {
             const Icon = row.icon;
             return (
-              <div key={row.feature} className="bg-navy-800 rounded-xl border border-navy-700 p-6 hover:border-warm-500/50 transition-colors">
+              <div key={row.feature} className="bg-ct-surface rounded-ct-md border border-ct-line p-6 hover:border-ct-teal/50 transition-colors">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-lg bg-warm-500/10 border border-warm-500/20 flex items-center justify-center">
-                    <Icon className="w-5 h-5 text-warm-400" />
+                  <div className="w-10 h-10 rounded-ct-sm bg-ct-teal/10 border border-ct-teal/20 flex items-center justify-center">
+                    <Icon className="w-5 h-5 text-ct-amber" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white">{row.feature}</h3>
+                  <h3 className="text-lg font-semibold text-ct-ink">{row.feature}</h3>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex items-start gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-3 p-3 bg-ct-teal/10 border border-ct-teal/20 rounded-ct-sm">
+                    <CheckCircle2 className="w-5 h-5 text-ct-teal shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wide mb-1">ConnecTradie</p>
-                      <p className="text-sm text-gray-300">{row.us}</p>
+                      <p className="text-xs font-semibold text-ct-teal uppercase tracking-wide mb-1">ConnecTradie</p>
+                      <p className="text-sm text-ct-mute">{row.us}</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 p-3 bg-red-500/5 border border-red-500/10 rounded-lg">
-                    <X className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-3 p-3 bg-ct-rose/[0.13]0/5 border border-ct-rose/10 rounded-ct-sm">
+                    <X className="w-5 h-5 text-ct-rose shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-xs font-semibold text-red-400 uppercase tracking-wide mb-1">Other Platforms</p>
-                      <p className="text-sm text-gray-400">{row.others}</p>
+                      <p className="text-xs font-semibold text-ct-rose uppercase tracking-wide mb-1">Other Platforms</p>
+                      <p className="text-sm text-ct-mute">{row.others}</p>
                     </div>
                   </div>
                 </div>
@@ -85,12 +85,12 @@ export default function HowItWorksClientsSection() {
         <div className="mt-16 text-center">
           <Link
             to="/register"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-all shadow-lg shadow-warm-500/25 hover:shadow-xl hover:shadow-warm-500/30 hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-all shadow-lg shadow-warm-500/25 hover:shadow-xl hover:shadow-warm-500/30 hover:-translate-y-0.5"
           >
             Post a Job Free
             <ArrowRight className="w-5 h-5" />
           </Link>
-          <p className="mt-3 text-sm text-gray-500">No cost to post. Payment protection included on every job.</p>
+          <p className="mt-3 text-sm text-ct-mute">No cost to post. Payment protection included on every job.</p>
         </div>
       </div>
     </section>

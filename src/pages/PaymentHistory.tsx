@@ -412,13 +412,13 @@ export default function PaymentHistory() {
 
   const getStatusBadge = (status: string) => {
     const map: Record<string, { bg: string; dot: string; label: string }> = {
-      pending:   { bg: 'bg-accent-50 text-accent-700 border border-accent-200', dot: 'bg-accent-400', label: 'Pending' },
-      completed: { bg: 'bg-amber-50 text-amber-700 border border-amber-200', dot: 'bg-amber-500', label: 'Completed' },
-      released:  { bg: 'bg-emerald-50 text-emerald-700 border border-emerald-200', dot: 'bg-emerald-500', label: 'Released' },
-      refunded:  { bg: 'bg-secondary-50 text-secondary-700 border border-secondary-200', dot: 'bg-secondary-500', label: 'Refunded' },
-      failed:    { bg: 'bg-red-50 text-red-700 border border-red-200', dot: 'bg-red-400', label: 'Failed' },
+      pending:   { bg: 'bg-ct-amber/[0.13] text-ct-amber border border-ct-amber/[0.34]', dot: 'bg-ct-amber', label: 'Pending' },
+      completed: { bg: 'bg-ct-amber/[0.13] text-ct-amber border border-ct-amber/[0.34]', dot: 'bg-ct-amber/[0.13]0', label: 'Completed' },
+      released:  { bg: 'bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30', dot: 'bg-ct-teal', label: 'Released' },
+      refunded:  { bg: 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line', dot: 'bg-ct-surface-20', label: 'Refunded' },
+      failed:    { bg: 'bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34]', dot: 'bg-ct-rose', label: 'Failed' },
     };
-    const cfg = map[status] || { bg: 'bg-navy-50 text-navy-600 border border-navy-200', dot: 'bg-navy-400', label: status };
+    const cfg = map[status] || { bg: 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line', dot: 'bg-ct-surface-2', label: status };
     return (
       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${cfg.bg}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
@@ -619,9 +619,9 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     return (
       <DashboardLayout wide>
         <div className="space-y-6">
-          <div className="h-8 bg-surface-200 rounded w-48 animate-pulse" />
+          <div className="h-8 bg-ct-line rounded w-48 animate-pulse" />
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1,2,3,4].map(i => <div key={i} className="h-28 bg-white rounded-2xl border border-surface-200 animate-pulse" />)}
+            {[1,2,3,4].map(i => <div key={i} className="h-28 bg-ct-surface rounded-ct-lg border border-ct-line animate-pulse" />)}
           </div>
           <ListSkeleton rows={5} />
         </div>
@@ -637,20 +637,20 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <div className="p-2 bg-primary-50 rounded-lg">
-                <Wallet className="w-5 h-5 text-primary-700" />
+              <div className="p-2 bg-ct-surface-2 rounded-ct-sm">
+                <Wallet className="w-5 h-5 text-ct-mute-2" />
               </div>
-              <h1 className="text-2xl font-bold text-navy-900">
+              <h1 className="text-2xl font-bold text-ct-paper">
                 {isTradie ? 'Earnings & Payouts' : 'Invoices & Payments'}
               </h1>
             </div>
-            <p className="text-sm text-navy-400 ml-12">
+            <p className="text-sm text-ct-mute ml-12">
               {isTradie ? 'Track your earnings, pending payouts, and payment history' : 'Manage invoices, make payments, and track your spending'}
             </p>
           </div>
           <button
             onClick={handleExportCSV}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-surface-300 rounded-lg text-sm font-medium text-navy-700 hover:bg-surface-50 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-ct-surface border border-ct-line rounded-ct-sm text-sm font-medium text-ct-paper hover:bg-ct-surface-2 transition-colors"
           >
             <Download className="w-4 h-4" />
             Export CSV
@@ -659,34 +659,34 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl border border-surface-200 p-5 hover:border-primary-200 transition-colors">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5 hover:border-ct-line transition-colors">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-primary-50"><DollarSign className="w-5 h-5 text-primary-600" /></div>
-              <span className="text-xs font-semibold text-navy-400 uppercase tracking-wider">{isTradie ? 'Total Earned' : 'Total Paid'}</span>
+              <div className="p-2 rounded-ct-sm bg-ct-surface-2"><DollarSign className="w-5 h-5 text-ct-mute-2" /></div>
+              <span className="text-xs font-semibold text-ct-mute uppercase tracking-wider">{isTradie ? 'Total Earned' : 'Total Paid'}</span>
             </div>
-            <p className="text-2xl font-bold text-primary-700">{formatCurrency(totalAmount)}</p>
+            <p className="text-2xl font-bold text-ct-mute-2">{formatCurrency(totalAmount)}</p>
           </div>
-          <div className="bg-white rounded-2xl border border-surface-200 p-5 hover:border-accent-200 transition-colors">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5 hover:border-ct-amber/[0.34] transition-colors">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-accent-50"><Clock className="w-5 h-5 text-accent-600" /></div>
-              <span className="text-xs font-semibold text-navy-400 uppercase tracking-wider">Pending</span>
+              <div className="p-2 rounded-ct-sm bg-ct-amber/[0.13]"><Clock className="w-5 h-5 text-ct-amber" /></div>
+              <span className="text-xs font-semibold text-ct-mute uppercase tracking-wider">Pending</span>
             </div>
-            <p className="text-2xl font-bold text-accent-700">{formatCurrency(pendingAmount)}</p>
+            <p className="text-2xl font-bold text-ct-amber">{formatCurrency(pendingAmount)}</p>
           </div>
-          <div className="bg-white rounded-2xl border border-surface-200 p-5 hover:border-warm-200 transition-colors">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5 hover:border-ct-amber/[0.34] transition-colors">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-warm-50"><TrendingUp className="w-5 h-5 text-warm-600" /></div>
-              <span className="text-xs font-semibold text-navy-400 uppercase tracking-wider">Completed</span>
+              <div className="p-2 rounded-ct-sm bg-ct-amber/[0.13]"><TrendingUp className="w-5 h-5 text-ct-amber" /></div>
+              <span className="text-xs font-semibold text-ct-mute uppercase tracking-wider">Completed</span>
             </div>
-            <p className="text-2xl font-bold text-navy-900">{completedCount}</p>
-            <p className="text-xs text-navy-300 mt-0.5">transactions</p>
+            <p className="text-2xl font-bold text-ct-paper">{completedCount}</p>
+            <p className="text-xs text-ct-mute mt-0.5">transactions</p>
           </div>
-          <div className="bg-white rounded-2xl border border-surface-200 p-5 hover:border-secondary-200 transition-colors">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5 hover:border-ct-line transition-colors">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-secondary-50"><RotateCcw className="w-5 h-5 text-secondary-600" /></div>
-              <span className="text-xs font-semibold text-navy-400 uppercase tracking-wider">Refunded</span>
+              <div className="p-2 rounded-ct-sm bg-ct-surface-2"><RotateCcw className="w-5 h-5 text-ct-mute-2" /></div>
+              <span className="text-xs font-semibold text-ct-mute uppercase tracking-wider">Refunded</span>
             </div>
-            <p className="text-2xl font-bold text-secondary-700">{formatCurrency(refundedAmount)}</p>
+            <p className="text-2xl font-bold text-ct-mute-2">{formatCurrency(refundedAmount)}</p>
           </div>
         </div>
 
@@ -694,23 +694,23 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         {!isTradie && (recurringLoading || recurringInvoices.length > 0) && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <FileText className="w-4 h-4 text-navy-300" />
-              <h2 className="text-sm font-semibold text-navy-800">Service Invoices</h2>
+              <FileText className="w-4 h-4 text-ct-mute" />
+              <h2 className="text-sm font-semibold text-ct-paper">Service Invoices</h2>
               {recurringInvoices.length > 0 && (
-                <span className="text-xs text-navy-300 font-medium">({recurringInvoices.length})</span>
+                <span className="text-xs text-ct-mute font-medium">({recurringInvoices.length})</span>
               )}
             </div>
             {recurringLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map(i => (
-                  <div key={i} className="h-48 bg-white rounded-xl border border-surface-200 animate-pulse" />
+                  <div key={i} className="h-48 bg-ct-surface rounded-ct-md border border-ct-line animate-pulse" />
                 ))}
               </div>
             ) : (
               <div className="space-y-5">
                 {recurringInvoices.filter(i => i.status === 'sent' || i.status === 'overdue' || i.status === 'draft').length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Outstanding</p>
+                    <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-3">Outstanding</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {recurringInvoices.filter(i => i.status === 'sent' || i.status === 'overdue' || i.status === 'draft').map(inv => (
                         <RecurringInvoiceCard key={inv.id} invoice={inv} userRole="client" />
@@ -720,7 +720,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 )}
                 {recurringInvoices.filter(i => i.status === 'paid' || i.status === 'cancelled').length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Payment History</p>
+                    <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-3">Payment History</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {recurringInvoices.filter(i => i.status === 'paid' || i.status === 'cancelled').map(inv => (
                         <RecurringInvoiceCard key={inv.id} invoice={inv} userRole="client" />
@@ -734,35 +734,35 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         )}
 
         {/* Transaction Table */}
-        <div className="bg-white rounded-2xl border border-surface-200 overflow-hidden">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
           {/* Table Header */}
-          <div className="flex items-center justify-between px-5 py-3.5 border-b border-surface-200">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-ct-line">
             <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-navy-300" />
-              <h2 className="text-sm font-semibold text-navy-800">Transaction History</h2>
-              {totalCount > 0 && <span className="text-xs text-navy-300 font-medium">({totalCount})</span>}
+              <FileText className="w-4 h-4 text-ct-mute" />
+              <h2 className="text-sm font-semibold text-ct-paper">Transaction History</h2>
+              {totalCount > 0 && <span className="text-xs text-ct-mute font-medium">({totalCount})</span>}
             </div>
             <div className="flex items-center gap-2">
               {hasActiveFilters && (
                 <button
                   onClick={() => { setStatusFilter('all'); setDateFrom(''); setDateTo(''); setTypeFilter(''); setPage(0); }}
-                  className="text-xs text-primary-600 hover:text-primary-700 font-semibold"
+                  className="text-xs text-ct-mute-2 hover:text-ct-mute-2 font-semibold"
                 >
                   Clear all
                 </button>
               )}
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-ct-sm text-xs font-medium transition-colors ${
                   showFilters || hasActiveFilters
-                    ? 'bg-primary-50 text-primary-700 border border-primary-200'
-                    : 'bg-surface-100 text-navy-500 border border-surface-200 hover:bg-surface-200'
+                    ? 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line'
+                    : 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line hover:bg-ct-line'
                 }`}
               >
                 <Filter className="w-3.5 h-3.5" />
                 Filters
                 {hasActiveFilters && (
-                  <span className="w-4 h-4 bg-primary-600 text-white rounded-full text-xs flex items-center justify-center font-bold">
+                  <span className="w-4 h-4 bg-ct-teal text-ct-ink rounded-full text-xs flex items-center justify-center font-bold">
                     {[statusFilter !== 'all', !!dateFrom, !!dateTo, !!typeFilter].filter(Boolean).length}
                   </span>
                 )}
@@ -772,14 +772,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
           {/* Expandable Filters */}
           {showFilters && (
-            <div className="px-5 py-4 bg-surface-50 border-b border-surface-200">
+            <div className="px-5 py-4 bg-ct-surface-2 border-b border-ct-line">
               <div className="flex flex-wrap items-center gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-navy-400 uppercase tracking-wider mb-1">Status</label>
+                  <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wider mb-1">Status</label>
                   <select
                     value={statusFilter}
                     onChange={e => { setStatusFilter(e.target.value as StatusFilter); setPage(0); }}
-                    className="px-3 py-2 border border-surface-300 rounded-lg text-sm text-navy-700 bg-white focus:ring-2 focus:ring-primary-400 focus:border-primary-400"
+                    className="px-3 py-2 border border-ct-line rounded-ct-sm text-sm text-ct-paper bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                   >
                     <option value="all">All Statuses</option>
                     <option value="pending">Pending</option>
@@ -789,19 +789,19 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-navy-400 uppercase tracking-wider mb-1">From</label>
+                  <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wider mb-1">From</label>
                   <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(0); }}
-                    className="px-3 py-2 border border-surface-300 rounded-lg text-sm text-navy-700 bg-white focus:ring-2 focus:ring-primary-400 focus:border-primary-400" />
+                    className="px-3 py-2 border border-ct-line rounded-ct-sm text-sm text-ct-paper bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-navy-400 uppercase tracking-wider mb-1">To</label>
+                  <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wider mb-1">To</label>
                   <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(0); }}
-                    className="px-3 py-2 border border-surface-300 rounded-lg text-sm text-navy-700 bg-white focus:ring-2 focus:ring-primary-400 focus:border-primary-400" />
+                    className="px-3 py-2 border border-ct-line rounded-ct-sm text-sm text-ct-paper bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-navy-400 uppercase tracking-wider mb-1">Type</label>
+                  <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wider mb-1">Type</label>
                   <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(0); }}
-                    className="px-3 py-2 border border-surface-300 rounded-lg text-sm text-navy-700 bg-white focus:ring-2 focus:ring-primary-400 focus:border-primary-400">
+                    className="px-3 py-2 border border-ct-line rounded-ct-sm text-sm text-ct-paper bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal">
                     <option value="">All Types</option>
                     <option value="job_payment">Job Payment</option>
                     {!isTradie && <option value="service_invoice">Service Invoice</option>}
@@ -821,11 +821,11 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             <div className="p-6"><ListSkeleton rows={3} /></div>
           ) : payments.length === 0 ? (
             <div className="py-20 text-center">
-              <div className="w-16 h-16 bg-surface-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Receipt className="w-8 h-8 text-navy-200" />
+              <div className="w-16 h-16 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mx-auto mb-4">
+                <Receipt className="w-8 h-8 text-ct-mute" />
               </div>
-              <h3 className="text-lg font-semibold text-navy-800 mb-1">No transactions yet</h3>
-              <p className="text-sm text-navy-400 max-w-sm mx-auto">
+              <h3 className="text-lg font-semibold text-ct-paper mb-1">No transactions yet</h3>
+              <p className="text-sm text-ct-mute max-w-sm mx-auto">
                 {hasActiveFilters
                   ? 'No results match your filters. Try adjusting or clearing them.'
                   : isTradie
@@ -839,7 +839,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
               {/* Column headings — desktop only. Widths match the data rows below.
                   pl-11 on Job pushes the label past the row icon (w-8 + gap-3) so it
                   sits over the description text rather than the icon column. */}
-              <div className="hidden md:flex items-center w-full px-5 py-2.5 bg-surface-100 border-b border-surface-200 text-xs font-semibold text-navy-400 uppercase tracking-wider">
+              <div className="hidden md:flex items-center w-full px-5 py-2.5 bg-ct-surface-2 border-b border-ct-line text-xs font-semibold text-ct-mute uppercase tracking-wider">
                 <div className="w-32">Date</div>
                 <div className="flex-1 pl-11">Job</div>
                 <div className="text-right w-28">Payment</div>
@@ -853,30 +853,30 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 const isActionNeeded = group.key === '__action_needed__';
                 const isPending = group.key === '__pending__';
                 const headerBg = isActionNeeded
-                  ? 'bg-amber-50 border-amber-200 hover:bg-amber-100'
+                  ? 'bg-ct-amber/[0.13] border-ct-amber/[0.34] hover:bg-ct-amber/[0.13]'
                   : isPending
-                    ? 'bg-secondary-50 border-secondary-200 hover:bg-secondary-100'
-                    : 'bg-surface-50 border-surface-200 hover:bg-surface-100';
+                    ? 'bg-ct-surface-2 border-ct-line hover:bg-ct-surface-2'
+                    : 'bg-ct-surface-2 border-ct-line hover:bg-ct-surface-2';
                 const headerText = isActionNeeded
-                  ? 'text-amber-800'
+                  ? 'text-ct-paper'
                   : isPending
-                    ? 'text-secondary-800'
-                    : 'text-navy-800';
+                    ? 'text-ct-mute-2'
+                    : 'text-ct-paper';
                 const subText = isActionNeeded
-                  ? 'text-amber-700 font-medium'
+                  ? 'text-ct-amber font-medium'
                   : isPending
-                    ? 'text-secondary-700 font-medium'
-                    : 'text-navy-300';
+                    ? 'text-ct-mute-2 font-medium'
+                    : 'text-ct-mute';
                 const chevronText = isActionNeeded
-                  ? 'text-amber-700'
+                  ? 'text-ct-amber'
                   : isPending
-                    ? 'text-secondary-700'
-                    : 'text-navy-400';
+                    ? 'text-ct-mute-2'
+                    : 'text-ct-mute';
                 const totalText = isActionNeeded
-                  ? 'text-amber-800'
+                  ? 'text-ct-paper'
                   : isPending
-                    ? 'text-secondary-800'
-                    : 'text-navy-700';
+                    ? 'text-ct-mute-2'
+                    : 'text-ct-paper';
                 return (
                   <div key={group.key}>
                     {/* Group header */}
@@ -886,8 +886,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     >
                       <div className="flex items-center gap-2">
                         <ChevronDown className={`w-4 h-4 transition-transform ${isCollapsed ? '-rotate-90' : ''} ${chevronText}`} />
-                        {isActionNeeded && <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
-                        {isPending && <span className="w-2 h-2 rounded-full bg-secondary-500 flex-shrink-0" />}
+                        {isActionNeeded && <span className="w-2 h-2 rounded-full bg-ct-amber/[0.13]0 flex-shrink-0" />}
+                        {isPending && <span className="w-2 h-2 rounded-full bg-ct-surface-20 flex-shrink-0" />}
                         <h3 className={`text-sm font-semibold ${headerText}`}>{group.label}</h3>
                         <span className={`text-xs ${subText}`}>
                           {group.payments.length} {group.payments.length === 1 ? 'payment' : 'payments'}
@@ -903,7 +903,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         {/* Desktop rows */}
                         <div className="hidden md:block">
                           <table className="w-full">
-                            <tbody className="divide-y divide-surface-100">
+                            <tbody className="divide-y divide-ct-line-soft">
                               {group.payments.map(p => {
                                 const category = p.jobs?.description ? getCategory(p.jobs.description) : null;
                                 const isBonus = p.payment_type === 'bonus';
@@ -912,45 +912,45 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                   : (p.jobs?.description ? cleanDescription(p.jobs.description) : p.payment_type.replace(/_/g, ' '));
                                 return (
                                   <tr key={p.id} onClick={() => setSelectedPayment(p)}
-                                    className="hover:bg-surface-50 cursor-pointer transition-colors group">
+                                    className="hover:bg-ct-surface-2 cursor-pointer transition-colors group">
                                     <td className="px-5 py-3.5 w-32">
-                                      <span className="text-sm text-navy-400">{new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
+                                      <span className="text-sm text-ct-mute">{new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
                                     </td>
                                     <td className="px-5 py-3.5">
                                       <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                                          isBonus ? 'bg-warm-50' :
-                                          p.status === 'completed' ? 'bg-warm-50' :
-                                          p.status === 'pending' ? 'bg-accent-50' :
-                                          p.status === 'refunded' ? 'bg-secondary-50' : 'bg-surface-100'
+                                        <div className={`w-8 h-8 rounded-ct-sm flex items-center justify-center flex-shrink-0 ${
+                                          isBonus ? 'bg-ct-amber/[0.13]' :
+                                          p.status === 'completed' ? 'bg-ct-amber/[0.13]' :
+                                          p.status === 'pending' ? 'bg-ct-amber/[0.13]' :
+                                          p.status === 'refunded' ? 'bg-ct-surface-2' : 'bg-ct-surface-2'
                                         }`}>
                                           {isBonus ? (
-                                            <Gift className="w-3.5 h-3.5 text-warm-600" />
+                                            <Gift className="w-3.5 h-3.5 text-ct-amber" />
                                           ) : p.payment_type === 'service_invoice' ? (
                                             <FileText className={`w-3.5 h-3.5 ${
-                                              p.status === 'completed' ? 'text-secondary-600' :
-                                              p.status === 'pending' ? 'text-accent-600' : 'text-navy-400'
+                                              p.status === 'completed' ? 'text-ct-mute-2' :
+                                              p.status === 'pending' ? 'text-ct-amber' : 'text-ct-mute'
                                             }`} />
                                           ) : p.payment_type === 'job_payment' ? (
                                             <Receipt className={`w-3.5 h-3.5 ${
-                                              p.status === 'completed' ? 'text-warm-600' :
-                                              p.status === 'pending' ? 'text-accent-600' : 'text-navy-400'
+                                              p.status === 'completed' ? 'text-ct-amber' :
+                                              p.status === 'pending' ? 'text-ct-amber' : 'text-ct-mute'
                                             }`} />
                                           ) : p.payment_type === 'subscription' ? (
-                                            <CreditCard className="w-3.5 h-3.5 text-primary-500" />
+                                            <CreditCard className="w-3.5 h-3.5 text-ct-teal0" />
                                           ) : (
-                                            <DollarSign className="w-3.5 h-3.5 text-navy-400" />
+                                            <DollarSign className="w-3.5 h-3.5 text-ct-mute" />
                                           )}
                                         </div>
                                         <div className="min-w-0">
-                                          <p className="text-sm font-medium text-navy-900 truncate max-w-[280px]">{desc}</p>
-                                          {category && <span className="text-xs text-navy-300 font-medium">{category}</span>}
+                                          <p className="text-sm font-medium text-ct-paper truncate max-w-[280px]">{desc}</p>
+                                          {category && <span className="text-xs text-ct-mute font-medium">{category}</span>}
                                         </div>
                                       </div>
                                     </td>
                                     <td className="px-5 py-3.5 text-right w-28">
                                       <span className={`text-sm font-semibold tabular-nums ${
-                                        p.status === 'refunded' ? 'text-secondary-600' : 'text-navy-900'
+                                        p.status === 'refunded' ? 'text-ct-mute-2' : 'text-ct-paper'
                                       }`}>
                                         {p.status === 'refunded' ? '-' : ''}{formatCurrency(p.amount)}
                                       </span>
@@ -959,8 +959,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                       <div className="flex flex-col items-center justify-center gap-1.5">
                                         {/* Bonus payments are destination charges — no escrow, never "Awaiting Release" */}
                                         {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null }) && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
-                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-ct-amber/[0.13] text-ct-amber border border-ct-amber/[0.34] whitespace-nowrap">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-ct-amber" />
                                             Awaiting Release
                                           </span>
                                         ) : (
@@ -971,7 +971,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                           const diffCents = Number(inc?.diff_cents || 0);
                                           const diffLabel = diffCents > 0 ? ` $${(diffCents / 100).toFixed(2)}` : '';
                                           return (
-                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 whitespace-nowrap">
+                                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-ct-amber/[0.13] text-ct-amber border border-ct-amber/[0.34] whitespace-nowrap">
                                               Price adjusted — pay{diffLabel} to release
                                             </span>
                                           );
@@ -979,7 +979,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                       </div>
                                     </td>
                                     <td className="px-5 py-3.5 text-right w-24">
-                                      <span className="text-xs font-medium text-primary-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <span className="text-xs font-medium text-ct-mute-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         View
                                       </span>
                                     </td>
@@ -991,7 +991,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         </div>
 
                         {/* Mobile rows */}
-                        <div className="md:hidden divide-y divide-surface-100">
+                        <div className="md:hidden divide-y divide-ct-line-soft">
                           {group.payments.map(p => {
                             const isBonus = p.payment_type === 'bonus';
                             const desc = isBonus
@@ -1002,35 +1002,35 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                               <div key={p.id} onClick={() => setSelectedPayment(p)}
                                 role="button" tabIndex={0}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedPayment(p); } }}
-                                className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-surface-50 transition-colors cursor-pointer">
-                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                                  isBonus ? 'bg-warm-50' :
-                                  p.status === 'completed' ? 'bg-warm-50' :
-                                  p.status === 'pending' ? 'bg-accent-50' : 'bg-surface-100'
+                                className="w-full flex items-center gap-3 px-5 py-3.5 text-left hover:bg-ct-surface-2 transition-colors cursor-pointer">
+                                <div className={`w-9 h-9 rounded-ct-sm flex items-center justify-center flex-shrink-0 ${
+                                  isBonus ? 'bg-ct-amber/[0.13]' :
+                                  p.status === 'completed' ? 'bg-ct-amber/[0.13]' :
+                                  p.status === 'pending' ? 'bg-ct-amber/[0.13]' : 'bg-ct-surface-2'
                                 }`}>
                                   {isBonus ? (
-                                    <Gift className="w-4 h-4 text-warm-600" />
+                                    <Gift className="w-4 h-4 text-ct-amber" />
                                   ) : (
                                     <Receipt className={`w-4 h-4 ${
-                                      p.status === 'completed' ? 'text-warm-600' :
-                                      p.status === 'pending' ? 'text-accent-600' : 'text-navy-400'
+                                      p.status === 'completed' ? 'text-ct-amber' :
+                                      p.status === 'pending' ? 'text-ct-amber' : 'text-ct-mute'
                                     }`} />
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-navy-900 truncate">{desc}</p>
+                                  <p className="text-sm font-medium text-ct-paper truncate">{desc}</p>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    {category && <span className="text-xs text-navy-300">{category}</span>}
-                                    <span className="text-xs text-navy-200">{new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
+                                    {category && <span className="text-xs text-ct-mute">{category}</span>}
+                                    <span className="text-xs text-ct-mute">{new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
                                   </div>
                                 </div>
                                 <div className="text-right flex-shrink-0">
-                                  <p className="text-sm font-semibold text-navy-900 tabular-nums">{formatCurrency(p.amount)}</p>
+                                  <p className="text-sm font-semibold text-ct-paper tabular-nums">{formatCurrency(p.amount)}</p>
                                   <div className="mt-1 flex items-center gap-1.5 justify-end">
                                     {/* Bonus payments are destination charges — no escrow, never "Awaiting Release" */}
                                     {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null }) && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
-                                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-ct-amber/[0.13] text-ct-amber border border-ct-amber/[0.34]">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-ct-amber" />
                                         Awaiting Release
                                       </span>
                                     ) : (
@@ -1041,7 +1041,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                       const diffCents = Number(inc?.diff_cents || 0);
                                       const diffLabel = diffCents > 0 ? ` $${(diffCents / 100).toFixed(2)}` : '';
                                       return (
-                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 whitespace-nowrap">
+                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-ct-amber/[0.13] text-ct-amber border border-ct-amber/[0.34] whitespace-nowrap">
                                           Price adjusted — pay{diffLabel} to release
                                         </span>
                                       );
@@ -1060,18 +1060,18 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-5 py-3.5 border-t border-surface-200">
-                  <p className="text-xs text-navy-300">
+                <div className="flex items-center justify-between px-5 py-3.5 border-t border-ct-line">
+                  <p className="text-xs text-ct-mute">
                     {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}
                   </p>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-                      className="p-2 rounded-lg text-navy-400 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
+                      className="p-2 rounded-ct-sm text-ct-mute hover:bg-ct-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
                       <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <span className="text-xs font-medium text-navy-400 px-2">{page + 1} / {totalPages}</span>
+                    <span className="text-xs font-medium text-ct-mute px-2">{page + 1} / {totalPages}</span>
                     <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
-                      className="p-2 rounded-lg text-navy-400 hover:bg-surface-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
+                      className="p-2 rounded-ct-sm text-ct-mute hover:bg-ct-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center">
                       <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -1099,8 +1099,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 
         {/* Toast */}
         {toast.show && (
-          <div className={`fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-50 flex items-center gap-2 px-5 py-3 rounded-lg shadow-lg text-sm font-medium ${
-            toast.isError ? 'bg-red-600 text-white' : 'bg-primary-700 text-white'
+          <div className={`fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-50 flex items-center gap-2 px-5 py-3 rounded-ct-sm shadow-lg text-sm font-medium ${
+            toast.isError ? 'bg-ct-rose text-ct-ink' : 'bg-ct-teal text-ct-ink'
           }`}>
             {toast.isError ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
             {toast.message}
@@ -1218,51 +1218,51 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
   const hasPendingReduction = !!pendingReduction;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-900/40" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ct-ink/40" onClick={onClose}>
+      <div className="bg-ct-surface rounded-ct-lg shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="px-6 pt-6 pb-4">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-lg font-bold text-primary-700">ConnecTradie</h2>
-              <p className="text-xs text-navy-300 mt-0.5">ABN: {COMPANY_ABN}</p>
+              <h2 className="text-lg font-bold text-ct-mute-2">ConnecTradie</h2>
+              <p className="text-xs text-ct-mute mt-0.5">ABN: {COMPANY_ABN}</p>
             </div>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-100 -mt-1 -mr-1 transition-colors">
-              <X className="w-5 h-5 text-navy-300" />
+            <button onClick={onClose} className="p-1.5 rounded-ct-sm hover:bg-ct-surface-2 -mt-1 -mr-1 transition-colors">
+              <X className="w-5 h-5 text-ct-mute" />
             </button>
           </div>
           <div className="flex items-center justify-between mt-4">
             <div>
-              <p className="text-xs font-bold text-navy-300 uppercase tracking-widest">Tax Invoice</p>
-              <p className="text-sm font-bold text-navy-900 mt-0.5">{invoiceNum}</p>
+              <p className="text-xs font-bold text-ct-mute uppercase tracking-widest">Tax Invoice</p>
+              <p className="text-sm font-bold text-ct-paper mt-0.5">{invoiceNum}</p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-navy-300 uppercase tracking-wider">Issue Date</p>
-              <p className="text-sm font-medium text-navy-800">{formatDate(payment.created_at)}</p>
+              <p className="text-xs text-ct-mute uppercase tracking-wider">Issue Date</p>
+              <p className="text-sm font-medium text-ct-paper">{formatDate(payment.created_at)}</p>
             </div>
           </div>
         </div>
 
-        <div className="h-px bg-surface-200 mx-6" />
+        <div className="h-px bg-ct-line mx-6" />
 
         <div className="px-6 py-5 space-y-5">
           {/* Service Details */}
-          <div className="bg-surface-50 rounded-lg p-4 border border-surface-200">
-            <p className="text-xs font-bold text-navy-300 uppercase tracking-widest mb-2.5">Service Details</p>
+          <div className="bg-ct-surface-2 rounded-ct-sm p-4 border border-ct-line">
+            <p className="text-xs font-bold text-ct-mute uppercase tracking-widest mb-2.5">Service Details</p>
             <div className="flex items-center gap-2 mb-1.5">
               {jobCategory && (
-                <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded text-xs font-semibold">{jobCategory}</span>
+                <span className="px-2 py-0.5 bg-ct-surface-2 text-ct-mute-2 rounded text-xs font-semibold">{jobCategory}</span>
               )}
               {getStatusBadge(payment.status)}
             </div>
-            <p className="text-sm font-medium text-navy-900">{jobDesc}</p>
+            <p className="text-sm font-medium text-ct-paper">{jobDesc}</p>
             {payment.job_id && (
               <div className="flex items-center gap-3 mt-2">
-                <Link to={`${isTradie ? '/jobs' : '/leads'}?job=${payment.job_id}`} className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors">
+                <Link to={`${isTradie ? '/jobs' : '/leads'}?job=${payment.job_id}`} className="inline-flex items-center gap-1 text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium transition-colors">
                   View job <ExternalLink className="w-3 h-3" />
                 </Link>
                 {!payment.id.startsWith('inv_') && (
-                  <Link to={`/invoice/${payment.id}`} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors">
+                  <Link to={`/invoice/${payment.id}`} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium transition-colors">
                     <Receipt className="w-3 h-3" /> Tax invoice
                   </Link>
                 )}
@@ -1273,60 +1273,60 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
           {/* Provider Info */}
           {(tradieName || tradieAbn) && (
             <div>
-              <p className="text-xs font-bold text-navy-300 uppercase tracking-widest mb-2">Service Provider</p>
+              <p className="text-xs font-bold text-ct-mute uppercase tracking-widest mb-2">Service Provider</p>
               <div className="text-sm space-y-0.5">
-                {tradieName && <p className="font-medium text-navy-900">{tradieName}</p>}
-                {tradieAbn && <p className="text-navy-400">ABN: {tradieAbn}</p>}
+                {tradieName && <p className="font-medium text-ct-paper">{tradieName}</p>}
+                {tradieAbn && <p className="text-ct-mute">ABN: {tradieAbn}</p>}
               </div>
             </div>
           )}
 
           {/* Financial Breakdown */}
           <div>
-            <p className="text-xs font-bold text-navy-300 uppercase tracking-widest mb-2.5">Amount Breakdown</p>
-            <div className="border border-surface-200 rounded-lg overflow-hidden">
-              <div className="divide-y divide-surface-100">
+            <p className="text-xs font-bold text-ct-mute uppercase tracking-widest mb-2.5">Amount Breakdown</p>
+            <div className="border border-ct-line rounded-ct-sm overflow-hidden">
+              <div className="divide-y divide-ct-line-soft">
                 <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-navy-500">{gstAmount > 0 ? 'Subtotal (ex. GST)' : 'Job Amount'}</span>
-                  <span className="text-sm font-medium text-navy-900 tabular-nums">{formatCurrency(exGst)}</span>
+                  <span className="text-sm text-ct-mute-2">{gstAmount > 0 ? 'Subtotal (ex. GST)' : 'Job Amount'}</span>
+                  <span className="text-sm font-medium text-ct-paper tabular-nums">{formatCurrency(exGst)}</span>
                 </div>
                 {gstAmount > 0 && (
                   <div className="flex items-center justify-between px-4 py-3">
-                    <span className="text-sm text-navy-500">GST (10%)</span>
-                    <span className="text-sm font-medium text-navy-900 tabular-nums">{formatCurrency(gstAmount)}</span>
+                    <span className="text-sm text-ct-mute-2">GST (10%)</span>
+                    <span className="text-sm font-medium text-ct-paper tabular-nums">{formatCurrency(gstAmount)}</span>
                   </div>
                 )}
                 {fee > 0 && (
                   <div className="flex items-center justify-between px-4 py-3">
-                    <span className="text-sm text-navy-400">Processing fee</span>
-                    <span className="text-sm font-medium text-navy-400 tabular-nums">{formatCurrency(fee)}</span>
+                    <span className="text-sm text-ct-mute">Processing fee</span>
+                    <span className="text-sm font-medium text-ct-mute tabular-nums">{formatCurrency(fee)}</span>
                   </div>
                 )}
               </div>
-              <div className="flex items-center justify-between px-4 py-3.5 bg-primary-700">
-                <span className="text-sm font-bold text-white">{gstAmount > 0 ? 'Total (inc. GST)' : 'Total'}</span>
-                <span className="text-lg font-bold text-white tabular-nums">{formatCurrency(exGst + gstAmount + fee)}</span>
+              <div className="flex items-center justify-between px-4 py-3.5 bg-ct-teal">
+                <span className="text-sm font-bold text-ct-ink">{gstAmount > 0 ? 'Total (inc. GST)' : 'Total'}</span>
+                <span className="text-lg font-bold text-ct-ink tabular-nums">{formatCurrency(exGst + gstAmount + fee)}</span>
               </div>
             </div>
           </div>
 
           {/* Reference Details */}
           <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-            <div><p className="text-xs text-navy-300 uppercase tracking-wider mb-0.5">Invoice #</p><p className="text-sm font-medium text-navy-900">{invoiceNum}</p></div>
-            <div><p className="text-xs text-navy-300 uppercase tracking-wider mb-0.5">Date & Time</p><p className="text-sm font-medium text-navy-900">{formatDateTime(payment.created_at)}</p></div>
-            <div><p className="text-xs text-navy-300 uppercase tracking-wider mb-0.5">Payment Type</p><p className="text-sm font-medium text-navy-900 capitalize">{payment.payment_type === 'bonus' ? 'Extra payment' : payment.payment_type.replace(/_/g, ' ')}</p></div>
-            <div><p className="text-xs text-navy-300 uppercase tracking-wider mb-0.5">Currency</p><p className="text-sm font-medium text-navy-900">{(payment.currency || 'AUD').toUpperCase()}</p></div>
+            <div><p className="text-xs text-ct-mute uppercase tracking-wider mb-0.5">Invoice #</p><p className="text-sm font-medium text-ct-paper">{invoiceNum}</p></div>
+            <div><p className="text-xs text-ct-mute uppercase tracking-wider mb-0.5">Date & Time</p><p className="text-sm font-medium text-ct-paper">{formatDateTime(payment.created_at)}</p></div>
+            <div><p className="text-xs text-ct-mute uppercase tracking-wider mb-0.5">Payment Type</p><p className="text-sm font-medium text-ct-paper capitalize">{payment.payment_type === 'bonus' ? 'Extra payment' : payment.payment_type.replace(/_/g, ' ')}</p></div>
+            <div><p className="text-xs text-ct-mute uppercase tracking-wider mb-0.5">Currency</p><p className="text-sm font-medium text-ct-paper">{(payment.currency || 'AUD').toUpperCase()}</p></div>
           </div>
 
           {/* Document Actions */}
           <div className="flex gap-3 pt-1">
             <button onClick={onExportPDF}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-surface-300 text-navy-700 rounded-lg text-sm font-medium hover:bg-surface-50 transition-colors">
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-surface border border-ct-line text-ct-paper rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors">
               <Download className="w-4 h-4" />
               Download PDF
             </button>
             <button onClick={onExportPDF}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-navy-800 text-white rounded-lg text-sm font-medium hover:bg-navy-900 transition-colors">
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-surface text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-ink transition-colors">
               <Receipt className="w-4 h-4" />
               Print Invoice
             </button>
@@ -1336,14 +1336,14 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
 
           {/* Pay Now (pending, no Stripe charge yet) */}
           {!isTradie && isPendingJobPayment && !payment.stripe_payment_intent_id && (
-            <div className="bg-accent-50 border border-accent-200 rounded-lg p-4">
+            <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm p-4">
               <div className="flex items-start gap-3 mb-3">
-                <CreditCard className="w-5 h-5 text-accent-600 flex-shrink-0 mt-0.5" />
+                <CreditCard className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-accent-800">
+                  <p className="text-sm font-semibold text-ct-paper">
                     {payment.stripe_checkout_session_id ? 'Payment Processing' : 'Payment Required'}
                   </p>
-                  <p className="text-xs text-accent-700 mt-0.5">
+                  <p className="text-xs text-ct-amber mt-0.5">
                     {payment.stripe_checkout_session_id
                       ? 'You may have already completed this payment. Click "Verify Payment" to check, or pay again if needed.'
                       : 'Your tradie has completed the work and requested payment. Review the invoice above, then pay securely via Stripe.'}
@@ -1353,19 +1353,19 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
               {payment.stripe_checkout_session_id ? (
                 <div className="flex gap-2">
                   <button onClick={handleVerifyPayment} disabled={actionLoading}
-                    className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+                    className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                     {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                     Verify Payment
                   </button>
                   <button onClick={handlePayNow} disabled={actionLoading}
-                    className="flex-1 px-4 py-2.5 bg-white border border-surface-300 text-navy-700 rounded-lg text-sm font-semibold hover:bg-surface-50 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+                    className="flex-1 px-4 py-2.5 bg-ct-surface border border-ct-line text-ct-paper rounded-ct-sm text-sm font-semibold hover:bg-ct-surface-2 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                     <CreditCard className="w-4 h-4" />
                     Pay Again
                   </button>
                 </div>
               ) : (
                 <button onClick={handlePayNow} disabled={actionLoading}
-                  className="w-full px-4 py-2.5 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+                  className="w-full px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                   {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
                   Pay Now — {formatCurrency(subtotal)}
                 </button>
@@ -1375,18 +1375,18 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
 
           {/* Escrow — auto-releases after 5h, client can release early */}
           {!isTradie && isCompletedWithStripe && !transferDone && !hasPendingIncrease && !hasPendingReduction && (
-            <div className="bg-warm-50 border border-warm-200 rounded-lg p-4">
+            <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm p-4">
               <div className="flex items-start gap-3 mb-3">
-                <ShieldCheck className="w-5 h-5 text-warm-600 flex-shrink-0 mt-0.5" />
+                <ShieldCheck className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-warm-800">Payment Secured with Stripe</p>
-                  <p className="text-xs text-warm-700 mt-0.5">
+                  <p className="text-sm font-semibold text-ct-paper">Payment Secured with Stripe</p>
+                  <p className="text-xs text-ct-amber mt-0.5">
                     Funds will be automatically released to your tradie within 5 hours. You can release early if you're happy with the work.
                   </p>
                 </div>
               </div>
               <button onClick={handleReleaseEscrow} disabled={actionLoading}
-                className="w-full px-4 py-2.5 bg-warm-600 text-white rounded-lg text-sm font-semibold hover:bg-warm-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+                className="w-full px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:bg-ct-teal disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                 Release Now
               </button>
@@ -1405,17 +1405,17 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
 
           {/* Pending reduction — waiting for tradie response */}
           {!isTradie && hasPendingReduction && pendingReduction && (
-            <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+            <div className="bg-ct-surface-2 border border-ct-line rounded-ct-sm p-4">
               <div className="flex items-start gap-3">
-                <Clock className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
+                <Clock className="w-5 h-5 text-ct-mute-2 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-secondary-800">Reduction Request Pending</p>
-                  <p className="text-xs text-secondary-700 mt-0.5">
+                  <p className="text-sm font-semibold text-ct-mute-2">Reduction Request Pending</p>
+                  <p className="text-xs text-ct-mute-2 mt-0.5">
                     You've asked to reduce this payment from ${((pendingReduction.original_amount_cents ?? 0) / 100).toFixed(2)} to ${((pendingReduction.proposed_amount_cents ?? 0) / 100).toFixed(2)}.
                     Waiting for the tradie to approve. You'll be refunded ${((pendingReduction.diff_cents ?? 0) / 100).toFixed(2)} once they do.
                   </p>
                   {pendingReduction.reason && (
-                    <p className="text-xs text-secondary-600 mt-1 italic">Your note: "{pendingReduction.reason}"</p>
+                    <p className="text-xs text-ct-mute-2 mt-1 italic">Your note: "{pendingReduction.reason}"</p>
                   )}
                 </div>
               </div>
@@ -1428,12 +1428,12 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
             const diffCents = Number(inc?.diff_cents || 0);
             const diffLabel = diffCents > 0 ? `$${(diffCents / 100).toFixed(2)}` : '';
             return (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+              <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm p-4 space-y-3">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-amber-800">Price Increase Pending</p>
-                    <p className="text-xs text-amber-700 mt-0.5">
+                    <p className="text-sm font-semibold text-ct-paper">Price Increase Pending</p>
+                    <p className="text-xs text-ct-amber mt-0.5">
                       Your tradie has requested a price adjustment{diffLabel ? ` of ${diffLabel}` : ''}. Please pay the additional amount before the payment can be released.
                     </p>
                   </div>
@@ -1450,7 +1450,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
                     }
                   }}
                   disabled={actionLoading}
-                  className="w-full px-4 py-2.5 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                  className="w-full px-4 py-2.5 bg-ct-amber text-ct-ink rounded-ct-sm text-sm font-semibold hover:bg-ct-amber disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
                 >
                   {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
                   Pay Increase{diffLabel ? ` — ${diffLabel}` : ''}
@@ -1461,17 +1461,17 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
 
           {/* Transfer completed */}
           {!isTradie && isCompletedWithStripe && transferDone && (
-            <div className={`${hasReview ? 'bg-green-50 border-green-200' : 'bg-warm-50 border-warm-200'} border rounded-lg p-3 space-y-2`}>
+            <div className={`${hasReview ? 'bg-ct-teal/[0.14] border-ct-teal/30' : 'bg-ct-amber/[0.13] border-ct-amber/[0.34]'} border rounded-ct-sm p-3 space-y-2`}>
               <div className="flex items-center gap-2">
-                <CheckCircle2 className={`w-4 h-4 ${hasReview ? 'text-green-600' : 'text-warm-600'} flex-shrink-0`} />
-                <p className={`text-sm ${hasReview ? 'text-green-700' : 'text-warm-700'} font-medium`}>
+                <CheckCircle2 className={`w-4 h-4 ${hasReview ? 'text-ct-teal' : 'text-ct-amber'} flex-shrink-0`} />
+                <p className={`text-sm ${hasReview ? 'text-ct-teal' : 'text-ct-amber'} font-medium`}>
                   {hasReview ? 'Completed — Payment released & reviewed' : 'Payment released to tradie'}
                 </p>
               </div>
               {payment.job_id && !hasReview && (
                 <Link
                   to={`/review/${payment.job_id}`}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-warm-500 text-white rounded-lg text-sm font-semibold hover:bg-warm-600 transition-colors"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 transition-colors"
                 >
                   <Star className="w-4 h-4" />
                   Leave a Review
@@ -1482,16 +1482,16 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
 
           {/* Legacy: pending with stripe intent */}
           {!isTradie && payment.status === 'pending' && payment.stripe_payment_intent_id && (
-            <div className="bg-warm-50 border border-warm-200 rounded-lg p-4">
+            <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm p-4">
               <div className="flex items-start gap-3 mb-3">
-                <ShieldCheck className="w-5 h-5 text-warm-600 flex-shrink-0 mt-0.5" />
+                <ShieldCheck className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-warm-800">Ready to Release</p>
-                  <p className="text-xs text-warm-700 mt-0.5">Funds are secured. Release payment once you're happy with the work.</p>
+                  <p className="text-sm font-semibold text-ct-paper">Ready to Release</p>
+                  <p className="text-xs text-ct-amber mt-0.5">Funds are secured. Release payment once you're happy with the work.</p>
                 </div>
               </div>
               <button onClick={handleReleaseEscrow} disabled={actionLoading}
-                className="w-full px-4 py-2.5 bg-warm-600 text-white rounded-lg text-sm font-semibold hover:bg-warm-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+                className="w-full px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:bg-ct-teal disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                 Release Payment
               </button>
@@ -1529,20 +1529,20 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
 
           {/* Tradie views */}
           {isTradie && payment.status === 'completed' && (
-            <div className="bg-warm-50 border border-warm-200 rounded-lg p-3 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-warm-600 flex-shrink-0" />
-              <p className="text-sm text-warm-700 font-medium">Payment received</p>
+            <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm p-3 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-ct-amber flex-shrink-0" />
+              <p className="text-sm text-ct-amber font-medium">Payment received</p>
             </div>
           )}
           {isTradie && payment.status === 'pending' && (
-            <div className="bg-accent-50 border border-accent-200 rounded-lg p-3 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-accent-600 flex-shrink-0" />
-              <p className="text-sm text-accent-700 font-medium">Awaiting client payment</p>
+            <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm p-3 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-ct-amber flex-shrink-0" />
+              <p className="text-sm text-ct-amber font-medium">Awaiting client payment</p>
             </div>
           )}
 
           {/* GST Note */}
-          <p className="text-xs text-navy-300 text-center pt-2 border-t border-surface-200 leading-relaxed">
+          <p className="text-xs text-ct-mute text-center pt-2 border-t border-ct-line leading-relaxed">
             Tax invoice issued by ConnecTradie Pty Ltd for GST purposes under Australian tax law.
             All prices in AUD include GST where applicable. Retain for your records.
           </p>
@@ -1599,7 +1599,7 @@ function ReductionRequestSection({
     return (
       <button
         onClick={() => setShowForm(true)}
-        className="w-full px-4 py-2.5 text-secondary-700 border border-secondary-200 rounded-lg text-sm font-medium hover:bg-secondary-50 transition-colors flex items-center justify-center gap-2"
+        className="w-full px-4 py-2.5 text-ct-mute-2 border border-ct-line rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors flex items-center justify-center gap-2"
       >
         <RotateCcw className="w-4 h-4" /> Adjust amount paid
       </button>
@@ -1607,19 +1607,19 @@ function ReductionRequestSection({
   }
 
   return (
-    <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+    <div className="bg-ct-surface-2 border border-ct-line rounded-ct-sm p-4">
       <div className="flex items-start gap-3 mb-3">
-        <AlertTriangle className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
+        <AlertTriangle className="w-5 h-5 text-ct-mute-2 flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-semibold text-secondary-800">Reduce the amount you paid</p>
-          <p className="text-xs text-secondary-700 mt-0.5">
+          <p className="text-sm font-semibold text-ct-mute-2">Reduce the amount you paid</p>
+          <p className="text-xs text-ct-mute-2 mt-0.5">
             Enter the total you meant to pay. The tradie will approve the change, and the difference is refunded to your card. Current amount: ${currentDollars.toFixed(2)}.
           </p>
         </div>
       </div>
       <div className="space-y-3">
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm font-medium">$</span>
           <input
             type="number"
             min="1"
@@ -1627,11 +1627,11 @@ function ReductionRequestSection({
             value={newTotalInput}
             onChange={(e) => setNewTotalInput(e.target.value)}
             placeholder="New total you meant to pay"
-            className="w-full pl-7 pr-3 py-2 border border-secondary-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-secondary-400 bg-white"
+            className="w-full pl-7 pr-3 py-2 border border-ct-line rounded-ct-sm text-sm text-ct-paper focus:outline-none focus:ring-2 focus:ring-ct-teal bg-ct-surface"
           />
         </div>
         {isLower && (
-          <p className="text-xs text-secondary-700">
+          <p className="text-xs text-ct-mute-2">
             Refund amount: <span className="font-semibold">${refundAmount.toFixed(2)}</span>
           </p>
         )}
@@ -1641,19 +1641,19 @@ function ReductionRequestSection({
           placeholder="Optional: explain what happened (e.g. accidentally entered $310 instead of $190)"
           rows={2}
           maxLength={500}
-          className="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-400 bg-white resize-none"
+          className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal bg-ct-surface resize-none"
         />
         <div className="flex gap-2">
           <button
             onClick={() => { setShowForm(false); setNewTotalInput(''); setReason(''); }}
-            className="flex-1 px-3 py-2 bg-white border border-surface-300 text-navy-700 rounded-lg text-sm font-medium hover:bg-surface-50 transition-colors"
+            className="flex-1 px-3 py-2 bg-ct-surface border border-ct-line text-ct-paper rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={processing || !isLower}
-            className="flex-1 px-3 py-2 bg-secondary-600 text-white rounded-lg text-sm font-medium hover:bg-secondary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5"
+            className="flex-1 px-3 py-2 bg-ct-surface-2 text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5"
           >
             {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
             Send to tradie
@@ -1703,7 +1703,7 @@ function DisputeSection({
     return (
       <button
         onClick={() => setShowForm(true)}
-        className="w-full px-4 py-2.5 text-amber-700 border border-amber-200 rounded-lg text-sm font-medium hover:bg-amber-50 transition-colors flex items-center justify-center gap-2"
+        className="w-full px-4 py-2.5 text-ct-amber border border-ct-amber/[0.34] rounded-ct-sm text-sm font-medium hover:bg-ct-amber/[0.13] transition-colors flex items-center justify-center gap-2"
       >
         <AlertTriangle className="w-4 h-4" /> Raise a Dispute
       </button>
@@ -1711,9 +1711,9 @@ function DisputeSection({
   }
 
   return (
-    <div className="border border-amber-200 rounded-lg p-4 bg-amber-50/50">
-      <p className="text-sm font-semibold text-gray-900">Raise a dispute</p>
-      <p className="text-xs text-gray-600 mt-1 mb-3">
+    <div className="border border-ct-amber/[0.34] rounded-ct-sm p-4 bg-ct-amber/[0.13]/50">
+      <p className="text-sm font-semibold text-ct-paper">Raise a dispute</p>
+      <p className="text-xs text-ct-mute-2 mt-1 mb-3">
         Tell us what went wrong. Our team reviews disputes within 2–3 business days, and
         payment on this job is held while we do.
       </p>
@@ -1722,20 +1722,20 @@ function DisputeSection({
         onChange={(e) => setDetail(e.target.value)}
         rows={3}
         placeholder="Describe the problem with the work…"
-        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-500 focus:border-transparent"
+        className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
       />
       <div className="flex gap-2 mt-3">
         <button
           onClick={() => { setShowForm(false); setDetail(''); }}
           disabled={submitting}
-          className="flex-1 px-3 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+          className="flex-1 px-3 py-2 border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 disabled:opacity-50"
         >
           Cancel
         </button>
         <button
           onClick={handleRaise}
           disabled={submitting || !detail.trim()}
-          className="flex-1 px-3 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-1.5"
+          className="flex-1 px-3 py-2 bg-ct-amber text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-amber disabled:opacity-50 flex items-center justify-center gap-1.5"
         >
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlertTriangle className="w-4 h-4" />}
           Submit dispute
@@ -1799,31 +1799,31 @@ function RefundSection({ paymentId, jobId, againstUser, onSuccess, onEscalated, 
   if (!showForm) {
     return (
       <button onClick={() => setShowForm(true)}
-        className="w-full px-4 py-2.5 text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+        className="w-full px-4 py-2.5 text-ct-rose border border-ct-rose/[0.34] rounded-ct-sm text-sm font-medium hover:bg-ct-rose/[0.13] transition-colors flex items-center justify-center gap-2">
         <RotateCcw className="w-4 h-4" /> Request Refund
       </button>
     );
   }
 
   return (
-    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+    <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm p-4">
       <div className="flex items-start gap-3 mb-3">
-        <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+        <AlertTriangle className="w-5 h-5 text-ct-rose flex-shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-semibold text-red-800">Request a refund</p>
-          <p className="text-xs text-red-600 mt-0.5">Please explain why. Our team will review within 2–3 business days.</p>
+          <p className="text-sm font-semibold text-ct-paper">Request a refund</p>
+          <p className="text-xs text-ct-rose mt-0.5">Please explain why. Our team will review within 2–3 business days.</p>
         </div>
       </div>
       <textarea {...proseInputProps} value={reason} onChange={e => setReason(e.target.value)}
         placeholder="Describe the reason for your refund..." rows={3}
-        className="w-full px-3 py-2 border border-red-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-400 bg-white mb-3 resize-none" />
+        className="w-full px-3 py-2 border border-ct-rose/[0.34] rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-rose bg-ct-surface mb-3 resize-none" />
       <div className="flex gap-2">
         <button onClick={() => setShowForm(false)}
-          className="flex-1 px-3 py-2 bg-white border border-surface-300 text-navy-700 rounded-lg text-sm font-medium hover:bg-surface-50 transition-colors">
+          className="flex-1 px-3 py-2 bg-ct-surface border border-ct-line text-ct-paper rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors">
           Cancel
         </button>
         <button onClick={handleRefund} disabled={processing || !reason.trim()}
-          className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5">
+          className="flex-1 px-3 py-2 bg-ct-rose text-ct-ink rounded-ct-sm text-sm font-medium hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5">
           {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
           Submit
         </button>

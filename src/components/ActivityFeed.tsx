@@ -45,7 +45,7 @@ export default function ActivityFeed() {
             title: 'New Booking',
             description: `${job.profiles?.full_name || 'A tradie'} just accepted a job`,
             timestamp: timeAgo,
-            icon: <Zap className="w-4 h-4 text-green-600" />,
+            icon: <Zap className="w-4 h-4 text-ct-teal" />,
           });
         });
       }
@@ -74,18 +74,18 @@ export default function ActivityFeed() {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6">
-      <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <Zap className="w-5 h-5 text-warm-600" />
+    <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6">
+      <h3 className="font-semibold text-ct-paper mb-4 flex items-center gap-2">
+        <Zap className="w-5 h-5 text-ct-amber" />
         Platform Activity
       </h3>
 
       {activities.length === 0 ? (
-        <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-100">
-          <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+        <div className="flex items-center gap-3 p-3 bg-ct-teal/[0.14] rounded-ct-md border border-ct-teal/30">
+          <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-gray-900">All caught up!</p>
-            <p className="text-xs text-gray-500">No new activity right now.</p>
+            <p className="text-sm font-medium text-ct-paper">All caught up!</p>
+            <p className="text-xs text-ct-mute">No new activity right now.</p>
           </div>
         </div>
       ) : (
@@ -93,14 +93,14 @@ export default function ActivityFeed() {
           {activities.map((activity) => (
             <div
               key={activity.id}
-              className="flex items-center gap-3 p-3 bg-gradient-to-r from-warm-50 to-warm-50 rounded-xl border border-warm-100 hover:border-warm-300 transition-all duration-200 animate-in fade-in slide-in-from-top-2"
+              className="flex items-center gap-3 p-3 bg-gradient-to-r from-ct-teal to-ct-teal rounded-ct-md border border-ct-teal/30 hover:border-ct-teal/30 transition-all duration-200 animate-in fade-in slide-in-from-top-2"
             >
               {activity.icon}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">{activity.title}</p>
-                <p className="text-xs text-gray-600">{activity.description}</p>
+                <p className="text-sm font-medium text-ct-paper">{activity.title}</p>
+                <p className="text-xs text-ct-mute-2">{activity.description}</p>
               </div>
-              <span className="text-xs text-gray-500 flex-shrink-0">{activity.timestamp}</span>
+              <span className="text-xs text-ct-mute flex-shrink-0">{activity.timestamp}</span>
             </div>
           ))}
         </div>

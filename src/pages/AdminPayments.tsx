@@ -187,17 +187,17 @@ export default function AdminPayments() {
 
   const getStatusBadge = (status: string) => {
     const map: Record<string, string> = {
-      pending: 'bg-amber-100 text-amber-700',
-      completed: 'bg-green-100 text-green-700',
-      failed: 'bg-red-100 text-red-700',
-      refunded: 'bg-gray-100 text-gray-600',
-      active: 'bg-green-100 text-green-700',
-      canceled: 'bg-red-100 text-red-700',
-      past_due: 'bg-amber-100 text-amber-700',
-      trialing: 'bg-secondary-100 text-secondary-700',
+      pending: 'bg-ct-amber/[0.13] text-ct-amber',
+      completed: 'bg-ct-teal/[0.14] text-ct-teal',
+      failed: 'bg-ct-rose/[0.13] text-ct-rose',
+      refunded: 'bg-ct-surface-2 text-ct-mute-2',
+      active: 'bg-ct-teal/[0.14] text-ct-teal',
+      canceled: 'bg-ct-rose/[0.13] text-ct-rose',
+      past_due: 'bg-ct-amber/[0.13] text-ct-amber',
+      trialing: 'bg-ct-surface-2 text-ct-mute-2',
     };
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[status] || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[status] || 'bg-ct-surface-2 text-ct-mute-2'}`}>
         {status.replace('_', ' ')}
       </span>
     );
@@ -205,11 +205,11 @@ export default function AdminPayments() {
 
   const getTypeBadge = (type: string) => {
     const map: Record<string, string> = {
-      lead_unlock: 'bg-secondary-50 text-secondary-700',
-      job_access: 'bg-purple-50 text-purple-700',
-      job_funding: 'bg-green-50 text-green-700',
-      job_payment: 'bg-green-50 text-green-700',
-      subscription: 'bg-indigo-50 text-indigo-700',
+      lead_unlock: 'bg-ct-surface-2 text-ct-mute-2',
+      job_access: 'bg-ct-surface-2 text-ct-mute-2',
+      job_funding: 'bg-ct-teal/[0.14] text-ct-teal',
+      job_payment: 'bg-ct-teal/[0.14] text-ct-teal',
+      subscription: 'bg-ct-surface-2 text-ct-mute-2',
     };
     const labels: Record<string, string> = {
       lead_unlock: 'Lead Unlock',
@@ -219,7 +219,7 @@ export default function AdminPayments() {
       subscription: 'Subscription',
     };
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[type] || 'bg-gray-100 text-gray-600'}`}>
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${map[type] || 'bg-ct-surface-2 text-ct-mute-2'}`}>
         {labels[type] || type.replace('_', ' ')}
       </span>
     );
@@ -237,64 +237,64 @@ export default function AdminPayments() {
       <Breadcrumbs />
       <div>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Financial Overview</h1>
-          <p className="text-gray-600 mt-1">Track all payments flowing through ConnecTradie</p>
+          <h1 className="text-2xl font-bold text-ct-paper">Financial Overview</h1>
+          <p className="text-ct-mute-2 mt-1">Track all payments flowing through ConnecTradie</p>
         </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Client Payments */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-secondary-50 rounded-xl">
-                <ArrowDownRight className="w-5 h-5 text-secondary-600" />
+              <div className="p-2.5 bg-ct-surface-2 rounded-ct-md">
+                <ArrowDownRight className="w-5 h-5 text-ct-mute-2" />
               </div>
-              <span className="text-sm font-medium text-gray-500">Client Payments</span>
+              <span className="text-sm font-medium text-ct-mute">Client Payments</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalGross)}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-2xl font-bold text-ct-paper">{formatCurrency(totalGross)}</p>
+            <p className="text-xs text-ct-mute mt-1">
               {formatCurrency(grossThisMonth)} this month
             </p>
           </div>
 
           {/* Tradie Payouts */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-green-50 rounded-xl">
-                <ArrowUpRight className="w-5 h-5 text-green-600" />
+              <div className="p-2.5 bg-ct-teal/[0.14] rounded-ct-md">
+                <ArrowUpRight className="w-5 h-5 text-ct-teal" />
               </div>
-              <span className="text-sm font-medium text-gray-500">Tradie Payouts</span>
+              <span className="text-sm font-medium text-ct-mute">Tradie Payouts</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(Math.max(0, totalTradiePayout))}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-2xl font-bold text-ct-paper">{formatCurrency(Math.max(0, totalTradiePayout))}</p>
+            <p className="text-xs text-ct-mute mt-1">
               {formatCurrency(Math.max(0, monthTradiePayout))} this month
             </p>
           </div>
 
           {/* ConnecTradie Revenue */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-warm-50 rounded-xl">
-                <TrendingUp className="w-5 h-5 text-warm-600" />
+              <div className="p-2.5 bg-ct-amber/[0.13] rounded-ct-md">
+                <TrendingUp className="w-5 h-5 text-ct-amber" />
               </div>
-              <span className="text-sm font-medium text-gray-500">Platform Revenue</span>
+              <span className="text-sm font-medium text-ct-mute">Platform Revenue</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalConnecTradieRevenue)}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-2xl font-bold text-ct-paper">{formatCurrency(totalConnecTradieRevenue)}</p>
+            <p className="text-xs text-ct-mute mt-1">
               {formatCurrency(monthConnecTradieRevenue)} this month
             </p>
           </div>
 
           {/* Pro Subscriptions */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
+          <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2.5 bg-indigo-50 rounded-xl">
-                <CreditCard className="w-5 h-5 text-indigo-600" />
+              <div className="p-2.5 bg-ct-surface-2 rounded-ct-md">
+                <CreditCard className="w-5 h-5 text-ct-mute-2" />
               </div>
-              <span className="text-sm font-medium text-gray-500">Pro Subscribers</span>
+              <span className="text-sm font-medium text-ct-mute">Pro Subscribers</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{activeSubscriptions.length}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-2xl font-bold text-ct-paper">{activeSubscriptions.length}</p>
+            <p className="text-xs text-ct-mute mt-1">
               Currently active
             </p>
           </div>
@@ -302,32 +302,32 @@ export default function AdminPayments() {
 
         {/* Fee Breakdown Banner */}
         {completedPayments.length > 0 && (
-          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 mb-8">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Fee Breakdown (All Time)</h3>
+          <div className="bg-ct-surface-2 rounded-ct-lg border border-ct-line p-5 mb-8">
+            <h3 className="text-sm font-semibold text-ct-mute-2 mb-3">Fee Breakdown (All Time)</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <p className="text-xs text-gray-500">Platform Fee (varies by tier)</p>
-                <p className="text-sm font-bold text-gray-900">{formatCurrency(totalPlatformFees)}</p>
+                <p className="text-xs text-ct-mute">Platform Fee (varies by tier)</p>
+                <p className="text-sm font-bold text-ct-paper">{formatCurrency(totalPlatformFees)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Processing Margin ({PLATFORM_MARGIN_LABEL})</p>
-                <p className="text-sm font-bold text-gray-900">{formatCurrency(totalPlatformMargin)}</p>
+                <p className="text-xs text-ct-mute">Processing Margin ({PLATFORM_MARGIN_LABEL})</p>
+                <p className="text-sm font-bold text-ct-paper">{formatCurrency(totalPlatformMargin)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Stripe Fees ({STRIPE_FEE_LABEL})</p>
-                <p className="text-sm font-bold text-gray-900">{formatCurrency(totalStripeFees)}</p>
+                <p className="text-xs text-ct-mute">Stripe Fees ({STRIPE_FEE_LABEL})</p>
+                <p className="text-sm font-bold text-ct-paper">{formatCurrency(totalStripeFees)}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Net to Tradies</p>
-                <p className="text-sm font-bold text-green-700">{formatCurrency(Math.max(0, totalTradiePayout))}</p>
+                <p className="text-xs text-ct-mute">Net to Tradies</p>
+                <p className="text-sm font-bold text-ct-teal">{formatCurrency(Math.max(0, totalTradiePayout))}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Tabs */}
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="border-b border-gray-200 overflow-x-auto">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
+          <div className="border-b border-ct-line overflow-x-auto">
             <div className="flex min-w-max">
               {tabs.map(tab => {
                 const Icon = tab.icon;
@@ -338,8 +338,8 @@ export default function AdminPayments() {
                     onClick={() => { setActiveTab(tab.key); setPage(1); }}
                     className={`flex-1 px-5 py-3.5 text-sm font-semibold transition-all relative whitespace-nowrap ${
                       isActive
-                        ? 'text-primary-700 bg-primary-50/50'
-                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'text-ct-mute-2 bg-ct-surface-2/50'
+                        : 'text-ct-mute hover:text-ct-paper hover:bg-ct-surface-2'
                     }`}
                   >
                     <div className="flex items-center justify-center gap-2">
@@ -347,14 +347,14 @@ export default function AdminPayments() {
                       <span>{tab.label}</span>
                       {tab.count !== undefined && (
                         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                          isActive ? 'bg-primary-100 text-primary-700' : 'bg-gray-200 text-gray-600'
+                          isActive ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-line text-ct-mute-2'
                         }`}>
                           {tab.count}
                         </span>
                       )}
                     </div>
                     {isActive && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600" />
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-ct-teal" />
                     )}
                   </button>
                 );
@@ -364,43 +364,43 @@ export default function AdminPayments() {
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
             </div>
           ) : activeTab === 'client' ? (
             <>
               {/* Client Payments - what clients pay */}
-              <div className="p-4 border-b border-gray-100">
-                <p className="text-xs text-gray-500 mb-3">
+              <div className="p-4 border-b border-ct-line-soft">
+                <p className="text-xs text-ct-mute mb-3">
                   All payments made by clients for jobs on the platform.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
                       placeholder="Search by client name or type..."
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
+                      className="w-full pl-10 pr-4 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm bg-ct-surface"
                     />
                   </div>
                   <div className="flex gap-2">
                     <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
                       <input
                         type="date"
                         value={dateFrom}
                         onChange={e => setDateFrom(e.target.value)}
-                        className="pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
+                        className="pl-10 pr-3 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm bg-ct-surface"
                       />
                     </div>
                     <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
                       <input
                         type="date"
                         value={dateTo}
                         onChange={e => setDateTo(e.target.value)}
-                        className="pl-10 pr-3 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
+                        className="pl-10 pr-3 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm bg-ct-surface"
                       />
                     </div>
                   </div>
@@ -409,9 +409,9 @@ export default function AdminPayments() {
 
               {filteredPayments.length === 0 ? (
                 <div className="py-16 text-center">
-                  <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium">No client payments found</p>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <DollarSign className="w-12 h-12 text-ct-mute mx-auto mb-3" />
+                  <p className="text-ct-mute font-medium">No client payments found</p>
+                  <p className="text-sm text-ct-mute mt-1">
                     {searchQuery || dateFrom || dateTo
                       ? 'Try adjusting your filters'
                       : 'Payments will appear here when clients pay for jobs'}
@@ -422,12 +422,12 @@ export default function AdminPayments() {
                   {/* Mobile Card View */}
                   <div className="md:hidden space-y-3 p-4">
                     {filteredPayments.map(payment => (
-                      <div key={payment.id} className="bg-white border border-gray-200 rounded-xl p-4 space-y-2">
+                      <div key={payment.id} className="bg-ct-surface border border-ct-line rounded-ct-md p-4 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-900">
+                          <span className="text-sm font-medium text-ct-paper">
                             {payment.profiles?.full_name || 'Unknown'}
                           </span>
-                          <span className="text-sm font-bold text-gray-900">
+                          <span className="text-sm font-bold text-ct-paper">
                             {formatCurrency(payment.amount)}
                           </span>
                         </div>
@@ -435,7 +435,7 @@ export default function AdminPayments() {
                           {getTypeBadge(payment.payment_type)}
                           {getStatusBadge(payment.status)}
                         </div>
-                        <p className="text-xs text-gray-400">{formatDate(payment.created_at)}</p>
+                        <p className="text-xs text-ct-mute">{formatDate(payment.created_at)}</p>
                       </div>
                     ))}
                   </div>
@@ -443,28 +443,28 @@ export default function AdminPayments() {
                   {/* Desktop Table */}
                   <div className="hidden md:block overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-ct-surface-2">
                         <tr>
-                          <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Client</th>
-                          <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Type</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Amount Paid</th>
-                          <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                          <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Client</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Type</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Amount Paid</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Status</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Date</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody className="divide-y divide-ct-line-soft">
                         {filteredPayments.map(payment => (
-                          <tr key={payment.id} className="hover:bg-gray-50/50">
-                            <td className="px-5 py-4 text-sm font-medium text-gray-900">
+                          <tr key={payment.id} className="hover:bg-ct-surface-2/50">
+                            <td className="px-5 py-4 text-sm font-medium text-ct-paper">
                               {payment.profiles?.full_name || 'Unknown'}
                             </td>
                             <td className="px-5 py-4">{getTypeBadge(payment.payment_type)}</td>
-                            <td className="px-5 py-4 text-sm font-bold text-gray-900 text-right">
+                            <td className="px-5 py-4 text-sm font-bold text-ct-paper text-right">
                               {formatCurrency(payment.amount)}
                             </td>
                             <td className="px-5 py-4">{getStatusBadge(payment.status)}</td>
-                            <td className="px-5 py-4 text-sm text-gray-500">{formatDate(payment.created_at)}</td>
+                            <td className="px-5 py-4 text-sm text-ct-mute">{formatDate(payment.created_at)}</td>
                             <td className="px-5 py-4 text-right">
                               {/* Only money that was actually collected can be sent back.
                                   A 'released' payment IS refundable by an admin — that is
@@ -474,12 +474,12 @@ export default function AdminPayments() {
                               {['completed', 'released'].includes(payment.status) ? (
                                 <button
                                   onClick={() => setRefundTarget(payment)}
-                                  className="text-red-600 hover:text-red-700 text-sm font-medium"
+                                  className="text-ct-rose hover:text-ct-rose text-sm font-medium"
                                 >
                                   Refund
                                 </button>
                               ) : (
-                                <span className="text-xs text-gray-400">—</span>
+                                <span className="text-xs text-ct-mute">—</span>
                               )}
                             </td>
                           </tr>
@@ -494,10 +494,10 @@ export default function AdminPayments() {
           ) : activeTab === 'tradie' ? (
             <>
               {/* Tradie Payouts */}
-              <div className="p-4 border-b border-gray-100">
-                <div className="flex items-start gap-2 px-3 py-2.5 bg-secondary-50 border border-secondary-200 rounded-lg">
-                  <Info className="w-4 h-4 text-secondary-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-xs text-secondary-800 leading-relaxed">
+              <div className="p-4 border-b border-ct-line-soft">
+                <div className="flex items-start gap-2 px-3 py-2.5 bg-ct-surface-2 border border-ct-line rounded-ct-sm">
+                  <Info className="w-4 h-4 text-ct-mute-2 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-ct-mute-2 leading-relaxed">
                     Estimated payouts after <strong>platform fee (varies by tier)</strong>, <strong>processing margin ({PLATFORM_MARGIN_LABEL})</strong>, and <strong>Stripe fee ({STRIPE_FEE_LABEL})</strong> are deducted.
                   </p>
                 </div>
@@ -505,9 +505,9 @@ export default function AdminPayments() {
 
               {completedPayments.length === 0 ? (
                 <div className="py-16 text-center">
-                  <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium">No payouts yet</p>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <Briefcase className="w-12 h-12 text-ct-mute mx-auto mb-3" />
+                  <p className="text-ct-mute font-medium">No payouts yet</p>
+                  <p className="text-sm text-ct-mute mt-1">
                     Payouts are calculated from completed job payments
                   </p>
                 </div>
@@ -515,36 +515,36 @@ export default function AdminPayments() {
                 <>
                   <div className="hidden md:block overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-ct-surface-2">
                         <tr>
-                          <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Client Paid</th>
-                          <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Type</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Gross</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Fees</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Net to Tradie</th>
-                          <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Client Paid</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Type</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Gross</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Fees</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Net to Tradie</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Date</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody className="divide-y divide-ct-line-soft">
                         {completedPayments.map(payment => {
                           const fees = Math.round(payment.amount * (DEFAULT_PLATFORM_FEE_RATE + PLATFORM_MARGIN_RATE + STRIPE_FEE_RATE)) + STRIPE_FEE_FIXED;
                           const net = payment.amount - fees;
                           return (
-                            <tr key={payment.id} className="hover:bg-gray-50/50">
-                              <td className="px-5 py-4 text-sm font-medium text-gray-900">
+                            <tr key={payment.id} className="hover:bg-ct-surface-2/50">
+                              <td className="px-5 py-4 text-sm font-medium text-ct-paper">
                                 {payment.profiles?.full_name || 'Unknown'}
                               </td>
                               <td className="px-5 py-4">{getTypeBadge(payment.payment_type)}</td>
-                              <td className="px-5 py-4 text-sm text-gray-500 text-right">
+                              <td className="px-5 py-4 text-sm text-ct-mute text-right">
                                 {formatCurrency(payment.amount)}
                               </td>
-                              <td className="px-5 py-4 text-sm text-red-600 text-right">
+                              <td className="px-5 py-4 text-sm text-ct-rose text-right">
                                 -{formatCurrency(fees)}
                               </td>
-                              <td className="px-5 py-4 text-sm font-bold text-green-700 text-right">
+                              <td className="px-5 py-4 text-sm font-bold text-ct-teal text-right">
                                 {formatCurrency(Math.max(0, net))}
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-500">{formatDate(payment.created_at)}</td>
+                              <td className="px-5 py-4 text-sm text-ct-mute">{formatDate(payment.created_at)}</td>
                             </tr>
                           );
                         })}
@@ -558,18 +558,18 @@ export default function AdminPayments() {
                       const fees = Math.round(payment.amount * (DEFAULT_PLATFORM_FEE_RATE + PLATFORM_MARGIN_RATE + STRIPE_FEE_RATE)) + STRIPE_FEE_FIXED;
                       const net = payment.amount - fees;
                       return (
-                        <div key={payment.id} className="bg-white border border-gray-200 rounded-xl p-4 space-y-2">
+                        <div key={payment.id} className="bg-ct-surface border border-ct-line rounded-ct-md p-4 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-900">
+                            <span className="text-sm font-medium text-ct-paper">
                               {payment.profiles?.full_name || 'Unknown'}
                             </span>
                             {getTypeBadge(payment.payment_type)}
                           </div>
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-500">Gross: {formatCurrency(payment.amount)}</span>
-                            <span className="font-bold text-green-700">Net: {formatCurrency(Math.max(0, net))}</span>
+                            <span className="text-ct-mute">Gross: {formatCurrency(payment.amount)}</span>
+                            <span className="font-bold text-ct-teal">Net: {formatCurrency(Math.max(0, net))}</span>
                           </div>
-                          <p className="text-xs text-gray-400">{formatDate(payment.created_at)}</p>
+                          <p className="text-xs text-ct-mute">{formatDate(payment.created_at)}</p>
                         </div>
                       );
                     })}
@@ -580,39 +580,39 @@ export default function AdminPayments() {
           ) : activeTab === 'revenue' ? (
             <>
               {/* Platform Revenue */}
-              <div className="p-4 border-b border-gray-100">
-                <p className="text-xs text-gray-500">
+              <div className="p-4 border-b border-ct-line-soft">
+                <p className="text-xs text-ct-mute">
                   ConnecTradie earns a platform fee (varies by subscription tier) + {PLATFORM_MARGIN_LABEL} processing margin on each completed payment. Stripe fees ({STRIPE_FEE_LABEL}) are paid to Stripe, not ConnecTradie.
                 </p>
               </div>
 
               {completedPayments.length === 0 ? (
                 <div className="py-16 text-center">
-                  <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium">No revenue yet</p>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <Building2 className="w-12 h-12 text-ct-mute mx-auto mb-3" />
+                  <p className="text-ct-mute font-medium">No revenue yet</p>
+                  <p className="text-sm text-ct-mute mt-1">
                     Revenue is earned when clients complete job payments
                   </p>
                 </div>
               ) : (
                 <>
                   {/* Revenue Summary */}
-                  <div className="p-5 border-b border-gray-100">
+                  <div className="p-5 border-b border-ct-line-soft">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="bg-warm-50 rounded-xl p-4 border border-warm-200">
-                        <p className="text-xs font-medium text-warm-700 mb-1">Platform Fees (by tier)</p>
-                        <p className="text-xl font-bold text-gray-900">{formatCurrency(totalPlatformFees)}</p>
-                        <p className="text-xs text-gray-500 mt-1">{formatCurrency(monthPlatformFees)} this month</p>
+                      <div className="bg-ct-amber/[0.13] rounded-ct-md p-4 border border-ct-amber/[0.34]">
+                        <p className="text-xs font-medium text-ct-amber mb-1">Platform Fees (by tier)</p>
+                        <p className="text-xl font-bold text-ct-paper">{formatCurrency(totalPlatformFees)}</p>
+                        <p className="text-xs text-ct-mute mt-1">{formatCurrency(monthPlatformFees)} this month</p>
                       </div>
-                      <div className="bg-secondary-50 rounded-xl p-4 border border-secondary-200">
-                        <p className="text-xs font-medium text-secondary-700 mb-1">Processing Margin ({PLATFORM_MARGIN_LABEL})</p>
-                        <p className="text-xl font-bold text-gray-900">{formatCurrency(totalPlatformMargin)}</p>
-                        <p className="text-xs text-gray-500 mt-1">{formatCurrency(monthPlatformMargin)} this month</p>
+                      <div className="bg-ct-surface-2 rounded-ct-md p-4 border border-ct-line">
+                        <p className="text-xs font-medium text-ct-mute-2 mb-1">Processing Margin ({PLATFORM_MARGIN_LABEL})</p>
+                        <p className="text-xl font-bold text-ct-paper">{formatCurrency(totalPlatformMargin)}</p>
+                        <p className="text-xs text-ct-mute mt-1">{formatCurrency(monthPlatformMargin)} this month</p>
                       </div>
-                      <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                        <p className="text-xs font-medium text-gray-600 mb-1">Stripe Fees (not ours)</p>
-                        <p className="text-xl font-bold text-gray-400">{formatCurrency(totalStripeFees)}</p>
-                        <p className="text-xs text-gray-400 mt-1">{formatCurrency(monthStripeFees)} this month</p>
+                      <div className="bg-ct-surface-2 rounded-ct-md p-4 border border-ct-line">
+                        <p className="text-xs font-medium text-ct-mute-2 mb-1">Stripe Fees (not ours)</p>
+                        <p className="text-xl font-bold text-ct-mute">{formatCurrency(totalStripeFees)}</p>
+                        <p className="text-xs text-ct-mute mt-1">{formatCurrency(monthStripeFees)} this month</p>
                       </div>
                     </div>
                   </div>
@@ -620,39 +620,39 @@ export default function AdminPayments() {
                   {/* Per-transaction breakdown */}
                   <div className="hidden md:block overflow-x-auto">
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-ct-surface-2">
                         <tr>
-                          <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Transaction</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Gross</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Platform (by tier)</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Margin ({(PLATFORM_MARGIN_RATE * 100).toFixed(1)}%)</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Stripe</th>
-                          <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Transaction</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Gross</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Platform (by tier)</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Margin ({(PLATFORM_MARGIN_RATE * 100).toFixed(1)}%)</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Stripe</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-ct-mute uppercase">Date</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody className="divide-y divide-ct-line-soft">
                         {completedPayments.map(payment => {
                           const platformFee = Math.round(payment.amount * DEFAULT_PLATFORM_FEE_RATE);
                           const processingFee = Math.round(payment.amount * PLATFORM_MARGIN_RATE);
                           const stripeFee = Math.round(payment.amount * STRIPE_FEE_RATE) + STRIPE_FEE_FIXED;
                           return (
-                            <tr key={payment.id} className="hover:bg-gray-50/50">
-                              <td className="px-5 py-4 text-sm font-medium text-gray-900">
+                            <tr key={payment.id} className="hover:bg-ct-surface-2/50">
+                              <td className="px-5 py-4 text-sm font-medium text-ct-paper">
                                 {payment.profiles?.full_name || 'Unknown'}
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-900 text-right">
+                              <td className="px-5 py-4 text-sm text-ct-paper text-right">
                                 {formatCurrency(payment.amount)}
                               </td>
-                              <td className="px-5 py-4 text-sm font-semibold text-warm-700 text-right">
+                              <td className="px-5 py-4 text-sm font-semibold text-ct-amber text-right">
                                 {formatCurrency(platformFee)}
                               </td>
-                              <td className="px-5 py-4 text-sm font-semibold text-secondary-700 text-right">
+                              <td className="px-5 py-4 text-sm font-semibold text-ct-mute-2 text-right">
                                 {formatCurrency(processingFee)}
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-400 text-right">
+                              <td className="px-5 py-4 text-sm text-ct-mute text-right">
                                 {formatCurrency(stripeFee)}
                               </td>
-                              <td className="px-5 py-4 text-sm text-gray-500">{formatDate(payment.created_at)}</td>
+                              <td className="px-5 py-4 text-sm text-ct-mute">{formatDate(payment.created_at)}</td>
                             </tr>
                           );
                         })}
@@ -666,18 +666,18 @@ export default function AdminPayments() {
                       const platformFee = Math.round(payment.amount * DEFAULT_PLATFORM_FEE_RATE);
                       const processingFee = Math.round(payment.amount * PLATFORM_MARGIN_RATE);
                       return (
-                        <div key={payment.id} className="bg-white border border-gray-200 rounded-xl p-4 space-y-2">
+                        <div key={payment.id} className="bg-ct-surface border border-ct-line rounded-ct-md p-4 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-900">
+                            <span className="text-sm font-medium text-ct-paper">
                               {payment.profiles?.full_name || 'Unknown'}
                             </span>
-                            <span className="text-sm text-gray-500">{formatCurrency(payment.amount)}</span>
+                            <span className="text-sm text-ct-mute">{formatCurrency(payment.amount)}</span>
                           </div>
                           <div className="flex items-center gap-3 text-xs">
-                            <span className="text-warm-700 font-semibold">Platform: {formatCurrency(platformFee)}</span>
-                            <span className="text-secondary-700 font-semibold">Margin: {formatCurrency(processingFee)}</span>
+                            <span className="text-ct-amber font-semibold">Platform: {formatCurrency(platformFee)}</span>
+                            <span className="text-ct-mute-2 font-semibold">Margin: {formatCurrency(processingFee)}</span>
                           </div>
-                          <p className="text-xs text-gray-400">{formatDate(payment.created_at)}</p>
+                          <p className="text-xs text-ct-mute">{formatDate(payment.created_at)}</p>
                         </div>
                       );
                     })}
@@ -689,30 +689,30 @@ export default function AdminPayments() {
             /* Subscriptions Tab */
             subscriptions.length === 0 ? (
               <div className="py-16 text-center">
-                <CreditCard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">No subscriptions yet</p>
-                <p className="text-sm text-gray-400 mt-1">Pro subscriptions will appear here</p>
+                <CreditCard className="w-12 h-12 text-ct-mute mx-auto mb-3" />
+                <p className="text-ct-mute font-medium">No subscriptions yet</p>
+                <p className="text-sm text-ct-mute mt-1">Pro subscriptions will appear here</p>
               </div>
             ) : (
               <>
-                <div className="p-4 border-b border-gray-100">
-                  <p className="text-xs text-gray-500">
+                <div className="p-4 border-b border-ct-line-soft">
+                  <p className="text-xs text-ct-mute">
                     Pro subscribers pay a lower platform fee (5% of labour, 4% for repeat clients) vs 8%/5% on the free tier. Commission applies to labour only — never to materials. They keep more of each payment.
                   </p>
                 </div>
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-ct-line-soft">
                   {subscriptions.map(sub => (
                     <div key={sub.id} className="px-5 py-4 flex items-center justify-between">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{sub.profiles?.full_name || 'Unknown'}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-sm font-medium text-ct-paper">{sub.profiles?.full_name || 'Unknown'}</p>
+                        <p className="text-xs text-ct-mute mt-0.5">
                           {sub.profiles?.subscription_started_at
                             ? `Pro since ${formatDate(sub.profiles.subscription_started_at)}`
                             : 'Pro subscriber'}
                         </p>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-teal/[0.14] text-ct-teal">
                           Pro
                         </span>
                       </div>
@@ -757,23 +757,23 @@ function Pagination({
 }) {
   if (totalCount <= pageSize) return null;
   return (
-    <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100">
-      <p className="text-sm text-gray-600">
+    <div className="flex items-center justify-between px-5 py-4 border-t border-ct-line-soft">
+      <p className="text-sm text-ct-mute-2">
         Showing {((page - 1) * pageSize) + 1}-{Math.min(page * pageSize, totalCount)} of {totalCount}
       </p>
       <div className="flex items-center gap-2">
         <button
           disabled={page <= 1}
           onClick={() => setPage(p => p - 1)}
-          className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50"
+          className="px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm disabled:opacity-50 hover:bg-ct-surface-2"
         >
           Previous
         </button>
-        <span className="text-sm font-medium text-gray-700">Page {page}</span>
+        <span className="text-sm font-medium text-ct-mute-2">Page {page}</span>
         <button
           disabled={page * pageSize >= totalCount}
           onClick={() => setPage(p => p + 1)}
-          className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm disabled:opacity-50 hover:bg-gray-50"
+          className="px-3 py-1.5 border border-ct-line rounded-ct-sm text-sm disabled:opacity-50 hover:bg-ct-surface-2"
         >
           Next
         </button>

@@ -59,27 +59,27 @@ export default function Schedule() {
   return (
     <DashboardLayout wide>
       <div>
-        <nav className="flex items-center gap-1.5 text-xs text-gray-500 mb-4">
-          <Link to="/dashboard" className="hover:text-primary-600 transition-colors">Dashboard</Link>
+        <nav className="flex items-center gap-1.5 text-xs text-ct-mute mb-4">
+          <Link to="/dashboard" className="hover:text-ct-mute-2 transition-colors">Dashboard</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="font-medium text-gray-900">{isTradie ? 'Teams & Schedule' : 'Schedule'}</span>
+          <span className="font-medium text-ct-paper">{isTradie ? 'Teams & Schedule' : 'Schedule'}</span>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-gray-700">{breadcrumbLabel}</span>
+          <span className="text-ct-mute-2">{breadcrumbLabel}</span>
         </nav>
 
         {isTradie && (
           <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
-            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+            <div className="flex items-center gap-1 bg-ct-surface-2 rounded-ct-md p-1 w-fit">
               {tabs.map(tab => {
                 const Icon = tab.icon;
                 return (
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-ct-sm text-sm font-medium transition-all ${
                       activeTab === tab.key
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-ct-surface text-ct-paper shadow-sm'
+                        : 'text-ct-mute hover:text-ct-mute-2'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -94,9 +94,9 @@ export default function Schedule() {
             {false && (
               <Link
                 to="/calendar-import"
-                className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-4 py-2 border border-ct-line rounded-ct-sm text-sm font-medium text-ct-mute-2 hover:bg-ct-surface-2 whitespace-nowrap"
               >
-                <CalendarDays className="w-4 h-4 text-secondary-600" /> Import from Google Calendar
+                <CalendarDays className="w-4 h-4 text-ct-mute-2" /> Import from Google Calendar
               </Link>
             )}
           </div>
@@ -105,21 +105,21 @@ export default function Schedule() {
         {activeTab === 'calendar' && (
           !isTradie && activeServiceCount === null ? (
             <div className="flex items-center justify-center py-16">
-              <span className="w-6 h-6 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
+              <span className="w-6 h-6 border-2 border-ct-line border-t-gray-500 rounded-full animate-spin" />
             </div>
           ) : isSingleService ? (
             <>
               {/* Single-service client: lead with the service, calendar collapsed below */}
               <div className="mb-10">
                 <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900">Ongoing Services</h2>
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <h2 className="text-lg font-semibold text-ct-paper">Ongoing Services</h2>
+                  <p className="text-sm text-ct-mute mt-0.5">
                     Your recurring services, upcoming sessions, and invoices
                   </p>
                 </div>
                 <ClientServicesTab />
               </div>
-              <div className="pt-8 border-t border-gray-200">
+              <div className="pt-8 border-t border-ct-line">
                 <SiteCalendar embedded defaultCollapsed />
               </div>
             </>
@@ -128,12 +128,12 @@ export default function Schedule() {
               <SiteCalendar embedded />
 
               {/* Ongoing Services section */}
-              <div className="mt-10 pt-8 border-t border-gray-200">
+              <div className="mt-10 pt-8 border-t border-ct-line">
                 <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-semibold text-ct-paper">
                     Ongoing Services
                   </h2>
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <p className="text-sm text-ct-mute mt-0.5">
                     {isTradie
                       ? 'Regular clients, upcoming visits, and invoices'
                       : 'Your recurring services, upcoming sessions, and invoices'}

@@ -43,14 +43,14 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
 
   const getAvailabilityStatus = () => {
     if (!hasSetAvailability) {
-      return { text: 'Request Availability', color: 'text-primary-700', bg: 'bg-primary-50', dot: 'bg-primary-400', border: 'border-primary-100' };
+      return { text: 'Request Availability', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', dot: 'bg-ct-teal', border: 'border-ct-teal/30' };
     }
     if (availabilityHours >= 10) {
-      return { text: 'Available This Week', color: 'text-green-700', bg: 'bg-green-50', dot: 'bg-green-500', border: 'border-green-100' };
+      return { text: 'Available This Week', color: 'text-ct-teal', bg: 'bg-ct-teal/[0.14]', dot: 'bg-ct-teal/[0.14]0', border: 'border-ct-teal/30' };
     } else if (availabilityHours > 0) {
-      return { text: 'Limited Availability', color: 'text-warm-700', bg: 'bg-warm-50', dot: 'bg-warm-500', border: 'border-warm-100' };
+      return { text: 'Limited Availability', color: 'text-ct-amber', bg: 'bg-ct-amber/[0.13]', dot: 'bg-ct-teal', border: 'border-ct-teal/30' };
     } else {
-      return { text: 'Busy This Week', color: 'text-gray-600', bg: 'bg-gray-50', dot: 'bg-gray-400', border: 'border-gray-200' };
+      return { text: 'Busy This Week', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', dot: 'bg-ct-surface-2', border: 'border-ct-line' };
     }
   };
 
@@ -58,11 +58,11 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
   const isIdentityVerified = details?.is_verified || tradie.verification_status === 'verified';
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm shadow-gray-200/60 hover:shadow-md hover:shadow-gray-200/80 transition-all duration-200 overflow-hidden group">
+    <div className="bg-ct-surface rounded-ct-lg border border-ct-line-soft shadow-sm shadow-gray-200/60 hover:shadow-md hover:shadow-gray-200/80 transition-all duration-200 overflow-hidden group">
       <div className="p-5">
         {/* Header: avatar + info + save */}
         <div className="flex items-start gap-3.5">
-          <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 ring-1 ring-gray-100">
+          <div className="w-14 h-14 rounded-ct-md bg-ct-surface-2 overflow-hidden flex-shrink-0 ring-1 ring-ct-line">
             {tradie.avatar_url ? (
               <img
                 src={tradie.avatar_url}
@@ -72,8 +72,8 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-primary-50 flex items-center justify-center">
-                <span className="text-xl font-bold text-primary-600">
+              <div className="w-full h-full bg-ct-surface-2 flex items-center justify-center">
+                <span className="text-xl font-bold text-ct-mute-2">
                   {tradie.full_name?.charAt(0) || 'T'}
                 </span>
               </div>
@@ -84,16 +84,16 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
             <div className="flex items-center gap-1.5 flex-wrap">
               <Link
                 to={`/tradie/${tradie.id}`}
-                className="font-semibold text-gray-900 text-sm line-clamp-2 break-words hover:text-primary-600 transition-colors"
+                className="font-semibold text-ct-paper text-sm line-clamp-2 break-words hover:text-ct-mute-2 transition-colors"
               >
                 {displayName}
               </Link>
               {isPro && (
-                <BadgeCheck className="w-4 h-4 text-primary-500 flex-shrink-0" />
+                <BadgeCheck className="w-4 h-4 text-ct-teal0 flex-shrink-0" />
               )}
               {isPro && <ProBadge size="sm" variant={isVerifiedPro ? 'verified' : 'pro'} />}
             </div>
-            <p className="text-xs text-gray-500 capitalize mt-0.5">
+            <p className="text-xs text-ct-mute capitalize mt-0.5">
               {details?.trade_category || 'Trade Professional'}
             </p>
             <div className="mt-1.5">
@@ -104,7 +104,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
               />
             </div>
             {suburb && (
-              <div className="flex items-center gap-1 mt-1 text-xs text-gray-400">
+              <div className="flex items-center gap-1 mt-1 text-xs text-ct-mute">
                 <MapPin className="w-3 h-3" />
                 <span>{suburb}</span>
               </div>
@@ -114,10 +114,10 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
           {onSave && (
             <button
               onClick={() => onSave(tradie)}
-              className={`p-2 rounded-xl transition-all min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
+              className={`p-2 rounded-ct-md transition-all min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center ${
                 isSaved
-                  ? 'bg-primary-50 text-primary-600 ring-1 ring-primary-200'
-                  : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                  ? 'bg-ct-surface-2 text-ct-mute-2 ring-1 ring-ct-teal'
+                  : 'bg-ct-surface-2 text-ct-mute hover:bg-ct-surface-2 hover:text-ct-mute-2'
               }`}
             >
               <svg className="w-4 h-4" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
@@ -135,12 +135,12 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
                 key={i}
                 className={`w-3.5 h-3.5 ${
                   i < Math.round(rating.average_rating)
-                    ? 'fill-yellow-400 text-yellow-400'
-                    : 'text-gray-200'
+                    ? 'fill-yellow-400 text-ct-amber'
+                    : 'text-ct-paper'
                 }`}
               />
             ))}
-            <span className="text-xs text-gray-500 ml-1">
+            <span className="text-xs text-ct-mute ml-1">
               {rating.average_rating.toFixed(1)} ({rating.total_reviews})
             </span>
           </div>
@@ -150,11 +150,11 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
         <div className="flex flex-wrap gap-1.5 mt-3">
           {isIdentityVerified && (
             <div className="relative group/tip">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary-50 text-secondary-700 text-xs font-medium rounded-md border border-secondary-100 cursor-help">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-md border border-ct-line cursor-help">
                 <ShieldCheck className="w-3 h-3" />
                 ID Verified
               </span>
-              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl">
+              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-ct-surface text-ct-ink text-xs rounded-ct-sm whitespace-nowrap opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>{redactName(tradie.full_name)} - Identity & Credentials Verified</span>
@@ -165,11 +165,11 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
           )}
           {details?.is_insured && (
             <div className="relative group/tip">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-secondary-50 text-secondary-700 text-xs font-medium rounded-md border border-secondary-100 cursor-help">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-md border border-ct-line cursor-help">
                 <Shield className="w-3 h-3" />
                 Insured
               </span>
-              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl">
+              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-ct-surface text-ct-ink text-xs rounded-ct-sm whitespace-nowrap opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl">
                 <div className="flex items-center gap-1.5 font-medium">
                   <Shield className="w-3.5 h-3.5" />
                   <span>Insurance Verified</span>
@@ -180,24 +180,24 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
           )}
           {details?.is_licensed && (
             <div className="relative group/tip">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-warm-50 text-warm-700 text-xs font-medium rounded-md border border-warm-100 cursor-help">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-md border border-ct-teal/30 cursor-help">
                 <FileCheck className="w-3 h-3" />
                 Licensed
               </span>
-              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl max-w-xs">
+              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-ct-surface text-ct-ink text-xs rounded-ct-sm opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl max-w-xs">
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5 font-medium whitespace-nowrap">
                     <FileCheck className="w-3.5 h-3.5" />
                     <span>Qualifications</span>
                   </div>
                   {details.qualifications && details.qualifications.length > 0 ? (
-                    <ul className="space-y-0.5 text-gray-300">
+                    <ul className="space-y-0.5 text-ct-mute">
                       {details.qualifications.map((qual, index) => (
                         <li key={index} className="whitespace-nowrap">• {qual}</li>
                       ))}
                     </ul>
                   ) : (
-                    <div className="text-gray-300">Licensed Professional</div>
+                    <div className="text-ct-mute">Licensed Professional</div>
                   )}
                 </div>
                 <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
@@ -208,33 +208,33 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
 
         {/* Availability + Pricing row */}
         <div className="flex items-center flex-wrap gap-2 mt-3">
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${availability.bg} ${availability.color} border ${availability.border}`}>
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-ct-sm text-xs font-medium ${availability.bg} ${availability.color} border ${availability.border}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${availability.dot} animate-pulse`} />
             {availability.text}
           </span>
 
           {details?.hourly_rate && (
-            <span className="text-xs text-gray-500">
-              From <span className="font-semibold text-gray-700">${details.hourly_rate}/hr</span>
+            <span className="text-xs text-ct-mute">
+              From <span className="font-semibold text-ct-mute-2">${details.hourly_rate}/hr</span>
             </span>
           )}
         </div>
 
 
         {tradie.has_phone && (
-          <p className="mt-2 text-xs text-gray-400">
+          <p className="mt-2 text-xs text-ct-mute">
             Contact via chat
           </p>
         )}
       </div>
 
       {/* Actions footer */}
-      <div className="px-5 py-3 border-t border-gray-100">
+      <div className="px-5 py-3 border-t border-ct-line-soft">
         <div className="flex items-center gap-2 flex-wrap">
           {onRequestQuote && (
             <button
               onClick={() => onRequestQuote(tradie)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors min-h-[44px]"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-ct-sm bg-ct-teal text-ct-ink hover:brightness-110 transition-colors min-h-[44px]"
             >
               <FileText className="w-3.5 h-3.5" />
               Request Quote
@@ -242,13 +242,13 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
           )}
           <button
             onClick={() => onChat(tradie)}
-            className="relative inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors min-h-[44px]"
+            className="relative inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-ct-sm border border-ct-line text-ct-mute-2 hover:bg-ct-surface-2 transition-colors min-h-[44px]"
           >
             <MessageCircle className="w-3.5 h-3.5" />
             Chat
             {!!unreadCount && (
               <span
-                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-warm-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-white"
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-ct-teal text-ct-ink text-[10px] font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-white"
                 aria-label={`${unreadCount} unread message${unreadCount === 1 ? '' : 's'}`}
               >
                 {unreadCount > 9 ? '9+' : unreadCount}
@@ -258,14 +258,14 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
           <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={() => onViewCalendar(tradie)}
-              className="p-2.5 text-secondary-400 hover:text-secondary-600 hover:bg-secondary-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-2.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               title="Check Calendar"
             >
               <Calendar className="w-4 h-4" />
             </button>
             <Link
               to={`/tradie/${tradie.id}`}
-              className="p-2.5 text-emerald-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-2.5 text-ct-teal hover:text-ct-teal hover:bg-ct-teal/[0.14] rounded-ct-sm transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               title="View Full Profile"
             >
               <ExternalLink className="w-4 h-4" />

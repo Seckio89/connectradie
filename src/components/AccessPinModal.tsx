@@ -59,7 +59,7 @@ function PinBoxes({
             const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, length);
             if (digits) { onChange(digits); refs.current[Math.min(digits.length, length - 1)]?.focus(); }
           }}
-          className="w-12 h-14 text-center text-xl font-semibold text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 disabled:bg-gray-50"
+          className="w-12 h-14 text-center text-xl font-semibold text-ct-paper border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal disabled:bg-ct-surface-2"
         />
       ))}
     </div>
@@ -153,27 +153,27 @@ export default function AccessPinModal({ isOpen, onClose, initialMode = 'auto', 
       <div className="p-5">
         <div className="flex items-start justify-between mb-1">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-secondary-50 flex items-center justify-center">
-              {mode === 'setup' ? <ShieldCheck className="w-5 h-5 text-secondary-600" /> : <Lock className="w-5 h-5 text-secondary-600" />}
+            <div className="w-9 h-9 rounded-ct-md bg-ct-surface-2 flex items-center justify-center">
+              {mode === 'setup' ? <ShieldCheck className="w-5 h-5 text-ct-mute-2" /> : <Lock className="w-5 h-5 text-ct-mute-2" />}
             </div>
-            <h2 className="text-base font-bold text-gray-900">{heading}</h2>
+            <h2 className="text-base font-bold text-ct-paper">{heading}</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="p-1.5 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm"><X className="w-4 h-4" /></button>
         </div>
 
         {mode === 'loading' && (
-          <div className="flex items-center justify-center py-8 text-gray-400"><Loader2 className="w-5 h-5 animate-spin" /></div>
+          <div className="flex items-center justify-center py-8 text-ct-mute"><Loader2 className="w-5 h-5 animate-spin" /></div>
         )}
 
         {mode === 'setup' && (
           <div className="space-y-3">
-            <p className="text-sm text-gray-500">This PIN keeps client access codes secure. You’ll enter it each time you view gate codes, keys, or alarm details.</p>
+            <p className="text-sm text-ct-mute">This PIN keeps client access codes secure. You’ll enter it each time you view gate codes, keys, or alarm details.</p>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5 text-center">Enter 4-digit PIN</label>
+              <label className="block text-xs font-medium text-ct-mute mb-1.5 text-center">Enter 4-digit PIN</label>
               <PinBoxes length={4} value={pin} onChange={(v) => { setPin(v); setError(''); }} autoFocus disabled={busy} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5 text-center">Confirm 4-digit PIN</label>
+              <label className="block text-xs font-medium text-ct-mute mb-1.5 text-center">Confirm 4-digit PIN</label>
               <PinBoxes length={4} value={confirm} onChange={(v) => { setConfirm(v); setError(''); }} disabled={busy} />
             </div>
           </div>
@@ -181,55 +181,55 @@ export default function AccessPinModal({ isOpen, onClose, initialMode = 'auto', 
 
         {mode === 'enter' && (
           <div className="space-y-3">
-            <p className="text-sm text-gray-500">Enter your 4-digit PIN to view access instructions.</p>
+            <p className="text-sm text-ct-mute">Enter your 4-digit PIN to view access instructions.</p>
             <PinBoxes length={4} value={pin} onChange={(v) => { setPin(v); setError(''); }} autoFocus disabled={busy} />
-            <button type="button" onClick={startForgot} disabled={busy} className="block mx-auto text-xs text-secondary-600 hover:text-secondary-700">Forgot PIN?</button>
+            <button type="button" onClick={startForgot} disabled={busy} className="block mx-auto text-xs text-ct-mute-2 hover:text-ct-mute-2">Forgot PIN?</button>
           </div>
         )}
 
         {mode === 'change' && (
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5 text-center">Current PIN</label>
+              <label className="block text-xs font-medium text-ct-mute mb-1.5 text-center">Current PIN</label>
               <PinBoxes length={4} value={current} onChange={(v) => { setCurrent(v); setError(''); }} autoFocus disabled={busy} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5 text-center">New PIN</label>
+              <label className="block text-xs font-medium text-ct-mute mb-1.5 text-center">New PIN</label>
               <PinBoxes length={4} value={pin} onChange={(v) => { setPin(v); setError(''); }} disabled={busy} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5 text-center">Confirm new PIN</label>
+              <label className="block text-xs font-medium text-ct-mute mb-1.5 text-center">Confirm new PIN</label>
               <PinBoxes length={4} value={confirm} onChange={(v) => { setConfirm(v); setError(''); }} disabled={busy} />
             </div>
-            <button type="button" onClick={startForgot} disabled={busy} className="block mx-auto text-xs text-secondary-600 hover:text-secondary-700">Forgot current PIN?</button>
+            <button type="button" onClick={startForgot} disabled={busy} className="block mx-auto text-xs text-ct-mute-2 hover:text-ct-mute-2">Forgot current PIN?</button>
           </div>
         )}
 
         {mode === 'reset' && (
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5 text-center">6-digit code (from email)</label>
+              <label className="block text-xs font-medium text-ct-mute mb-1.5 text-center">6-digit code (from email)</label>
               <PinBoxes length={6} value={code} onChange={(v) => { setCode(v); setError(''); }} autoFocus disabled={busy} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5 text-center">New PIN</label>
+              <label className="block text-xs font-medium text-ct-mute mb-1.5 text-center">New PIN</label>
               <PinBoxes length={4} value={pin} onChange={(v) => { setPin(v); setError(''); }} disabled={busy} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5 text-center">Confirm new PIN</label>
+              <label className="block text-xs font-medium text-ct-mute mb-1.5 text-center">Confirm new PIN</label>
               <PinBoxes length={4} value={confirm} onChange={(v) => { setConfirm(v); setError(''); }} disabled={busy} />
             </div>
           </div>
         )}
 
-        {notice && <p className="mt-3 text-xs text-secondary-700 bg-secondary-50 rounded-lg px-3 py-2">{notice}</p>}
-        {error && <p className="mt-3 text-xs text-red-600 text-center">{error}</p>}
+        {notice && <p className="mt-3 text-xs text-ct-mute-2 bg-ct-surface-2 rounded-ct-sm px-3 py-2">{notice}</p>}
+        {error && <p className="mt-3 text-xs text-ct-rose text-center">{error}</p>}
 
         {mode !== 'loading' && (
           <button
             onClick={mode === 'setup' ? submitSetup : mode === 'enter' ? submitEnter : mode === 'change' ? submitChange : submitReset}
             disabled={busy}
-            className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-secondary-600 text-white text-sm font-semibold rounded-xl hover:bg-secondary-700 disabled:opacity-50 transition-colors"
+            className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-surface-2 text-ct-ink text-sm font-semibold rounded-ct-md hover:bg-ct-surface-2 disabled:opacity-50 transition-colors"
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             {mode === 'setup' ? 'Set PIN' : mode === 'enter' ? 'Unlock' : mode === 'change' ? 'Change PIN' : 'Reset PIN'}

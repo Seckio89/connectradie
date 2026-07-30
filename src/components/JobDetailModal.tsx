@@ -424,37 +424,37 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="lg" closeOnBackdrop={false}>
       {/* Header */}
-      <div className="sticky top-0 bg-white px-6 pt-5 pb-4 border-b border-gray-100 z-10">
+      <div className="sticky top-0 bg-ct-surface px-6 pt-5 pb-4 border-b border-ct-line-soft z-10">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
               {category && (
-                <span className="px-3 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs font-medium border border-secondary-200 flex-shrink-0">
+                <span className="px-3 py-1 bg-ct-surface-2 text-ct-mute-2 rounded-full text-xs font-medium border border-ct-line flex-shrink-0">
                   {category}
                 </span>
               )}
               {isRecurring && frequencyLabel && (
-                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium flex-shrink-0">
+                <span className="px-3 py-1 rounded-full bg-ct-teal/[0.14] text-ct-teal text-xs font-medium flex-shrink-0">
                   <Repeat className="w-3 h-3 inline mr-1" />{frequencyLabel}
                 </span>
               )}
               <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${
-                isDeclined ? 'bg-red-50 text-red-700 border-red-200'
-                : localStatus === 'completed' ? 'bg-green-50 text-green-700 border-green-200'
-                : localStatus === 'in_progress' ? 'bg-secondary-50 text-secondary-700 border-secondary-200'
-                : localStatus === 'accepted' ? 'bg-secondary-50 text-secondary-700 border-secondary-200'
-                : 'bg-amber-50 text-amber-700 border-amber-200'
+                isDeclined ? 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose/[0.34]'
+                : localStatus === 'completed' ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30'
+                : localStatus === 'in_progress' ? 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'
+                : localStatus === 'accepted' ? 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'
+                : 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]'
               }`}>
                 {localStatus.replace(/_/g, ' ')}
               </span>
             </div>
-            <h2 className="text-lg font-bold text-gray-900 truncate">{description || 'Job Details'}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <h2 className="text-lg font-bold text-ct-paper truncate">{description || 'Job Details'}</h2>
+            <p className="text-xs text-ct-mute mt-0.5">
               Posted {formatDate(job.created_at)}
               {job.scheduled_date && (
                 <>
-                  <span className="mx-1.5 text-gray-300">·</span>
-                  <span className="text-gray-600 font-medium">
+                  <span className="mx-1.5 text-ct-mute">·</span>
+                  <span className="text-ct-mute-2 font-medium">
                     Wanted by {formatDate(job.scheduled_date)}
                     {job.preferred_time_slot ? ` (${job.preferred_time_slot})` : ''}
                   </span>
@@ -462,8 +462,8 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
               )}
             </p>
           </div>
-          <button onClick={onClose} aria-label="Close" className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 ml-3 min-w-[44px] min-h-[44px] flex items-center justify-center">
-            <X className="w-5 h-5 text-gray-500" />
+          <button onClick={onClose} aria-label="Close" className="p-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors flex-shrink-0 ml-3 min-w-[44px] min-h-[44px] flex items-center justify-center">
+            <X className="w-5 h-5 text-ct-mute" />
           </button>
         </div>
       </div>
@@ -471,8 +471,8 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
       <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
         {/* ── Progress Stepper ── */}
         {!isDeclined && (
-          <div className="bg-gray-50 rounded-xl p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Job Progress</p>
+          <div className="bg-ct-surface-2 rounded-ct-md p-4">
+            <p className="text-xs font-semibold text-ct-mute uppercase tracking-wider mb-3">Job Progress</p>
             <div ref={stepperScrollRef} className="overflow-x-auto sm:overflow-visible scrollbar-hide -mx-1 px-1">
             <div className="flex items-center justify-between min-w-[280px] sm:min-w-0">
               {STEPS.map((step, i) => {
@@ -484,9 +484,9 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                         done
                           ? isCurrent
-                            ? 'bg-secondary-500 text-white ring-4 ring-secondary-100'
-                            : 'bg-secondary-500 text-white'
-                          : 'bg-gray-200 text-gray-400'
+                            ? 'bg-ct-surface-20 text-ct-ink ring-4 ring-ct-teal'
+                            : 'bg-ct-surface-20 text-ct-ink'
+                          : 'bg-ct-line text-ct-mute'
                       }`}>
                         {done && !isCurrent ? (
                           <CheckCircle2 className="w-5 h-5" />
@@ -495,14 +495,14 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                         )}
                       </div>
                       <span className={`text-[10px] sm:text-xs mt-1.5 font-medium leading-tight whitespace-nowrap ${
-                        isCurrent ? 'text-secondary-700' : done ? 'text-gray-600' : 'text-gray-400'
+                        isCurrent ? 'text-ct-mute-2' : done ? 'text-ct-mute-2' : 'text-ct-mute'
                       }`}>
                         {step.label}
                       </span>
                     </div>
                     {i < STEPS.length - 1 && (
                       <div className={`flex-1 h-0.5 mx-1 sm:mx-2 rounded ${
-                        i < currentStep ? 'bg-secondary-400' : 'bg-gray-200'
+                        i < currentStep ? 'bg-ct-surface-2' : 'bg-ct-line'
                       }`} />
                     )}
                   </div>
@@ -514,15 +514,15 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
         )}
 
         {isJobTaken && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-            <p className="text-sm font-semibold text-amber-700">This job has been taken by another tradie</p>
-            <p className="text-xs text-amber-600 mt-1">This job is no longer available for quoting.</p>
+          <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-4 text-center">
+            <p className="text-sm font-semibold text-ct-amber">This job has been taken by another tradie</p>
+            <p className="text-xs text-ct-amber mt-1">This job is no longer available for quoting.</p>
           </div>
         )}
 
         {isDeclined && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-            <p className="text-sm font-semibold text-red-700">This job has been declined</p>
+          <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-4 text-center">
+            <p className="text-sm font-semibold text-ct-rose">This job has been declined</p>
           </div>
         )}
 
@@ -531,18 +531,18 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
           !isDeclined &&
           acceptedQuote?.requires_site_inspection &&
           (localStatus === 'funded' || localStatus === 'in_progress') && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-4">
             <div className="flex items-start gap-3 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                <DollarSign className="w-4 h-4 text-amber-600" />
+              <div className="w-8 h-8 rounded-ct-sm bg-ct-amber/[0.13] flex items-center justify-center flex-shrink-0">
+                <DollarSign className="w-4 h-4 text-ct-amber" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-amber-900">
+                <p className="text-sm font-semibold text-ct-paper">
                   {acceptedQuote.final_price != null
                     ? 'Final Price Set'
                     : 'Set Final Price After Site Visit'}
                 </p>
-                <p className="text-xs text-amber-700 mt-0.5">
+                <p className="text-xs text-ct-amber mt-0.5">
                   {acceptedQuote.final_price != null
                     ? `Final price: $${acceptedQuote.final_price.toFixed(2)} (original estimate: $${(acceptedQuote.firm_price ?? acceptedQuote.price_max ?? acceptedQuote.price_min).toFixed(2)})`
                     : 'Visit the site and confirm your final price. If higher than your estimate, the client will need to approve and pay the difference.'}
@@ -554,7 +554,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
               <>
                 <div className="flex items-center gap-2 mt-3">
                   <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm font-medium">$</span>
                     <input
                       type="number"
                       min="1"
@@ -565,16 +565,16 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                         setFinalPriceError(null);
                       }}
                       placeholder="Final price"
-                      className="w-full pl-7 pr-3 py-2.5 border border-amber-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                      className="w-full pl-7 pr-3 py-2.5 border border-ct-amber/[0.34] rounded-ct-sm text-sm text-ct-paper focus:outline-none focus:ring-2 focus:ring-ct-amber bg-ct-surface"
                     />
                   </div>
                   <button
                     onClick={handleSetFinalPrice}
                     disabled={finalPriceLoading || !finalPriceInput}
-                    className={`px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                    className={`px-4 py-2.5 text-sm font-medium rounded-ct-sm transition-colors ${
                       finalPriceLoading || !finalPriceInput
-                        ? 'bg-amber-300 text-amber-100 cursor-not-allowed'
-                        : 'bg-amber-500 text-white hover:bg-amber-600'
+                        ? 'bg-ct-amber/[0.13] text-ct-amber cursor-not-allowed'
+                        : 'bg-ct-amber/[0.13]0 text-ct-ink hover:bg-ct-amber'
                     }`}
                   >
                     {finalPriceLoading ? (
@@ -586,7 +586,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                 </div>
 
                 {finalPriceError && (
-                  <div className="flex items-start gap-1.5 mt-2 text-xs text-red-600">
+                  <div className="flex items-start gap-1.5 mt-2 text-xs text-ct-rose">
                     <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                     <span>{finalPriceError}</span>
                   </div>
@@ -595,7 +595,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
             )}
 
             {finalPriceSuccess && (
-              <div className="flex items-start gap-1.5 mt-2 text-xs text-green-700 bg-green-50 rounded-lg p-2 border border-green-200">
+              <div className="flex items-start gap-1.5 mt-2 text-xs text-ct-teal bg-ct-teal/[0.14] rounded-ct-sm p-2 border border-ct-teal/30">
                 <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                 <span>{finalPriceSuccess}</span>
               </div>
@@ -605,28 +605,28 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
 
         {/* ── What to do next ── */}
         {nextAction && !isDeclined && (
-          <div className={`rounded-xl p-4 border ${
+          <div className={`rounded-ct-md p-4 border ${
             localStatus === 'completed'
-              ? 'bg-green-50 border-green-200'
-              : 'bg-secondary-50 border-secondary-200'
+              ? 'bg-ct-teal/[0.14] border-ct-teal/30'
+              : 'bg-ct-surface-2 border-ct-line'
           }`}>
             <div className="flex items-start gap-3">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                localStatus === 'completed' ? 'bg-green-100' : 'bg-secondary-100'
+              <div className={`w-8 h-8 rounded-ct-sm flex items-center justify-center flex-shrink-0 ${
+                localStatus === 'completed' ? 'bg-ct-teal/[0.14]' : 'bg-ct-surface-2'
               }`}>
-                {localStatus === 'pending' && <Clock className="w-4 h-4 text-secondary-600" />}
-                {localStatus === 'accepted' && <Play className="w-4 h-4 text-secondary-600" />}
-                {localStatus === 'in_progress' && <Flag className="w-4 h-4 text-secondary-600" />}
-                {localStatus === 'completed' && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                {localStatus === 'pending' && <Clock className="w-4 h-4 text-ct-mute-2" />}
+                {localStatus === 'accepted' && <Play className="w-4 h-4 text-ct-mute-2" />}
+                {localStatus === 'in_progress' && <Flag className="w-4 h-4 text-ct-mute-2" />}
+                {localStatus === 'completed' && <CheckCircle2 className="w-4 h-4 text-ct-teal" />}
               </div>
               <div className="flex-1">
                 <p className={`text-sm font-semibold ${
-                  localStatus === 'completed' ? 'text-green-800' : 'text-secondary-900'
+                  localStatus === 'completed' ? 'text-ct-teal' : 'text-ct-paper'
                 }`}>
                   {nextAction.label}
                 </p>
                 <p className={`text-xs mt-0.5 ${
-                  localStatus === 'completed' ? 'text-green-700' : 'text-secondary-700'
+                  localStatus === 'completed' ? 'text-ct-teal' : 'text-ct-mute-2'
                 }`}>
                   {nextAction.hint}
                 </p>
@@ -637,19 +637,19 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
 
         {/* ── Scope of Work ── */}
         {description && description.length > 40 && (
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Scope of Work</p>
+          <div className="bg-ct-surface border border-ct-line rounded-ct-md p-4">
+            <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">Scope of Work</p>
             {descriptionLines.length > 1 ? (
               <ul className="space-y-1.5">
                 {descriptionLines.map((line, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-gray-700 leading-relaxed">
-                    <span className="mt-[0.5em] w-1.5 h-1.5 rounded-full bg-secondary-400 flex-shrink-0" />
+                  <li key={i} className="flex items-start gap-2 text-sm text-ct-mute-2 leading-relaxed">
+                    <span className="mt-[0.5em] w-1.5 h-1.5 rounded-full bg-ct-surface-2 flex-shrink-0" />
                     <span>{line}</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{description}</p>
+              <p className="text-sm text-ct-mute-2 leading-relaxed whitespace-pre-wrap">{description}</p>
             )}
           </div>
         )}
@@ -658,9 +658,9 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                structured so a worker can read it at the job site. Never shown to the
                client (public-quote doesn't return jobs.notes, and this is role-gated). ── */}
         {isTradie && job.notes && (
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              Job notes &amp; conditions <span className="font-normal normal-case text-gray-400">· not shown to client</span>
+          <div className="bg-ct-surface border border-ct-line rounded-ct-md p-4">
+            <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">
+              Job notes &amp; conditions <span className="font-normal normal-case text-ct-mute">· not shown to client</span>
             </p>
             <FormattedNotes text={job.notes} className="space-y-1" />
           </div>
@@ -671,24 +671,24 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
 
         {/* ── Service Schedule (recurring only) ── */}
         {isRecurring && recurringJob && (
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Service Schedule</p>
+          <div className="bg-ct-surface border border-ct-line rounded-ct-md p-4">
+            <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-3">Service Schedule</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {frequencyLabel && (
-                <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
-                  <Repeat className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+                <div className="flex items-center gap-2.5 bg-ct-surface-2 rounded-ct-md p-3">
+                  <Repeat className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase">Frequency</p>
-                    <p className="text-sm text-gray-700">{frequencyLabel}</p>
+                    <p className="text-xs font-semibold text-ct-mute uppercase">Frequency</p>
+                    <p className="text-sm text-ct-mute-2">{frequencyLabel}</p>
                   </div>
                 </div>
               )}
               {recurringJob.next_due_date && (
-                <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
-                  <Calendar className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+                <div className="flex items-center gap-2.5 bg-ct-surface-2 rounded-ct-md p-3">
+                  <Calendar className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase">Next Due</p>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-xs font-semibold text-ct-mute uppercase">Next Due</p>
+                    <p className="text-sm text-ct-mute-2">
                       {new Date(recurringJob.next_due_date + 'T00:00:00').toLocaleDateString('en-AU', {
                         weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
                       })}
@@ -696,19 +696,19 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                   </div>
                 </div>
               )}
-              <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
-                <span className="text-base text-secondary-500 font-semibold flex-shrink-0">$</span>
+              <div className="flex items-center gap-2.5 bg-ct-surface-2 rounded-ct-md p-3">
+                <span className="text-base text-ct-mute-2 font-semibold flex-shrink-0">$</span>
                 <div>
-                  <p className="text-xs font-semibold text-gray-400 uppercase">Estimated Value</p>
-                  <p className="text-sm text-gray-700 font-medium">{estimatedValue}</p>
+                  <p className="text-xs font-semibold text-ct-mute uppercase">Estimated Value</p>
+                  <p className="text-sm text-ct-mute-2 font-medium">{estimatedValue}</p>
                 </div>
               </div>
               {recurringJob.preferred_time && (
-                <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
-                  <Clock className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+                <div className="flex items-center gap-2.5 bg-ct-surface-2 rounded-ct-md p-3">
+                  <Clock className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
                   <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase">Preferred Time</p>
-                    <p className="text-sm text-gray-700">{recurringJob.preferred_time}</p>
+                    <p className="text-xs font-semibold text-ct-mute uppercase">Preferred Time</p>
+                    <p className="text-sm text-ct-mute-2">{recurringJob.preferred_time}</p>
                   </div>
                 </div>
               )}
@@ -718,8 +718,8 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
 
         {/* ── Your Availability (tradie only, pending jobs) ── */}
         {isTradie && localStatus === 'pending' && user && (
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Your Availability</p>
+          <div className="bg-ct-surface border border-ct-line rounded-ct-md p-4">
+            <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-3">Your Availability</p>
             <AvailabilityMiniCalendar
               tradieId={user.id}
               preferredDate={job.scheduled_date}
@@ -732,20 +732,20 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
         {/* ── Key Details ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {job.location_address && (
-            <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
-              <MapPin className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+            <div className="flex items-center gap-2.5 bg-ct-surface-2 rounded-ct-md p-3">
+              <MapPin className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase">Location</p>
-                <p className="text-sm text-gray-700">{job.location_address}</p>
+                <p className="text-xs font-semibold text-ct-mute uppercase">Location</p>
+                <p className="text-sm text-ct-mute-2">{job.location_address}</p>
               </div>
             </div>
           )}
           {job.scheduled_time && (
-            <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
-              <Calendar className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+            <div className="flex items-center gap-2.5 bg-ct-surface-2 rounded-ct-md p-3">
+              <Calendar className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase">Scheduled</p>
-                <p className="text-sm text-gray-700">
+                <p className="text-xs font-semibold text-ct-mute uppercase">Scheduled</p>
+                <p className="text-sm text-ct-mute-2">
                   {new Date(job.scheduled_time).toLocaleDateString('en-AU', {
                     weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
                   })}
@@ -754,20 +754,20 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
             </div>
           )}
           {job.estimated_duration && (
-            <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
-              <Clock className="w-4 h-4 text-secondary-500 flex-shrink-0" />
+            <div className="flex items-center gap-2.5 bg-ct-surface-2 rounded-ct-md p-3">
+              <Clock className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase">Duration</p>
-                <p className="text-sm text-gray-700">{job.estimated_duration}</p>
+                <p className="text-xs font-semibold text-ct-mute uppercase">Duration</p>
+                <p className="text-sm text-ct-mute-2">{job.estimated_duration}</p>
               </div>
             </div>
           )}
           {(job.budget_amount || job.budget_type) && (
-            <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
-              <span className="text-base text-secondary-500 font-semibold flex-shrink-0">$</span>
+            <div className="flex items-center gap-2.5 bg-ct-surface-2 rounded-ct-md p-3">
+              <span className="text-base text-ct-mute-2 font-semibold flex-shrink-0">$</span>
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase">Budget</p>
-                <p className="text-sm text-gray-700 font-medium">
+                <p className="text-xs font-semibold text-ct-mute uppercase">Budget</p>
+                <p className="text-sm text-ct-mute-2 font-medium">
                   {job.budget_amount
                     ? `$${job.budget_amount.toLocaleString()}${job.budget_type === 'hourly_rate' ? '/hr' : ''}`
                     : job.budget_type === 'request_quote'
@@ -778,17 +778,17 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
             </div>
           )}
           {(isJobOwner || parkingValue !== null) && (
-            <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl p-3">
-              <Car className={`w-4 h-4 flex-shrink-0 ${parkingValue ? 'text-emerald-500' : 'text-secondary-500'}`} />
+            <div className="flex items-center gap-2.5 bg-ct-surface-2 rounded-ct-md p-3">
+              <Car className={`w-4 h-4 flex-shrink-0 ${parkingValue ? 'text-ct-teal' : 'text-ct-mute-2'}`} />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-400 uppercase">Parking on site</p>
+                <p className="text-xs font-semibold text-ct-mute uppercase">Parking on site</p>
                 {isJobOwner ? (
-                  <div className="mt-1 inline-flex rounded-lg border border-gray-200 bg-white overflow-hidden">
+                  <div className="mt-1 inline-flex rounded-ct-sm border border-ct-line bg-ct-surface overflow-hidden">
                     <button
                       type="button"
                       disabled={parkingSaving}
                       onClick={() => handleParkingChange(true)}
-                      className={`px-3 py-1 text-xs font-medium transition-colors ${parkingValue === true ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                      className={`px-3 py-1 text-xs font-medium transition-colors ${parkingValue === true ? 'bg-ct-teal/[0.14] text-ct-teal' : 'text-ct-mute-2 hover:bg-ct-surface-2'}`}
                     >
                       Yes
                     </button>
@@ -796,13 +796,13 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                       type="button"
                       disabled={parkingSaving}
                       onClick={() => handleParkingChange(false)}
-                      className={`px-3 py-1 text-xs font-medium border-l border-gray-200 transition-colors ${parkingValue === false ? 'bg-gray-100 text-gray-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                      className={`px-3 py-1 text-xs font-medium border-l border-ct-line transition-colors ${parkingValue === false ? 'bg-ct-surface-2 text-ct-mute-2' : 'text-ct-mute-2 hover:bg-ct-surface-2'}`}
                     >
                       No
                     </button>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-700 font-medium">
+                  <p className="text-sm text-ct-mute-2 font-medium">
                     {parkingValue ? 'Available' : 'Not available'}
                   </p>
                 )}
@@ -817,14 +817,14 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
         {job.images_url && job.images_url.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <ImageIcon className="w-4 h-4 text-gray-400" />
-              <p className="text-xs font-semibold text-gray-500">Photos ({job.images_url.length})</p>
+              <ImageIcon className="w-4 h-4 text-ct-mute" />
+              <p className="text-xs font-semibold text-ct-mute">Photos ({job.images_url.length})</p>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {job.images_url.map((_, index) => {
                 const signedUrl = photoSignedUrls[index];
                 return (
-                  <div key={index} className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                  <div key={index} className="w-20 h-20 rounded-ct-sm overflow-hidden bg-ct-surface-2 border border-ct-line flex-shrink-0">
                     {signedUrl ? (
                       <img
                         src={signedUrl}
@@ -834,7 +834,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                         onClick={() => window.open(signedUrl, '_blank')}
                       />
                     ) : (
-                      <div className="w-full h-full bg-gray-100" />
+                      <div className="w-full h-full bg-ct-surface-2" />
                     )}
                   </div>
                 );
@@ -845,15 +845,15 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
 
         {/* ── Client Contact ── */}
         {client && (
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs font-semibold text-gray-500 mb-3">Client</p>
+          <div className="bg-ct-surface border border-ct-line rounded-ct-md p-4">
+            <p className="text-xs font-semibold text-ct-mute mb-3">Client</p>
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-secondary-100 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-secondary-600" />
+              <div className="w-10 h-10 bg-ct-surface-2 rounded-full flex items-center justify-center">
+                <User className="w-5 h-5 text-ct-mute-2" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900">{client.full_name}</p>
-                <p className="text-xs text-gray-500">Client</p>
+                <p className="font-semibold text-ct-paper">{client.full_name}</p>
+                <p className="text-xs text-ct-mute">Client</p>
               </div>
             </div>
             {canSeeContactInfo ? (
@@ -861,7 +861,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                 {client.phone && (
                   <a
                     href={`tel:${client.phone}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-100 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors"
                   >
                     <Phone className="w-3.5 h-3.5" />
                     {client.phone}
@@ -870,7 +870,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                 {client.email && (
                   <a
                     href={`mailto:${client.email}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 text-secondary-700 rounded-lg text-sm font-medium hover:bg-secondary-100 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors"
                   >
                     <Mail className="w-3.5 h-3.5" />
                     {client.email}
@@ -878,7 +878,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                 )}
               </div>
             ) : (
-              <p className="text-xs text-gray-400">Contact details available after payment is secured</p>
+              <p className="text-xs text-ct-mute">Contact details available after payment is secured</p>
             )}
           </div>
         )}
@@ -899,17 +899,17 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
 
       {/* ── Footer Actions ── */}
       {statusError && (
-        <div className="mx-4 mb-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        <div className="mx-4 mb-2 px-3 py-2 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-sm text-ct-rose">
           {statusError}
         </div>
       )}
       <div
-        className="sticky bottom-0 px-4 pt-4 border-t border-gray-100 bg-white flex gap-3"
+        className="sticky bottom-0 px-4 pt-4 border-t border-ct-line-soft bg-ct-surface flex gap-3"
         style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
       >
         <button
           onClick={onClose}
-          className="px-5 py-3 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+          className="px-5 py-3 border border-ct-line text-ct-mute-2 font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors"
         >
           Close
         </button>
@@ -917,7 +917,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
         {isTradie && localStatus === 'pending' && onQuote && job.budget_type === 'request_quote' && (
           <button
             onClick={() => onQuote(selectedAvailDate)}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
           >
             <ClipboardList className="w-4 h-4" />
             {selectedAvailDate
@@ -942,7 +942,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                 }
               }}
               disabled={payLinkState === 'sending'}
-              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 transition-colors"
             >
               {payLinkState === 'sending' ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
@@ -953,7 +953,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
               )}
             </button>
           ) : (
-            <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 font-medium rounded-xl border border-amber-200">
+            <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-ct-amber/[0.13] text-ct-amber font-medium rounded-ct-md border border-ct-amber/[0.34]">
               <Clock className="w-4 h-4" />
               Awaiting Client Payment
             </div>
@@ -961,12 +961,12 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
         )}
 
         {isTradie && localStatus === 'funded' && acceptedQuote?.requires_site_inspection && acceptedQuote.final_price == null && (
-          <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 font-medium rounded-xl border border-amber-200">
+          <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-ct-amber/[0.13] text-ct-amber font-medium rounded-ct-md border border-ct-amber/[0.34]">
             Set final price above to continue
           </div>
         )}
         {isTradie && localStatus === 'funded' && !(acceptedQuote?.requires_site_inspection && acceptedQuote.final_price == null) && (
-          <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-secondary-50 text-secondary-700 font-medium rounded-xl border border-secondary-200">
+          <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-ct-surface-2 text-ct-mute-2 font-medium rounded-ct-md border border-ct-line">
             <Loader2 className="w-4 h-4 animate-spin" />
             Auto-starting...
           </div>
@@ -975,7 +975,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
         {isTradie && localStatus === 'in_progress' && !(acceptedQuote?.requires_site_inspection && acceptedQuote?.final_price == null) && (
           <button
             onClick={() => { onClose(); onComplete?.(); }}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
           >
             <CheckCircle2 className="w-4 h-4" />
             {/* "Request Payment" only makes sense for an ON-APP, not-yet-funded
@@ -988,7 +988,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
         {isTradie && localStatus === 'in_progress' && acceptedQuote?.requires_site_inspection && acceptedQuote?.final_price == null && (
           <button
             disabled
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-gray-200 text-gray-500 font-semibold rounded-xl cursor-not-allowed"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-ct-line text-ct-mute font-semibold rounded-ct-md cursor-not-allowed"
           >
             <AlertCircle className="w-4 h-4" />
             Set final price first
@@ -1008,7 +1008,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
               else { setPayLinkState('idle'); setStatusError(res.error || 'Could not send the invoice.'); }
             }}
             disabled={payLinkState === 'sending'}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 transition-colors"
           >
             {payLinkState === 'sending'
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
@@ -1019,7 +1019,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
         )}
 
         {isTradie && localStatus === 'completed' && !(isOffApp && !jobPaid) && (
-          <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 font-semibold rounded-xl border border-green-200">
+          <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-ct-teal/[0.14] text-ct-teal font-semibold rounded-ct-md border border-ct-teal/30">
             <CheckCircle2 className="w-4 h-4" />
             Job Complete
           </div>
@@ -1028,20 +1028,20 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
 
       {/* Confirmation dialog overlay */}
       {confirmDialog && (
-        <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center z-50 p-6">
-          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Price</h3>
-            <p className="text-sm text-gray-600 mb-5">{confirmDialog.message}</p>
+        <div className="absolute inset-0 bg-black/40 rounded-ct-lg flex items-center justify-center z-50 p-6">
+          <div className="bg-ct-surface rounded-ct-md shadow-lg p-6 max-w-sm w-full">
+            <h3 className="text-lg font-semibold text-ct-paper mb-2">Confirm Price</h3>
+            <p className="text-sm text-ct-mute-2 mb-5">{confirmDialog.message}</p>
             <div className="flex items-center gap-3 justify-end">
               <button
                 onClick={() => setConfirmDialog(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-sm font-medium text-ct-mute-2 border border-ct-line rounded-ct-sm hover:bg-ct-surface-2"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDialog.onConfirm}
-                className="px-4 py-2 text-sm font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600"
+                className="px-4 py-2 text-sm font-medium text-ct-ink bg-ct-teal rounded-ct-sm hover:brightness-110"
               >
                 Confirm
               </button>

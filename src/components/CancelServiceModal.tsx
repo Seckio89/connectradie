@@ -77,15 +77,15 @@ export default function CancelServiceModal({
         if (e.target === e.currentTarget && !submitting) onCancel();
       }}
     >
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl max-w-md w-full shadow-xl max-h-[85vh] overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:pb-0">
+      <div className="bg-ct-surface rounded-t-2xl sm:rounded-ct-lg max-w-md w-full shadow-xl max-h-[85vh] overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:pb-0">
         <div className="flex items-start justify-between p-6 pb-2">
           <div className="flex items-start gap-3">
-            <div className="p-2.5 bg-red-50 rounded-full flex-shrink-0">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
+            <div className="p-2.5 bg-ct-rose/[0.13] rounded-full flex-shrink-0">
+              <AlertTriangle className="w-5 h-5 text-ct-rose" />
             </div>
             <div className="pt-0.5">
-              <h3 className="text-lg font-semibold text-gray-900">End {serviceLabel}?</h3>
-              <p className="text-sm text-gray-600 mt-1">
+              <h3 className="text-lg font-semibold text-ct-paper">End {serviceLabel}?</h3>
+              <p className="text-sm text-ct-mute-2 mt-1">
                 This will stop future sessions and end the agreement with {otherPartyLabel}.
               </p>
             </div>
@@ -93,7 +93,7 @@ export default function CancelServiceModal({
           <button
             onClick={onCancel}
             disabled={submitting}
-            className="p-1 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-gray-600 disabled:opacity-40"
+            className="p-1 min-w-[44px] min-h-[44px] flex items-center justify-center text-ct-mute hover:text-ct-mute-2 disabled:opacity-40"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -101,8 +101,8 @@ export default function CancelServiceModal({
         </div>
 
         <div className="px-6 pb-2">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
-            Why are you ending this? <span className="lowercase text-gray-400 normal-case font-normal">(optional)</span>
+          <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-2">
+            Why are you ending this? <span className="lowercase text-ct-mute normal-case font-normal">(optional)</span>
           </p>
           <div className="flex flex-wrap gap-2">
             {visibleChips.map((chip) => {
@@ -114,8 +114,8 @@ export default function CancelServiceModal({
                   onClick={() => setCategory(selected ? undefined : chip.value)}
                   className={
                     selected
-                      ? 'px-3 py-1.5 rounded-full text-xs font-medium border bg-secondary-50 text-secondary-700 border-secondary-300'
-                      : 'px-3 py-1.5 rounded-full text-xs font-medium border bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                      ? 'px-3 py-1.5 rounded-full text-xs font-medium border bg-ct-surface-2 text-ct-mute-2 border-ct-line'
+                      : 'px-3 py-1.5 rounded-full text-xs font-medium border bg-ct-surface text-ct-mute-2 border-ct-line hover:bg-ct-surface-2'
                   }
                 >
                   {chip.label}
@@ -126,8 +126,8 @@ export default function CancelServiceModal({
         </div>
 
         <div className="px-6 pt-3 pb-4">
-          <label htmlFor="cancel-reason" className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-2">
-            Anything else <span className="lowercase text-gray-400 normal-case font-normal">(optional)</span>
+          <label htmlFor="cancel-reason" className="text-xs font-medium text-ct-mute uppercase tracking-wide block mb-2">
+            Anything else <span className="lowercase text-ct-mute normal-case font-normal">(optional)</span>
           </label>
           <textarea {...proseInputProps}
             id="cancel-reason"
@@ -135,23 +135,23 @@ export default function CancelServiceModal({
             value={reason}
             onChange={(e) => setReason(e.target.value.slice(0, 500))}
             placeholder={otherPartyRole === 'tradie' ? 'Helps your tradie understand the decision' : 'Helps your client understand the decision'}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-secondary-500 focus:ring-1 focus:ring-secondary-500 resize-none"
+            className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm text-ct-paper placeholder-ct-placeholder focus:outline-none focus:border-ct-teal focus:ring-1 focus:ring-ct-teal resize-none"
           />
-          <p className="text-xs text-gray-400 mt-1">{reason.length}/500</p>
+          <p className="text-xs text-ct-mute mt-1">{reason.length}/500</p>
         </div>
 
         <div className="px-6 pb-6 flex gap-3">
           <button
             onClick={onCancel}
             disabled={submitting}
-            className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 bg-ct-surface-2 text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-line disabled:opacity-50"
           >
             Keep service
           </button>
           <button
             onClick={handleConfirm}
             disabled={submitting}
-            className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-60"
+            className="flex-1 px-4 py-2.5 bg-ct-rose text-ct-ink rounded-ct-sm text-sm font-medium hover:brightness-110 disabled:opacity-60"
           >
             {submitting ? 'Ending…' : 'End service'}
           </button>

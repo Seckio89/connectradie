@@ -255,63 +255,63 @@ export default function UpcomingTimeline() {
   }, []);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-6">
-      <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <Calendar className="w-5 h-5 text-warm-600" />
+    <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6">
+      <h3 className="font-semibold text-ct-paper mb-4 flex items-center gap-2">
+        <Calendar className="w-5 h-5 text-ct-amber" />
         This Week
       </h3>
 
       {loading ? (
         <div className="space-y-2">
-          <div className="h-12 bg-gray-50 rounded-lg animate-pulse" />
-          <div className="h-12 bg-gray-50 rounded-lg animate-pulse" />
+          <div className="h-12 bg-ct-surface-2 rounded-ct-sm animate-pulse" />
+          <div className="h-12 bg-ct-surface-2 rounded-ct-sm animate-pulse" />
         </div>
       ) : items.length === 0 ? (
-        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
-          <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0" />
+        <div className="flex items-center gap-3 p-3 bg-ct-surface-2 rounded-ct-md border border-ct-line-soft">
+          <Calendar className="w-5 h-5 text-ct-mute flex-shrink-0" />
           <div>
-            <p className="text-sm font-medium text-gray-900">Nothing scheduled</p>
-            <p className="text-xs text-gray-500">Your next 7 days are clear.</p>
+            <p className="text-sm font-medium text-ct-paper">Nothing scheduled</p>
+            <p className="text-xs text-ct-mute">Your next 7 days are clear.</p>
           </div>
         </div>
       ) : (
         <div className="space-y-4">
           {dayGroups.map((dayGroup) => (
             <div key={dayGroup.key}>
-              <p className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${dayGroup.isToday ? 'text-warm-600' : 'text-gray-400'}`}>
+              <p className={`text-xs font-semibold uppercase tracking-wide mb-1.5 ${dayGroup.isToday ? 'text-ct-amber' : 'text-ct-mute'}`}>
                 {dayGroup.label}
               </p>
               <div className="space-y-1">
                 {dayGroup.items.map((item) => {
                   const Icon = item.icon === 'session' ? Calendar : item.icon === 'invoice' ? FileText : Briefcase;
                   const accentClass = item.warning
-                    ? 'bg-amber-100 text-amber-700'
+                    ? 'bg-ct-amber/[0.13] text-ct-amber'
                     : item.icon === 'session'
-                      ? 'bg-secondary-100 text-secondary-600'
+                      ? 'bg-ct-surface-2 text-ct-mute-2'
                       : item.icon === 'invoice'
-                        ? 'bg-secondary-100 text-secondary-700'
-                        : 'bg-emerald-100 text-emerald-700';
+                        ? 'bg-ct-surface-2 text-ct-mute-2'
+                        : 'bg-ct-teal/[0.14] text-ct-teal';
                   return (
                     <Link
                       key={item.key}
                       to={item.href}
-                      className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors group"
+                      className="flex items-center gap-3 p-2.5 rounded-ct-md hover:bg-ct-surface-2 transition-colors group"
                     >
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${accentClass}`}>
+                      <div className={`w-9 h-9 rounded-ct-sm flex items-center justify-center flex-shrink-0 ${accentClass}`}>
                         {item.warning ? <AlertTriangle className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-medium text-gray-900 truncate">{item.title}</p>
+                          <p className="text-sm font-medium text-ct-paper truncate">{item.title}</p>
                           {item.badge && (
-                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 flex-shrink-0">
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-ct-surface-2 text-ct-mute-2 flex-shrink-0">
                               {item.badge}
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 truncate">{item.subtitle}</p>
+                        <p className="text-xs text-ct-mute truncate">{item.subtitle}</p>
                       </div>
-                      <ArrowRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0" />
+                      <ArrowRight className="w-3.5 h-3.5 text-ct-mute group-hover:text-ct-mute transition-colors flex-shrink-0" />
                     </Link>
                   );
                 })}

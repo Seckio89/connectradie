@@ -116,33 +116,33 @@ export const COMPLIANCE_META: Record<
 > = {
   compliant: {
     label: 'Compliant',
-    badgeClass: 'bg-emerald-100 text-emerald-700',
-    dotClass: 'bg-emerald-500',
+    badgeClass: 'bg-ct-teal/[0.14] text-ct-teal',
+    dotClass: 'bg-ct-teal',
   },
   expiring_soon: {
     label: 'Expiring soon',
-    badgeClass: 'bg-amber-100 text-amber-700',
-    dotClass: 'bg-amber-500',
+    badgeClass: 'bg-ct-amber/[0.13] text-ct-amber',
+    dotClass: 'bg-ct-amber/[0.13]0',
   },
   expired: {
     label: 'Expired',
-    badgeClass: 'bg-red-100 text-red-700',
-    dotClass: 'bg-red-500',
+    badgeClass: 'bg-ct-rose/[0.13] text-ct-rose',
+    dotClass: 'bg-ct-rose/[0.13]0',
   },
   not_recorded: {
     label: 'Not recorded',
-    badgeClass: 'bg-gray-100 text-gray-600',
-    dotClass: 'bg-gray-400',
+    badgeClass: 'bg-ct-surface-2 text-ct-mute-2',
+    dotClass: 'bg-ct-surface-2',
   },
   not_required: {
     label: 'Not required',
-    badgeClass: 'bg-gray-100 text-gray-500',
-    dotClass: 'bg-gray-300',
+    badgeClass: 'bg-ct-surface-2 text-ct-mute',
+    dotClass: 'bg-ct-line',
   },
   not_tracked: {
     label: 'Not tracked',
-    badgeClass: 'bg-gray-100 text-gray-600',
-    dotClass: 'bg-gray-400',
+    badgeClass: 'bg-ct-surface-2 text-ct-mute-2',
+    dotClass: 'bg-ct-surface-2',
   },
 };
 
@@ -150,11 +150,11 @@ export const VERIFICATION_META: Record<
   VerificationStatus,
   { label: string; badgeClass: string }
 > = {
-  unverified: { label: 'Not verified', badgeClass: 'bg-gray-100 text-gray-600' },
-  pending: { label: 'Awaiting review', badgeClass: 'bg-secondary-100 text-secondary-700' },
-  verified: { label: 'Verified', badgeClass: 'bg-emerald-100 text-emerald-700' },
-  rejected: { label: 'Rejected', badgeClass: 'bg-red-100 text-red-700' },
-  expired: { label: 'Expired', badgeClass: 'bg-red-100 text-red-700' },
+  unverified: { label: 'Not verified', badgeClass: 'bg-ct-surface-2 text-ct-mute-2' },
+  pending: { label: 'Awaiting review', badgeClass: 'bg-ct-surface-2 text-ct-mute-2' },
+  verified: { label: 'Verified', badgeClass: 'bg-ct-teal/[0.14] text-ct-teal' },
+  rejected: { label: 'Rejected', badgeClass: 'bg-ct-rose/[0.13] text-ct-rose' },
+  expired: { label: 'Expired', badgeClass: 'bg-ct-rose/[0.13] text-ct-rose' },
 };
 
 /** Midnight-anchored day difference, so a date-only expiry never drifts by hours. */
@@ -357,10 +357,10 @@ export const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
 };
 
 export const ROSTER_STATUS_META: Record<string, { label: string; badgeClass: string }> = {
-  invited: { label: 'Invited', badgeClass: 'bg-secondary-100 text-secondary-700' },
-  active: { label: 'Active', badgeClass: 'bg-emerald-100 text-emerald-700' },
-  inactive: { label: 'Inactive', badgeClass: 'bg-gray-100 text-gray-600' },
-  archived: { label: 'Archived', badgeClass: 'bg-gray-100 text-gray-600' },
+  invited: { label: 'Invited', badgeClass: 'bg-ct-surface-2 text-ct-mute-2' },
+  active: { label: 'Active', badgeClass: 'bg-ct-teal/[0.14] text-ct-teal' },
+  inactive: { label: 'Inactive', badgeClass: 'bg-ct-surface-2 text-ct-mute-2' },
+  archived: { label: 'Archived', badgeClass: 'bg-ct-surface-2 text-ct-mute-2' },
 };
 
 /** Human-readable expiry hint. Never characterises employment status. */

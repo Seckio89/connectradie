@@ -188,14 +188,14 @@ export default function Workforce() {
           {/* Header */}
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Workforce</h1>
-              <p className="text-sm text-gray-600 mt-1">
+              <h1 className="text-2xl font-bold text-ct-paper">Workforce</h1>
+              <p className="text-sm text-ct-mute-2 mt-1">
                 Your team and the tickets, licences and checks that keep them job-ready.
               </p>
             </div>
             <Link
               to="/workforce/invite"
-              className="inline-flex items-center gap-2 px-5 py-2 bg-warm-500 hover:bg-warm-600 text-white rounded-lg text-sm font-medium min-h-[44px]"
+              className="inline-flex items-center gap-2 px-5 py-2 bg-ct-teal hover:brightness-110 text-ct-ink rounded-ct-sm text-sm font-medium min-h-[44px]"
             >
               <Plus className="w-4 h-4" />
               Add worker
@@ -209,17 +209,17 @@ export default function Workforce() {
                 <button
                   key={state}
                   onClick={() => setComplianceFilter(complianceFilter === state ? 'all' : state)}
-                  className={`max-w-sm w-full text-left bg-white rounded-xl shadow-sm p-6 border transition-colors ${
-                    complianceFilter === state ? 'border-warm-500' : 'border-gray-200 hover:bg-gray-50'
+                  className={`max-w-sm w-full text-left bg-ct-surface rounded-ct-md shadow-sm p-6 border transition-colors ${
+                    complianceFilter === state ? 'border-ct-teal' : 'border-ct-line hover:bg-ct-surface-2'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${COMPLIANCE_META[state].dotClass}`} />
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    <span className="text-xs font-medium text-ct-mute uppercase tracking-wide">
                       {COMPLIANCE_META[state].label}
                     </span>
                   </div>
-                  <p className="text-2xl font-bold text-gray-900 mt-2">{counts[state]}</p>
+                  <p className="text-2xl font-bold text-ct-paper mt-2">{counts[state]}</p>
                 </button>
               ))}
             </div>
@@ -229,13 +229,13 @@ export default function Workforce() {
           {!loading && entries.length > 0 && (
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1 max-w-md">
-                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-ct-mute absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search by name or email"
-                  className="w-full pl-9 pr-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:border-transparent"
+                  className="w-full pl-9 pr-3 py-2 min-h-[44px] border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                 />
               </div>
               <div className="flex flex-wrap gap-2">
@@ -243,10 +243,10 @@ export default function Workforce() {
                   <button
                     key={s}
                     onClick={() => setStatusFilter(s)}
-                    className={`px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium border transition-colors ${
+                    className={`px-4 py-2 min-h-[44px] rounded-ct-sm text-sm font-medium border transition-colors ${
                       statusFilter === s
-                        ? 'border-warm-500 text-warm-600 bg-warm-50'
-                        : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+                        ? 'border-ct-teal text-ct-amber bg-ct-amber/[0.13]'
+                        : 'border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                     }`}
                   >
                     {s === 'all' ? 'All' : ROSTER_STATUS_META[s]?.label ?? s}
@@ -258,18 +258,18 @@ export default function Workforce() {
 
           {/* Body */}
           {loading ? (
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <div className="flex items-center justify-center py-16 text-gray-500">
+            <div className="bg-ct-surface rounded-ct-md shadow-sm p-6">
+              <div className="flex items-center justify-center py-16 text-ct-mute">
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
                 <span className="text-sm">Loading your workforce…</span>
               </div>
             </div>
           ) : error ? (
-            <div className="bg-white rounded-xl shadow-sm p-6 max-w-md">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="bg-ct-surface rounded-ct-md shadow-sm p-6 max-w-md">
+              <p className="text-sm text-ct-rose">{error}</p>
             </div>
           ) : entries.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm">
+            <div className="bg-ct-surface rounded-ct-md shadow-sm">
               <EmptyState
                 icon={HardHat}
                 title="No workers yet"
@@ -279,7 +279,7 @@ export default function Workforce() {
               />
             </div>
           ) : visible.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm">
+            <div className="bg-ct-surface rounded-ct-md shadow-sm">
               <EmptyState
                 icon={Search}
                 title="No workers match those filters"
@@ -294,12 +294,12 @@ export default function Workforce() {
                   <Link
                     key={worker.id}
                     to={`/workforce/${worker.id}`}
-                    className="block bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50"
+                    className="block bg-ct-surface rounded-ct-md shadow-sm p-6 hover:bg-ct-surface-2"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">{worker.invite_name || 'Unnamed worker'}</p>
-                        <p className="text-sm text-gray-600 mt-0.5">
+                        <p className="font-semibold text-ct-paper truncate">{worker.invite_name || 'Unnamed worker'}</p>
+                        <p className="text-sm text-ct-mute-2 mt-0.5">
                           {EMPLOYMENT_TYPE_LABELS[worker.employment_type] ?? worker.employment_type}
                         </p>
                       </div>
@@ -308,10 +308,10 @@ export default function Workforce() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-3 mt-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROSTER_STATUS_META[worker.status]?.badgeClass ?? 'bg-gray-100 text-gray-600'}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROSTER_STATUS_META[worker.status]?.badgeClass ?? 'bg-ct-surface-2 text-ct-mute-2'}`}>
                         {ROSTER_STATUS_META[worker.status]?.label ?? worker.status}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-ct-mute">
                         {nextExpiryLabel(compliance)}
                       </span>
                     </div>
@@ -320,16 +320,16 @@ export default function Workforce() {
               </div>
 
               {/* Table — md and up */}
-              <div className="hidden md:block bg-white rounded-xl shadow-sm overflow-hidden">
+              <div className="hidden md:block bg-ct-surface rounded-ct-md shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Worker</th>
-                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Employment type</th>
-                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
-                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Compliance</th>
-                        <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Next expiry</th>
+                      <tr className="border-b border-ct-line">
+                        <th className="text-left px-6 py-3 text-xs font-medium text-ct-mute uppercase tracking-wide">Worker</th>
+                        <th className="text-left px-6 py-3 text-xs font-medium text-ct-mute uppercase tracking-wide">Employment type</th>
+                        <th className="text-left px-6 py-3 text-xs font-medium text-ct-mute uppercase tracking-wide">Status</th>
+                        <th className="text-left px-6 py-3 text-xs font-medium text-ct-mute uppercase tracking-wide">Compliance</th>
+                        <th className="text-left px-6 py-3 text-xs font-medium text-ct-mute uppercase tracking-wide">Next expiry</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -337,19 +337,19 @@ export default function Workforce() {
                         <tr
                           key={worker.id}
                           onClick={() => navigate(`/workforce/${worker.id}`)}
-                          className="border-b border-gray-200 last:border-0 hover:bg-gray-50 cursor-pointer"
+                          className="border-b border-ct-line last:border-0 hover:bg-ct-surface-2 cursor-pointer"
                         >
                           <td className="px-6 py-4">
-                            <p className="text-sm font-medium text-gray-900">{worker.invite_name || 'Unnamed worker'}</p>
+                            <p className="text-sm font-medium text-ct-paper">{worker.invite_name || 'Unnamed worker'}</p>
                             {worker.invite_email && (
-                              <p className="text-xs text-gray-500 mt-0.5">{worker.invite_email}</p>
+                              <p className="text-xs text-ct-mute mt-0.5">{worker.invite_email}</p>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
+                          <td className="px-6 py-4 text-sm text-ct-mute-2">
                             {EMPLOYMENT_TYPE_LABELS[worker.employment_type] ?? worker.employment_type}
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROSTER_STATUS_META[worker.status]?.badgeClass ?? 'bg-gray-100 text-gray-600'}`}>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROSTER_STATUS_META[worker.status]?.badgeClass ?? 'bg-ct-surface-2 text-ct-mute-2'}`}>
                               {ROSTER_STATUS_META[worker.status]?.label ?? worker.status}
                             </span>
                           </td>
@@ -358,7 +358,7 @@ export default function Workforce() {
                               {COMPLIANCE_META[compliance.state].label}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
+                          <td className="px-6 py-4 text-sm text-ct-mute-2">
                             {nextExpiryLabel(compliance)}
                           </td>
                         </tr>
@@ -371,8 +371,8 @@ export default function Workforce() {
           )}
 
           {!loading && entries.length > 0 && (
-            <p className="flex items-start gap-2 text-xs text-gray-500 max-w-2xl">
-              <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-gray-400" />
+            <p className="flex items-start gap-2 text-xs text-ct-mute max-w-2xl">
+              <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-ct-mute" />
               <span>
                 Employment type is recorded as you enter it. ConnecTradie does not determine
                 whether a worker is an employee or a contractor.

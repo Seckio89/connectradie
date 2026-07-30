@@ -70,28 +70,28 @@ export default function OnboardingWelcome() {
   };
 
   const inputCls =
-    'w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500';
+    'w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal';
 
   return (
-    <div className="min-h-screen bg-surface-50 flex flex-col items-center justify-center px-4 py-10">
+    <div className="min-h-screen bg-ct-surface-2 flex flex-col items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-block text-2xl font-extrabold tracking-tight text-navy-900 mb-4">
-            Connec<span className="text-warm-500">Tradie</span>
+          <div className="inline-block text-2xl font-extrabold tracking-tight text-ct-paper mb-4">
+            Connec<span className="text-ct-teal">Tradie</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-ct-paper">
             {firstName ? `Welcome, ${firstName}!` : 'Welcome!'}
           </h1>
-          <p className="text-sm text-gray-600 mt-1.5">
+          <p className="text-sm text-ct-mute-2 mt-1.5">
             {isTradie
               ? 'A couple of quick details and you’re ready to go.'
               : 'Just a couple of details to get you started.'}
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
+        <div className="bg-ct-surface rounded-ct-lg shadow-sm border border-ct-line-soft p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Your name</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Your name</label>
             <input
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
@@ -103,7 +103,7 @@ export default function OnboardingWelcome() {
           {isTradie ? (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Your trade or service</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Your trade or service</label>
                 <input
                   value={trade}
                   onChange={(e) => setTrade(e.target.value)}
@@ -112,8 +112,8 @@ export default function OnboardingWelcome() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Your ABN <span className="text-gray-400 font-normal">(optional)</span>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
+                  Your ABN <span className="text-ct-mute font-normal">(optional)</span>
                 </label>
                 <input
                   value={abn}
@@ -126,7 +126,7 @@ export default function OnboardingWelcome() {
             </>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Your location</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Your location</label>
               <AddressAutocomplete
                 value={address}
                 onChange={(value, coords, details) => {
@@ -144,12 +144,12 @@ export default function OnboardingWelcome() {
             </div>
           )}
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-ct-rose">{error}</p>}
 
           <button
             onClick={handleContinue}
             disabled={saving || skipping}
-            className="w-full inline-flex items-center justify-center gap-2 bg-warm-500 hover:bg-warm-600 text-white px-5 py-3 rounded-xl font-semibold disabled:opacity-60 transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 bg-ct-teal hover:brightness-110 text-ct-ink px-5 py-3 rounded-ct-md font-semibold disabled:opacity-60 transition-colors"
           >
             {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Continue <ArrowRight className="w-4 h-4" /></>}
           </button>
@@ -159,7 +159,7 @@ export default function OnboardingWelcome() {
           <button
             onClick={handleSkip}
             disabled={saving || skipping}
-            className="text-sm text-gray-500 hover:text-gray-700 font-medium inline-flex items-center gap-1 disabled:opacity-60"
+            className="text-sm text-ct-mute hover:text-ct-mute-2 font-medium inline-flex items-center gap-1 disabled:opacity-60"
           >
             {skipping ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
             Skip setup, go to dashboard <ArrowRight className="w-3.5 h-3.5" />

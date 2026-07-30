@@ -32,8 +32,8 @@ const RANGES = [
 ];
 
 const ROLE_BADGE: Record<string, string> = {
-  employee: 'bg-secondary-100 text-secondary-700',
-  subcontractor: 'bg-warm-100 text-warm-700',
+  employee: 'bg-ct-surface-2 text-ct-mute-2',
+  subcontractor: 'bg-ct-amber/[0.13] text-ct-amber',
 };
 
 export default function SiteActivityTab({ activeMembers }: SiteActivityTabProps) {
@@ -66,21 +66,21 @@ export default function SiteActivityTab({ activeMembers }: SiteActivityTabProps)
       {/* Header + range toggle */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-            <Radar className="w-4 h-4 text-secondary-600" />
+          <h3 className="text-sm font-semibold text-ct-paper flex items-center gap-2">
+            <Radar className="w-4 h-4 text-ct-mute-2" />
             Site Activity
           </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-ct-mute mt-0.5">
             Automatically logged when a worker arrives at or leaves a booked job site on the app.
           </p>
         </div>
-        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-ct-surface-2 rounded-ct-sm p-1">
           {RANGES.map((r) => (
             <button
               key={r.days}
               onClick={() => setRangeDays(r.days)}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                rangeDays === r.days ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                rangeDays === r.days ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'
               }`}
             >
               {r.label}
@@ -90,8 +90,8 @@ export default function SiteActivityTab({ activeMembers }: SiteActivityTabProps)
       </div>
 
       {/* Straight-line disclaimer */}
-      <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
-        <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-gray-400" />
+      <div className="flex items-start gap-2 text-xs text-ct-mute bg-ct-surface-2 border border-ct-line-soft rounded-ct-sm px-3 py-2">
+        <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-ct-mute" />
         <span>
           Distances are straight-line (point to point), not road distance. Times reflect when the worker&apos;s
           phone crossed the site boundary.
@@ -99,19 +99,19 @@ export default function SiteActivityTab({ activeMembers }: SiteActivityTabProps)
       </div>
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>
+        <div className="p-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md text-sm text-ct-rose">{error}</div>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-12 text-gray-400">
+        <div className="flex items-center justify-center py-12 text-ct-mute">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           <span className="text-sm">Loading site activity…</span>
         </div>
       ) : activeMembers.length === 0 ? (
         <div className="text-center py-12">
-          <MapPin className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm font-medium text-gray-900">No active team members</p>
-          <p className="text-xs text-gray-500 mt-1">Add employees or subcontractors to track their site activity.</p>
+          <MapPin className="w-8 h-8 text-ct-mute mx-auto mb-3" />
+          <p className="text-sm font-medium text-ct-paper">No active team members</p>
+          <p className="text-xs text-ct-mute mt-1">Add employees or subcontractors to track their site activity.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -134,21 +134,21 @@ function WorkerCard({ member, activity }: { member: ActiveMember; activity?: Wor
   const totalMs = days.reduce((n, d) => n + d.totalOnSiteMs, 0);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+    <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm overflow-hidden">
       {/* Worker header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 bg-gray-50/60">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
-          <span className="text-sm font-bold text-secondary-800">{member.full_name.charAt(0).toUpperCase()}</span>
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-ct-line-soft bg-ct-surface-2/60">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-ct-surface-2 to-ct-surface-2 flex items-center justify-center flex-shrink-0">
+          <span className="text-sm font-bold text-ct-mute-2">{member.full_name.charAt(0).toUpperCase()}</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-gray-900 truncate">{member.full_name}</span>
+            <span className="font-semibold text-ct-paper truncate">{member.full_name}</span>
             <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${ROLE_BADGE[member.employment_type]}`}>
               {member.employment_type === 'employee' ? 'Employee' : 'Subcontractor'}
             </span>
           </div>
           {totalSites > 0 && (
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-ct-mute mt-0.5">
               {totalSites} site {totalSites === 1 ? 'visit' : 'visits'} · {formatDuration(totalMs)} on site
             </p>
           )}
@@ -157,20 +157,20 @@ function WorkerCard({ member, activity }: { member: ActiveMember; activity?: Wor
 
       {days.length === 0 ? (
         <div className="px-5 py-8 text-center">
-          <p className="text-sm text-gray-500">No site arrivals recorded in this period.</p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-sm text-ct-mute">No site arrivals recorded in this period.</p>
+          <p className="text-xs text-ct-mute mt-1">
             Tracked automatically once they arrive at a booked job site with the app installed.
           </p>
         </div>
       ) : (
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-ct-line-soft">
           {days.map((day) => (
             <div key={day.date} className="px-5 py-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                <span className="text-xs font-semibold text-ct-mute-2 uppercase tracking-wide">
                   {formatDayLabel(day.date)}
                 </span>
-                <span className="text-xs text-gray-500">{formatDuration(day.totalOnSiteMs)} on site</span>
+                <span className="text-xs text-ct-mute">{formatDuration(day.totalOnSiteMs)} on site</span>
               </div>
 
               <ol className="space-y-0">
@@ -181,38 +181,38 @@ function WorkerCard({ member, activity }: { member: ActiveMember; activity?: Wor
                       {/* Visit */}
                       <div className="flex gap-3">
                         <div className="flex flex-col items-center pt-1">
-                          <span className="w-2.5 h-2.5 rounded-full bg-secondary-500" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-ct-surface-20" />
                           {(i < day.visits.length - 1 || leg) && (
-                            <span className="w-px flex-1 bg-gray-200 my-1" />
+                            <span className="w-px flex-1 bg-ct-line my-1" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0 pb-1">
-                          <p className="text-sm font-medium text-gray-900 truncate">
+                          <p className="text-sm font-medium text-ct-paper truncate">
                             {visit.jobTitle || 'Job site'}
                           </p>
                           {visit.jobAddress && (
-                            <p className="text-xs text-gray-500 truncate flex items-center gap-1">
+                            <p className="text-xs text-ct-mute truncate flex items-center gap-1">
                               <MapPin className="w-3 h-3 flex-shrink-0" />
                               {visit.jobAddress}
                             </p>
                           )}
                           <div className="flex items-center gap-3 mt-1.5 flex-wrap text-xs">
-                            <span className="inline-flex items-center gap-1 text-secondary-700">
+                            <span className="inline-flex items-center gap-1 text-ct-mute-2">
                               <LogIn className="w-3.5 h-3.5" />
                               {formatTime(visit.arrivedAt)}
                             </span>
                             {visit.leftAt ? (
-                              <span className="inline-flex items-center gap-1 text-gray-600">
+                              <span className="inline-flex items-center gap-1 text-ct-mute-2">
                                 <LogOut className="w-3.5 h-3.5" />
                                 {formatTime(visit.leftAt)}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-ct-teal/[0.14] text-ct-teal font-medium">
+                                <span className="w-1.5 h-1.5 rounded-full bg-ct-teal animate-pulse" />
                                 On site now
                               </span>
                             )}
-                            <span className="inline-flex items-center gap-1 text-gray-500">
+                            <span className="inline-flex items-center gap-1 text-ct-mute">
                               <Clock className="w-3.5 h-3.5" />
                               {formatDuration(visit.durationMs)}
                             </span>
@@ -224,9 +224,9 @@ function WorkerCard({ member, activity }: { member: ActiveMember; activity?: Wor
                       {leg && (
                         <div className="flex gap-3">
                           <div className="flex flex-col items-center">
-                            <span className="w-px flex-1 bg-gray-200" />
+                            <span className="w-px flex-1 bg-ct-line" />
                           </div>
-                          <div className="flex items-center gap-2 py-1.5 text-xs text-gray-400">
+                          <div className="flex items-center gap-2 py-1.5 text-xs text-ct-mute">
                             <Navigation className="w-3.5 h-3.5" />
                             <span>
                               {formatDuration(leg.travelMs)} travel
@@ -245,10 +245,10 @@ function WorkerCard({ member, activity }: { member: ActiveMember; activity?: Wor
                   {day.offSiteStarts.map((os, i) => (
                     <div
                       key={`${os.occurredAt}-${i}`}
-                      className="flex items-start gap-2 text-xs bg-warm-50 border border-warm-200 rounded-lg px-3 py-2"
+                      className="flex items-start gap-2 text-xs bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm px-3 py-2"
                     >
-                      <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-warm-600" />
-                      <span className="text-warm-800">
+                      <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-ct-amber" />
+                      <span className="text-ct-paper">
                         Started <span className="font-medium">{os.jobTitle || 'job'}</span> off-site
                         {os.distanceM != null && ` · ~${formatDistanceShort(os.distanceM)} away`}
                         {` · ${formatTime(os.occurredAt)}`}

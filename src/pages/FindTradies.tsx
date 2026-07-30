@@ -224,7 +224,7 @@ export default function FindTradies() {
   const otherTrades = FEATURED_CROSS_TRADES.filter((s) => s !== trade).slice(0, 8);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-ct-surface-2">
       <SEO
         title={`${tradeLabelPlural} in ${suburb.name} ${suburb.state} ${suburb.postcode}`}
         description={`Find verified, licensed ${tradeLabel.toLowerCase()}s in ${suburb.name} ${suburb.state}. ABN-checked, ${tradeLabel.toLowerCase()} licence-verified, paid through Stripe-held escrow — funds release only when you approve the work.`}
@@ -234,24 +234,24 @@ export default function FindTradies() {
       />
 
       {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-30">
+      <header className="bg-ct-surface border-b border-ct-line-soft sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center">
               <span className="text-xl font-extrabold tracking-tight text-black">
-                Connec<span className="text-warm-500">Tradie</span>
+                Connec<span className="text-ct-teal">Tradie</span>
               </span>
             </Link>
             <div className="flex items-center gap-2">
               <Link
                 to="/register?type=client"
-                className="hidden sm:inline-flex px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-lg transition-colors"
+                className="hidden sm:inline-flex px-4 py-2 bg-ct-teal hover:brightness-110 text-ct-ink text-sm font-semibold rounded-ct-sm transition-colors"
               >
                 Post a job
               </Link>
               <Link
                 to="/login"
-                className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 font-medium"
+                className="px-4 py-2 text-sm text-ct-mute-2 hover:text-ct-paper font-medium"
               >
                 Sign in
               </Link>
@@ -263,63 +263,63 @@ export default function FindTradies() {
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mb-6 text-sm">
-          <ol className="flex flex-wrap items-center gap-1.5 text-gray-500">
+          <ol className="flex flex-wrap items-center gap-1.5 text-ct-mute">
             <li>
-              <Link to="/" className="hover:text-gray-900">Home</Link>
+              <Link to="/" className="hover:text-ct-paper">Home</Link>
             </li>
             <li><ChevronRight className="w-3.5 h-3.5" /></li>
             <li>
-              <Link to={suburbHubUrl(suburb.slug)} className="hover:text-gray-900">
+              <Link to={suburbHubUrl(suburb.slug)} className="hover:text-ct-paper">
                 {suburb.city}
               </Link>
             </li>
             <li><ChevronRight className="w-3.5 h-3.5" /></li>
             <li>
-              <Link to={suburbHubUrl(suburb.slug)} className="hover:text-gray-900">
+              <Link to={suburbHubUrl(suburb.slug)} className="hover:text-ct-paper">
                 {suburb.name}
               </Link>
             </li>
             <li><ChevronRight className="w-3.5 h-3.5" /></li>
-            <li className="text-gray-900 font-medium">{tradeLabelPlural}</li>
+            <li className="text-ct-paper font-medium">{tradeLabelPlural}</li>
           </ol>
         </nav>
 
         {/* Hero */}
         <section className="mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold mb-4 border border-emerald-100">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-ct-teal/[0.14] text-ct-teal rounded-full text-xs font-semibold mb-4 border border-ct-teal/30">
             <Lock className="w-3.5 h-3.5" />
             Stripe-secured · Licence verified · {suburb.state}-based
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-ct-paper">
             {tradeLabelPlural} in {suburb.name}
           </h1>
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-ct-mute">
             {suburb.name} {suburb.state} {suburb.postcode}
           </p>
 
           {/* Local stats row — only show when inventory exists */}
           {inventoryCount > 0 && (
             <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-              <div className="flex items-center gap-2 text-gray-700">
-                <Shield className="w-4 h-4 text-emerald-600" />
+              <div className="flex items-center gap-2 text-ct-mute-2">
+                <Shield className="w-4 h-4 text-ct-teal" />
                 <span>
-                  <span className="font-semibold text-gray-900">{verifiedCount}</span> verified {tradeLabel.toLowerCase()}{verifiedCount === 1 ? '' : 's'}
+                  <span className="font-semibold text-ct-paper">{verifiedCount}</span> verified {tradeLabel.toLowerCase()}{verifiedCount === 1 ? '' : 's'}
                 </span>
               </div>
               {avgRating > 0 && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <div className="flex items-center gap-2 text-ct-mute-2">
+                  <Star className="w-4 h-4 text-ct-amber fill-amber-500" />
                   <span>
-                    <span className="font-semibold text-gray-900">{avgRating.toFixed(1)}</span> avg rating
+                    <span className="font-semibold text-ct-paper">{avgRating.toFixed(1)}</span> avg rating
                   </span>
                 </div>
               )}
               {totalReviews > 0 && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <BadgeCheck className="w-4 h-4 text-secondary-600" />
+                <div className="flex items-center gap-2 text-ct-mute-2">
+                  <BadgeCheck className="w-4 h-4 text-ct-mute-2" />
                   <span>
-                    <span className="font-semibold text-gray-900">{totalReviews}</span> verified review{totalReviews === 1 ? '' : 's'}
+                    <span className="font-semibold text-ct-paper">{totalReviews}</span> verified review{totalReviews === 1 ? '' : 's'}
                   </span>
                 </div>
               )}
@@ -327,7 +327,7 @@ export default function FindTradies() {
           )}
 
           {/* Intro paragraph */}
-          <p className="mt-6 text-base text-gray-700 leading-relaxed max-w-3xl">
+          <p className="mt-6 text-base text-ct-mute-2 leading-relaxed max-w-3xl">
             {content.intro}
           </p>
 
@@ -335,14 +335,14 @@ export default function FindTradies() {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               to={`/post-lead?trade=${trade}&postcode=${suburb.postcode}`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-teal hover:brightness-110 text-ct-ink text-sm font-semibold rounded-ct-sm transition-colors"
             >
               Post your {suburb.name} job — free
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               to={`/search?trade=${trade}&postcode=${suburb.postcode}`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-semibold rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 border border-ct-line text-ct-mute-2 hover:bg-ct-surface-2 text-sm font-semibold rounded-ct-sm transition-colors"
             >
               Browse all {suburb.name} {tradeLabel.toLowerCase()}s
             </Link>
@@ -353,29 +353,29 @@ export default function FindTradies() {
           {/* Left column — tradie list + cost guide + FAQs */}
           <div className="lg:col-span-2 space-y-6">
             {/* Tradie list */}
-            <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-1">
+            <section className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 sm:p-8">
+              <h2 className="text-xl font-bold text-ct-paper mb-1">
                 Top {tradeLabelPlural} in {suburb.name}
               </h2>
-              <p className="text-sm text-gray-600 mb-5">
+              <p className="text-sm text-ct-mute-2 mb-5">
                 Every listing below is ABN-verified and (where required for the trade) {suburb.state} licence-checked. Funds sit in Stripe-held escrow until you approve the work.
               </p>
 
               {loading ? (
-                <div className="py-12 text-center text-sm text-gray-500">
+                <div className="py-12 text-center text-sm text-ct-mute">
                   Loading {suburb.name} {tradeLabel.toLowerCase()}s…
                 </div>
               ) : tradies.length === 0 ? (
                 <div className="py-10 text-center">
-                  <p className="text-base font-semibold text-gray-900 mb-2">
+                  <p className="text-base font-semibold text-ct-paper mb-2">
                     We&apos;re building inventory in {suburb.name}.
                   </p>
-                  <p className="text-sm text-gray-600 max-w-md mx-auto mb-5">
+                  <p className="text-sm text-ct-mute-2 max-w-md mx-auto mb-5">
                     Post your job free — verified {tradeLabel.toLowerCase()}s in the {suburb.city} area will be notified and can quote within hours.
                   </p>
                   <Link
                     to={`/post-lead?trade=${trade}&postcode=${suburb.postcode}`}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-lg transition-colors"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-teal hover:brightness-110 text-ct-ink text-sm font-semibold rounded-ct-sm transition-colors"
                   >
                     Post your {suburb.name} {tradeLabel.toLowerCase()} job
                     <ArrowRight className="w-4 h-4" />
@@ -398,29 +398,29 @@ export default function FindTradies() {
             />
 
             {/* What they do */}
-            <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <section className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 sm:p-8">
+              <h2 className="text-xl font-bold text-ct-paper mb-4">
                 What {tradeLabelPlural.toLowerCase()} in {suburb.name} typically do
               </h2>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
                 {content.whatTheyDo.map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                    <span className="text-sm text-gray-700">{item}</span>
+                    <CheckCircle2 className="w-4 h-4 text-ct-teal flex-shrink-0 mt-0.5" />
+                    <span className="text-sm text-ct-mute-2">{item}</span>
                   </li>
                 ))}
               </ul>
             </section>
 
             {/* License note */}
-            <section className="bg-secondary-50 rounded-2xl border border-secondary-100 p-6 sm:p-8">
+            <section className="bg-ct-surface-2 rounded-ct-lg border border-ct-line p-6 sm:p-8">
               <div className="flex items-start gap-3">
-                <Shield className="w-6 h-6 text-secondary-600 flex-shrink-0 mt-0.5" />
+                <Shield className="w-6 h-6 text-ct-mute-2 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h2 className="text-base font-semibold text-gray-900 mb-1.5">
+                  <h2 className="text-base font-semibold text-ct-paper mb-1.5">
                     Licensing in {suburb.state}
                   </h2>
-                  <p className="text-sm text-gray-700 leading-relaxed">
+                  <p className="text-sm text-ct-mute-2 leading-relaxed">
                     {content.licenseNote}
                   </p>
                 </div>
@@ -428,20 +428,20 @@ export default function FindTradies() {
             </section>
 
             {/* How to choose */}
-            <section className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-8">
+            <section className="bg-ct-surface rounded-ct-lg border border-ct-line p-6 sm:p-8">
               <div className="flex items-start gap-3 mb-4">
-                <ListChecks className="w-5 h-5 text-emerald-600 mt-0.5" />
-                <h2 className="text-xl font-bold text-gray-900">
+                <ListChecks className="w-5 h-5 text-ct-teal mt-0.5" />
+                <h2 className="text-xl font-bold text-ct-paper">
                   How to choose a {tradeLabel.toLowerCase()} in {suburb.name}
                 </h2>
               </div>
               <ul className="space-y-2.5">
                 {content.howToChoose.map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold flex-shrink-0 mt-0.5">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-ct-teal/[0.14] text-ct-teal text-xs font-bold flex-shrink-0 mt-0.5">
                       {i + 1}
                     </span>
-                    <span className="text-sm text-gray-700 leading-relaxed">{item}</span>
+                    <span className="text-sm text-ct-mute-2 leading-relaxed">{item}</span>
                   </li>
                 ))}
               </ul>
@@ -462,37 +462,37 @@ export default function FindTradies() {
               variant="card"
             />
 
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6">
               <div className="flex items-center gap-2 mb-3">
-                <Wallet className="w-5 h-5 text-emerald-600" />
-                <h3 className="text-base font-semibold text-gray-900">How payment works</h3>
+                <Wallet className="w-5 h-5 text-ct-teal" />
+                <h3 className="text-base font-semibold text-ct-paper">How payment works</h3>
               </div>
-              <ol className="space-y-2.5 text-sm text-gray-700">
+              <ol className="space-y-2.5 text-sm text-ct-mute-2">
                 <li className="flex gap-3">
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold flex-shrink-0 mt-0.5">1</span>
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-ct-teal/[0.14] text-ct-teal text-xs font-bold flex-shrink-0 mt-0.5">1</span>
                   <span>You accept a quote — payment held by Stripe.</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold flex-shrink-0 mt-0.5">2</span>
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-ct-teal/[0.14] text-ct-teal text-xs font-bold flex-shrink-0 mt-0.5">2</span>
                   <span>Tradie completes the work.</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold flex-shrink-0 mt-0.5">3</span>
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-ct-teal/[0.14] text-ct-teal text-xs font-bold flex-shrink-0 mt-0.5">3</span>
                   <span>You approve — funds release. Auto-release in 5 hours if you go silent.</span>
                 </li>
               </ol>
             </div>
 
-            <div className="bg-warm-50 rounded-2xl border border-warm-100 p-6">
-              <h3 className="text-base font-semibold text-gray-900 mb-2">
+            <div className="bg-ct-amber/[0.13] rounded-ct-lg border border-ct-teal/30 p-6">
+              <h3 className="text-base font-semibold text-ct-paper mb-2">
                 Need a {tradeLabel.toLowerCase()}&apos;s cost breakdown across Australia?
               </h3>
-              <p className="text-sm text-gray-700 mb-3">
+              <p className="text-sm text-ct-mute-2 mb-3">
                 Compare {tradeLabel.toLowerCase()} pricing nationally with our cost guide.
               </p>
               <Link
                 to={costGuideUrl(trade)}
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-warm-700 hover:text-warm-800"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-ct-amber hover:text-ct-paper"
               >
                 View {tradeLabel} cost guide
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -512,24 +512,24 @@ export default function FindTradies() {
         </div>
 
         {/* Footer CTA */}
-        <section className="mt-10 bg-navy-900 rounded-2xl px-6 py-10 sm:px-10 sm:py-12 text-center">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
+        <section className="mt-10 bg-ct-ink rounded-ct-lg px-6 py-10 sm:px-10 sm:py-12 text-center">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-ct-ink">
             Post your {suburb.name} {tradeLabel.toLowerCase()} job free
           </h2>
-          <p className="mt-3 text-base text-gray-300 max-w-xl mx-auto">
+          <p className="mt-3 text-base text-ct-mute max-w-xl mx-auto">
             ABN-verified, licence-checked {tradeLabel.toLowerCase()}s in the {suburb.city} area will be notified and can quote within hours. No lead fees, no chasing, escrow-protected payment.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
               to={`/post-lead?trade=${trade}&postcode=${suburb.postcode}`}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-warm-500 hover:bg-warm-600 text-white font-semibold rounded-xl transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ct-teal hover:brightness-110 text-ct-ink font-semibold rounded-ct-md transition-colors"
             >
               Post a job
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               to={tradeHubUrl(trade)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-navy-800 hover:bg-navy-700 border border-navy-700 text-white font-semibold rounded-xl transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ct-surface hover:bg-ct-surface-2 border border-ct-line text-ct-ink font-semibold rounded-ct-md transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               All {tradeLabelPlural.toLowerCase()} by suburb

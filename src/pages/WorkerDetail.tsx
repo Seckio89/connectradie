@@ -268,7 +268,7 @@ export default function WorkerDetail() {
     return (
       <DashboardLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="bg-white rounded-xl shadow-sm p-6 flex items-center justify-center py-16 text-gray-500">
+          <div className="bg-ct-surface rounded-ct-md shadow-sm p-6 flex items-center justify-center py-16 text-ct-mute">
             <Loader2 className="w-5 h-5 animate-spin mr-2" />
             <span className="text-sm">Loading worker…</span>
           </div>
@@ -281,11 +281,11 @@ export default function WorkerDetail() {
     return (
       <DashboardLayout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
-          <Link to="/workforce" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+          <Link to="/workforce" className="inline-flex items-center gap-2 text-sm text-ct-mute-2 hover:text-ct-paper">
             <ArrowLeft className="w-4 h-4" /> Back to workforce
           </Link>
-          <div className="bg-white rounded-xl shadow-sm p-6 max-w-md">
-            <p className="text-sm text-red-600">{error || 'This worker could not be found.'}</p>
+          <div className="bg-ct-surface rounded-ct-md shadow-sm p-6 max-w-md">
+            <p className="text-sm text-ct-rose">{error || 'This worker could not be found.'}</p>
           </div>
         </div>
       </DashboardLayout>
@@ -296,45 +296,45 @@ export default function WorkerDetail() {
     <DashboardLayout>
       <SectionErrorBoundary fallbackTitle="Worker">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-          <Link to="/workforce" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+          <Link to="/workforce" className="inline-flex items-center gap-2 text-sm text-ct-mute-2 hover:text-ct-paper">
             <ArrowLeft className="w-4 h-4" /> Back to workforce
           </Link>
 
           {/* Header */}
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{worker.invite_name || 'Unnamed worker'}</h1>
+              <h1 className="text-2xl font-bold text-ct-paper">{worker.invite_name || 'Unnamed worker'}</h1>
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROSTER_STATUS_META[worker.status]?.badgeClass ?? 'bg-gray-100 text-gray-600'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${ROSTER_STATUS_META[worker.status]?.badgeClass ?? 'bg-ct-surface-2 text-ct-mute-2'}`}>
                   {ROSTER_STATUS_META[worker.status]?.label ?? worker.status}
                 </span>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${COMPLIANCE_META[compliance.state].badgeClass}`}>
                   {COMPLIANCE_META[compliance.state].label}
                 </span>
               </div>
-              <p className="text-sm text-gray-600 mt-2">
+              <p className="text-sm text-ct-mute-2 mt-2">
                 {EMPLOYMENT_TYPE_LABELS[worker.employment_type] ?? worker.employment_type}
                 {worker.started_at ? ` · Started ${worker.started_at}` : ''}
               </p>
               {(worker.invite_email || worker.invite_phone) && (
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-ct-mute-2 mt-1">
                   {[worker.invite_email, worker.invite_phone].filter(Boolean).join(' · ')}
                 </p>
               )}
             </div>
             <button
               onClick={() => setAddOpen(true)}
-              className="inline-flex items-center gap-2 px-5 py-2 bg-warm-500 hover:bg-warm-600 text-white rounded-lg text-sm font-medium min-h-[44px]"
+              className="inline-flex items-center gap-2 px-5 py-2 bg-ct-teal hover:brightness-110 text-ct-ink rounded-ct-sm text-sm font-medium min-h-[44px]"
             >
               <Plus className="w-4 h-4" /> Add credential
             </button>
           </div>
 
           {/* Credentials */}
-          <div className="bg-white rounded-xl shadow-sm">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Credentials</h2>
-              <p className="text-sm text-gray-600 mt-0.5">
+          <div className="bg-ct-surface rounded-ct-md shadow-sm">
+            <div className="px-6 py-4 border-b border-ct-line">
+              <h2 className="text-lg font-semibold text-ct-paper">Credentials</h2>
+              <p className="text-sm text-ct-mute-2 mt-0.5">
                 Tickets, checks, licences and insurances. We record the outcome and expiry only.
               </p>
             </div>
@@ -348,13 +348,13 @@ export default function WorkerDetail() {
                 onAction={() => setAddOpen(true)}
               />
             ) : (
-              <ul className="divide-y divide-gray-200">
+              <ul className="divide-y divide-ct-line">
                 {rows.map(({ type, credential, state: credState, daysUntilExpiry }) => (
                   <li key={type.id} className={`px-6 py-4 ${credState === 'not_required' ? 'opacity-60' : ''}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-medium text-gray-900">{type.label}</p>
+                          <p className="text-sm font-medium text-ct-paper">{type.label}</p>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${COMPLIANCE_META[credState].badgeClass}`}>
                             {COMPLIANCE_META[credState].label}
                           </span>
@@ -364,7 +364,7 @@ export default function WorkerDetail() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-ct-mute mt-1">
                           {credState === 'not_required'
                             ? "You've marked this as not needed for this worker"
                             : credential
@@ -380,7 +380,7 @@ export default function WorkerDetail() {
                         {credState === 'not_required' ? (
                           <button
                             onClick={() => void handleSetRequired(type.id, true)}
-                            className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                            className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2"
                           >
                             <RotateCcw className="w-4 h-4" /> Track again
                           </button>
@@ -389,13 +389,13 @@ export default function WorkerDetail() {
                         {credential?.document_path && (
                           <button
                             onClick={() => void handleView(credential)}
-                            className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                            className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2"
                           >
                             <FileText className="w-4 h-4" /> View
                           </button>
                         )}
                         {credential && type.requires_document && (
-                          <label className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 cursor-pointer">
+                          <label className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 cursor-pointer">
                             {uploadingId === credential.id
                               ? <Loader2 className="w-4 h-4 animate-spin" />
                               : <Upload className="w-4 h-4" />}
@@ -416,14 +416,14 @@ export default function WorkerDetail() {
                         {credential ? (
                           <button
                             onClick={() => setToDelete(credential)}
-                            className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] text-red-600 hover:text-red-700 text-sm font-medium"
+                            className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] text-ct-rose hover:text-ct-rose text-sm font-medium"
                           >
                             <Trash2 className="w-4 h-4" /> Remove
                           </button>
                         ) : (
                           <button
                             onClick={() => { setForm({ ...form, credentialTypeId: type.id }); setAddOpen(true); }}
-                            className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                            className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2"
                           >
                             <Plus className="w-4 h-4" /> Record
                           </button>
@@ -433,7 +433,7 @@ export default function WorkerDetail() {
                         {!credential && (
                           <button
                             onClick={() => void handleSetRequired(type.id, false)}
-                            className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] text-gray-500 hover:text-gray-700 text-sm font-medium"
+                            className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] text-ct-mute hover:text-ct-mute-2 text-sm font-medium"
                           >
                             <Ban className="w-4 h-4" /> Not required
                           </button>
@@ -449,9 +449,9 @@ export default function WorkerDetail() {
           </div>
 
           {/* Assignment history */}
-          <div className="bg-white rounded-xl shadow-sm">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Assignment history</h2>
+          <div className="bg-ct-surface rounded-ct-md shadow-sm">
+            <div className="px-6 py-4 border-b border-ct-line">
+              <h2 className="text-lg font-semibold text-ct-paper">Assignment history</h2>
             </div>
             {assignments.length === 0 ? (
               <EmptyState
@@ -460,19 +460,19 @@ export default function WorkerDetail() {
                 description="Jobs this worker is put on will show here, with the date and their role on site."
               />
             ) : (
-              <ul className="divide-y divide-gray-200">
+              <ul className="divide-y divide-ct-line">
                 {assignments.map((a) => (
                   <li key={a.id} className="px-6 py-4 flex flex-wrap items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-ct-paper truncate">
                         {one(a.jobs)?.title || 'Untitled job'}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-ct-mute mt-0.5">
                         {[a.role_on_job, a.scheduled_date].filter(Boolean).join(' · ') || 'No date recorded'}
                         {a.unassigned_at ? ' · Unassigned' : ''}
                       </p>
                     </div>
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute-2">
                       {a.status}
                     </span>
                   </li>
@@ -481,8 +481,8 @@ export default function WorkerDetail() {
             )}
           </div>
 
-          <p className="flex items-start gap-2 text-xs text-gray-500 max-w-2xl">
-            <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-gray-400" />
+          <p className="flex items-start gap-2 text-xs text-ct-mute max-w-2xl">
+            <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-ct-mute" />
             <span>
               We store whether a check passed and when it expires — never a date of birth,
               visa details, health information or government ID number. Documents are held
@@ -495,16 +495,16 @@ export default function WorkerDetail() {
         <Modal isOpen={addOpen} onClose={() => setAddOpen(false)} maxWidth="md">
           <div className="p-6 space-y-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Add credential</h3>
-              <p className="text-sm text-gray-600 mt-0.5">Record the outcome and expiry — not the underlying ID document.</p>
+              <h3 className="text-lg font-semibold text-ct-paper">Add credential</h3>
+              <p className="text-sm text-ct-mute-2 mt-0.5">Record the outcome and expiry — not the underlying ID document.</p>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Credential</label>
+              <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1">Credential</label>
               <select
                 value={form.credentialTypeId}
                 onChange={(e) => setForm({ ...form, credentialTypeId: e.target.value })}
-                className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                className="w-full px-3 py-2 min-h-[44px] border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
               >
                 <option value="">Select a credential…</option>
                 {types.map((t) => (
@@ -514,33 +514,33 @@ export default function WorkerDetail() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Reference number</label>
+              <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1">Reference number</label>
               <input
                 type="text"
                 value={form.referenceNumber}
                 onChange={(e) => setForm({ ...form, referenceNumber: e.target.value })}
                 placeholder="Optional"
-                className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                className="w-full px-3 py-2 min-h-[44px] border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Issued</label>
+                <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1">Issued</label>
                 <input
                   type="date"
                   value={form.issuedAt}
                   onChange={(e) => setForm({ ...form, issuedAt: e.target.value })}
-                  className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                  className="w-full px-3 py-2 min-h-[44px] border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Expires</label>
+                <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1">Expires</label>
                 <input
                   type="date"
                   value={form.expiresAt}
                   onChange={(e) => setForm({ ...form, expiresAt: e.target.value })}
-                  className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                  className="w-full px-3 py-2 min-h-[44px] border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 />
               </div>
             </div>
@@ -548,14 +548,14 @@ export default function WorkerDetail() {
             <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
               <button
                 onClick={() => setAddOpen(false)}
-                className="px-4 py-2 min-h-[44px] border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                className="px-4 py-2 min-h-[44px] border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2"
               >
                 Cancel
               </button>
               <button
                 onClick={() => void handleAdd()}
                 disabled={!form.credentialTypeId || saving}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2 min-h-[44px] bg-warm-500 hover:bg-warm-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2 min-h-[44px] bg-ct-teal hover:brightness-110 disabled:opacity-50 text-ct-ink rounded-ct-sm text-sm font-medium"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 Add credential
@@ -576,7 +576,7 @@ export default function WorkerDetail() {
         )}
 
         {toast.show && (
-          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-sm text-white shadow-sm z-50 ${toast.isError ? 'bg-red-600' : 'bg-gray-900'}`}>
+          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-ct-sm text-sm text-ct-ink shadow-sm z-50 ${toast.isError ? 'bg-ct-rose' : 'bg-ct-surface'}`}>
             {toast.message}
           </div>
         )}

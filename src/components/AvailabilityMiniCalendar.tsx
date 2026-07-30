@@ -126,24 +126,24 @@ export default function AvailabilityMiniCalendar({
           type="button"
           onClick={goToPrevMonth}
           disabled={!canGoPrev}
-          className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-1 rounded hover:bg-ct-surface-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
         >
-          <ChevronLeft className="w-4 h-4 text-gray-500" />
+          <ChevronLeft className="w-4 h-4 text-ct-mute" />
         </button>
-        <span className="text-sm font-medium text-gray-700">{monthLabel}</span>
+        <span className="text-sm font-medium text-ct-mute-2">{monthLabel}</span>
         <button
           type="button"
           onClick={goToNextMonth}
-          className="p-1 rounded hover:bg-gray-100 transition-colors"
+          className="p-1 rounded hover:bg-ct-surface-2 transition-colors"
         >
-          <ChevronRight className="w-4 h-4 text-gray-500" />
+          <ChevronRight className="w-4 h-4 text-ct-mute" />
         </button>
       </div>
 
       {/* Day labels */}
       <div className="grid grid-cols-7 gap-0 mb-1">
         {DAY_LABELS.map((d) => (
-          <div key={d} className="text-center text-xs font-medium text-gray-400 py-1">
+          <div key={d} className="text-center text-xs font-medium text-ct-mute py-1">
             {d}
           </div>
         ))}
@@ -158,20 +158,20 @@ export default function AvailabilityMiniCalendar({
           const isSelected = selectedDate ? isSameDay(date, selectedDate) : false;
           const isDisabled = isPast || isBlocked || !isCurrentMonth;
 
-          let cellClass = 'w-8 h-8 rounded-lg text-xs font-medium flex items-center justify-center transition-colors ';
+          let cellClass = 'w-8 h-8 rounded-ct-sm text-xs font-medium flex items-center justify-center transition-colors ';
 
           if (!isCurrentMonth) {
-            cellClass += 'text-gray-200 cursor-default';
+            cellClass += 'text-ct-paper cursor-default';
           } else if (isSelected) {
-            cellClass += 'bg-emerald-500 text-white font-bold cursor-pointer';
+            cellClass += 'bg-ct-teal text-ct-ink font-bold cursor-pointer';
           } else if (isPreferred && !isPast && !isBlocked) {
-            cellClass += 'bg-amber-100 text-amber-800 border border-amber-300 cursor-pointer hover:bg-amber-200';
+            cellClass += 'bg-ct-amber/[0.13] text-ct-paper border border-ct-amber/[0.34] cursor-pointer hover:bg-ct-amber/[0.13]';
           } else if (isPast) {
-            cellClass += 'text-gray-300 cursor-default';
+            cellClass += 'text-ct-mute cursor-default';
           } else if (isBlocked) {
-            cellClass += 'text-gray-300 line-through cursor-default';
+            cellClass += 'text-ct-mute line-through cursor-default';
           } else {
-            cellClass += 'text-gray-700 cursor-pointer hover:bg-gray-100';
+            cellClass += 'text-ct-mute-2 cursor-pointer hover:bg-ct-surface-2';
           }
 
           return (
@@ -193,12 +193,12 @@ export default function AvailabilityMiniCalendar({
 
       {/* Selection feedback */}
       {selectedDateFormatted && (
-        <p className="mt-2 text-xs font-medium text-emerald-700">
+        <p className="mt-2 text-xs font-medium text-ct-teal">
           Selected: {selectedDateFormatted}
         </p>
       )}
       {!selectedDate && preferredDate && !blockedDates.has(preferredDate) && preferredDate >= today && (
-        <p className="mt-2 text-xs text-amber-600">
+        <p className="mt-2 text-xs text-ct-amber">
           Client&apos;s preferred date highlighted in amber
         </p>
       )}

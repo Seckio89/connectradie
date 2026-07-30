@@ -199,15 +199,15 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
         className="fixed inset-0 bg-black/30 z-[60]"
         onClick={onClose}
       />
-      <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl z-[60] w-full sm:max-w-4xl max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 bg-ct-surface rounded-t-2xl sm:rounded-ct-lg shadow-2xl z-[60] w-full sm:max-w-4xl max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-ct-line">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900">Add Availability Slots</h3>
-            <p className="text-sm text-gray-500 mt-1">Select multiple dates and set your working hours</p>
+            <h3 className="text-xl font-semibold text-ct-paper">Add Availability Slots</h3>
+            <p className="text-sm text-ct-mute mt-1">Select multiple dates and set your working hours</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -217,30 +217,30 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-gray-900">Select Dates</h4>
+                <h4 className="font-semibold text-ct-paper">Select Dates</h4>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1))}
-                    className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-1.5 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                   >
-                    <ChevronLeft className="w-4 h-4 text-gray-600" />
+                    <ChevronLeft className="w-4 h-4 text-ct-mute-2" />
                   </button>
-                  <span className="text-sm font-medium text-gray-700 min-w-[140px] text-center">
+                  <span className="text-sm font-medium text-ct-mute-2 min-w-[140px] text-center">
                     {monthNames[viewMonth.getMonth()]} {viewMonth.getFullYear()}
                   </span>
                   <button
                     onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1))}
-                    className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-1.5 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
                   >
-                    <ChevronRight className="w-4 h-4 text-gray-600" />
+                    <ChevronRight className="w-4 h-4 text-ct-mute-2" />
                   </button>
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+              <div className="bg-ct-surface-2 rounded-ct-md p-4 mb-4">
                 <div className="grid grid-cols-7 gap-1 mb-2">
                   {WEEKDAY_NAMES.map((day) => (
-                    <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
+                    <div key={day} className="text-center text-xs font-medium text-ct-mute py-1">
                       {day}
                     </div>
                   ))}
@@ -261,12 +261,12 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                         key={day}
                         onClick={() => !isPast && toggleDate(day)}
                         disabled={isPast}
-                        className={`aspect-square rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
+                        className={`aspect-square rounded-ct-sm text-sm font-medium transition-all flex items-center justify-center ${
                           selected
-                            ? 'bg-warm-500 text-white shadow-sm'
+                            ? 'bg-ct-teal text-ct-ink shadow-sm'
                             : isPast
-                            ? 'text-gray-300 cursor-not-allowed'
-                            : 'text-gray-700 hover:bg-gray-200'
+                            ? 'text-ct-mute cursor-not-allowed'
+                            : 'text-ct-mute-2 hover:bg-ct-line'
                         }`}
                       >
                         {day}
@@ -279,42 +279,42 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
               <div className="flex flex-wrap gap-2 mb-4">
                 <button
                   onClick={() => selectDateRange('weekdays')}
-                  className="text-xs px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="text-xs px-3 py-1.5 bg-ct-surface border border-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                 >
                   All Weekdays
                 </button>
                 <button
                   onClick={() => selectDateRange('weekend')}
-                  className="text-xs px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="text-xs px-3 py-1.5 bg-ct-surface border border-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                 >
                   Weekend
                 </button>
                 <button
                   onClick={() => selectDateRange('all')}
-                  className="text-xs px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="text-xs px-3 py-1.5 bg-ct-surface border border-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                 >
                   Entire Month
                 </button>
                 <button
                   onClick={clearAllDates}
-                  className="text-xs px-3 py-1.5 bg-white border border-gray-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                  className="text-xs px-3 py-1.5 bg-ct-surface border border-ct-line text-ct-rose rounded-ct-sm hover:bg-ct-rose/[0.13] transition-colors"
                 >
                   Clear All
                 </button>
               </div>
 
-              <div className="bg-secondary-50 border border-secondary-200 rounded-xl p-4">
+              <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Repeat className="w-4 h-4 text-secondary-600" />
-                    <span className="text-sm font-semibold text-secondary-900">Recurring Pattern</span>
+                    <Repeat className="w-4 h-4 text-ct-mute-2" />
+                    <span className="text-sm font-semibold text-ct-paper">Recurring Pattern</span>
                   </div>
                   <button
                     onClick={() => setRecurringPattern({ ...recurringPattern, enabled: !recurringPattern.enabled })}
-                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    className={`px-3 py-1 rounded-ct-sm text-xs font-medium transition-colors ${
                       recurringPattern.enabled
-                        ? 'bg-warm-500 text-white'
-                        : 'bg-white text-primary-600 border border-primary-300'
+                        ? 'bg-ct-teal text-ct-ink'
+                        : 'bg-ct-surface text-ct-mute-2 border border-ct-teal/30'
                     }`}
                   >
                     {recurringPattern.enabled ? 'Enabled' : 'Disabled'}
@@ -324,16 +324,16 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                 {recurringPattern.enabled && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-xs font-medium text-secondary-900 mb-2">Repeat on:</label>
+                      <label className="block text-xs font-medium text-ct-paper mb-2">Repeat on:</label>
                       <div className="flex gap-1">
                         {WEEKDAY_NAMES.map((day, index) => (
                           <button
                             key={day}
                             onClick={() => toggleWeekday(index)}
-                            className={`flex-1 py-2 text-xs font-medium rounded-lg transition-colors ${
+                            className={`flex-1 py-2 text-xs font-medium rounded-ct-sm transition-colors ${
                               recurringPattern.weekdays.includes(index)
-                                ? 'bg-warm-500 text-white'
-                                : 'bg-white text-gray-600 border border-gray-200'
+                                ? 'bg-ct-teal text-ct-ink'
+                                : 'bg-ct-surface text-ct-mute-2 border border-ct-line'
                             }`}
                           >
                             {day}
@@ -343,16 +343,16 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-secondary-900 mb-2">Repeat until:</label>
+                      <label className="block text-xs font-medium text-ct-paper mb-2">Repeat until:</label>
                       <input
                         type="date"
                         value={recurringPattern.endDate}
                         onChange={(e) => setRecurringPattern({ ...recurringPattern, endDate: e.target.value })}
-                        className="w-full px-3 py-2 border border-secondary-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                       />
                     </div>
 
-                    <p className="text-xs text-secondary-700">
+                    <p className="text-xs text-ct-mute-2">
                       This will create slots for selected weekdays until the end date.
                     </p>
                   </div>
@@ -361,22 +361,22 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
             </div>
 
             <div>
-              <h4 className="font-semibold text-gray-900 mb-4">Time Slot Template</h4>
+              <h4 className="font-semibold text-ct-paper mb-4">Time Slot Template</h4>
 
               <div className="grid grid-cols-2 gap-3 mb-6">
                 {TIME_PRESETS.map((preset) => (
                   <button
                     key={preset.id}
                     onClick={() => setSelectedPreset(preset.id)}
-                    className={`p-4 rounded-xl border-2 transition-all text-left ${
+                    className={`p-4 rounded-ct-md border-2 transition-all text-left ${
                       selectedPreset === preset.id
-                        ? 'border-warm-500 bg-warm-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-ct-teal bg-ct-amber/[0.13]'
+                        : 'border-ct-line hover:border-ct-line'
                     }`}
                   >
                     <div className="text-2xl mb-2">{preset.icon}</div>
-                    <div className="font-semibold text-gray-900 text-sm mb-1">{preset.name}</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="font-semibold text-ct-paper text-sm mb-1">{preset.name}</div>
+                    <div className="text-xs text-ct-mute">
                       {preset.startTime} - {preset.endTime}
                     </div>
                   </button>
@@ -384,56 +384,56 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
               </div>
 
               {selectedPreset === 'custom' && (
-                <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">Custom Time Range</label>
+                <div className="bg-ct-surface-2 rounded-ct-md p-4 mb-6">
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-3">Custom Time Range</label>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Start Time</label>
+                      <label className="block text-xs text-ct-mute mb-1">Start Time</label>
                       <input
                         type="time"
                         step="300"
                         value={customStartTime}
                         onChange={(e) => setCustomStartTime(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">End Time</label>
+                      <label className="block text-xs text-ct-mute mb-1">End Time</label>
                       <input
                         type="time"
                         step="300"
                         value={customEndTime}
                         onChange={(e) => setCustomEndTime(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                       />
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 mt-2">Select any time in 5-minute intervals</p>
+                  <p className="text-xs text-ct-mute mt-2">Select any time in 5-minute intervals</p>
                 </div>
               )}
 
-              <div className="bg-gradient-to-br from-primary-50 to-secondary-50 rounded-xl p-6 border border-primary-100">
+              <div className="bg-gradient-to-br from-ct-teal to-ct-surface-2 rounded-ct-md p-6 border border-ct-teal/30">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-warm-500 rounded-xl flex items-center justify-center">
-                    <CalendarIcon className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 bg-ct-teal rounded-ct-md flex items-center justify-center">
+                    <CalendarIcon className="w-5 h-5 text-ct-ink" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900">{totalSlots}</div>
-                    <div className="text-sm text-gray-600">Slots to create</div>
+                    <div className="text-2xl font-bold text-ct-paper">{totalSlots}</div>
+                    <div className="text-sm text-ct-mute-2">Slots to create</div>
                   </div>
                 </div>
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-700">
+                    <Clock className="w-4 h-4 text-ct-mute" />
+                    <span className="text-ct-mute-2">
                       <strong>{startTime}</strong> - <strong>{endTime}</strong>
                     </span>
                   </div>
                   {recurringPattern.enabled && recurringPattern.weekdays.length > 0 && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Repeat className="w-4 h-4 text-gray-500" />
-                      <span className="text-gray-700">
+                      <Repeat className="w-4 h-4 text-ct-mute" />
+                      <span className="text-ct-mute-2">
                         Repeating on {recurringPattern.weekdays.map(d => WEEKDAY_NAMES[d]).join(', ')}
                       </span>
                     </div>
@@ -441,7 +441,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                 </div>
 
                 {totalSlots > 0 && (
-                  <div className="text-xs text-gray-600 bg-white/50 rounded-lg p-3">
+                  <div className="text-xs text-ct-mute-2 bg-ct-surface/50 rounded-ct-sm p-3">
                     You're about to add {totalSlots} availability slot{totalSlots !== 1 ? 's' : ''} to your calendar.
                   </div>
                 )}
@@ -450,17 +450,17 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
           </div>
         </div>
 
-        <div className="border-t border-gray-200 p-4 pb-20 sm:p-6 sm:pb-6 flex items-center justify-between bg-gray-50">
+        <div className="border-t border-ct-line p-4 pb-20 sm:p-6 sm:pb-6 flex items-center justify-between bg-ct-surface-2">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-200 rounded-xl transition-colors"
+            className="px-5 py-2.5 text-ct-mute-2 font-medium hover:bg-ct-line rounded-ct-md transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={totalSlots === 0 || isSaving}
-            className="px-6 py-2.5 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className="px-6 py-2.5 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
             {isSaving ? (
               <>

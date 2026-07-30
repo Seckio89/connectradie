@@ -57,43 +57,43 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Create New Job Group</h2>
+      <div className="bg-ct-surface rounded-ct-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-ct-surface border-b border-ct-line px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-ct-paper">Create New Job Group</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-ct-mute" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="p-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm">
+              <p className="text-sm text-ct-rose">{error}</p>
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Job Group Name <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-2">
+              Job Group Name <span className="text-ct-rose">*</span>
             </label>
             <div className="relative">
-              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g., Kitchen Renovation"
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full pl-10 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-ct-mute-2 mb-2">
               Description
             </label>
             <textarea {...proseInputProps}
@@ -101,45 +101,45 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of this job group..."
               rows={3}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+              className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal resize-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-ct-mute-2 mb-2">
                 Start Date
               </label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full pl-10 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-ct-mute-2 mb-2">
                 Est. End Date
               </label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                 <input
                   type="date"
                   value={estimatedEndDate}
                   onChange={(e) => setEstimatedEndDate(e.target.value)}
                   min={startDate}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full pl-10 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
-            <p className="text-sm text-secondary-800">
+          <div className="bg-ct-surface-2 border border-ct-line rounded-ct-sm p-4">
+            <p className="text-sm text-ct-mute-2">
               After creating the job group, you can add existing jobs or create new ones within it.
             </p>
           </div>
@@ -148,14 +148,14 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              className="flex-1 px-6 py-3 border border-ct-line text-ct-mute-2 rounded-ct-md hover:bg-ct-surface-2 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-warm-500 text-white rounded-xl hover:bg-warm-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-6 py-3 bg-ct-teal text-ct-ink rounded-ct-md hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating...' : 'Create Job Group'}
             </button>

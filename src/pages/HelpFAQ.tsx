@@ -154,26 +154,26 @@ function FAQAccordion({ item, highlight }: { item: FAQItem; highlight?: string }
     const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
     const parts = text.split(regex);
     return parts.map((part, i) =>
-      regex.test(part) ? <mark key={i} className="bg-yellow-200 rounded px-0.5">{part}</mark> : part
+      regex.test(part) ? <mark key={i} className="bg-ct-amber/[0.13] rounded px-0.5">{part}</mark> : part
     );
   };
 
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden">
+    <div className="border border-ct-line rounded-ct-md overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-ct-surface-2 transition-colors"
       >
-        <span className="font-medium text-gray-900 pr-4">{highlightText(item.question)}</span>
+        <span className="font-medium text-ct-paper pr-4">{highlightText(item.question)}</span>
         {isOpen ? (
-          <ChevronUp className="w-5 h-5 text-gray-400 flex-shrink-0" />
+          <ChevronUp className="w-5 h-5 text-ct-mute flex-shrink-0" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+          <ChevronDown className="w-5 h-5 text-ct-mute flex-shrink-0" />
         )}
       </button>
       {isOpen && (
         <div className="px-5 pb-4">
-          <p className="text-gray-600 leading-relaxed">{highlightText(item.answer)}</p>
+          <p className="text-ct-mute-2 leading-relaxed">{highlightText(item.answer)}</p>
         </div>
       )}
     </div>
@@ -200,23 +200,23 @@ export default function HelpFAQ() {
   const totalResults = filteredSections.reduce((sum, s) => sum + s.items.length, 0);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-ct-surface">
       <SEO
         title="Help & FAQs"
         description="Find answers to frequently asked questions about ConnecTradie. Learn how to get started, manage your account, payments, and more."
         canonical="/help"
       />
-      <header className="sticky top-0 z-30 bg-white border-b border-gray-100">
+      <header className="sticky top-0 z-30 bg-ct-surface border-b border-ct-line-soft">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center">
               <span className="text-2xl font-extrabold tracking-tight text-black">
-                Connec<span className="text-warm-500">Tradie</span>
+                Connec<span className="text-ct-teal">Tradie</span>
               </span>
             </Link>
             <Link
               to="/"
-              className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-ct-mute-2 hover:text-ct-paper transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to home
@@ -226,10 +226,10 @@ export default function HelpFAQ() {
       </header>
 
       <main id="main-content" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Help & Frequently Asked Questions</h1>
-        <p className="text-gray-600 mb-8">
+        <h1 className="text-3xl font-bold text-ct-paper mb-2">Help & Frequently Asked Questions</h1>
+        <p className="text-ct-mute-2 mb-8">
           Find answers to common questions about using ConnecTradie. Can't find what you're looking for?{' '}
-          <Link to="/contact" className="text-primary-600 hover:text-primary-700 font-medium">
+          <Link to="/contact" className="text-ct-mute-2 hover:text-ct-mute-2 font-medium">
             Contact us
           </Link>
           .
@@ -237,16 +237,16 @@ export default function HelpFAQ() {
 
         {/* Search */}
         <div className="relative mb-8">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search for answers..."
-            className="w-full pl-12 pr-4 py-3.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-gray-50 transition-all"
+            className="w-full pl-12 pr-4 py-3.5 text-sm border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal bg-ct-surface-2 transition-all"
           />
           {searchQuery && (
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-ct-mute">
               {totalResults} result{totalResults !== 1 ? 's' : ''} found
             </p>
           )}
@@ -256,7 +256,7 @@ export default function HelpFAQ() {
         <div className="space-y-10">
           {filteredSections.map((section) => (
             <section key={section.title}>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">{section.title}</h2>
+              <h2 className="text-xl font-semibold text-ct-paper mb-4">{section.title}</h2>
               <div className="space-y-3">
                 {section.items.map((item) => (
                   <FAQAccordion key={item.question} item={item} highlight={searchQuery} />
@@ -267,12 +267,12 @@ export default function HelpFAQ() {
 
           {filteredSections.length === 0 && (
             <div className="text-center py-12">
-              <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <h3 className="text-base font-semibold text-gray-900 mb-1">No results found</h3>
-              <p className="text-sm text-gray-500">Try different keywords or browse the categories below</p>
+              <Search className="w-10 h-10 text-ct-mute mx-auto mb-3" />
+              <h3 className="text-base font-semibold text-ct-paper mb-1">No results found</h3>
+              <p className="text-sm text-ct-mute">Try different keywords or browse the categories below</p>
               <button
                 onClick={() => setSearchQuery('')}
-                className="mt-4 text-sm text-primary-600 font-medium hover:text-primary-700"
+                className="mt-4 text-sm text-ct-mute-2 font-medium hover:text-ct-mute-2"
               >
                 Clear search
               </button>
@@ -280,21 +280,21 @@ export default function HelpFAQ() {
           )}
         </div>
 
-        <div className="mt-12 bg-gray-50 rounded-2xl border border-gray-200 p-8 text-center">
-          <h2 className="text-lg font-bold text-gray-900 mb-2">Still need help?</h2>
-          <p className="text-gray-600 mb-4">
+        <div className="mt-12 bg-ct-surface-2 rounded-ct-lg border border-ct-line p-8 text-center">
+          <h2 className="text-lg font-bold text-ct-paper mb-2">Still need help?</h2>
+          <p className="text-ct-mute-2 mb-4">
             Our team is here to assist you with any questions or concerns.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               to="/contact"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-warm-500 text-white font-semibold rounded-xl hover:bg-warm-600 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
             >
               Contact Us
             </Link>
             <a
               href="mailto:admin@connectradie.com"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ct-surface border border-ct-line text-ct-mute-2 font-semibold rounded-ct-md hover:bg-ct-surface-2 transition-colors"
             >
               Email Support
             </a>
@@ -304,34 +304,34 @@ export default function HelpFAQ() {
 
       {/* Floating help panel — opens real contact options. No fake chat. */}
       {showHelpPanel ? (
-        <div className="fixed bottom-6 right-6 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
-          <div className="bg-warm-500 px-4 py-3 flex items-center justify-between">
+        <div className="fixed bottom-6 right-6 w-80 bg-ct-surface rounded-ct-lg shadow-2xl border border-ct-line z-50 overflow-hidden">
+          <div className="bg-ct-teal px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5 text-white" />
-              <span className="text-white font-semibold text-sm">Need help?</span>
+              <MessageCircle className="w-5 h-5 text-ct-ink" />
+              <span className="text-ct-ink font-semibold text-sm">Need help?</span>
             </div>
             <button
               onClick={() => setShowHelpPanel(false)}
-              className="text-white/80 hover:text-white"
+              className="text-ct-ink/80 hover:text-ct-ink"
               aria-label="Close help panel"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
           <div className="p-4 space-y-3">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-ct-mute-2">
               We usually reply within one business day. Choose the option that suits you.
             </p>
             <a
               href="mailto:admin@connectradie.com"
-              className="block px-4 py-3 bg-warm-500 text-white text-sm font-semibold rounded-lg hover:bg-warm-600 transition-colors text-center"
+              className="block px-4 py-3 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-sm hover:brightness-110 transition-colors text-center"
             >
               Email support
             </a>
             <Link
               to="/contact"
               onClick={() => setShowHelpPanel(false)}
-              className="block px-4 py-3 border border-gray-200 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-50 transition-colors text-center"
+              className="block px-4 py-3 border border-ct-line text-ct-mute-2 text-sm font-semibold rounded-ct-sm hover:bg-ct-surface-2 transition-colors text-center"
             >
               Open contact form
             </Link>
@@ -340,7 +340,7 @@ export default function HelpFAQ() {
       ) : (
         <button
           onClick={() => setShowHelpPanel(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-warm-500 text-white rounded-full shadow-lg hover:bg-warm-600 transition-all flex items-center justify-center z-50 hover:scale-105"
+          className="fixed bottom-6 right-6 w-14 h-14 bg-ct-teal text-ct-ink rounded-full shadow-lg hover:brightness-110 transition-all flex items-center justify-center z-50 hover:scale-105"
           aria-label="Open help options"
         >
           <MessageCircle className="w-6 h-6" />

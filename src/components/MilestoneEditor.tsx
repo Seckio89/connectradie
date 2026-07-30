@@ -184,9 +184,9 @@ interface MilestoneEditorProps {
 }
 
 const STATUS_CONFIG: Record<MilestoneStatus, { label: string; color: string; bg: string; icon: typeof Clock }> = {
-  pending: { label: 'Pending', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200', icon: Clock },
-  approved: { label: 'Approved', color: 'text-secondary-700', bg: 'bg-secondary-50 border-secondary-200', icon: CheckCircle2 },
-  paid: { label: 'Paid', color: 'text-green-700', bg: 'bg-green-50 border-green-200', icon: DollarSign },
+  pending: { label: 'Pending', color: 'text-ct-amber', bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', icon: Clock },
+  approved: { label: 'Approved', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2 border-ct-line', icon: CheckCircle2 },
+  paid: { label: 'Paid', color: 'text-ct-teal', bg: 'bg-ct-teal/[0.14] border-ct-teal/30', icon: DollarSign },
 };
 
 function formatCents(cents: number): string {
@@ -354,16 +354,16 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
-            <Calendar className="w-4 h-4 text-primary-600" />
+          <div className="w-8 h-8 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center">
+            <Calendar className="w-4 h-4 text-ct-mute-2" />
           </div>
-          <h4 className="text-base font-bold text-gray-900">Milestones</h4>
+          <h4 className="text-base font-bold text-ct-paper">Milestones</h4>
           {localMilestones.length > 0 && (
-            <span className="text-xs text-gray-500 ml-1">({localMilestones.length})</span>
+            <span className="text-xs text-ct-mute ml-1">({localMilestones.length})</span>
           )}
         </div>
         {localMilestones.length > 0 && (
-          <span className="text-sm font-semibold text-gray-700">
+          <span className="text-sm font-semibold text-ct-mute-2">
             Total: ${formatCents(totalCents)}
           </span>
         )}
@@ -373,7 +373,7 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
       {!readOnly && availableTemplate && localMilestones.length === 0 && !showTemplateConfirm && (
         <button
           onClick={() => loadTemplate()}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-primary-50 border-2 border-dashed border-primary-200 text-primary-700 font-medium rounded-xl hover:bg-primary-100 hover:border-primary-300 transition-colors text-sm"
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-ct-surface-2 border-2 border-dashed border-ct-line text-ct-mute-2 font-medium rounded-ct-md hover:bg-ct-surface-2 hover:border-ct-teal/30 transition-colors text-sm"
         >
           <FileText className="w-4 h-4" />
           Load {tradeCategory} milestone template
@@ -382,20 +382,20 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
 
       {/* Template confirm when milestones already exist */}
       {!readOnly && availableTemplate && localMilestones.length > 0 && showTemplateConfirm && (
-        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
-          <p className="text-sm text-amber-800 font-medium mb-2">
+        <div className="p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md">
+          <p className="text-sm text-ct-paper font-medium mb-2">
             This will replace your current milestones with the {tradeCategory} template. Continue?
           </p>
           <div className="flex gap-2">
             <button
               onClick={loadTemplate}
-              className="px-3 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors"
+              className="px-3 py-1.5 bg-ct-amber text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-amber transition-colors"
             >
               Yes, load template
             </button>
             <button
               onClick={() => setShowTemplateConfirm(false)}
-              className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-3 py-1.5 bg-ct-surface border border-ct-line text-ct-mute-2 text-sm font-medium rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
             >
               Cancel
             </button>
@@ -406,7 +406,7 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
       {!readOnly && availableTemplate && localMilestones.length > 0 && !showTemplateConfirm && (
         <button
           onClick={() => setShowTemplateConfirm(true)}
-          className="inline-flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-700 font-medium"
+          className="inline-flex items-center gap-1.5 text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium"
         >
           <FileText className="w-3.5 h-3.5" />
           Reset to {tradeCategory} template
@@ -416,16 +416,16 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
       {/* Progress bar */}
       {localMilestones.length > 0 && (
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-gray-500">
+          <div className="flex items-center justify-between text-xs text-ct-mute">
             <span>
               {completedCount} of {localMilestones.length} paid
               {approvedCount > 0 && `, ${approvedCount} approved`}
             </span>
             <span>{progressPercent}%</span>
           </div>
-          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div className="w-full h-2 bg-ct-surface-2 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-ct-teal to-ct-teal0 rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -434,25 +434,25 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
 
       {/* Milestone list */}
       {localMilestones.length === 0 && readOnly && (
-        <div className="py-8 text-center text-sm text-gray-400">
+        <div className="py-8 text-center text-sm text-ct-mute">
           No milestones have been added yet.
         </div>
       )}
 
-      <div className="space-y-0 divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+      <div className="space-y-0 divide-y divide-ct-line-soft border border-ct-line rounded-ct-md overflow-hidden">
         {localMilestones.map((m, index) => {
           const statusCfg = STATUS_CONFIG[m.status];
           const StatusIcon = statusCfg.icon;
 
           return (
-            <div key={m.id || `new-${index}`} className="bg-white p-4 relative group">
+            <div key={m.id || `new-${index}`} className="bg-ct-surface p-4 relative group">
               {readOnly ? (
                 /* Read-only view */
                 <div>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <span className="text-xs font-medium text-gray-400 mr-2">{index + 1}.</span>
-                      <span className="font-semibold text-gray-900">{m.title || 'Untitled'}</span>
+                      <span className="text-xs font-medium text-ct-mute mr-2">{index + 1}.</span>
+                      <span className="font-semibold text-ct-paper">{m.title || 'Untitled'}</span>
                     </div>
                     <span
                       className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${statusCfg.bg} ${statusCfg.color}`}
@@ -462,14 +462,14 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
                     </span>
                   </div>
                   {m.description && (
-                    <p className="text-sm text-gray-500 mt-1 ml-5">{m.description}</p>
+                    <p className="text-sm text-ct-mute mt-1 ml-5">{m.description}</p>
                   )}
-                  <div className="flex items-center gap-3 mt-2 ml-5 text-sm text-gray-600">
+                  <div className="flex items-center gap-3 mt-2 ml-5 text-sm text-ct-mute-2">
                     <span className="font-medium">${parseFloat(m.amount || '0').toLocaleString('en-AU', { minimumFractionDigits: 2 })}</span>
                     {m.due_date && (
                       <>
-                        <span className="text-gray-300">|</span>
-                        <span className="flex items-center gap-1 text-gray-500">
+                        <span className="text-ct-mute">|</span>
+                        <span className="flex items-center gap-1 text-ct-mute">
                           <Calendar className="w-3 h-3" />
                           Due: {new Date(m.due_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                         </span>
@@ -481,7 +481,7 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
                 /* Editable view */
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
-                    <span className="text-xs font-bold text-gray-400 mt-2.5 w-5 text-right flex-shrink-0">
+                    <span className="text-xs font-bold text-ct-mute mt-2.5 w-5 text-right flex-shrink-0">
                       {index + 1}.
                     </span>
                     <div className="flex-1 space-y-3">
@@ -490,18 +490,18 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
                         value={m.title}
                         onChange={(e) => updateField(index, 'title', e.target.value)}
                         placeholder="Milestone title (e.g. Foundation Work)"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent font-medium"
+                        className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal font-medium"
                       />
                       <input
                         type="text"
                         value={m.description}
                         onChange={(e) => updateField(index, 'description', e.target.value)}
                         placeholder="Brief description (optional)"
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-600"
+                        className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-ct-mute-2"
                       />
                       <div className="flex items-center gap-3 flex-wrap">
                         <div className="relative flex-1 min-w-[120px]">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium">$</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm font-medium">$</span>
                           <input
                             type="number"
                             value={m.amount}
@@ -509,16 +509,16 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
                             placeholder="Amount"
                             min="0"
                             step="0.01"
-                            className="w-full pl-7 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            className="w-full pl-7 pr-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                           />
                         </div>
                         <div className="relative flex-1 min-w-[140px]">
-                          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
                           <input
                             type="date"
                             value={m.due_date}
                             onChange={(e) => updateField(index, 'due_date', e.target.value)}
-                            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            className="w-full pl-9 pr-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                           />
                         </div>
                         <span
@@ -531,7 +531,7 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
                     </div>
                     <button
                       onClick={() => removeMilestone(index)}
-                      className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors mt-1.5 opacity-0 group-hover:opacity-100"
+                      className="p-1.5 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors mt-1.5 opacity-0 group-hover:opacity-100"
                       title="Remove milestone"
                     >
                       <X className="w-4 h-4" />
@@ -547,7 +547,7 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
         {!readOnly && (
           <button
             onClick={addMilestone}
-            className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-primary-600 hover:bg-primary-50 transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add Milestone
@@ -557,13 +557,13 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
 
       {/* Error / Success messages */}
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+        <div className="flex items-center gap-2 p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md text-sm text-ct-rose">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           {error}
         </div>
       )}
       {successMsg && (
-        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">
+        <div className="flex items-center gap-2 p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md text-sm text-ct-teal">
           <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
           {successMsg}
         </div>
@@ -574,7 +574,7 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full flex items-center justify-center gap-2 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-2 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <>

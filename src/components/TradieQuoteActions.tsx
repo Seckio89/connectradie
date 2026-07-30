@@ -72,7 +72,7 @@ export default function TradieQuoteActions({ quote, job, tradeCategory, onChange
       <div className="flex items-center gap-2 flex-wrap">
         <QuoteStatusBadge status={quote.status} role="tradie" />
         {description && (
-          <span className="text-xs text-gray-500">{description}</span>
+          <span className="text-xs text-ct-mute">{description}</span>
         )}
       </div>
 
@@ -81,7 +81,7 @@ export default function TradieQuoteActions({ quote, job, tradeCategory, onChange
           {actions.includes('mark_visit_complete') && (
             <button
               onClick={() => setShowCompleteModal(true)}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-colors text-sm shadow-sm"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors text-sm shadow-sm"
             >
               <CheckCircle2 className="w-4 h-4" />
               Mark site visit complete
@@ -90,7 +90,7 @@ export default function TradieQuoteActions({ quote, job, tradeCategory, onChange
           {actions.includes('submit_final') && (
             <button
               onClick={() => setShowFinalModal(true)}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-warm-500 text-white font-semibold rounded-lg hover:bg-warm-600 transition-colors text-sm shadow-sm"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors text-sm shadow-sm"
             >
               <FileText className="w-4 h-4" />
               Submit final quote
@@ -157,18 +157,18 @@ function CompleteVisitModal({ isOpen, quote, tradeCategory, onClose, onDone }: C
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Mark site visit complete</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h2 className="text-lg font-bold text-ct-paper">Mark site visit complete</h2>
+            <p className="text-sm text-ct-mute mt-0.5">
               The client will be notified. After this, you'll need to submit your final quote.
             </p>
           </div>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors">
+          <button onClick={onClose} className="p-1 text-ct-mute hover:text-ct-mute-2 rounded transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Notes from the visit <span className="text-gray-400 font-normal">(optional, visible to the client)</span>
+        <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
+          Notes from the visit <span className="text-ct-mute font-normal">(optional, visible to the client)</span>
         </label>
         <textarea {...proseInputProps}
           value={notes}
@@ -176,11 +176,11 @@ function CompleteVisitModal({ isOpen, quote, tradeCategory, onClose, onDone }: C
           rows={3}
           maxLength={500}
           placeholder={visitNotesPlaceholder(tradeCategory)}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+          className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
         />
 
         {error && (
-          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <div className="mt-3 p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-sm text-ct-rose">
             {error}
           </div>
         )}
@@ -189,14 +189,14 @@ function CompleteVisitModal({ isOpen, quote, tradeCategory, onClose, onDone }: C
           <button
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-ct-mute-2 hover:text-ct-paper transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition-colors text-sm disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors text-sm disabled:opacity-50"
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             Mark visit complete
@@ -281,19 +281,19 @@ function SubmitFinalQuoteModal({ isOpen, quote, onClose, onDone }: SubmitFinalQu
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-gray-900">Submit your final quote</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <h2 className="text-lg font-bold text-ct-paper">Submit your final quote</h2>
+            <p className="text-sm text-ct-mute mt-0.5">
               This is binding under Australian Consumer Law. The client can accept and pay
               up until the validity date — after that, the quote expires and you can submit a new one.
             </p>
           </div>
-          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors">
+          <button onClick={onClose} className="p-1 text-ct-mute hover:text-ct-mute-2 rounded transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Original estimate context */}
-        <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-600">
+        <div className="mb-4 p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm text-xs text-ct-mute-2">
           <span className="font-semibold">Your original estimate:</span>{' '}
           {quote.firm_price != null
             ? <>${Number(quote.firm_price).toLocaleString()} firm</>
@@ -302,11 +302,11 @@ function SubmitFinalQuoteModal({ isOpen, quote, onClose, onDone }: SubmitFinalQu
         </div>
 
         {/* Final price */}
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Final price (AUD) <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
+          Final price (AUD) <span className="text-ct-rose">*</span>
         </label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm">$</span>
           <input
             type="number"
             inputMode="decimal"
@@ -315,13 +315,13 @@ function SubmitFinalQuoteModal({ isOpen, quote, onClose, onDone }: SubmitFinalQu
             value={finalPriceStr}
             onChange={(e) => setFinalPriceStr(e.target.value)}
             placeholder="0.00"
-            className="w-full pl-7 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+            className="w-full pl-7 pr-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
           />
         </div>
 
         {/* ACL advisory */}
         {exceedsAdvisory && (
-          <div className="mt-3 p-3 bg-warm-50 border border-warm-200 rounded-lg text-xs text-warm-800 flex gap-2 items-start">
+          <div className="mt-3 p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm text-xs text-ct-paper flex gap-2 items-start">
             <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span>
               <span className="font-semibold">This final is more than 25% above your original estimate range.</span>{' '}
@@ -332,21 +332,21 @@ function SubmitFinalQuoteModal({ isOpen, quote, onClose, onDone }: SubmitFinalQu
         )}
 
         {/* Validity */}
-        <label className="block text-sm font-medium text-gray-700 mb-1.5 mt-4">
-          Valid until <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-ct-mute-2 mb-1.5 mt-4">
+          Valid until <span className="text-ct-rose">*</span>
         </label>
         <input
           type="date"
           min={todayIso}
           value={finalValidUntil}
           onChange={(e) => setFinalValidUntil(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+          className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
         />
-        <p className="text-xs text-gray-400 mt-1">Defaults to {DEFAULT_VALIDITY_DAYS} days. Adjust if your pricing depends on materials that move quickly.</p>
+        <p className="text-xs text-ct-mute mt-1">Defaults to {DEFAULT_VALIDITY_DAYS} days. Adjust if your pricing depends on materials that move quickly.</p>
 
         {/* Message */}
-        <label className="block text-sm font-medium text-gray-700 mb-1.5 mt-4">
-          Message to the client {messageRequired ? <span className="text-red-500">*</span> : <span className="text-gray-400 font-normal">(optional)</span>}
+        <label className="block text-sm font-medium text-ct-mute-2 mb-1.5 mt-4">
+          Message to the client {messageRequired ? <span className="text-ct-rose">*</span> : <span className="text-ct-mute font-normal">(optional)</span>}
         </label>
         <textarea {...proseInputProps}
           value={message}
@@ -356,16 +356,16 @@ function SubmitFinalQuoteModal({ isOpen, quote, onClose, onDone }: SubmitFinalQu
           placeholder={messageRequired
             ? 'Explain why the final differs from the estimate range — concealed damage, harder access, additional materials, etc.'
             : 'Any notes about the price, materials, or scope.'}
-          className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500 ${
-            messageRequired && !messageOk ? 'border-warm-300 bg-warm-50/30' : 'border-gray-200'
+          className={`w-full px-3 py-2 border rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal ${
+            messageRequired && !messageOk ? 'border-ct-teal/30 bg-ct-amber/[0.13]/30' : 'border-ct-line'
           }`}
         />
         {messageRequired && !messageOk && (
-          <p className="text-xs text-warm-700 mt-1">Please write at least 10 characters explaining the price.</p>
+          <p className="text-xs text-ct-amber mt-1">Please write at least 10 characters explaining the price.</p>
         )}
 
         {error && (
-          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <div className="mt-3 p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-sm text-ct-rose">
             {error}
           </div>
         )}
@@ -379,14 +379,14 @@ function SubmitFinalQuoteModal({ isOpen, quote, onClose, onDone }: SubmitFinalQu
           <button
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-ct-mute-2 hover:text-ct-paper transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-warm-500 text-white font-semibold rounded-lg hover:bg-warm-600 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
             Submit final quote

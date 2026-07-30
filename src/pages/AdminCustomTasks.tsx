@@ -61,47 +61,47 @@ export default function AdminCustomTasks() {
       <Breadcrumbs />
       <div>
         <div className="mb-6 flex items-start gap-3">
-          <div className="w-11 h-11 rounded-xl bg-secondary-50 flex items-center justify-center flex-shrink-0">
-            <Lightbulb className="w-5 h-5 text-secondary-600" />
+          <div className="w-11 h-11 rounded-ct-md bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
+            <Lightbulb className="w-5 h-5 text-ct-mute-2" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Task Requests</h1>
-            <p className="text-gray-600 mt-1 text-sm">Tradies suggested these from the “Other” trade. Approve popular ones into a category so they appear as quick-add tasks.</p>
+            <h1 className="text-2xl font-bold text-ct-paper">Task Requests</h1>
+            <p className="text-ct-mute-2 mt-1 text-sm">Tradies suggested these from the “Other” trade. Approve popular ones into a category so they appear as quick-add tasks.</p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 border-b border-gray-200 mb-4">
+        <div className="flex gap-1 border-b border-ct-line mb-4">
           {(['pending', 'approved', 'rejected'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-2.5 text-sm font-medium capitalize border-b-2 -mb-px transition-colors ${
-                tab === t ? 'border-warm-500 text-warm-600' : 'border-transparent text-gray-400 hover:text-gray-600'
+                tab === t ? 'border-ct-teal text-ct-amber' : 'border-transparent text-ct-mute hover:text-ct-mute-2'
               }`}>{t}</button>
           ))}
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-gray-400"><Loader2 className="w-6 h-6 animate-spin" /></div>
+          <div className="flex items-center justify-center py-16 text-ct-mute"><Loader2 className="w-6 h-6 animate-spin" /></div>
         ) : rows.length === 0 ? (
           <div className="text-center py-16">
-            <Lightbulb className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">Nothing {tab} right now.</p>
+            <Lightbulb className="w-10 h-10 text-ct-mute mx-auto mb-3" />
+            <p className="text-sm text-ct-mute">Nothing {tab} right now.</p>
           </div>
         ) : (
           <div className="space-y-2.5">
             {rows.map((row) => (
-              <div key={row.id} className="bg-white rounded-xl border border-gray-200 p-4">
+              <div key={row.id} className="bg-ct-surface rounded-ct-lg border border-ct-line p-4">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-base font-semibold text-gray-900">{row.task_name}</span>
+                      <span className="text-base font-semibold text-ct-paper">{row.task_name}</span>
                       {row.times_submitted > 1 && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-ct-amber/[0.13] text-ct-amber">
                           <TrendingUp className="w-3 h-3" /> {row.times_submitted}× requested
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-ct-mute mt-0.5">
                       {row.trade_context ? `From "${row.trade_context}" · ` : ''}first seen {new Date(row.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                       {row.status === 'approved' && row.approved_as_category ? ` · added to ${row.approved_as_category}` : ''}
                     </p>
@@ -115,14 +115,14 @@ export default function AdminCustomTasks() {
                       value={category[row.id] ?? ''}
                       onChange={(e) => setCategory((c) => ({ ...c, [row.id]: e.target.value }))}
                       placeholder="Add to category… (or type a new one)"
-                      className="flex-1 min-w-[200px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                      className="flex-1 min-w-[200px] px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                     />
                     <button onClick={() => approve(row)} disabled={busyId === row.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-600 disabled:opacity-50">
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-ct-sm bg-ct-teal text-ct-ink text-sm font-medium hover:brightness-110 disabled:opacity-50">
                       {busyId === row.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Approve
                     </button>
                     <button onClick={() => reject(row)} disabled={busyId === row.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 disabled:opacity-50">
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-ct-sm border border-ct-line text-ct-mute-2 text-sm font-medium hover:bg-ct-surface-2 disabled:opacity-50">
                       <X className="w-4 h-4" /> Ignore
                     </button>
                   </div>

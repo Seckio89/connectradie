@@ -32,11 +32,11 @@ export default function SignedImage({
   if (!url) {
     return (
       <div
-        className={fallbackClassName || `${className || ''} bg-gray-100 flex items-center justify-center`.trim()}
+        className={fallbackClassName || `${className || ''} bg-ct-surface-2 flex items-center justify-center`.trim()}
         role="img"
         aria-label={alt || 'Loading image'}
       >
-        <ImageIcon className="w-1/3 h-1/3 max-w-8 max-h-8 text-gray-300" />
+        <ImageIcon className="w-1/3 h-1/3 max-w-8 max-h-8 text-ct-mute" />
       </div>
     );
   }

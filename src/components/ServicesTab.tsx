@@ -88,7 +88,7 @@ function ServiceControls({ jobId, jobLabel, isActive, isCancelled, onChanged }: 
 
   if (isCancelled) {
     return (
-      <span className="text-xs text-gray-400 font-medium">Service ended</span>
+      <span className="text-xs text-ct-mute font-medium">Service ended</span>
     );
   }
 
@@ -112,13 +112,13 @@ function ServiceControls({ jobId, jobLabel, isActive, isCancelled, onChanged }: 
           <button
             onClick={handleResume}
             disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-50 transition-colors"
           >
             {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Resume Service'}
           </button>
           <button
             onClick={() => setConfirming('stop')}
-            className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors"
+            className="text-xs text-ct-rose hover:text-ct-rose font-medium transition-colors"
           >
             Cancel permanently
           </button>
@@ -131,17 +131,17 @@ function ServiceControls({ jobId, jobLabel, isActive, isCancelled, onChanged }: 
   if (confirming === 'pause') {
     return (
       <div className="flex items-center gap-3">
-        <span className="text-xs text-gray-600">Put this service on hold? Upcoming sessions will be paused.</span>
+        <span className="text-xs text-ct-mute-2">Put this service on hold? Upcoming sessions will be paused.</span>
         <button
           onClick={handlePause}
           disabled={loading}
-          className="px-3 py-1.5 bg-amber-500 text-white text-xs font-medium rounded-lg hover:bg-amber-600 disabled:opacity-50 transition-colors"
+          className="px-3 py-1.5 bg-ct-amber/[0.13]0 text-ct-ink text-xs font-medium rounded-ct-sm hover:bg-ct-amber disabled:opacity-50 transition-colors"
         >
           {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Confirm'}
         </button>
         <button
           onClick={() => setConfirming(null)}
-          className="text-xs text-gray-500 hover:text-gray-700 font-medium transition-colors"
+          className="text-xs text-ct-mute hover:text-ct-mute-2 font-medium transition-colors"
         >
           Back
         </button>
@@ -154,14 +154,14 @@ function ServiceControls({ jobId, jobLabel, isActive, isCancelled, onChanged }: 
       <div className="flex items-center gap-3">
         <button
           onClick={() => setConfirming('pause')}
-          className="text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
+          className="text-xs text-ct-amber hover:text-ct-amber font-medium transition-colors"
         >
           Put on Hold
         </button>
-        <span className="text-gray-300">|</span>
+        <span className="text-ct-mute">|</span>
         <button
           onClick={() => setConfirming('stop')}
-          className="text-xs text-red-500 hover:text-red-600 font-medium transition-colors"
+          className="text-xs text-ct-rose hover:text-ct-rose font-medium transition-colors"
         >
           End Service
         </button>
@@ -220,10 +220,10 @@ function AcceptModeToggle({ jobId, currentAutoAccept, onToggled }: { jobId: stri
       <button
         onClick={() => handleToggle(true)}
         disabled={toggling}
-        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
+        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-ct-sm text-xs font-medium border transition-colors disabled:opacity-50 ${
           currentAutoAccept
-            ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-            : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+            ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal'
+            : 'border-ct-line text-ct-mute hover:bg-ct-surface-2'
         }`}
       >
         <CheckCircle2 className="w-3 h-3" />
@@ -232,16 +232,16 @@ function AcceptModeToggle({ jobId, currentAutoAccept, onToggled }: { jobId: stri
       <button
         onClick={() => handleToggle(false)}
         disabled={toggling}
-        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
+        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-ct-sm text-xs font-medium border transition-colors disabled:opacity-50 ${
           !currentAutoAccept
-            ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-            : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+            ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal'
+            : 'border-ct-line text-ct-mute hover:bg-ct-surface-2'
         }`}
       >
         <Shield className="w-3 h-3" />
         Manual
       </button>
-      {toggling && <Loader2 className="w-3 h-3 text-gray-400 animate-spin" />}
+      {toggling && <Loader2 className="w-3 h-3 text-ct-mute animate-spin" />}
     </div>
   );
 }
@@ -488,37 +488,37 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
         <button
           onClick={handleShowPreview}
           disabled={loadingPreview}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal hover:brightness-110 text-ct-ink text-xs font-medium rounded-ct-sm disabled:opacity-50 transition-colors"
         >
           <FileText className="w-3 h-3" />
           {loadingPreview ? 'Loading...' : 'Send Invoice'}
         </button>
         <button
           onClick={() => { setShowSettings(!showSettings); setShowInvoicePreview(false); }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-ct-line text-ct-mute-2 text-xs font-medium rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
         >
           <Clock className="w-3 h-3" />
           {showSettings ? 'Hide Settings' : 'Invoice Settings'}
         </button>
         {autoInvoice && !showSettings && !showInvoicePreview && (
-          <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
+          <span className="px-3 py-1 bg-ct-teal/[0.14] text-ct-teal text-xs font-medium rounded-full">
             Auto — {cycleLabel} · {dayLabel} at {sendTime}
           </span>
         )}
         {!autoInvoice && !showSettings && !showInvoicePreview && (
-          <span className="text-xs text-gray-400">Manual · {cycleLabel}</span>
+          <span className="text-xs text-ct-mute">Manual · {cycleLabel}</span>
         )}
         {uninvoicedCount > 0 && !showSettings && !showInvoicePreview && (
           <button
             onClick={handleShowPreview}
             disabled={loadingPreview}
-            className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full hover:bg-amber-200 transition-colors cursor-pointer disabled:opacity-50"
+            className="px-2 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-full hover:bg-ct-amber/[0.13] transition-colors cursor-pointer disabled:opacity-50"
           >
             {uninvoicedCount} session{uninvoicedCount !== 1 ? 's' : ''} ready to invoice
           </button>
         )}
         {lastInvoicedAt && !showSettings && !showInvoicePreview && (
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-ct-mute">
             Last: {new Date(lastInvoicedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
           </span>
         )}
@@ -526,42 +526,42 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
 
       {/* Invoice Preview */}
       {showInvoicePreview && !showSettings && (
-        <div className="p-3 bg-white border border-gray-200 rounded-lg space-y-3">
+        <div className="p-3 bg-ct-surface border border-ct-line rounded-ct-sm space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-gray-900">Invoice Preview</p>
-            <button onClick={() => setShowInvoicePreview(false)} className="text-xs text-gray-400 hover:text-gray-600">Close</button>
+            <p className="text-xs font-semibold text-ct-paper">Invoice Preview</p>
+            <button onClick={() => setShowInvoicePreview(false)} className="text-xs text-ct-mute hover:text-ct-mute-2">Close</button>
           </div>
 
-          <div className="p-2.5 bg-gray-50 rounded-lg">
-            <p className="text-xs font-medium text-gray-700 mb-1">Billing Period</p>
-            <p className="text-sm font-semibold text-gray-900">{periodStartLabel} — {periodEndLabel}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{cycleLabel} billing cycle</p>
+          <div className="p-2.5 bg-ct-surface-2 rounded-ct-sm">
+            <p className="text-xs font-medium text-ct-mute-2 mb-1">Billing Period</p>
+            <p className="text-sm font-semibold text-ct-paper">{periodStartLabel} — {periodEndLabel}</p>
+            <p className="text-xs text-ct-mute mt-0.5">{cycleLabel} billing cycle</p>
           </div>
 
           {previewSessions.length === 0 ? (
             <div className="text-center py-4">
-              <p className="text-xs text-gray-500">No completed sessions in this period.</p>
-              <p className="text-xs text-gray-400 mt-1">Complete visits first, then invoice.</p>
+              <p className="text-xs text-ct-mute">No completed sessions in this period.</p>
+              <p className="text-xs text-ct-mute mt-1">Complete visits first, then invoice.</p>
             </div>
           ) : (
             <>
               {/* Awaiting Payment sessions — already invoiced but unpaid */}
               {awaitingPaymentSessions.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-amber-700 mb-1.5">Already Invoiced ({awaitingPaymentSessions.length})</p>
+                  <p className="text-xs font-medium text-ct-amber mb-1.5">Already Invoiced ({awaitingPaymentSessions.length})</p>
                   <div className="space-y-1">
                     {awaitingPaymentSessions.map((s) => {
                       const badge = ({
-                        overdue: { label: 'Overdue', cls: 'bg-red-100 text-red-700' },
-                        disputed: { label: 'Disputed', cls: 'bg-red-100 text-red-700' },
-                        pending_approval: { label: 'Awaiting Client Approval', cls: 'bg-amber-100 text-amber-700' },
-                        processing: { label: 'Processing', cls: 'bg-secondary-100 text-secondary-700' },
-                        sent: { label: 'Invoiced', cls: 'bg-amber-100 text-amber-700' },
+                        overdue: { label: 'Overdue', cls: 'bg-ct-rose/[0.13] text-ct-rose' },
+                        disputed: { label: 'Disputed', cls: 'bg-ct-rose/[0.13] text-ct-rose' },
+                        pending_approval: { label: 'Awaiting Client Approval', cls: 'bg-ct-amber/[0.13] text-ct-amber' },
+                        processing: { label: 'Processing', cls: 'bg-ct-surface-2 text-ct-mute-2' },
+                        sent: { label: 'Invoiced', cls: 'bg-ct-amber/[0.13] text-ct-amber' },
                       } as Record<string, { label: string; cls: string }>)[s.invoiceStatus ?? 'sent']
-                        ?? { label: 'Invoiced', cls: 'bg-amber-100 text-amber-700' };
+                        ?? { label: 'Invoiced', cls: 'bg-ct-amber/[0.13] text-ct-amber' };
                       return (
-                        <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-amber-50 rounded text-xs">
-                          <span className="text-gray-700">
+                        <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-ct-amber/[0.13] rounded text-xs">
+                          <span className="text-ct-mute-2">
                             {new Date(s.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
                           </span>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${badge.cls}`}>
@@ -577,15 +577,15 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
               {/* Uninvoiced completed sessions — ready to invoice */}
               {completedCount > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600 mb-1.5">Ready to Invoice ({completedCount})</p>
+                  <p className="text-xs font-medium text-ct-mute-2 mb-1.5">Ready to Invoice ({completedCount})</p>
                   <div className="space-y-1">
                     {uninvoicedSessions.filter(s => s.status === 'completed').map((s) => (
-                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-gray-50 rounded text-xs">
-                        <span className="text-gray-700">
+                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-ct-surface-2 rounded text-xs">
+                        <span className="text-ct-mute-2">
                           {new Date(s.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-emerald-700">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="inline-flex items-center gap-1 text-ct-teal">
+                          <span className="w-1.5 h-1.5 rounded-full bg-ct-teal" />
                           Confirmed
                         </span>
                       </div>
@@ -599,21 +599,21 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
                   Mark Complete on each one (or flips auto_complete_sessions back on). */}
               {awaitingConfirmationCount > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-orange-700 mb-1.5">Awaiting Your Confirmation ({awaitingConfirmationCount})</p>
+                  <p className="text-xs font-medium text-ct-amber mb-1.5">Awaiting Your Confirmation ({awaitingConfirmationCount})</p>
                   <div className="space-y-1">
                     {uninvoicedSessions.filter(s => s.status === 'awaiting_completion').map((s) => (
-                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-orange-50 rounded text-xs">
-                        <span className="text-gray-700">
+                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-ct-amber/[0.13] rounded text-xs">
+                        <span className="text-ct-mute-2">
                           {new Date(s.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </span>
-                        <span className="inline-flex items-center gap-1 text-orange-700 font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                        <span className="inline-flex items-center gap-1 text-ct-amber font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-ct-amber" />
                           Confirm in Schedule
                         </span>
                       </div>
                     ))}
                   </div>
-                  <p className="text-[11px] text-gray-500 mt-1.5">
+                  <p className="text-[11px] text-ct-mute mt-1.5">
                     These visits won't be invoiced until you confirm them as completed.
                   </p>
                 </div>
@@ -621,19 +621,19 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
 
               {extraCount > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-gray-600 mb-1.5">Extra Sessions ({extraCount})</p>
+                  <p className="text-xs font-medium text-ct-mute-2 mb-1.5">Extra Sessions ({extraCount})</p>
                   <div className="space-y-1">
                     {uninvoicedSessions.filter(s => s.status === 'extra').map((s) => (
-                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-amber-50 rounded text-xs">
+                      <div key={s.id} className="flex items-center justify-between py-1.5 px-2 bg-ct-amber/[0.13] rounded text-xs">
                         <div className="min-w-0">
-                          <span className="text-gray-700">
+                          <span className="text-ct-mute-2">
                             {new Date(s.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
                           </span>
                           {s.notes && (
-                            <span className="text-gray-400 ml-1.5">— {s.notes}</span>
+                            <span className="text-ct-mute ml-1.5">— {s.notes}</span>
                           )}
                         </div>
-                        <span className="text-amber-700 font-medium flex-shrink-0 ml-2">${(s.extra_cost ?? 0).toFixed(2)}</span>
+                        <span className="text-ct-amber font-medium flex-shrink-0 ml-2">${(s.extra_cost ?? 0).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
@@ -644,40 +644,40 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
               {(() => {
                 const suppliesTotal = uninvoicedSessions.reduce((sum, s) => sum + ((s.supply_cost as number) ?? 0), 0);
                 return suppliesTotal > 0 ? (
-                  <div className="flex items-center justify-between py-2 px-2 bg-secondary-50 rounded text-xs">
-                    <span className="font-medium text-secondary-700 inline-flex items-center gap-1.5">
+                  <div className="flex items-center justify-between py-2 px-2 bg-ct-surface-2 rounded text-xs">
+                    <span className="font-medium text-ct-mute-2 inline-flex items-center gap-1.5">
                       <Package className="w-3 h-3" />
                       Supplies & Materials
                     </span>
-                    <span className="text-secondary-700 font-semibold">${suppliesTotal.toFixed(2)}</span>
+                    <span className="text-ct-mute-2 font-semibold">${suppliesTotal.toFixed(2)}</span>
                   </div>
                 ) : null;
               })()}
 
               {(completedCount + extraCount) > 0 ? (
                 <>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-ct-mute">
                     The invoice will be calculated at the agreed rate and sent to the client with a Stripe payment link.
                   </p>
                   <div className="flex items-center gap-2 pt-1">
                     <button
                       onClick={handleSendNow}
                       disabled={sending}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg disabled:opacity-50 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-teal hover:brightness-110 text-ct-ink text-xs font-medium rounded-ct-sm disabled:opacity-50 transition-colors"
                     >
                       <FileText className="w-3 h-3" />
                       {sending ? 'Generating & Sending...' : `Send Invoice (${completedCount + extraCount} sessions)`}
                     </button>
                     <button
                       onClick={() => setShowInvoicePreview(false)}
-                      className="text-xs text-gray-500 hover:text-gray-700 font-medium transition-colors"
+                      className="text-xs text-ct-mute hover:text-ct-mute-2 font-medium transition-colors"
                     >
                       Cancel
                     </button>
                   </div>
                 </>
               ) : (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-ct-mute">
                   All completed sessions have been invoiced. Waiting for payment.
                 </p>
               )}
@@ -688,21 +688,21 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
 
       {/* Settings panel */}
       {showSettings && (
-        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
-          <p className="text-xs font-semibold text-gray-900">Invoice Schedule</p>
+        <div className="p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm space-y-3">
+          <p className="text-xs font-semibold text-ct-paper">Invoice Schedule</p>
 
           {/* Billing cycle */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">Billing Cycle</label>
+            <label className="block text-xs font-medium text-ct-mute-2 mb-1.5">Billing Cycle</label>
             <div className="flex gap-2">
               {(['weekly', 'fortnightly', 'monthly'] as const).map((opt) => (
                 <button
                   key={opt}
                   onClick={() => setCycle(opt)}
-                  className={`flex-1 px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${
+                  className={`flex-1 px-3 py-2 rounded-ct-sm border text-xs font-medium transition-colors ${
                     cycle === opt
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                      : 'border-gray-200 text-gray-600 hover:bg-white'
+                      ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal'
+                      : 'border-ct-line text-ct-mute-2 hover:bg-ct-surface'
                   }`}
                 >
                   {opt === 'weekly' ? 'Weekly' : opt === 'fortnightly' ? 'Fortnightly' : 'Monthly'}
@@ -715,25 +715,25 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
           <label className="flex items-center gap-2.5 cursor-pointer">
             <div
               onClick={() => setAutoInvoice(!autoInvoice)}
-              className={`relative w-9 h-5 rounded-full transition-colors ${autoInvoice ? 'bg-emerald-500' : 'bg-gray-300'}`}
+              className={`relative w-9 h-5 rounded-full transition-colors ${autoInvoice ? 'bg-ct-teal' : 'bg-ct-line'}`}
             >
-              <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${autoInvoice ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              <div className={`absolute top-0.5 w-4 h-4 bg-ct-surface rounded-full shadow transition-transform ${autoInvoice ? 'translate-x-4' : 'translate-x-0.5'}`} />
             </div>
-            <span className="text-xs font-medium text-gray-700">Auto-send invoices</span>
+            <span className="text-xs font-medium text-ct-mute-2">Auto-send invoices</span>
           </label>
 
           {/* Day & time (only when auto is on) */}
           {autoInvoice && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-xs font-medium text-ct-mute-2 mb-1">
                   {cycle === 'monthly' ? 'Day of Month' : 'Send Every'}
                 </label>
                 {cycle === 'monthly' ? (
                   <select
                     value={sendDay}
                     onChange={(e) => setSendDay(Number(e.target.value))}
-                    className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-1.5 text-xs border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                   >
                     {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
                       <option key={d} value={d}>
@@ -745,7 +745,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
                   <select
                     value={sendDay}
                     onChange={(e) => setSendDay(Number(e.target.value))}
-                    className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-1.5 text-xs border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                   >
                     {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((name, i) => (
                       <option key={i + 1} value={i + 1}>{name}</option>
@@ -754,11 +754,11 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
                 )}
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Time</label>
+                <label className="block text-xs font-medium text-ct-mute-2 mb-1">Time</label>
                 <select
                   value={sendTime}
                   onChange={(e) => setSendTime(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-1.5 text-xs border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 >
                   {['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'].map(t => (
                     <option key={t} value={t}>
@@ -771,7 +771,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
           )}
 
           {autoInvoice && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-ct-mute">
               Invoice will be automatically generated and sent to the client{cycle === 'monthly'
                 ? ` on the ${sendDay}${sendDay === 1 ? 'st' : sendDay === 2 ? 'nd' : sendDay === 3 ? 'rd' : 'th'} of each month`
                 : cycle === 'weekly' ? ' every week' : ' every 2 weeks'
@@ -783,13 +783,13 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
             <button
               onClick={handleSaveSettings}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal hover:brightness-110 text-ct-ink text-xs font-medium rounded-ct-sm disabled:opacity-50 transition-colors"
             >
               {saving ? 'Saving...' : 'Save Settings'}
             </button>
             <button
               onClick={() => setShowSettings(false)}
-              className="text-xs text-gray-500 hover:text-gray-700 font-medium transition-colors"
+              className="text-xs text-ct-mute hover:text-ct-mute-2 font-medium transition-colors"
             >
               Cancel
             </button>
@@ -883,41 +883,41 @@ function QuickChat({ clientId, clientName, userId, recurringJobId }: { clientId:
   };
 
   return (
-    <div className="border-t border-gray-100">
+    <div className="border-t border-ct-line-soft">
       <div className="px-5 py-3">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-medium text-gray-600">Chat with {clientName}</span>
+          <span className="text-xs font-medium text-ct-mute-2">Chat with {clientName}</span>
           {conversationId && (
             <button
               onClick={() => navigate(`/messages?conversation=${conversationId}`)}
-              className="text-xs text-secondary-500 hover:text-secondary-700 font-medium"
+              className="text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium"
             >
               Open full chat
             </button>
           )}
         </div>
-        <div ref={chatContainerRef} className="bg-gray-50 rounded-lg border border-gray-200 max-h-48 overflow-y-auto p-3 space-y-2 mb-2">
+        <div ref={chatContainerRef} className="bg-ct-surface-2 rounded-ct-sm border border-ct-line max-h-48 overflow-y-auto p-3 space-y-2 mb-2">
           {loading ? (
             <div className="flex items-center justify-center py-4">
-              <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+              <Loader2 className="w-4 h-4 animate-spin text-ct-mute" />
             </div>
           ) : messages.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-3">No messages yet. Start the conversation!</p>
+            <p className="text-xs text-ct-mute text-center py-3">No messages yet. Start the conversation!</p>
           ) : (
             messages.map(msg => {
               const isOwn = msg.sender_id === userId;
               return (
                 <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] px-3 py-1.5 rounded-lg text-xs ${
+                  <div className={`max-w-[75%] px-3 py-1.5 rounded-ct-sm text-xs ${
                     isOwn
-                      ? 'bg-secondary-500 text-white'
-                      : 'bg-white border border-gray-200 text-gray-700'
+                      ? 'bg-ct-surface-20 text-ct-ink'
+                      : 'bg-ct-surface border border-ct-line text-ct-mute-2'
                   }`}>
                     {msg.content}
                     {isOwn && (
                       <div className="flex justify-end mt-0.5">
                         <CheckCheck
-                          className={`w-3 h-3 ${msg.read_at ? 'text-emerald-300' : 'text-secondary-200'}`}
+                          className={`w-3 h-3 ${msg.read_at ? 'text-ct-teal' : 'text-ct-mute-2'}`}
                           aria-label={msg.read_at ? 'Seen' : 'Sent'}
                         />
                       </div>
@@ -936,12 +936,12 @@ function QuickChat({ clientId, clientName, userId, recurringJobId }: { clientId:
             onChange={e => setNewMessage(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
             placeholder="Type a message..."
-            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary-500 focus:border-transparent"
+            className="flex-1 px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
           />
           <button
             onClick={handleSend}
             disabled={!newMessage.trim() || sending}
-            className="px-3 py-2 bg-secondary-500 text-white rounded-lg hover:bg-secondary-600 disabled:opacity-50 transition-colors"
+            className="px-3 py-2 bg-ct-surface-20 text-ct-ink rounded-ct-sm hover:bg-ct-surface-2 disabled:opacity-50 transition-colors"
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
@@ -1059,25 +1059,25 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
   const isCustom = newName !== '' && !top5.includes(newName);
 
   return (
-    <div className="border-t border-gray-100 px-5 py-4">
+    <div className="border-t border-ct-line-soft px-5 py-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-700 uppercase tracking-wide">
-          <Package className="w-3.5 h-3.5 text-emerald-500" />
+        <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-ct-mute-2 uppercase tracking-wide">
+          <Package className="w-3.5 h-3.5 text-ct-teal" />
           Supplies
-          {supplies.length > 0 && <span className="text-gray-400 font-normal normal-case">({supplies.length})</span>}
+          {supplies.length > 0 && <span className="text-ct-mute font-normal normal-case">({supplies.length})</span>}
           {lowStockItems.length > 0 && (
-            <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-[10px] font-semibold normal-case">
+            <span className="px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber rounded-full text-[10px] font-semibold normal-case">
               {lowStockItems.length} low
             </span>
           )}
         </p>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+          className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-ct-sm transition-colors ${
             showAddForm
-              ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-              : 'bg-emerald-500 text-white hover:bg-emerald-600'
+              ? 'bg-ct-line text-ct-mute-2 hover:bg-ct-line'
+              : 'bg-ct-teal text-ct-ink hover:brightness-110'
           }`}
         >
           {showAddForm ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
@@ -1087,49 +1087,49 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
 
       {/* Supply list */}
       {supplies.length > 0 && (
-        <div className="rounded-lg border border-gray-200 overflow-hidden mb-3">
+        <div className="rounded-ct-sm border border-ct-line overflow-hidden mb-3">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 text-[10px] font-medium text-gray-500 uppercase tracking-wide">
+              <tr className="bg-ct-surface-2 text-[10px] font-medium text-ct-mute uppercase tracking-wide">
                 <th className="text-left px-3 py-2">Item</th>
                 <th className="text-center px-2 py-2 w-24">Stock</th>
                 <th className="text-right px-3 py-2 w-20"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-ct-line-soft">
               {supplies.map(item => {
                 const isLow = item.stock_level != null && item.restock_threshold != null && item.stock_level <= item.restock_threshold;
                 const alreadyNotified = !!item.restock_notified_at;
                 return (
-                  <tr key={item.id} className={isLow ? 'bg-amber-50/50' : ''}>
+                  <tr key={item.id} className={isLow ? 'bg-ct-amber/[0.13]/50' : ''}>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-800">{item.name}</span>
+                        <span className="text-xs font-medium text-ct-paper">{item.name}</span>
                         <span className={`px-1.5 py-0.5 rounded text-[9px] font-semibold ${
-                          item.provided_by === 'tradie' ? 'bg-secondary-50 text-secondary-600' : 'bg-gray-100 text-gray-500'
+                          item.provided_by === 'tradie' ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface-2 text-ct-mute'
                         }`}>
                           {item.provided_by === 'tradie' ? 'You' : 'Client'}
                         </span>
                       </div>
-                      {item.notes && <p className="text-[10px] text-gray-400 mt-0.5">{item.notes}</p>}
+                      {item.notes && <p className="text-[10px] text-ct-mute mt-0.5">{item.notes}</p>}
                     </td>
                     <td className="px-2 py-2.5">
                       {item.stock_level != null ? (
                         <div className="flex items-center justify-center gap-2 sm:gap-1">
                           <button
                             onClick={() => handleUpdateStock(item.id, Math.max(0, (item.stock_level ?? 0) - 1))}
-                            className="w-11 h-11 sm:w-6 sm:h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center transition-colors min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px]"
+                            className="w-11 h-11 sm:w-6 sm:h-6 rounded-md bg-ct-surface-2 hover:bg-ct-line text-ct-mute-2 text-xs font-bold flex items-center justify-center transition-colors min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px]"
                           >−</button>
-                          <span className={`text-xs font-bold min-w-[24px] text-center ${isLow ? 'text-amber-700' : 'text-gray-800'}`}>
+                          <span className={`text-xs font-bold min-w-[24px] text-center ${isLow ? 'text-ct-amber' : 'text-ct-paper'}`}>
                             {item.stock_level}
                           </span>
                           <button
                             onClick={() => handleUpdateStock(item.id, (item.stock_level ?? 0) + 1)}
-                            className="w-11 h-11 sm:w-6 sm:h-6 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold flex items-center justify-center transition-colors min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px]"
+                            className="w-11 h-11 sm:w-6 sm:h-6 rounded-md bg-ct-surface-2 hover:bg-ct-line text-ct-mute-2 text-xs font-bold flex items-center justify-center transition-colors min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px]"
                           >+</button>
                         </div>
                       ) : (
-                        <span className="text-[10px] text-gray-300 block text-center">—</span>
+                        <span className="text-[10px] text-ct-mute block text-center">—</span>
                       )}
                     </td>
                     <td className="px-3 py-2.5 text-right">
@@ -1138,17 +1138,17 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
                           <button
                             onClick={() => handleFlagRestock(item)}
                             disabled={restocking === item.id}
-                            className="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[9px] font-semibold rounded transition-colors disabled:opacity-50"
+                            className="px-2 py-1 bg-ct-amber/[0.13]0 hover:bg-ct-amber text-ct-ink text-[9px] font-semibold rounded transition-colors disabled:opacity-50"
                           >
                             {restocking === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Restock'}
                           </button>
                         )}
                         {isLow && alreadyNotified && (
-                          <span className="text-[9px] text-amber-600 font-medium">Alerted</span>
+                          <span className="text-[9px] text-ct-amber font-medium">Alerted</span>
                         )}
                         <button
                           onClick={() => handleRemoveItem(item.id)}
-                          className="text-gray-300 hover:text-red-500 transition-colors p-0.5"
+                          className="text-ct-mute hover:text-ct-rose transition-colors p-0.5"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -1163,17 +1163,17 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
       )}
 
       {supplies.length === 0 && !showAddForm && (
-        <p className="text-xs text-gray-400 mb-2">No supplies listed yet.</p>
+        <p className="text-xs text-ct-mute mb-2">No supplies listed yet.</p>
       )}
 
       {/* Add supply form */}
       {showAddForm && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4 space-y-3">
-          <p className="text-xs font-semibold text-gray-800">New Supply Item</p>
+        <div className="rounded-ct-sm border border-ct-teal/30 bg-ct-teal/[0.14]/50 p-4 space-y-3">
+          <p className="text-xs font-semibold text-ct-paper">New Supply Item</p>
 
           {/* Item selector */}
           <div>
-            <label className="block text-[10px] font-medium text-gray-500 mb-1">Item</label>
+            <label className="block text-[10px] font-medium text-ct-mute mb-1">Item</label>
             <select
               value={top5.includes(newName) ? newName : newName === '' ? '' : '__other__'}
               onChange={e => {
@@ -1186,7 +1186,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
                   setNewUnit(SUPPLY_DEFAULT_UNITS[e.target.value] || '');
                 }
               }}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
             >
               <option value=""></option>
               {top5.map(name => (
@@ -1203,64 +1203,64 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
               value={newName}
               onChange={e => setNewName(e.target.value)}
               placeholder="Enter item name..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
             />
           )}
 
           {/* Details row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div>
-              <label className="block text-[10px] font-medium text-gray-500 mb-1">Unit</label>
+              <label className="block text-[10px] font-medium text-ct-mute mb-1">Unit</label>
               <input
                 value={newUnit}
                 onChange={e => setNewUnit(e.target.value)}
                 placeholder="rolls"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
               />
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-gray-500 mb-1">Supplied by</label>
+              <label className="block text-[10px] font-medium text-ct-mute mb-1">Supplied by</label>
               <select
                 value={newProvidedBy}
                 onChange={e => setNewProvidedBy(e.target.value as 'tradie' | 'client')}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
               >
                 <option value="tradie">Me</option>
                 <option value="client">Client</option>
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-gray-500 mb-1">In stock</label>
+              <label className="block text-[10px] font-medium text-ct-mute mb-1">In stock</label>
               <input
                 type="number"
                 value={newStock}
                 onChange={e => setNewStock(e.target.value)}
                 placeholder="10"
                 min="0"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
               />
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-gray-500 mb-1">Alert at</label>
+              <label className="block text-[10px] font-medium text-ct-mute mb-1">Alert at</label>
               <input
                 type="number"
                 value={newThreshold}
                 onChange={e => setNewThreshold(e.target.value)}
                 placeholder="3"
                 min="0"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
               />
             </div>
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-[10px] font-medium text-gray-500 mb-1">Notes (optional)</label>
+            <label className="block text-[10px] font-medium text-ct-mute mb-1">Notes (optional)</label>
             <input
               value={newNotes}
               onChange={e => setNewNotes(e.target.value)}
               placeholder="Brand preference, where to find it..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
             />
           </div>
 
@@ -1269,14 +1269,14 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
             <button
               onClick={handleAddItem}
               disabled={!newName.trim() || saving}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-teal hover:brightness-110 text-ct-ink text-xs font-medium rounded-ct-sm disabled:opacity-50 transition-colors"
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
               Add to List
             </button>
             <button
               onClick={() => { setShowAddForm(false); setNewName(''); }}
-              className="text-xs text-gray-500 hover:text-gray-700 font-medium px-3 py-2"
+              className="text-xs text-ct-mute hover:text-ct-mute-2 font-medium px-3 py-2"
             >
               Cancel
             </button>
@@ -1330,67 +1330,67 @@ function JobCard({
   const { showToast } = useToast();
 
   const statusBadge = isCancelled
-    ? { bg: 'bg-red-50 border-red-200', text: 'text-red-700', label: 'Ended' }
+    ? { bg: 'bg-ct-rose/[0.13] border-ct-rose/[0.34]', text: 'text-ct-rose', label: 'Ended' }
     : !isActive
-    ? { bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700', label: 'Paused' }
-    : { bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700', label: 'Active' };
+    ? { bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', text: 'text-ct-amber', label: 'Paused' }
+    : { bg: 'bg-ct-teal/[0.14] border-ct-teal/30', text: 'text-ct-teal', label: 'Active' };
 
   // Split sessions: next 3 visits get full cards, rest are compact
   const upcomingSessions = sessions.slice(0, 3);
   const futureSessionsList = sessions.slice(3);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm overflow-hidden">
       {/* ─── Header — click to collapse/expand ─── */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="w-full px-4 sm:px-5 py-3 sm:py-4 text-left hover:bg-gray-50/50 transition-colors"
+        className="w-full px-4 sm:px-5 py-3 sm:py-4 text-left hover:bg-ct-surface-2/50 transition-colors"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
-              <h4 className="text-sm font-bold text-gray-900 capitalize">{jobLabel}</h4>
+              <ChevronDown className={`w-4 h-4 text-ct-mute transition-transform flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
+              <h4 className="text-sm font-bold text-ct-paper capitalize">{jobLabel}</h4>
               <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium border ${statusBadge.bg} ${statusBadge.text}`}>
                 {statusBadge.label}
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-1 mt-1.5 ml-6 sm:ml-0">
-              <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                <User className="w-3 h-3 text-gray-400" />
+              <span className="inline-flex items-center gap-1.5 text-xs text-ct-mute">
+                <User className="w-3 h-3 text-ct-mute" />
                 {clientName}
               </span>
               {clientPhone && (
-                <a href={`tel:${clientPhone}`} className="inline-flex items-center gap-1.5 text-xs text-secondary-600 hover:text-secondary-700 font-medium">
+                <a href={`tel:${clientPhone}`} className="inline-flex items-center gap-1.5 text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium">
                   <Phone className="w-3 h-3" />
                   {clientPhone}
                 </a>
               )}
               {clientEmail && (
-                <a href={`mailto:${clientEmail}`} className="hidden sm:inline-flex items-center gap-1.5 text-xs text-secondary-600 hover:text-secondary-700 font-medium">
+                <a href={`mailto:${clientEmail}`} className="hidden sm:inline-flex items-center gap-1.5 text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium">
                   <Mail className="w-3 h-3" />
                   {clientEmail}
                 </a>
               )}
               {freqLabel && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 whitespace-nowrap">
-                  <RefreshCw className="w-3 h-3 text-gray-400" />
+                <span className="inline-flex items-center gap-1.5 text-xs text-ct-mute whitespace-nowrap">
+                  <RefreshCw className="w-3 h-3 text-ct-mute" />
                   {freqLabel}
                 </span>
               )}
               {location && (
-                <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 truncate max-w-[180px] sm:max-w-[240px]">
-                  <MapPin className="w-3 h-3 flex-shrink-0 text-gray-400" />
+                <span className="inline-flex items-center gap-1.5 text-xs text-ct-mute truncate max-w-[180px] sm:max-w-[240px]">
+                  <MapPin className="w-3 h-3 flex-shrink-0 text-ct-mute" />
                   {location.split(',')[0]}
                 </span>
               )}
               {isOwner && agreedPrice != null && agreedPrice > 0 && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-ct-teal whitespace-nowrap">
                   ${agreedPrice.toFixed(2)}/visit
                 </span>
               )}
               {isCollapsed && sessions.length > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs text-secondary-600">
+                <span className="inline-flex items-center gap-1 text-xs text-ct-mute-2">
                   {sessions.length} upcoming
                 </span>
               )}
@@ -1404,7 +1404,7 @@ function JobCard({
         {/* ─── Assigned-worker banner (read-only view) ─── */}
         {!isOwner && (
           <div className="px-5 pb-4">
-            <div className="flex items-center gap-2 pt-3 border-t border-gray-100 text-xs text-emerald-700">
+            <div className="flex items-center gap-2 pt-3 border-t border-ct-line-soft text-xs text-ct-teal">
               <UserCheck className="w-3.5 h-3.5 flex-shrink-0" />
               <span>Assigned to you{ownerName ? ` by ${ownerName}` : ''} — view your visits below.</span>
             </div>
@@ -1414,7 +1414,7 @@ function JobCard({
         {/* ─── Quick Controls (owner only) ─── */}
         {isOwner && (
         <div className="px-5 pb-4">
-          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-100">
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-ct-line-soft">
             <AcceptModeToggle
               jobId={jobId}
               currentAutoAccept={isAutoAccept}
@@ -1423,10 +1423,10 @@ function JobCard({
             {clientId && (
               <button
                 onClick={() => setShowChat(!showChat)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-ct-sm transition-colors ${
                   showChat
-                    ? 'bg-secondary-100 text-secondary-700 border border-secondary-300'
-                    : 'text-secondary-600 border border-secondary-200 hover:bg-secondary-50'
+                    ? 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line'
+                    : 'text-ct-mute-2 border border-ct-line hover:bg-ct-surface-2'
                 }`}
               >
                 <MessageCircle className="w-3.5 h-3.5" />
@@ -1436,10 +1436,10 @@ function JobCard({
             {!isCancelled && (
               <button
                 onClick={() => setShowAssignWorker(true)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors max-w-[180px] ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-ct-sm border transition-colors max-w-[180px] ${
                   assignedWorkerId
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                    : 'text-gray-600 border-gray-200 hover:bg-gray-50'
+                    ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30 hover:bg-ct-teal/[0.14]'
+                    : 'text-ct-mute-2 border-ct-line hover:bg-ct-surface-2'
                 }`}
               >
                 {assignedWorkerId ? (
@@ -1482,15 +1482,15 @@ function JobCard({
 
         {/* ─── Task Requirements ─── */}
         {descLines.length > 0 && (
-          <div className="border-t border-gray-100 px-5 py-3">
-            <p className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 mb-2">
-              <ClipboardList className="w-3.5 h-3.5 text-gray-400" />
+          <div className="border-t border-ct-line-soft px-5 py-3">
+            <p className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-mute-2 mb-2">
+              <ClipboardList className="w-3.5 h-3.5 text-ct-mute" />
               Task Requirements ({descLines.length})
             </p>
             <ol className="space-y-1.5">
               {descLines.map((line, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px] font-bold mt-0.5">
+                <li key={i} className="flex items-start gap-2 text-xs text-ct-mute-2">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-ct-teal/[0.14] text-ct-teal flex items-center justify-center text-[10px] font-bold mt-0.5">
                     {i + 1}
                   </span>
                   <span className="pt-0.5">{line}</span>
@@ -1505,11 +1505,11 @@ function JobCard({
           household consumables (toilet paper, soap, etc.) or whether the
           client keeps them stocked. Their own working equipment is implicit. */}
       {isActive && !isCancelled && (
-        <div className="border-t border-gray-100 px-5 py-3">
-          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border ${
+        <div className="border-t border-ct-line-soft px-5 py-3">
+          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-ct-sm text-xs font-medium border ${
             consumablesProvider === 'tradie_billed'
-              ? 'bg-amber-50 text-amber-700 border-amber-200'
-              : 'bg-gray-50 text-gray-700 border-gray-200'
+              ? 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]'
+              : 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'
           }`}>
             {consumablesProvider === 'tradie_billed'
               ? <>You supply consumables &middot; bills back on invoice</>
@@ -1525,19 +1525,19 @@ function JobCard({
 
       {/* ─── Your Visits (assigned worker — read-only) ─── */}
       {!isOwner && (upcomingSessions.length > 0 || futureSessionsList.length > 0) && (
-        <div className="border-t border-gray-100 px-5 py-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Your Upcoming Visits</p>
+        <div className="border-t border-ct-line-soft px-5 py-3">
+          <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">Your Upcoming Visits</p>
           <div className="space-y-1.5">
             {[...upcomingSessions, ...futureSessionsList].slice(0, 8).map((s) => {
               const d = new Date((s.actual_date || s.scheduled_date) + 'T00:00:00');
               const t = s.start_time ? String(s.start_time).slice(0, 5)
                 : (s.recurring_job?.preferred_time ? String(s.recurring_job.preferred_time).slice(0, 5) : null);
               return (
-                <div key={s.id} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg text-xs">
-                  <Calendar className="w-3.5 h-3.5 text-secondary-400 flex-shrink-0" />
-                  <span className="font-medium text-gray-800">{d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-                  {t && <span className="text-gray-500">· {t}</span>}
-                  <span className="ml-auto text-gray-400 capitalize">{String(s.status).replace(/_/g, ' ')}</span>
+                <div key={s.id} className="flex items-center gap-2 px-3 py-2 bg-ct-surface-2 rounded-ct-sm text-xs">
+                  <Calendar className="w-3.5 h-3.5 text-ct-mute flex-shrink-0" />
+                  <span className="font-medium text-ct-paper">{d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                  {t && <span className="text-ct-mute">· {t}</span>}
+                  <span className="ml-auto text-ct-mute capitalize">{String(s.status).replace(/_/g, ' ')}</span>
                 </div>
               );
             })}
@@ -1547,9 +1547,9 @@ function JobCard({
 
       {/* ─── Next Visits — full session cards (up to 3) ─── */}
       {isOwner && upcomingSessions.length > 0 && (
-        <div className="border-t border-gray-100">
+        <div className="border-t border-ct-line-soft">
           <div className="px-5 pt-3 pb-1">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide">
               {upcomingSessions.length === 1 ? 'Next Visit' : `Next ${upcomingSessions.length} Visits`}
             </p>
           </div>
@@ -1591,16 +1591,16 @@ function JobCard({
 
       {/* ─── Later Visits — collapsible ─── */}
       {isOwner && futureSessionsList.length > 0 && (
-        <div className="border-t border-gray-100">
+        <div className="border-t border-ct-line-soft">
           <button
             onClick={() => setShowFutureVisits(!showFutureVisits)}
-            className="w-full px-5 py-3 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+            className="w-full px-5 py-3 flex items-center justify-between hover:bg-ct-surface-2/50 transition-colors"
           >
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
-              <Calendar className="w-3.5 h-3.5 text-gray-400" />
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-mute-2">
+              <Calendar className="w-3.5 h-3.5 text-ct-mute" />
               {futureSessionsList.length} more scheduled visit{futureSessionsList.length !== 1 ? 's' : ''}
             </span>
-            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showFutureVisits ? '' : '-rotate-90'}`} />
+            <ChevronDown className={`w-4 h-4 text-ct-mute transition-transform ${showFutureVisits ? '' : '-rotate-90'}`} />
           </button>
           {showFutureVisits && (
             isAutoAccept ? (
@@ -1609,9 +1609,9 @@ function JobCard({
                   {futureSessionsList.map((s) => {
                     const d = new Date((s.actual_date || s.scheduled_date) + 'T00:00:00');
                     return (
-                      <div key={s.id} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
-                        <Calendar className="w-3 h-3 text-secondary-400 flex-shrink-0" />
-                        <span className="text-xs text-gray-700 font-medium">
+                      <div key={s.id} className="flex items-center gap-2 px-3 py-2 bg-ct-surface-2 rounded-ct-sm">
+                        <Calendar className="w-3 h-3 text-ct-mute flex-shrink-0" />
+                        <span className="text-xs text-ct-mute-2 font-medium">
                           {d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </span>
                       </div>
@@ -1642,15 +1642,15 @@ function JobCard({
 
       {/* ─── Invoice & Billing (owner only) ─── */}
       {isOwner && (
-      <div className="border-t border-gray-100 px-5 py-3 space-y-3">
-        <p className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600">
-          <FileText className="w-3.5 h-3.5 text-gray-400" />
+      <div className="border-t border-ct-line-soft px-5 py-3 space-y-3">
+        <p className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-mute-2">
+          <FileText className="w-3.5 h-3.5 text-ct-mute" />
           Invoice & Billing
         </p>
         {agreement && (
           <button
             onClick={() => setShowLogVisit(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-emerald-300 text-emerald-700 text-xs font-medium rounded-lg hover:bg-emerald-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-ct-teal/30 text-ct-teal text-xs font-medium rounded-ct-sm hover:bg-ct-teal/[0.14] transition-colors"
           >
             <Plus className="w-3 h-3" />
             Log Extra Visit
@@ -1904,7 +1904,7 @@ export default function ServicesTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+        <Loader2 className="w-5 h-5 text-ct-mute animate-spin" />
       </div>
     );
   }
@@ -1912,9 +1912,9 @@ export default function ServicesTab() {
   if (isEmpty) {
     return (
       <div className="text-center py-12">
-        <Inbox className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-        <h3 className="text-sm font-semibold text-gray-900 mb-1">No ongoing services yet</h3>
-        <p className="text-xs text-gray-500">When you set up repeat work with a client, it'll show up here.</p>
+        <Inbox className="w-10 h-10 text-ct-mute mx-auto mb-3" />
+        <h3 className="text-sm font-semibold text-ct-paper mb-1">No ongoing services yet</h3>
+        <p className="text-xs text-ct-mute">When you set up repeat work with a client, it'll show up here.</p>
       </div>
     );
   }
@@ -1927,32 +1927,32 @@ export default function ServicesTab() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <RefreshCw className="w-4 h-4 text-emerald-500" />
-                <h3 className="text-sm font-semibold text-gray-900">Ongoing Services</h3>
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">{jobRows.length}</span>
+                <RefreshCw className="w-4 h-4 text-ct-teal" />
+                <h3 className="text-sm font-semibold text-ct-paper">Ongoing Services</h3>
+                <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute">{jobRows.length}</span>
               </div>
             </div>
 
             {showControls && (
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search clients or services..."
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                   />
                 </div>
                 {hasPast && (
-                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                  <div className="flex items-center gap-1 bg-ct-surface-2 rounded-ct-sm p-0.5">
                     {(['active', 'past', 'all'] as const).map(v => (
                       <button
                         key={v}
                         onClick={() => setStatusFilter(v)}
                         className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                          statusFilter === v ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                          statusFilter === v ? 'bg-ct-surface text-ct-paper shadow-sm' : 'text-ct-mute hover:text-ct-mute-2'
                         }`}
                       >
                         {v === 'active' ? 'Active' : v === 'past' ? 'Past' : 'All'}
@@ -1964,8 +1964,8 @@ export default function ServicesTab() {
             )}
 
             {filteredRows.length === 0 ? (
-              <div className="text-center py-10 border border-dashed border-gray-200 rounded-xl">
-                <p className="text-sm text-gray-500">No services match your search.</p>
+              <div className="text-center py-10 border border-dashed border-ct-line rounded-ct-md">
+                <p className="text-sm text-ct-mute">No services match your search.</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -1975,46 +1975,46 @@ export default function ServicesTab() {
                     ? new Date(row.nextVisitIso + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
                     : null;
                   const statusPill = row.isCancelled
-                    ? { label: 'Ended', cls: 'bg-gray-100 text-gray-600' }
+                    ? { label: 'Ended', cls: 'bg-ct-surface-2 text-ct-mute-2' }
                     : row.isActive
-                    ? { label: 'Active', cls: 'bg-emerald-100 text-emerald-700' }
-                    : { label: 'Paused', cls: 'bg-amber-100 text-amber-700' };
+                    ? { label: 'Active', cls: 'bg-ct-teal/[0.14] text-ct-teal' }
+                    : { label: 'Paused', cls: 'bg-ct-amber/[0.13] text-ct-amber' };
 
                   return (
-                    <div key={row.jobId} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                    <div key={row.jobId} className="bg-ct-surface border border-ct-line rounded-ct-md overflow-hidden">
                       <button
                         onClick={() => toggleExpanded(row.jobId)}
-                        className="w-full flex items-center justify-between gap-3 p-3 hover:bg-gray-50 transition-colors text-left"
+                        className="w-full flex items-center justify-between gap-3 p-3 hover:bg-ct-surface-2 transition-colors text-left"
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs flex items-center justify-center flex-shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-ct-teal/[0.14] text-ct-teal font-semibold text-xs flex items-center justify-center flex-shrink-0">
                             {initials(row.clientName)}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-sm font-semibold text-gray-900 truncate">{row.clientName}</p>
+                              <p className="text-sm font-semibold text-ct-paper truncate">{row.clientName}</p>
                               <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusPill.cls}`}>{statusPill.label}</span>
                             </div>
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500 mt-0.5">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-ct-mute mt-0.5">
                               <span className="capitalize whitespace-nowrap">{row.jobLabel}</span>
-                              {row.freqLabel && (<><span className="text-gray-300">·</span><span className="whitespace-nowrap">{row.freqLabel}</span></>)}
+                              {row.freqLabel && (<><span className="text-ct-mute">·</span><span className="whitespace-nowrap">{row.freqLabel}</span></>)}
                               {row.agreedPrice != null && row.agreedPrice > 0 && (
-                                <><span className="text-gray-300">·</span><span className="text-emerald-600 font-medium whitespace-nowrap">${row.agreedPrice.toFixed(0)}/visit</span></>
+                                <><span className="text-ct-mute">·</span><span className="text-ct-teal font-medium whitespace-nowrap">${row.agreedPrice.toFixed(0)}/visit</span></>
                               )}
                               {nextLabel && !row.isCancelled && (
-                                <><span className="text-gray-300">·</span><span className="font-medium text-gray-700 whitespace-nowrap">Next: {nextLabel}</span></>
+                                <><span className="text-ct-mute">·</span><span className="font-medium text-ct-mute-2 whitespace-nowrap">Next: {nextLabel}</span></>
                               )}
                               {row.assignedWorkerName && !row.isCancelled && (
-                                <><span className="text-gray-300">·</span><span className="inline-flex items-center gap-1 text-emerald-700 font-medium whitespace-nowrap"><UserCheck className="w-3 h-3" />{row.assignedWorkerName}</span></>
+                                <><span className="text-ct-mute">·</span><span className="inline-flex items-center gap-1 text-ct-teal font-medium whitespace-nowrap"><UserCheck className="w-3 h-3" />{row.assignedWorkerName}</span></>
                               )}
                             </div>
                           </div>
                         </div>
-                        {isExpanded ? <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+                        {isExpanded ? <ChevronDown className="w-4 h-4 text-ct-mute flex-shrink-0" /> : <ChevronRight className="w-4 h-4 text-ct-mute flex-shrink-0" />}
                       </button>
 
                       {isExpanded && (
-                        <div className="border-t border-gray-100 bg-gray-50/30 p-3">
+                        <div className="border-t border-ct-line-soft bg-ct-surface-2/30 p-3">
                           <JobCard
                             jobId={row.jobId}
                             jobLabel={row.jobLabel}
@@ -2058,9 +2058,9 @@ export default function ServicesTab() {
         {tradieInvoices.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <FileText className="w-4 h-4 text-gray-400" />
-              <h3 className="text-sm font-semibold text-gray-900">Outstanding Invoices</h3>
-              <span className="text-xs text-gray-400">{tradieInvoices.length}</span>
+              <FileText className="w-4 h-4 text-ct-mute" />
+              <h3 className="text-sm font-semibold text-ct-paper">Outstanding Invoices</h3>
+              <span className="text-xs text-ct-mute">{tradieInvoices.length}</span>
             </div>
             <div className="space-y-3">
               {tradieInvoices.map((inv) => (

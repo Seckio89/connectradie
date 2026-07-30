@@ -29,15 +29,15 @@ function getDaysUntilDue(dueDate: string): number {
 
 function getDueLabel(daysUntil: number): { text: string; color: string } {
   if (daysUntil < 0) {
-    return { text: `${Math.abs(daysUntil)}d overdue`, color: 'text-red-600' };
+    return { text: `${Math.abs(daysUntil)}d overdue`, color: 'text-ct-rose' };
   }
   if (daysUntil === 0) {
-    return { text: 'Due today', color: 'text-red-600' };
+    return { text: 'Due today', color: 'text-ct-rose' };
   }
   if (daysUntil <= 7) {
-    return { text: `Due in ${daysUntil}d`, color: 'text-warm-600' };
+    return { text: `Due in ${daysUntil}d`, color: 'text-ct-amber' };
   }
-  return { text: `Due in ${daysUntil}d`, color: 'text-gray-500' };
+  return { text: `Due in ${daysUntil}d`, color: 'text-ct-mute' };
 }
 
 export default function ServiceRemindersWidget() {
@@ -105,16 +105,16 @@ export default function ServiceRemindersWidget() {
   if (loading || reminders.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <div className="px-6 py-4 bg-gradient-to-r from-secondary-50 to-secondary-50 border-b border-secondary-100">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <CalendarClock className="w-5 h-5 text-secondary-600" />
+    <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
+      <div className="px-6 py-4 bg-gradient-to-r from-ct-surface-2 to-ct-surface-2 border-b border-ct-line">
+        <h3 className="font-semibold text-ct-paper flex items-center gap-2">
+          <CalendarClock className="w-5 h-5 text-ct-mute-2" />
           Maintenance Due
         </h3>
-        <p className="text-xs text-gray-500 mt-0.5">Services coming up or overdue</p>
+        <p className="text-xs text-ct-mute mt-0.5">Services coming up or overdue</p>
       </div>
 
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-ct-line-soft">
         {reminders.map((reminder) => {
           const daysUntil = getDaysUntilDue(reminder.due_date);
           const dueLabel = getDueLabel(daysUntil);
@@ -123,37 +123,37 @@ export default function ServiceRemindersWidget() {
           return (
             <div
               key={reminder.id}
-              className={`px-5 py-4 transition-colors ${isOverdue ? 'bg-red-50/50' : 'hover:bg-gray-50'}`}
+              className={`px-5 py-4 transition-colors ${isOverdue ? 'bg-ct-rose/[0.13]/50' : 'hover:bg-ct-surface-2'}`}
             >
               <div className="flex items-start gap-3">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                <div className={`w-9 h-9 rounded-ct-sm flex items-center justify-center flex-shrink-0 ${
                   isOverdue
-                    ? 'bg-red-100'
+                    ? 'bg-ct-rose/[0.13]'
                     : daysUntil <= 7
-                      ? 'bg-warm-100'
-                      : 'bg-secondary-100'
+                      ? 'bg-ct-amber/[0.13]'
+                      : 'bg-ct-surface-2'
                 }`}>
                   {isOverdue ? (
-                    <AlertTriangle className="w-4 h-4 text-red-600" />
+                    <AlertTriangle className="w-4 h-4 text-ct-rose" />
                   ) : (
-                    <Wrench className={`w-4 h-4 ${daysUntil <= 7 ? 'text-warm-600' : 'text-secondary-600'}`} />
+                    <Wrench className={`w-4 h-4 ${daysUntil <= 7 ? 'text-ct-amber' : 'text-ct-mute-2'}`} />
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
+                    <p className="text-sm font-semibold text-ct-paper truncate">
                       {formatCategoryName(reminder.category_name)}
                     </p>
                     <button
                       onClick={() => handleDismiss(reminder.id)}
-                      className="p-1 text-gray-300 hover:text-gray-500 rounded transition-colors flex-shrink-0"
+                      className="p-1 text-ct-mute hover:text-ct-mute rounded transition-colors flex-shrink-0"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-ct-mute truncate">
                     {reminder.tradie_business || reminder.tradie_name}
                   </p>
 
@@ -163,7 +163,7 @@ export default function ServiceRemindersWidget() {
                     </span>
                     <button
                       onClick={() => handleBookAgain(reminder)}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-secondary-700 hover:text-secondary-800 bg-secondary-50 hover:bg-secondary-100 px-2.5 py-1 rounded-md transition-colors"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-ct-mute-2 hover:text-ct-mute-2 bg-ct-surface-2 hover:bg-ct-surface-2 px-2.5 py-1 rounded-md transition-colors"
                     >
                       <RefreshCw className="w-3 h-3" />
                       Book Again
@@ -177,10 +177,10 @@ export default function ServiceRemindersWidget() {
       </div>
 
       {reminders.length >= 5 && (
-        <div className="px-5 py-3 bg-gray-50 border-t border-gray-100">
+        <div className="px-5 py-3 bg-ct-surface-2 border-t border-ct-line-soft">
           <button
             onClick={() => navigate('/search')}
-            className="flex items-center justify-center gap-1 w-full text-xs font-medium text-secondary-600 hover:text-secondary-700 transition-colors"
+            className="flex items-center justify-center gap-1 w-full text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 transition-colors"
           >
             View all reminders
             <ChevronRight className="w-3.5 h-3.5" />

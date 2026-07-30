@@ -323,27 +323,27 @@ export default function LicenseCertificate({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/60 " onClick={onClose} />
 
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-y-auto">
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">License Certificate</h2>
+      <div className="relative bg-ct-surface rounded-ct-lg shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-y-auto">
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-ct-surface border-b border-ct-line">
+          <h2 className="text-lg font-semibold text-ct-paper">License Certificate</h2>
           <div className="flex items-center gap-3">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 px-4 py-2 bg-navy-800 text-white text-sm font-medium rounded-lg hover:bg-navy-900 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-ct-surface text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-ink transition-colors"
             >
               <Printer className="w-4 h-4" />
               Print / Save PDF
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        <div className="p-8 bg-gray-50">
+        <div className="p-8 bg-ct-surface-2">
           <div ref={certRef}>
             <div className="cert-outer" style={{
               border: '3px solid #5C4F4B',

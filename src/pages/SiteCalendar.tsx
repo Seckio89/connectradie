@@ -151,10 +151,10 @@ interface CalendarEntry {
 }
 
 const TIME_SLOT_COLORS: Record<string, string> = {
-  morning: 'bg-warm-50 border-warm-200 text-warm-800',
-  midday: 'bg-secondary-50 border-secondary-200 text-secondary-800',
-  afternoon: 'bg-warm-50 border-warm-200 text-warm-800',
-  evening: 'bg-primary-50 border-primary-200 text-navy-700',
+  morning: 'bg-ct-amber/[0.13] border-ct-amber/[0.34] text-ct-paper',
+  midday: 'bg-ct-surface-2 border-ct-line text-ct-mute-2',
+  afternoon: 'bg-ct-amber/[0.13] border-ct-amber/[0.34] text-ct-paper',
+  evening: 'bg-ct-surface-2 border-ct-line text-ct-paper',
 };
 
 const TIME_SLOT_LABELS: Record<string, string> = {
@@ -173,12 +173,12 @@ function parseJobDescription(description: string): { category: string; title: st
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-amber-50 text-amber-700 border-amber-200',
-  accepted: 'bg-secondary-100 text-secondary-700 border-secondary-200',
-  in_progress: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  completed: 'bg-gray-100 text-gray-500 border-gray-200',
-  cancelled: 'bg-gray-100 text-gray-400 border-gray-200',
-  declined: 'bg-red-100 text-red-700 border-red-200',
+  pending: 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]',
+  accepted: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line',
+  in_progress: 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30',
+  completed: 'bg-ct-surface-2 text-ct-mute border-ct-line',
+  cancelled: 'bg-ct-surface-2 text-ct-mute border-ct-line',
+  declined: 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose/[0.34]',
 };
 
 interface AssignTeamModalProps {
@@ -228,20 +228,20 @@ function AssignTeamModal({ job, teamMembers, existingAssignments, onClose, onSav
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+        className="bg-ct-surface rounded-ct-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 bg-white rounded-t-2xl flex items-start justify-between p-6 border-b border-gray-100">
+        <div className="sticky top-0 z-10 bg-ct-surface rounded-t-2xl flex items-start justify-between p-6 border-b border-ct-line-soft">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Assign Team</h2>
-            <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">{job.description}</p>
+            <h2 className="text-xl font-bold text-ct-paper">Assign Team</h2>
+            <p className="text-sm text-ct-mute mt-0.5 line-clamp-2">{job.description}</p>
             {job.location_address && (
-              <p className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+              <p className="flex items-center gap-1 text-xs text-ct-mute mt-1">
                 <MapPin className="w-3 h-3" />{job.location_address}
               </p>
             )}
           </div>
-          <button onClick={onClose} aria-label="Close" className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 ml-4 flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center">
+          <button onClick={onClose} aria-label="Close" className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 ml-4 flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -249,26 +249,26 @@ function AssignTeamModal({ job, teamMembers, existingAssignments, onClose, onSav
         <div className="p-6 space-y-5">
           {existingAssignments.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Assigned ({existingAssignments.length})</h3>
+              <h3 className="text-sm font-semibold text-ct-mute-2 mb-3">Assigned ({existingAssignments.length})</h3>
               <div className="space-y-2">
                 {existingAssignments.map(assignment => {
                   const member = teamMembers.find(m => m.id === assignment.team_member_id);
                   if (!member) return null;
                   return (
-                    <div key={assignment.id} className="flex items-center gap-3 p-3 bg-primary-50 border border-primary-100 rounded-xl">
-                      <div className="w-9 h-9 rounded-full bg-primary-200 flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-bold text-primary-700">{member.invite_name.charAt(0)}</span>
+                    <div key={assignment.id} className="flex items-center gap-3 p-3 bg-ct-surface-2 border border-ct-teal/30 rounded-ct-md">
+                      <div className="w-9 h-9 rounded-full bg-ct-teal/[0.14] flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-ct-mute-2">{member.invite_name.charAt(0)}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 text-sm">{member.invite_name}</p>
-                        <p className="text-xs text-gray-500">{member.trade_specialty || member.role} · {assignment.role_on_job}</p>
+                        <p className="font-medium text-ct-paper text-sm">{member.invite_name}</p>
+                        <p className="text-xs text-ct-mute">{member.trade_specialty || member.role} · {assignment.role_on_job}</p>
                         {assignment.start_time && (
-                          <p className="text-xs text-gray-400">{assignment.start_time} – {assignment.end_time || '?'}</p>
+                          <p className="text-xs text-ct-mute">{assignment.start_time} – {assignment.end_time || '?'}</p>
                         )}
                       </div>
                       <button
                         onClick={() => onRemove(assignment.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg"
+                        className="p-1.5 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -280,21 +280,21 @@ function AssignTeamModal({ job, teamMembers, existingAssignments, onClose, onSav
           )}
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Add Team Member</h3>
+            <h3 className="text-sm font-semibold text-ct-mute-2 mb-3">Add Team Member</h3>
             {error && (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm mb-3">
+              <div className="flex items-center gap-2 p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-ct-rose text-sm mb-3">
                 <AlertCircle className="w-4 h-4" />{error}
               </div>
             )}
 
             {availableMembers.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">All active team members are already assigned</p>
+              <p className="text-sm text-ct-mute py-4 text-center">All active team members are already assigned</p>
             ) : (
               <div className="space-y-3">
                 <select
                   value={selectedMember}
                   onChange={e => setSelectedMember(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none bg-white text-sm"
+                  className="w-full px-4 py-2.5 border border-ct-line rounded-ct-md focus:ring-2 focus:ring-ct-teal outline-none bg-ct-surface text-sm"
                 >
                   <option value="">Select team member...</option>
                   {availableMembers.map(m => (
@@ -304,21 +304,21 @@ function AssignTeamModal({ job, teamMembers, existingAssignments, onClose, onSav
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">Start Time</label>
+                    <label className="block text-xs text-ct-mute mb-1">Start Time</label>
                     <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+                      className="w-full px-3 py-2 border border-ct-line rounded-ct-md text-sm focus:ring-2 focus:ring-ct-teal outline-none" />
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-500 mb-1">End Time</label>
+                    <label className="block text-xs text-ct-mute mb-1">End Time</label>
                     <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none" />
+                      className="w-full px-3 py-2 border border-ct-line rounded-ct-md text-sm focus:ring-2 focus:ring-ct-teal outline-none" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">Role on this job</label>
+                  <label className="block text-xs text-ct-mute mb-1">Role on this job</label>
                   <select value={roleOnJob} onChange={e => setRoleOnJob(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white">
+                    className="w-full px-3 py-2 border border-ct-line rounded-ct-md text-sm focus:ring-2 focus:ring-ct-teal outline-none bg-ct-surface">
                     <option value="lead">Lead</option>
                     <option value="assistant">Assistant</option>
                     <option value="employee">Employee</option>
@@ -330,7 +330,7 @@ function AssignTeamModal({ job, teamMembers, existingAssignments, onClose, onSav
                 <button
                   onClick={handleAdd}
                   disabled={saving || !selectedMember}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 disabled:opacity-50 transition-colors text-sm"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink font-medium rounded-ct-md hover:brightness-110 disabled:opacity-50 transition-colors text-sm"
                 >
                   {saving ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus className="w-4 h-4" />}
                   Assign to Job
@@ -1199,18 +1199,18 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
       <div className="space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 px-4 md:px-0">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Site Calendar</h1>
-            <p className="text-sm text-gray-500 mt-1 hidden sm:block">Track jobs, team assignments, and your availability in one view</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-ct-paper">Site Calendar</h1>
+            <p className="text-sm text-ct-mute mt-1 hidden sm:block">Track jobs, team assignments, and your availability in one view</p>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {conflictCount > 0 && (
               <button
                 onClick={() => setShowOnlyConflicts(!showOnlyConflicts)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-ct-md text-sm font-medium border transition-colors ${
                   showOnlyConflicts
-                    ? 'bg-red-100 text-red-700 border-red-200'
-                    : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
+                    ? 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose/[0.34]'
+                    : 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose/[0.34] hover:bg-ct-rose/[0.13]'
                 }`}
               >
                 <AlertCircle className="w-4 h-4" />
@@ -1223,74 +1223,74 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 <select
                   value={filterMember}
                   onChange={e => setFilterMember(e.target.value)}
-                  className="pl-8 pr-4 py-2 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none appearance-none"
+                  className="pl-8 pr-4 py-2 border border-ct-line rounded-ct-md text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal outline-none appearance-none"
                 >
                   <option value="all">All Team</option>
                   {teamMembers.map(m => <option key={m.id} value={m.id}>{m.invite_name}</option>)}
                 </select>
-                <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ct-mute pointer-events-none" />
               </div>
             )}
 
-            <div className="flex border border-gray-200 rounded-xl overflow-hidden">
+            <div className="flex border border-ct-line rounded-ct-md overflow-hidden">
               <button
                 onClick={() => setView('week')}
-                className={`px-4 py-2 min-h-[44px] text-sm font-medium transition-colors ${view === 'week' ? 'bg-warm-500 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                className={`px-4 py-2 min-h-[44px] text-sm font-medium transition-colors ${view === 'week' ? 'bg-ct-teal text-ct-ink' : 'text-ct-mute-2 hover:bg-ct-surface-2'}`}
               >Week</button>
               <button
                 onClick={() => setView('month')}
-                className={`px-4 py-2 min-h-[44px] text-sm font-medium transition-colors ${view === 'month' ? 'bg-warm-500 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                className={`px-4 py-2 min-h-[44px] text-sm font-medium transition-colors ${view === 'month' ? 'bg-ct-teal text-ct-ink' : 'text-ct-mute-2 hover:bg-ct-surface-2'}`}
               >Month</button>
             </div>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 border-b border-gray-100">
-            <button onClick={() => navigate(-1)} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+        <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 border-b border-ct-line-soft">
+            <button onClick={() => navigate(-1)} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors">
               <ChevronLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3">
-              <Calendar className="w-4 h-4 text-gray-400" />
-              <h2 className="font-semibold text-gray-900">{getTitle()}</h2>
-              <button onClick={() => setCurrentDate(new Date())} className="text-xs text-primary-600 font-medium hover:underline">Today</button>
+              <Calendar className="w-4 h-4 text-ct-mute" />
+              <h2 className="font-semibold text-ct-paper">{getTitle()}</h2>
+              <button onClick={() => setCurrentDate(new Date())} className="text-xs text-ct-mute-2 font-medium hover:underline">Today</button>
             </div>
-            <button onClick={() => navigate(1)} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+            <button onClick={() => navigate(1)} className="p-2 min-h-[44px] min-w-[44px] inline-flex items-center justify-center text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors">
               <ChevronRight className="w-5 h-5" />
             </button>
           </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
-              <span className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+              <span className="w-8 h-8 border-4 border-ct-line border-t-primary-600 rounded-full animate-spin" />
             </div>
           ) : view === 'week' ? (
             <>
             {/* Week summary — availability & bookings at a glance (flat, palette-only) */}
-            <div className="px-4 md:px-5 py-3 border-b border-gray-100">
-              <div className="flex items-center bg-emerald-50 border border-emerald-100 rounded-2xl">
+            <div className="px-4 md:px-5 py-3 border-b border-ct-line-soft">
+              <div className="flex items-center bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-lg">
                 {isTradie && (
                   <>
                     <div className="flex-1 px-5 py-3.5">
-                      <p className="text-2xl font-bold text-gray-900 tabular-nums leading-none">{weekAvailableDays}</p>
-                      <p className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 mt-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <p className="text-2xl font-bold text-ct-paper tabular-nums leading-none">{weekAvailableDays}</p>
+                      <p className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-mute mt-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-ct-teal" />
                         day{weekAvailableDays === 1 ? '' : 's'} available
                       </p>
                     </div>
-                    <div className="w-px self-stretch bg-emerald-200/80 my-3" />
+                    <div className="w-px self-stretch bg-ct-teal/[0.14]/80 my-3" />
                   </>
                 )}
                 <div className="flex-1 px-5 py-3.5">
-                  <p className="text-2xl font-bold text-gray-900 tabular-nums leading-none">{weekJobCount}</p>
-                  <p className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 mt-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-secondary-500" />
+                  <p className="text-2xl font-bold text-ct-paper tabular-nums leading-none">{weekJobCount}</p>
+                  <p className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-mute mt-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-ct-surface-20" />
                     job{weekJobCount === 1 ? '' : 's'} booked
                   </p>
                 </div>
               </div>
             </div>
-            <div className="hidden md:grid md:grid-cols-7 md:divide-x divide-gray-100 min-h-[500px]">
+            <div className="hidden md:grid md:grid-cols-7 md:divide-x divide-ct-line-soft min-h-[500px]">
               {days.map((day, i) => {
                 const entries = getJobsForDate(day);
                 const today = isToday(day);
@@ -1299,10 +1299,10 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 const now = new Date();
                 const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 return (
-                  <div key={i} className={`flex flex-col ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-primary-50/30' : hasAvailable ? 'bg-green-50/20' : ''}`}>
-                    <div className={`px-2 py-3 text-center border-b border-gray-100 ${today ? 'bg-primary-50' : ''}`}>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</p>
-                      <p className={`text-lg font-bold mt-0.5 ${today ? 'text-primary-600' : isPastDay ? 'text-gray-400' : 'text-gray-900'}`}>{day.getDate()}</p>
+                  <div key={i} className={`flex flex-col ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-ct-surface-2/30' : hasAvailable ? 'bg-ct-teal/[0.14]/20' : ''}`}>
+                    <div className={`px-2 py-3 text-center border-b border-ct-line-soft ${today ? 'bg-ct-surface-2' : ''}`}>
+                      <p className="text-xs text-ct-mute uppercase tracking-wide">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</p>
+                      <p className={`text-lg font-bold mt-0.5 ${today ? 'text-ct-mute-2' : isPastDay ? 'text-ct-mute' : 'text-ct-paper'}`}>{day.getDate()}</p>
                       {daySlots.length > 0 && (
                         <div className="flex justify-center gap-0.5 mt-1">
                           {daySlots.map(slot => (
@@ -1310,7 +1310,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                               key={slot.id}
                               title={`${formatSlotTime(slot.start_time)} – ${formatSlotTime(slot.end_time)} (${slot.status})`}
                               className={`w-1.5 h-1.5 rounded-full ${
-                                slot.status === 'available' ? 'bg-green-500' : 'bg-red-400'
+                                slot.status === 'available' ? 'bg-ct-teal/[0.14]0' : 'bg-ct-rose'
                               }`}
                             />
                           ))}
@@ -1321,11 +1321,11 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                       {entries.length === 0 ? (
                         <div className="h-full flex items-center justify-center py-4">
                           {hasAvailable ? (
-                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Available
+                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-teal">
+                              <span className="w-1.5 h-1.5 rounded-full bg-ct-teal" />Available
                             </span>
                           ) : (
-                            <span className="text-xs text-gray-300">No jobs</span>
+                            <span className="text-xs text-ct-mute">No jobs</span>
                           )}
                         </div>
                       ) : (
@@ -1335,28 +1335,28 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                             <div
                               key={job.id}
                               onClick={() => setSelectedJob(job)}
-                              className={`relative p-2.5 rounded-lg border cursor-pointer hover:shadow-md transition-all text-xs ${
+                              className={`relative p-2.5 rounded-ct-sm border cursor-pointer hover:shadow-md transition-all text-xs ${
                                 job.is_emergency
-                                  ? 'bg-red-50 border-red-200'
+                                  ? 'bg-ct-rose/[0.13] border-ct-rose/[0.34]'
                                   : conflictWarning
-                                  ? 'bg-red-50 border-red-200'
+                                  ? 'bg-ct-rose/[0.13] border-ct-rose/[0.34]'
                                   : job.status === 'completed'
-                                  ? 'bg-gray-50 border-gray-200 opacity-60'
-                                  : 'bg-white border-gray-200 hover:border-primary-300'
+                                  ? 'bg-ct-surface-2 border-ct-line opacity-60'
+                                  : 'bg-ct-surface border-ct-line hover:border-ct-teal/30'
                               }`}
                             >
                               {/* Header: category badge + status */}
                               <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                                 {category && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary-100 text-primary-700 font-semibold text-[10px] uppercase tracking-wide">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-ct-surface-2 text-ct-mute-2 font-semibold text-[10px] uppercase tracking-wide">
                                     {category}
                                   </span>
                                 )}
-                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${(job.status && STATUS_COLORS[job.status]) || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                                <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium border ${(job.status && STATUS_COLORS[job.status]) || 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'}`}>
                                   {(job.status ?? 'pending').replace('_', ' ')}
                                 </span>
                                 {job.is_emergency && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-red-100 text-red-700 text-[10px] font-semibold">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-ct-rose/[0.13] text-ct-rose text-[10px] font-semibold">
                                     Urgent
                                   </span>
                                 )}
@@ -1368,12 +1368,12 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                         setConflictMenuJob(conflictMenuJob === job.id ? null : job.id);
                                       }}
                                       title="Resolve conflict"
-                                      className="p-0.5 rounded hover:bg-red-100 transition-colors"
+                                      className="p-0.5 rounded hover:bg-ct-rose/[0.13] transition-colors"
                                     >
-                                      <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                                      <AlertCircle className="w-3.5 h-3.5 text-ct-rose" />
                                     </button>
                                     {conflictMenuJob === job.id && (
-                                      <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-40">
+                                      <div className="absolute right-0 top-full mt-1 z-50 bg-ct-surface rounded-ct-sm shadow-lg border border-ct-line py-1 w-40">
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -1384,9 +1384,9 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                             setRescheduleDuration(inferRescheduleDuration(job));
                                             setConflictMenuJob(null);
                                           }}
-                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
                                         >
-                                          <CalendarClock className="w-3.5 h-3.5 text-primary-500" />
+                                          <CalendarClock className="w-3.5 h-3.5 text-ct-teal0" />
                                           Reschedule
                                         </button>
                                         <button
@@ -1395,7 +1395,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                             setRemoveConfirmJob(job);
                                             setConflictMenuJob(null);
                                           }}
-                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors"
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-ct-rose hover:bg-ct-rose/[0.13] transition-colors"
                                         >
                                           <Trash2 className="w-3.5 h-3.5" />
                                           Remove Job
@@ -1405,9 +1405,9 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                             e.stopPropagation();
                                             dismissConflict(job.id, conflictsWith);
                                           }}
-                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors border-t border-gray-100"
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-ct-mute-2 hover:bg-ct-surface-2 transition-colors border-t border-ct-line-soft"
                                         >
-                                          <Check className="w-3.5 h-3.5 text-gray-400" />
+                                          <Check className="w-3.5 h-3.5 text-ct-mute" />
                                           Ignore conflict
                                         </button>
                                       </div>
@@ -1419,16 +1419,16 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                               {/* Identity fallback — only when there's no category
                                   badge to name the card (badge is the title otherwise). */}
                               {!category && (
-                                <p className="font-semibold text-gray-900 line-clamp-1 leading-snug">{title}</p>
+                                <p className="font-semibold text-ct-paper line-clamp-1 leading-snug">{title}</p>
                               )}
 
                               {/* Details: time · location on one row. The full task
                                   list / address opens in the click-through popup. */}
                               {(job.start_time || job.preferred_time_slot || job.location_address) && (
-                                <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-gray-500">
+                                <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-ct-mute">
                                   {(job.start_time || job.preferred_time_slot) && (
                                     <span className="inline-flex items-center gap-1">
-                                      <Clock className="w-2.5 h-2.5 flex-shrink-0 text-gray-400" />
+                                      <Clock className="w-2.5 h-2.5 flex-shrink-0 text-ct-mute" />
                                       {job.start_time
                                         ? (job.end_time
                                             ? `${formatJobTime(job.start_time)} – ${formatJobTime(job.end_time)}`
@@ -1437,14 +1437,14 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                     </span>
                                   )}
                                   {job.start_time && !job.time_confirmed && !job.id.startsWith('recurring-') && (
-                                    <span className="px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-medium leading-none">proposed</span>
+                                    <span className="px-1.5 py-0.5 rounded-full bg-ct-amber/[0.13] text-ct-amber text-[10px] font-medium leading-none">proposed</span>
                                   )}
                                   {(job.start_time || job.preferred_time_slot) && job.location_address && (
-                                    <span className="text-gray-300">·</span>
+                                    <span className="text-ct-mute">·</span>
                                   )}
                                   {job.location_address && (
                                     <span className="inline-flex items-center gap-1 min-w-0">
-                                      <MapPin className="w-2.5 h-2.5 flex-shrink-0 text-gray-400" />
+                                      <MapPin className="w-2.5 h-2.5 flex-shrink-0 text-ct-mute" />
                                       <span className="truncate">{job.location_address.split(',')[0]}</span>
                                     </span>
                                   )}
@@ -1453,20 +1453,20 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
                               {/* Team avatars */}
                               {jobAssignments.length > 0 && (
-                                <div className="flex items-center gap-1 mt-2 pt-1.5 border-t border-gray-100">
-                                  <Users className="w-2.5 h-2.5 text-primary-500" />
+                                <div className="flex items-center gap-1 mt-2 pt-1.5 border-t border-ct-line-soft">
+                                  <Users className="w-2.5 h-2.5 text-ct-teal0" />
                                   <div className="flex -space-x-1">
                                     {jobAssignments.slice(0, 3).map(a => (
                                       <div key={a.id} title={a.member?.invite_name}
-                                        className="w-4 h-4 rounded-full bg-primary-200 border border-white flex items-center justify-center">
-                                        <span className="text-[8px] font-bold text-primary-700">
+                                        className="w-4 h-4 rounded-full bg-ct-teal/[0.14] border border-white flex items-center justify-center">
+                                        <span className="text-[8px] font-bold text-ct-mute-2">
                                           {a.member?.invite_name.charAt(0)}
                                         </span>
                                       </div>
                                     ))}
                                     {jobAssignments.length > 3 && (
-                                      <div className="w-4 h-4 rounded-full bg-gray-200 border border-white flex items-center justify-center">
-                                        <span className="text-[8px] font-bold text-gray-600">+{jobAssignments.length - 3}</span>
+                                      <div className="w-4 h-4 rounded-full bg-ct-line border border-white flex items-center justify-center">
+                                        <span className="text-[8px] font-bold text-ct-mute-2">+{jobAssignments.length - 3}</span>
                                       </div>
                                     )}
                                   </div>
@@ -1483,7 +1483,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
             </div>
 
             {/* Mobile week list — day cards */}
-            <div className="md:hidden p-3 space-y-2.5 bg-gray-50/40">
+            <div className="md:hidden p-3 space-y-2.5 bg-ct-surface-2/40">
               {days.map((day, i) => {
                 const entries = getJobsForDate(day);
                 const today = isToday(day);
@@ -1495,49 +1495,49 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 return (
                   <div
                     key={i}
-                    className={`flex items-stretch gap-3.5 bg-white border rounded-2xl p-3.5 ${
-                      today ? 'border-emerald-200 ring-2 ring-emerald-100' : 'border-gray-200'
+                    className={`flex items-stretch gap-3.5 bg-ct-surface border rounded-ct-lg p-3.5 ${
+                      today ? 'border-ct-teal/30 ring-2 ring-ct-teal' : 'border-ct-line'
                     } ${isPastDay ? 'opacity-60' : ''}`}
                   >
                     {/* Date badge */}
                     <div className="text-center min-w-[46px] flex flex-col justify-center">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-ct-mute">
                         {day.toLocaleDateString('en-AU', { weekday: 'short' })}
                       </p>
-                      <p className={`text-2xl font-extrabold leading-tight ${today ? 'text-emerald-600' : isPastDay ? 'text-gray-400' : 'text-gray-900'}`}>
+                      <p className={`text-2xl font-extrabold leading-tight ${today ? 'text-ct-teal' : isPastDay ? 'text-ct-mute' : 'text-ct-paper'}`}>
                         {day.getDate()}
                       </p>
                     </div>
 
-                    <div className="w-px self-stretch bg-gray-100" />
+                    <div className="w-px self-stretch bg-ct-surface-2" />
 
                     {/* Info */}
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       {/* Status line */}
                       <div className="flex items-center gap-2 flex-wrap">
                         {jobCount > 0 ? (
-                          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-secondary-700">
-                            <span className="w-2 h-2 rounded-full bg-secondary-500 flex-shrink-0" />
+                          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ct-mute-2">
+                            <span className="w-2 h-2 rounded-full bg-ct-surface-20 flex-shrink-0" />
                             {jobCount} job{jobCount === 1 ? '' : 's'} booked
                           </span>
                         ) : hasAvailable ? (
-                          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                          <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ct-teal">
+                            <span className="w-2 h-2 rounded-full bg-ct-teal flex-shrink-0" />
                             Available
                           </span>
                         ) : isTradie ? (
-                          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-400">
-                            <span className="w-2 h-2 rounded-full bg-gray-300 flex-shrink-0" />
+                          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-ct-mute">
+                            <span className="w-2 h-2 rounded-full bg-ct-line flex-shrink-0" />
                             Unavailable
                           </span>
                         ) : (
-                          <span className="text-sm font-medium text-gray-400">No jobs</span>
+                          <span className="text-sm font-medium text-ct-mute">No jobs</span>
                         )}
-                        {today && <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Today</span>}
+                        {today && <span className="text-[10px] font-bold uppercase tracking-wide text-ct-teal bg-ct-teal/[0.14] px-1.5 py-0.5 rounded">Today</span>}
                       </div>
 
                       {jobCount === 0 ? (
-                        <p className="text-xs text-gray-400 mt-1">No jobs booked</p>
+                        <p className="text-xs text-ct-mute mt-1">No jobs booked</p>
                       ) : (
                         <div className="mt-2 space-y-1.5">
                           {entries.map(({ job, assignments: jobAssignments, conflictWarning }) => {
@@ -1553,21 +1553,21 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                               <button
                                 key={job.id}
                                 onClick={() => setSelectedJob(job)}
-                                className={`w-full flex items-center gap-2 text-left rounded-xl border px-3 py-2 transition-colors ${
+                                className={`w-full flex items-center gap-2 text-left rounded-ct-md border px-3 py-2 transition-colors ${
                                   isUrgent
-                                    ? 'bg-red-50 border-red-200 active:bg-red-100'
-                                    : 'bg-secondary-50 border-secondary-100 active:bg-secondary-100'
+                                    ? 'bg-ct-rose/[0.13] border-ct-rose/[0.34] active:bg-ct-rose/[0.13]'
+                                    : 'bg-ct-surface-2 border-ct-line active:bg-ct-surface-2'
                                 }`}
                               >
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1.5">
-                                    <span className={`text-xs font-semibold truncate ${isUrgent ? 'text-red-700' : 'text-secondary-800'}`}>
+                                    <span className={`text-xs font-semibold truncate ${isUrgent ? 'text-ct-rose' : 'text-ct-mute-2'}`}>
                                       {category ? (title ? `${category} — ${title}` : category) : title}
                                     </span>
-                                    {job.is_emergency && <span className="text-[9px] font-bold text-red-600 flex-shrink-0">URGENT</span>}
+                                    {job.is_emergency && <span className="text-[9px] font-bold text-ct-rose flex-shrink-0">URGENT</span>}
                                   </div>
                                   {(jobTime || job.location_address) && (
-                                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-gray-500 min-w-0">
+                                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-ct-mute min-w-0">
                                       {jobTime && (
                                         <span className="inline-flex items-center gap-1 flex-shrink-0">
                                           <Clock className="w-3 h-3" />{jobTime}
@@ -1582,7 +1582,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                     </div>
                                   )}
                                   {conflictWarning && (
-                                    <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] font-medium text-red-600">
+                                    <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] font-medium text-ct-rose">
                                       <AlertCircle className="w-3 h-3" />Time conflict
                                     </span>
                                   )}
@@ -1595,14 +1595,14 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                       <div
                                         key={a.id}
                                         title={a.member?.invite_name}
-                                        className="w-6 h-6 rounded-full bg-emerald-100 border-2 border-white flex items-center justify-center"
+                                        className="w-6 h-6 rounded-full bg-ct-teal/[0.14] border-2 border-white flex items-center justify-center"
                                       >
-                                        <span className="text-[10px] font-bold text-emerald-700">{a.member?.invite_name.charAt(0)}</span>
+                                        <span className="text-[10px] font-bold text-ct-teal">{a.member?.invite_name.charAt(0)}</span>
                                       </div>
                                     ))}
                                     {jobAssignments.length > 3 && (
-                                      <div className="w-6 h-6 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center">
-                                        <span className="text-[10px] font-bold text-gray-600">+{jobAssignments.length - 3}</span>
+                                      <div className="w-6 h-6 rounded-full bg-ct-surface-2 border-2 border-white flex items-center justify-center">
+                                        <span className="text-[10px] font-bold text-ct-mute-2">+{jobAssignments.length - 3}</span>
                                       </div>
                                     )}
                                   </div>
@@ -1610,10 +1610,10 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
                                 {/* Status badge */}
                                 <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-                                  job.status === 'completed' ? 'bg-gray-100 text-gray-500' :
-                                  job.status === 'in_progress' ? 'bg-emerald-100 text-emerald-700' :
-                                  job.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
-                                  'bg-amber-100 text-amber-700'
+                                  job.status === 'completed' ? 'bg-ct-surface-2 text-ct-mute' :
+                                  job.status === 'in_progress' ? 'bg-ct-teal/[0.14] text-ct-teal' :
+                                  job.status === 'accepted' ? 'bg-ct-surface-2 text-ct-mute-2' :
+                                  'bg-ct-amber/[0.13] text-ct-amber'
                                 }`}>
                                   {(job.status ?? 'pending').replace('_', ' ')}
                                 </span>
@@ -1629,14 +1629,14 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
               {/* Legend + edit availability (tradie only) */}
               {isTradie && (
-                <div className="bg-white border border-gray-200 rounded-2xl p-4 mt-1">
-                  <div className="flex items-center gap-5 text-xs text-gray-500">
-                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />Available</span>
-                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-secondary-500" />Scheduled job</span>
+                <div className="bg-ct-surface border border-ct-line rounded-ct-lg p-4 mt-1">
+                  <div className="flex items-center gap-5 text-xs text-ct-mute">
+                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-ct-teal" />Available</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-ct-surface-20" />Scheduled job</span>
                   </div>
                   <Link
                     to="/dashboard"
-                    className="flex items-center justify-between min-h-[44px] mt-3.5 pt-3.5 border-t border-gray-100 text-sm font-semibold text-emerald-700 active:opacity-70"
+                    className="flex items-center justify-between min-h-[44px] mt-3.5 pt-3.5 border-t border-ct-line-soft text-sm font-semibold text-ct-teal active:opacity-70"
                   >
                     <span>Edit availability on Dashboard</span>
                     <ChevronRight className="w-4 h-4" />
@@ -1649,16 +1649,16 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
             <div>
               {/* Desktop month grid */}
               <div className="hidden md:block">
-                <div className="grid grid-cols-7 border-b border-gray-100">
+                <div className="grid grid-cols-7 border-b border-ct-line-soft">
                   {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
-                    <div key={d} className="py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    <div key={d} className="py-3 text-center text-xs font-medium text-ct-mute uppercase tracking-wide">
                       {d}
                     </div>
                   ))}
                 </div>
-                <div className="grid grid-cols-7 divide-x divide-y divide-gray-100">
+                <div className="grid grid-cols-7 divide-x divide-y divide-ct-line-soft">
                   {monthDays.map((day, i) => {
-                    if (!day) return <div key={i} className="min-h-[100px] bg-gray-50/50" />;
+                    if (!day) return <div key={i} className="min-h-[100px] bg-ct-surface-2/50" />;
                     const entries = getJobsForDate(day);
                     const today = isToday(day);
                     const daySlots = getAvailabilityForDate(day);
@@ -1666,15 +1666,15 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                     const now = new Date();
                     const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                     return (
-                      <div key={i} className={`min-h-[100px] p-2 ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-primary-50/30' : hasAvailable ? 'bg-green-50/20 hover:bg-green-50/30' : 'hover:bg-gray-50/50'} transition-colors`}>
+                      <div key={i} className={`min-h-[100px] p-2 ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-ct-surface-2/30' : hasAvailable ? 'bg-ct-teal/[0.14]/20 hover:bg-ct-teal/[0.14]/30' : 'hover:bg-ct-surface-2/50'} transition-colors`}>
                         <div className="flex items-center gap-1 mb-1.5">
                           <p className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${
-                            today ? 'bg-warm-500 text-white' : isPastDay ? 'text-gray-400' : 'text-gray-700'
+                            today ? 'bg-ct-teal text-ct-ink' : isPastDay ? 'text-ct-mute' : 'text-ct-mute-2'
                           }`}>
                             {day.getDate()}
                           </p>
                           {hasAvailable && (
-                            <span className="w-2 h-2 rounded-full bg-green-300 flex-shrink-0" title="Available" />
+                            <span className="w-2 h-2 rounded-full bg-ct-teal/[0.14] flex-shrink-0" title="Available" />
                           )}
                         </div>
                         <div className="space-y-1">
@@ -1684,17 +1684,17 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                               onClick={() => setSelectedJob(job)}
                               className={`px-2 py-1 rounded text-xs cursor-pointer truncate border font-medium transition-colors ${
                                 job.is_emergency
-                                  ? 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
+                                  ? 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose/[0.34] hover:bg-ct-rose/[0.13]'
                                   : conflictWarning
-                                  ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                                  : (job.status && STATUS_COLORS[job.status]) || 'bg-gray-100 text-gray-600 border-gray-200'
+                                  ? 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose/[0.34] hover:bg-ct-rose/[0.13]'
+                                  : (job.status && STATUS_COLORS[job.status]) || 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'
                               }`}
                             >
                               {job.description}
                             </div>
                           ))}
                           {entries.length > 3 && (
-                            <p className="text-xs text-gray-400 pl-1">+{entries.length - 3} more</p>
+                            <p className="text-xs text-ct-mute pl-1">+{entries.length - 3} more</p>
                           )}
                         </div>
                       </div>
@@ -1709,7 +1709,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 <div className="px-3 py-2">
                   <div className="grid grid-cols-7 mb-1">
                     {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-                      <div key={i} className="py-1.5 text-center text-[10px] font-medium text-gray-400 uppercase">
+                      <div key={i} className="py-1.5 text-center text-[10px] font-medium text-ct-mute uppercase">
                         {d}
                       </div>
                     ))}
@@ -1725,7 +1725,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                       return (
                         <div key={i} className="flex flex-col items-center">
                           <div className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-medium ${
-                            today ? 'bg-warm-500 text-white' : isPastDay ? 'text-gray-300' : hasJobs ? 'text-gray-900 font-semibold' : 'text-gray-500'
+                            today ? 'bg-ct-teal text-ct-ink' : isPastDay ? 'text-ct-mute' : hasJobs ? 'text-ct-paper font-semibold' : 'text-ct-mute'
                           }`}>
                             {day.getDate()}
                           </div>
@@ -1733,11 +1733,11 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                             <div className="flex gap-0.5 mt-0.5">
                               {entries.slice(0, 3).map((e, j) => (
                                 <span key={j} className={`w-1 h-1 rounded-full ${
-                                  e.job.is_emergency || e.conflictWarning ? 'bg-red-500' :
-                                  e.job.status === 'completed' ? 'bg-gray-400' :
-                                  e.job.status === 'in_progress' ? 'bg-emerald-500' :
-                                  e.job.status === 'accepted' ? 'bg-blue-500' :
-                                  'bg-amber-500'
+                                  e.job.is_emergency || e.conflictWarning ? 'bg-ct-rose/[0.13]0' :
+                                  e.job.status === 'completed' ? 'bg-ct-surface-2' :
+                                  e.job.status === 'in_progress' ? 'bg-ct-teal' :
+                                  e.job.status === 'accepted' ? 'bg-ct-surface-20' :
+                                  'bg-ct-amber/[0.13]0'
                                 }`} />
                               ))}
                             </div>
@@ -1749,7 +1749,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 </div>
 
                 {/* List of days with scheduled jobs */}
-                <div className="border-t border-gray-100 divide-y divide-gray-100">
+                <div className="border-t border-ct-line-soft divide-y divide-ct-line-soft">
                   {monthDays.filter((day): day is Date => day !== null && getJobsForDate(day).length > 0).map((day, i) => {
                     const entries = getJobsForDate(day);
                     const today = isToday(day);
@@ -1757,12 +1757,12 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                     const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                     return (
                       <div key={i} className={isPastDay ? 'opacity-60' : ''}>
-                        <div className={`px-4 py-2 flex items-center gap-2 ${today ? 'bg-emerald-50' : 'bg-gray-50'}`}>
-                          <span className={`text-[11px] font-bold uppercase tracking-wider ${today ? 'text-emerald-700' : 'text-gray-500'}`}>
+                        <div className={`px-4 py-2 flex items-center gap-2 ${today ? 'bg-ct-teal/[0.14]' : 'bg-ct-surface-2'}`}>
+                          <span className={`text-[11px] font-bold uppercase tracking-wider ${today ? 'text-ct-teal' : 'text-ct-mute'}`}>
                             {day.toLocaleDateString('en-AU', { weekday: 'short' })} {day.getDate()} {day.toLocaleDateString('en-AU', { month: 'short' })}
                           </span>
-                          {today && <span className="text-[10px] font-medium text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded">Today</span>}
-                          <span className="ml-auto text-[10px] text-gray-400">{entries.length} job{entries.length !== 1 ? 's' : ''}</span>
+                          {today && <span className="text-[10px] font-medium text-ct-teal bg-ct-teal/[0.14] px-1.5 py-0.5 rounded">Today</span>}
+                          <span className="ml-auto text-[10px] text-ct-mute">{entries.length} job{entries.length !== 1 ? 's' : ''}</span>
                         </div>
                         {entries.map(({ job, conflictWarning }) => {
                           const { category, title } = parseJobDescription(job.description);
@@ -1776,16 +1776,16 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                             <div
                               key={job.id}
                               onClick={() => setSelectedJob(job)}
-                              className={`flex items-center gap-3 px-4 py-3 border-l-4 ${accentColor} cursor-pointer active:bg-gray-50 transition-colors`}
+                              className={`flex items-center gap-3 px-4 py-3 border-l-4 ${accentColor} cursor-pointer active:bg-ct-surface-2 transition-colors`}
                               style={{ borderBottom: '0.5px solid #eee' }}
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 mb-0.5">
-                                  {category && <span className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{category}</span>}
-                                  {!category && <span className="text-sm font-medium text-gray-900 truncate">{title}</span>}
-                                  {job.is_emergency && <span className="text-[10px] font-semibold text-red-600">URGENT</span>}
+                                  {category && <span className="text-[10px] font-bold uppercase tracking-wide text-ct-mute">{category}</span>}
+                                  {!category && <span className="text-sm font-medium text-ct-paper truncate">{title}</span>}
+                                  {job.is_emergency && <span className="text-[10px] font-semibold text-ct-rose">URGENT</span>}
                                 </div>
-                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <div className="flex items-center gap-2 text-xs text-ct-mute">
                                   {(job.start_time || job.preferred_time_slot) && (
                                     <span className="flex items-center gap-1">
                                       <Clock className="w-3 h-3" />
@@ -1802,17 +1802,17 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                   )}
                                 </div>
                                 {conflictWarning && (
-                                  <div className="flex items-center gap-1 mt-1 text-[10px] text-red-600 font-medium">
+                                  <div className="flex items-center gap-1 mt-1 text-[10px] text-ct-rose font-medium">
                                     <AlertCircle className="w-3 h-3" />
                                     Time conflict
                                   </div>
                                 )}
                               </div>
                               <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${
-                                job.status === 'completed' ? 'bg-gray-100 text-gray-500' :
-                                job.status === 'in_progress' ? 'bg-emerald-100 text-emerald-700' :
-                                job.status === 'accepted' ? 'bg-blue-100 text-blue-700' :
-                                'bg-amber-100 text-amber-700'
+                                job.status === 'completed' ? 'bg-ct-surface-2 text-ct-mute' :
+                                job.status === 'in_progress' ? 'bg-ct-teal/[0.14] text-ct-teal' :
+                                job.status === 'accepted' ? 'bg-ct-surface-2 text-ct-mute-2' :
+                                'bg-ct-amber/[0.13] text-ct-amber'
                               }`}>
                                 {(job.status ?? 'pending').replace('_', ' ')}
                               </span>
@@ -1823,7 +1823,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                     );
                   })}
                   {monthDays.filter((day): day is Date => day !== null && getJobsForDate(day).length > 0).length === 0 && (
-                    <div className="px-4 py-6 text-center text-xs text-gray-400">No jobs scheduled this month</div>
+                    <div className="px-4 py-6 text-center text-xs text-ct-mute">No jobs scheduled this month</div>
                   )}
                 </div>
               </div>
@@ -1831,71 +1831,71 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 bg-white border border-gray-100 rounded-xl shadow-sm px-4 md:px-5 py-3">
-          <div className="flex items-center flex-wrap gap-3 sm:gap-5 text-xs text-gray-600">
-            <span className="font-medium text-gray-700">Legend:</span>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 bg-ct-surface border border-ct-line-soft rounded-ct-md shadow-sm px-4 md:px-5 py-3">
+          <div className="flex items-center flex-wrap gap-3 sm:gap-5 text-xs text-ct-mute-2">
+            <span className="font-medium text-ct-mute-2">Legend:</span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-green-100 border border-green-300" />
+              <span className="w-3 h-3 rounded bg-ct-teal/[0.14] border border-ct-teal/30" />
               Available
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-warm-50 border border-warm-200" />
+              <span className="w-3 h-3 rounded bg-ct-amber/[0.13] border border-ct-amber/[0.34]" />
               Scheduled job
             </span>
             {conflictCount > 0 && (
               <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-red-100 border border-red-200" />
+                <span className="w-3 h-3 rounded bg-ct-rose/[0.13] border border-ct-rose/[0.34]" />
                 Conflict
               </span>
             )}
           </div>
           <Link
             to="/dashboard"
-            className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline"
+            className="text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 hover:underline"
           >
             Edit availability on Dashboard &rarr;
           </Link>
         </div>
 
         {jobs.length === 0 && !loading && (
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-8 md:p-12 text-center">
-            <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Calendar className="w-8 h-8 text-primary-400" />
+          <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm p-8 md:p-12 text-center">
+            <div className="w-16 h-16 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mx-auto mb-4">
+              <Calendar className="w-8 h-8 text-ct-mute" />
             </div>
-            <h3 className="font-semibold text-gray-700 mb-2">No jobs scheduled this period</h3>
-            <p className="text-sm text-gray-400 max-w-sm mx-auto">
+            <h3 className="font-semibold text-ct-mute-2 mb-2">No jobs scheduled this period</h3>
+            <p className="text-sm text-ct-mute max-w-sm mx-auto">
               Jobs with a scheduled date will appear on the calendar. Accept and schedule jobs to see them here.
             </p>
           </div>
         )}
 
         {teamMembers.length > 0 && (
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4 md:p-5">
-            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary-600" />
+          <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm p-4 md:p-5">
+            <h3 className="font-semibold text-ct-paper mb-4 flex items-center gap-2">
+              <Users className="w-5 h-5 text-ct-mute-2" />
               Team Activity This Period
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {teamMembers.map(member => {
                 const memberAssignments = assignments.filter(a => a.team_member_id === member.id);
                 return (
-                  <div key={member.id} className={`p-3 rounded-xl border cursor-pointer transition-all ${
+                  <div key={member.id} className={`p-3 rounded-ct-md border cursor-pointer transition-all ${
                     filterMember === member.id
-                      ? 'border-primary-300 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-ct-teal/30 bg-ct-surface-2'
+                      : 'border-ct-line hover:border-ct-line hover:bg-ct-surface-2'
                   }`} onClick={() => setFilterMember(filterMember === member.id ? 'all' : member.id)}>
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center flex-shrink-0">
-                        <span className="text-sm font-bold text-primary-700">{member.invite_name.charAt(0)}</span>
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-ct-teal to-ct-teal flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-ct-mute-2">{member.invite_name.charAt(0)}</span>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{member.invite_name}</p>
-                        <p className="text-xs text-gray-400 truncate">{member.trade_specialty || member.role}</p>
+                        <p className="text-sm font-medium text-ct-paper truncate">{member.invite_name}</p>
+                        <p className="text-xs text-ct-mute truncate">{member.trade_specialty || member.role}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-gray-400" />
-                      <span className="text-xs text-gray-600">
+                      <Layers className="w-3.5 h-3.5 text-ct-mute" />
+                      <span className="text-xs text-ct-mute-2">
                         {memberAssignments.length} job{memberAssignments.length !== 1 ? 's' : ''}
                       </span>
                     </div>
@@ -1928,27 +1928,27 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
           onClick={() => setSelectedJob(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            className="bg-ct-surface rounded-ct-lg shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 z-10 bg-white rounded-t-2xl flex items-start justify-between p-6 border-b border-gray-100">
+            <div className="sticky top-0 z-10 bg-ct-surface rounded-t-2xl flex items-start justify-between p-6 border-b border-ct-line-soft">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${(selectedJob.status && STATUS_COLORS[selectedJob.status]) || 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${(selectedJob.status && STATUS_COLORS[selectedJob.status]) || 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'}`}>
                     {(selectedJob.status ?? 'pending').replace('_', ' ')}
                   </span>
                   {serviceTag && (
-                    <span className="px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide bg-secondary-50 text-secondary-700 border border-secondary-200">
+                    <span className="px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide bg-ct-surface-2 text-ct-mute-2 border border-ct-line">
                       {serviceTag}
                     </span>
                   )}
                   {selectedJob.is_emergency && (
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">Emergency</span>
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34]">Emergency</span>
                   )}
                 </div>
-                <h2 className="text-base font-semibold text-gray-900 leading-snug line-clamp-2">{headerTitle}</h2>
+                <h2 className="text-base font-semibold text-ct-paper leading-snug line-clamp-2">{headerTitle}</h2>
               </div>
-              <button onClick={() => setSelectedJob(null)} aria-label="Close" className="ml-4 p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center">
+              <button onClick={() => setSelectedJob(null)} aria-label="Close" className="ml-4 p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1956,14 +1956,14 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
             <div className="p-6 space-y-3">
               {selectedJob.scheduled_date && (
                 <div className="flex items-center gap-2 px-1">
-                  <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <span className="text-sm font-medium text-gray-900">
+                  <Calendar className="w-4 h-4 text-ct-mute flex-shrink-0" />
+                  <span className="text-sm font-medium text-ct-paper">
                     {new Date(selectedJob.scheduled_date).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 </div>
               )}
               {selectedJob.id.startsWith('recurring-') && !selectedJob.time_confirmed && (selectedJob as { proposed_start_time?: string | null }).proposed_start_time && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <div className="rounded-ct-md border border-ct-amber/[0.34] bg-ct-amber/[0.13] px-3 py-2 text-xs text-ct-paper">
                   {isTradie
                     ? `Client proposed ${formatJobTime((selectedJob as { proposed_start_time?: string | null }).proposed_start_time!)} — set the exact time below to confirm.`
                     : `You proposed ${formatJobTime((selectedJob as { proposed_start_time?: string | null }).proposed_start_time!)} — awaiting the tradie's confirmation.`}
@@ -1990,8 +1990,8 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                     { label: 'Tomorrow', value: tomorrowDate },
                   ];
                   return (
-                    <div className="rounded-xl border border-gray-200 p-3">
-                      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2">{isTradie ? 'Confirm or adjust time' : 'Quick reschedule'}</p>
+                    <div className="rounded-ct-md border border-ct-line p-3">
+                      <p className="text-[11px] font-semibold text-ct-mute uppercase tracking-wide mb-2">{isTradie ? 'Confirm or adjust time' : 'Quick reschedule'}</p>
                       <div className="flex flex-wrap items-center gap-1.5">
                         {chips.map(c => {
                           const saving = quickRescheduling === c.value;
@@ -2001,9 +2001,9 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                               type="button"
                               disabled={saving}
                               onClick={() => quickReschedule(selectedJob, c.value)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-gray-200 bg-white text-xs font-medium text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-50 transition-colors"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-ct-line bg-ct-surface text-xs font-medium text-ct-mute-2 hover:bg-ct-teal/[0.14] hover:border-ct-teal/30 hover:text-ct-teal disabled:opacity-50 transition-colors"
                             >
-                              {saving && <span className="w-3 h-3 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />}
+                              {saving && <span className="w-3 h-3 border-2 border-ct-line border-t-emerald-500 rounded-full animate-spin" />}
                               {c.label}
                             </button>
                           );
@@ -2018,7 +2018,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                             setRescheduleDuration(inferRescheduleDuration(selectedJob));
                             setSelectedJob(null);
                           }}
-                          className="inline-flex items-center px-2.5 py-1 rounded-full border border-dashed border-gray-300 bg-white text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                          className="inline-flex items-center px-2.5 py-1 rounded-full border border-dashed border-ct-line bg-ct-surface text-xs font-medium text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
                         >
                           {isTradie ? 'Set exact time…' : 'Pick date…'}
                         </button>
@@ -2027,11 +2027,11 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                   );
                 })()}
                 {/* Time slot chips — clicking stages a change; user must Confirm to save. */}
-                <div className="rounded-xl border border-gray-200 p-3">
+                <div className="rounded-ct-md border border-ct-line p-3">
                   <div className="flex items-baseline justify-between mb-2 gap-2">
-                    <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Time</p>
+                    <p className="text-[11px] font-semibold text-ct-mute uppercase tracking-wide">Time</p>
                     {selectedJob.id.startsWith('recurring-') && (
-                      <p className="text-[10px] text-gray-400">Changes only this session</p>
+                      <p className="text-[10px] text-ct-mute">Changes only this session</p>
                     )}
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -2048,13 +2048,13 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                           onClick={() => setPendingSlot(isPending ? null : slot)}
                           className={`flex-1 inline-flex items-center justify-center gap-1 px-2 py-1 rounded-full text-xs font-medium border transition-colors disabled:cursor-not-allowed ${
                             isStaged
-                              ? 'bg-emerald-500 text-white border-emerald-500'
+                              ? 'bg-ct-teal text-ct-ink border-ct-teal'
                               : isCurrent
-                                ? `${TIME_SLOT_COLORS[slot] ?? 'bg-emerald-50 border-emerald-200 text-emerald-700'}`
-                                : 'bg-white border-gray-200 text-gray-700 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700'
+                                ? `${TIME_SLOT_COLORS[slot] ?? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal'}`
+                                : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-teal/[0.14] hover:border-ct-teal/30 hover:text-ct-teal'
                           }`}
                         >
-                          {saving && <span className="w-3 h-3 border-2 border-gray-300 border-t-emerald-500 rounded-full animate-spin" />}
+                          {saving && <span className="w-3 h-3 border-2 border-ct-line border-t-emerald-500 rounded-full animate-spin" />}
                           {TIME_SLOT_LABELS[slot] ?? slot}
                         </button>
                       );
@@ -2062,16 +2062,16 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                   </div>
                   {/* Confirm bar — only shown when a different slot has been staged. */}
                   {pendingSlot && pendingSlot !== selectedJob.preferred_time_slot && (
-                    <div className="mt-3 flex items-center justify-between gap-2 pt-3 border-t border-gray-100">
-                      <p className="text-xs text-gray-600">
-                        Change to <span className="font-semibold text-gray-900">{TIME_SLOT_LABELS[pendingSlot] ?? pendingSlot}</span>?
+                    <div className="mt-3 flex items-center justify-between gap-2 pt-3 border-t border-ct-line-soft">
+                      <p className="text-xs text-ct-mute-2">
+                        Change to <span className="font-semibold text-ct-paper">{TIME_SLOT_LABELS[pendingSlot] ?? pendingSlot}</span>?
                       </p>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setPendingSlot(null)}
                           disabled={slotSaving !== null}
-                          className="px-2.5 py-1 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                          className="px-2.5 py-1 rounded-ct-sm border border-ct-line text-xs font-medium text-ct-mute-2 hover:bg-ct-surface-2 disabled:opacity-50 transition-colors"
                         >
                           Cancel
                         </button>
@@ -2082,7 +2082,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                             setPendingSlot(null);
                           }}
                           disabled={slotSaving !== null}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500 text-white text-xs font-semibold hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-ct-sm bg-ct-teal text-ct-ink text-xs font-semibold hover:brightness-110 disabled:opacity-50 transition-colors"
                         >
                           {slotSaving ? <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Check className="w-3 h-3" />}
                           Confirm
@@ -2094,29 +2094,29 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               </div>
 
               {selectedJob.location_address && (
-                <div className="flex items-start gap-2 p-3 bg-gray-50 rounded-xl">
-                  <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-2 p-3 bg-ct-surface-2 rounded-ct-md">
+                  <MapPin className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-xs text-gray-500">Location</p>
-                    <p className="text-sm font-medium text-gray-900">{selectedJob.location_address}</p>
+                    <p className="text-xs text-ct-mute">Location</p>
+                    <p className="text-sm font-medium text-ct-paper">{selectedJob.location_address}</p>
                   </div>
                 </div>
               )}
 
               {selectedJob.contact_name && (
-                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
-                  <User className="w-4 h-4 text-gray-400" />
+                <div className="flex items-center gap-2 p-3 bg-ct-surface-2 rounded-ct-md">
+                  <User className="w-4 h-4 text-ct-mute" />
                   <div>
-                    <p className="text-xs text-gray-500">Client</p>
-                    <p className="text-sm font-medium text-gray-900">{selectedJob.contact_name}</p>
+                    <p className="text-xs text-ct-mute">Client</p>
+                    <p className="text-sm font-medium text-ct-paper">{selectedJob.contact_name}</p>
                   </div>
                 </div>
               )}
 
               {selectedJobAssignments.length > 0 && (
                 <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                    <Users className="w-4 h-4 text-primary-600" />
+                  <p className="text-sm font-semibold text-ct-mute-2 mb-2 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-ct-mute-2" />
                     Assigned Team ({selectedJobAssignments.length})
                   </p>
                   <div className="space-y-2">
@@ -2124,16 +2124,16 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                       const member = teamMembers.find(m => m.id === a.team_member_id);
                       if (!member) return null;
                       return (
-                        <div key={a.id} className="flex items-center gap-3 p-3 bg-primary-50 rounded-xl">
-                          <div className="w-8 h-8 rounded-full bg-primary-200 flex items-center justify-center">
-                            <span className="text-sm font-bold text-primary-700">{member.invite_name.charAt(0)}</span>
+                        <div key={a.id} className="flex items-center gap-3 p-3 bg-ct-surface-2 rounded-ct-md">
+                          <div className="w-8 h-8 rounded-full bg-ct-teal/[0.14] flex items-center justify-center">
+                            <span className="text-sm font-bold text-ct-mute-2">{member.invite_name.charAt(0)}</span>
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">{member.invite_name}</p>
-                            <p className="text-xs text-gray-500">{a.role_on_job} · {member.trade_specialty || member.role}</p>
+                            <p className="text-sm font-medium text-ct-paper">{member.invite_name}</p>
+                            <p className="text-xs text-ct-mute">{a.role_on_job} · {member.trade_specialty || member.role}</p>
                           </div>
                           {a.start_time && (
-                            <span className="text-xs text-gray-500">{a.start_time}–{a.end_time || '?'}</span>
+                            <span className="text-xs text-ct-mute">{a.start_time}–{a.end_time || '?'}</span>
                           )}
                         </div>
                       );
@@ -2150,12 +2150,12 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 );
                 if (sameDateJobs.length === 0) return null;
                 return (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                  <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <AlertCircle className="w-4 h-4 text-red-600" />
-                      <p className="text-sm font-medium text-red-800">Time Conflict</p>
+                      <AlertCircle className="w-4 h-4 text-ct-rose" />
+                      <p className="text-sm font-medium text-ct-paper">Time Conflict</p>
                     </div>
-                    <p className="text-xs text-red-700 mb-3">
+                    <p className="text-xs text-ct-rose mb-3">
                       This job overlaps with {sameDateJobs.length} other {sameDateJobs.length === 1 ? 'job' : 'jobs'} within an hour.
                     </p>
                     <div className="flex items-center gap-2">
@@ -2168,7 +2168,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                           setRescheduleDuration(inferRescheduleDuration(selectedJob));
                           setSelectedJob(null);
                         }}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-red-300 text-red-800 rounded-lg text-xs font-medium hover:bg-red-100 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-ct-surface border border-ct-rose/40 text-ct-paper rounded-ct-sm text-xs font-medium hover:bg-ct-rose/[0.13] transition-colors"
                       >
                         <CalendarClock className="w-3.5 h-3.5" />
                         Reschedule
@@ -2178,7 +2178,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                           setRemoveConfirmJob(selectedJob);
                           setSelectedJob(null);
                         }}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-xs font-medium hover:bg-red-50 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-ct-surface border border-ct-rose/[0.34] text-ct-rose rounded-ct-sm text-xs font-medium hover:bg-ct-rose/[0.13] transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         Remove Job
@@ -2191,14 +2191,14 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               {teamMembers.length > 0 ? (
                 <button
                   onClick={() => setShowAssignModal(true)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-primary-300 text-primary-600 font-medium rounded-xl hover:bg-primary-50 transition-colors text-sm"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-ct-teal/30 text-ct-mute-2 font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors text-sm"
                 >
                   <Plus className="w-4 h-4" />
                   Assign Team Members
                 </button>
               ) : profile?.role === 'tradie' ? (
-                <p className="text-xs text-gray-400 text-center">
-                  Add team members in the <Link to="/work?tab=recruitment" className="text-primary-600 hover:underline">Hiring</Link> tab to assign them to jobs.
+                <p className="text-xs text-ct-mute text-center">
+                  Add team members in the <Link to="/work?tab=recruitment" className="text-ct-mute-2 hover:underline">Hiring</Link> tab to assign them to jobs.
                 </p>
               ) : null}
             </div>
@@ -2235,53 +2235,53 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
         return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="flex items-start justify-between p-5 border-b border-gray-100">
+          <div className="bg-ct-surface rounded-ct-lg shadow-2xl w-full max-w-md">
+            <div className="flex items-start justify-between p-5 border-b border-ct-line-soft">
               <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-bold text-gray-900">{isTradie ? 'Confirm visit time' : 'Reschedule job'}</h3>
+                <h3 className="text-lg font-bold text-ct-paper">{isTradie ? 'Confirm visit time' : 'Reschedule job'}</h3>
                 {serviceTag && (
-                  <span className="inline-block mt-1 px-3 py-1 rounded-full bg-secondary-50 text-secondary-700 border border-secondary-200 text-xs font-medium uppercase tracking-wide">
+                  <span className="inline-block mt-1 px-3 py-1 rounded-full bg-ct-surface-2 text-ct-mute-2 border border-ct-line text-xs font-medium uppercase tracking-wide">
                     {serviceTag}
                   </span>
                 )}
-                <p className="text-sm font-medium text-gray-700 mt-1.5 line-clamp-2">{titleText}</p>
+                <p className="text-sm font-medium text-ct-mute-2 mt-1.5 line-clamp-2">{titleText}</p>
               </div>
-              <button onClick={() => { setRescheduleJob(null); setRescheduleDate(''); setRescheduleSlot(''); setRescheduleTime(''); setRescheduleDuration(120); }} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 ml-3 flex-shrink-0">
+              <button onClick={() => { setRescheduleJob(null); setRescheduleDate(''); setRescheduleSlot(''); setRescheduleTime(''); setRescheduleDuration(120); }} className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 ml-3 flex-shrink-0">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Current details — so user knows what they're moving */}
             {(currentDateLabel || currentSlotLabel || rescheduleJob.location_address || rescheduleJob.contact_name || priceLabel) && (
-              <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 space-y-1.5">
-                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Currently scheduled</p>
+              <div className="px-5 py-3 bg-ct-surface-2 border-b border-ct-line-soft space-y-1.5">
+                <p className="text-[11px] font-semibold text-ct-mute uppercase tracking-wide mb-1">Currently scheduled</p>
                 {currentDateLabel && (
-                  <div className="flex items-center gap-2 text-xs text-gray-700">
-                    <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                  <div className="flex items-center gap-2 text-xs text-ct-mute-2">
+                    <Calendar className="w-3.5 h-3.5 text-ct-mute flex-shrink-0" />
                     <span>{currentDateLabel}{currentSlotLabel ? ` · ${currentSlotLabel}` : ''}</span>
                   </div>
                 )}
                 {!currentDateLabel && currentSlotLabel && (
-                  <div className="flex items-center gap-2 text-xs text-gray-700">
-                    <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                  <div className="flex items-center gap-2 text-xs text-ct-mute-2">
+                    <Clock className="w-3.5 h-3.5 text-ct-mute flex-shrink-0" />
                     <span>{currentSlotLabel}</span>
                   </div>
                 )}
                 {rescheduleJob.contact_name && (
-                  <div className="flex items-center gap-2 text-xs text-gray-700">
-                    <User className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                  <div className="flex items-center gap-2 text-xs text-ct-mute-2">
+                    <User className="w-3.5 h-3.5 text-ct-mute flex-shrink-0" />
                     <span className="truncate">{rescheduleJob.contact_name}</span>
                   </div>
                 )}
                 {rescheduleJob.location_address && (
-                  <div className="flex items-center gap-2 text-xs text-gray-700">
-                    <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                  <div className="flex items-center gap-2 text-xs text-ct-mute-2">
+                    <MapPin className="w-3.5 h-3.5 text-ct-mute flex-shrink-0" />
                     <span className="truncate">{rescheduleJob.location_address}</span>
                   </div>
                 )}
                 {priceLabel && (
-                  <div className="flex items-center gap-2 text-xs text-gray-700">
-                    <span className="w-3.5 h-3.5 flex items-center justify-center text-gray-400 flex-shrink-0 text-xs font-bold">$</span>
+                  <div className="flex items-center gap-2 text-xs text-ct-mute-2">
+                    <span className="w-3.5 h-3.5 flex items-center justify-center text-ct-mute flex-shrink-0 text-xs font-bold">$</span>
                     <span>{priceLabel}</span>
                   </div>
                 )}
@@ -2290,7 +2290,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
             <div className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">New Date</label>
+                <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1.5">New Date</label>
                 {/* Quick-pick chips — anchor to the current scheduled date when present,
                     otherwise to today, so "+1 week" still means "same day next week". */}
                 {(() => {
@@ -2322,8 +2322,8 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                             onClick={() => setRescheduleDate(c.value)}
                             className={`px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
                               active
-                                ? 'bg-emerald-500 text-white border-emerald-500'
-                                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                                ? 'bg-ct-teal text-ct-ink border-ct-teal'
+                                : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:bg-ct-surface-2'
                             }`}
                           >
                             {c.label}
@@ -2338,20 +2338,20 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                   value={rescheduleDate}
                   onChange={e => setRescheduleDate(e.target.value)}
                   min={toLocalDateStr(new Date())}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                  className="w-full px-3 py-2.5 border border-ct-line rounded-ct-md text-sm focus:ring-2 focus:ring-ct-teal outline-none"
                 />
               </div>
               {!rescheduleJob.id.startsWith('recurring-') && (
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">Time Slot</label>
+                  <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1.5">Time Slot</label>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => setRescheduleSlot('')}
                       className={`inline-flex items-center px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
                         rescheduleSlot === ''
-                          ? 'bg-emerald-500 text-white border-emerald-500'
-                          : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                          ? 'bg-ct-teal text-ct-ink border-ct-teal'
+                          : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:bg-ct-surface-2'
                       }`}
                     >
                       No preference
@@ -2365,8 +2365,8 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                           onClick={() => setRescheduleSlot(slot)}
                           className={`inline-flex items-center px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${
                             active
-                              ? 'bg-emerald-500 text-white border-emerald-500'
-                              : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                              ? 'bg-ct-teal text-ct-ink border-ct-teal'
+                              : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:bg-ct-surface-2'
                           }`}
                         >
                           {TIME_SLOT_LABELS[slot] ?? slot}
@@ -2378,19 +2378,19 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               )}
               {(
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1.5">{isTradie ? 'Confirm start time & duration' : 'Preferred start time (optional)'}</label>
+                  <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1.5">{isTradie ? 'Confirm start time & duration' : 'Preferred start time (optional)'}</label>
                   <div className="flex flex-col sm:flex-row gap-2.5">
                     <input
                       type="time"
                       value={rescheduleTime}
                       onChange={e => setRescheduleTime(e.target.value)}
-                      className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                      className="px-3 py-2.5 border border-ct-line rounded-ct-md text-sm focus:ring-2 focus:ring-ct-teal outline-none"
                     />
                     <select
                       value={rescheduleDuration}
                       onChange={e => setRescheduleDuration(Number(e.target.value))}
                       disabled={!rescheduleTime}
-                      className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none disabled:opacity-50 disabled:bg-gray-50"
+                      className="px-3 py-2.5 border border-ct-line rounded-ct-md text-sm bg-ct-surface focus:ring-2 focus:ring-ct-teal outline-none disabled:opacity-50 disabled:bg-ct-surface-2"
                     >
                       {DURATION_OPTIONS.map(d => (
                         <option key={d.minutes} value={d.minutes}>{d.label}</option>
@@ -2398,13 +2398,13 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                     </select>
                   </div>
                   {rescheduleTime ? (
-                    <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-secondary-700">
+                    <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-ct-mute-2">
                       <Clock className="w-3 h-3 flex-shrink-0" />
                       {isTradie ? 'Booked' : 'Roughly'} <span className="font-semibold">{formatJobTime(rescheduleTime)} – {formatJobTime(addMinutesToTime(rescheduleTime, rescheduleDuration))}</span>
-                      {!isTradie && <span className="text-gray-400">· the tradie confirms the final time</span>}
+                      {!isTradie && <span className="text-ct-mute">· the tradie confirms the final time</span>}
                     </p>
                   ) : (
-                    <p className="mt-1 text-[11px] text-gray-400">
+                    <p className="mt-1 text-[11px] text-ct-mute">
                       {isTradie ? 'Set the start time and how long it takes.' : 'Set a preferred start time, or leave blank to use the time slot above.'}
                     </p>
                   )}
@@ -2413,14 +2413,14 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
               <div className="flex items-center gap-3 pt-2">
                 <button
                   onClick={() => { setRescheduleJob(null); setRescheduleDate(''); setRescheduleSlot(''); setRescheduleTime(''); setRescheduleDuration(120); }}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-md text-sm font-medium hover:bg-ct-surface-2 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleReschedule}
                   disabled={!rescheduleDate || rescheduleSaving}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-sm font-medium hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-md text-sm font-medium hover:brightness-110 disabled:opacity-50 transition-colors"
                 >
                   {rescheduleSaving ? (
                     <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -2439,33 +2439,33 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
       {/* Remove Confirmation Modal */}
       {removeConfirmJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+          <div className="bg-ct-surface rounded-ct-lg shadow-2xl w-full max-w-sm">
             <div className="p-6 text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-6 h-6 text-red-600" />
+              <div className="w-12 h-12 bg-ct-rose/[0.13] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-6 h-6 text-ct-rose" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Remove This Job?</h3>
-              <p className="text-sm text-gray-500 mb-1 line-clamp-2">{removeConfirmJob.description}</p>
+              <h3 className="text-lg font-bold text-ct-paper mb-2">Remove This Job?</h3>
+              <p className="text-sm text-ct-mute mb-1 line-clamp-2">{removeConfirmJob.description}</p>
               {removeConfirmJob.scheduled_date && (
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-ct-mute">
                   Scheduled for {new Date(removeConfirmJob.scheduled_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </p>
               )}
-              <p className="text-sm text-gray-600 mt-3">
+              <p className="text-sm text-ct-mute-2 mt-3">
                 This will permanently cancel this {removeConfirmJob.id.startsWith('recurring-') ? 'session' : 'job'}. This action cannot be undone.
               </p>
             </div>
             <div className="flex items-center gap-3 px-6 pb-6">
               <button
                 onClick={() => setRemoveConfirmJob(null)}
-                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-md text-sm font-medium hover:bg-ct-surface-2 transition-colors"
               >
                 Keep Job
               </button>
               <button
                 onClick={handleRemoveJob}
                 disabled={removeSaving}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-rose text-ct-ink rounded-ct-md text-sm font-medium hover:brightness-110 disabled:opacity-50 transition-colors"
               >
                 {removeSaving ? (
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -2505,28 +2505,28 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
 
   const collapsedView = (
     <div>
-      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex items-center justify-between gap-4 flex-wrap">
+      <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm p-5 flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-warm-50 flex items-center justify-center flex-shrink-0">
-            <Calendar className="w-5 h-5 text-warm-600" />
+          <div className="w-10 h-10 rounded-ct-md bg-ct-amber/[0.13] flex items-center justify-center flex-shrink-0">
+            <Calendar className="w-5 h-5 text-ct-amber" />
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Calendar</p>
+            <p className="text-xs font-medium text-ct-mute uppercase tracking-wide">Calendar</p>
             {loading ? (
-              <p className="text-sm font-semibold text-gray-400">Loading…</p>
+              <p className="text-sm font-semibold text-ct-mute">Loading…</p>
             ) : nextEntry ? (
-              <p className="text-sm font-semibold text-gray-900 truncate">
+              <p className="text-sm font-semibold text-ct-paper truncate">
                 Next visit: {new Date(nextEntry.scheduled_date! + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
                 {formatJobTime(nextEntry.start_time) ? ` · ${formatJobTime(nextEntry.start_time)}` : ''}
               </p>
             ) : (
-              <p className="text-sm font-semibold text-gray-900">No upcoming visits scheduled</p>
+              <p className="text-sm font-semibold text-ct-paper">No upcoming visits scheduled</p>
             )}
           </div>
         </div>
         <button
           onClick={() => setCalendarCollapsed(false)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex-shrink-0"
+          className="inline-flex items-center gap-1.5 px-4 py-2 border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors flex-shrink-0"
         >
           <Calendar className="w-4 h-4" />
           View calendar

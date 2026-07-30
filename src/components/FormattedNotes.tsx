@@ -19,8 +19,8 @@ export default function FormattedNotes({ text, className }: FormattedNotesProps)
     blocks.push(
       <ul key={`ul-${key}`} className="space-y-1.5 my-1.5">
         {bullets.map((b, i) => (
-          <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-            <span className="mt-[0.5em] w-1.5 h-1.5 rounded-full bg-secondary-400 flex-shrink-0" />
+          <li key={i} className="flex items-start gap-2 text-sm text-ct-mute-2">
+            <span className="mt-[0.5em] w-1.5 h-1.5 rounded-full bg-ct-surface-2 flex-shrink-0" />
             <span className="leading-relaxed">{b}</span>
           </li>
         ))}
@@ -36,9 +36,9 @@ export default function FormattedNotes({ text, className }: FormattedNotesProps)
     if (bullet) { bullets.push(bullet[1].trim()); return; }
     flush(String(i));
     if (/:$/.test(line) && line.length <= 48) {
-      blocks.push(<p key={i} className="text-sm font-semibold text-gray-800 mt-2 first:mt-0">{line}</p>);
+      blocks.push(<p key={i} className="text-sm font-semibold text-ct-paper mt-2 first:mt-0">{line}</p>);
     } else {
-      blocks.push(<p key={i} className="text-sm text-gray-700 leading-relaxed">{line}</p>);
+      blocks.push(<p key={i} className="text-sm text-ct-mute-2 leading-relaxed">{line}</p>);
     }
   });
   flush('end');

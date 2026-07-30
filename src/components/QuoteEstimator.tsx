@@ -101,9 +101,9 @@ function durationLabel(h: number, m: number): string {
 }
 
 const CONF_CHIP: Record<string, string> = {
-  high: 'bg-emerald-100 text-emerald-700',
-  medium: 'bg-secondary-100 text-secondary-700',
-  low: 'bg-amber-100 text-amber-700',
+  high: 'bg-ct-teal/[0.14] text-ct-teal',
+  medium: 'bg-ct-surface-2 text-ct-mute-2',
+  low: 'bg-ct-amber/[0.13] text-ct-amber',
 };
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('en-AU')}`;
@@ -527,14 +527,14 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   };
 
   const fields = trade ? fieldsFor(trade, property) : [];
-  const numInput = 'px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500';
+  const numInput = 'px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal';
 
   return (
-    <div className="border border-secondary-200 bg-secondary-50/40 rounded-xl p-4 space-y-3">
+    <div className="border border-ct-line bg-ct-surface-2/40 rounded-ct-md p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <Sparkles className="w-4 h-4 text-secondary-600" />
-        <span className="text-sm font-semibold text-gray-900">Pricing helper</span>
-        <span className="text-[11px] text-gray-500">suggests — you decide</span>
+        <Sparkles className="w-4 h-4 text-ct-mute-2" />
+        <span className="text-sm font-semibold text-ct-paper">Pricing helper</span>
+        <span className="text-[11px] text-ct-mute">suggests — you decide</span>
       </div>
 
       {/* Property preview — auto Street View from the client's stored address */}
@@ -549,7 +549,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
         {TRADES.map((t) => (
           <button key={t} type="button" onClick={() => { setTrade(t); setQuantities({}); }}
             className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-              trade === t ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+              trade === t ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
             }`}>{t}</button>
         ))}
       </div>
@@ -558,26 +558,26 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
         <>
           {/* "Other" trade — capture the task in words + feed the review pipeline */}
           {trade === 'Other' && (
-            <div className="rounded-lg border border-secondary-100 bg-white p-3 space-y-2">
-              <label className="block text-xs font-medium text-gray-600">What type of work? Describe the task</label>
+            <div className="rounded-ct-sm border border-ct-line bg-ct-surface p-3 space-y-2">
+              <label className="block text-xs font-medium text-ct-mute-2">What type of work? Describe the task</label>
               <div className="flex items-center gap-2">
                 <input type="text" value={customTask}
                   onChange={(e) => { setCustomTask(e.target.value); setTaskSubmitted(false); }}
                   placeholder="e.g. Pressure washing, gutter vac, solar panel clean…"
                   className={`flex-1 ${numInput}`} />
                 <button type="button" onClick={submitTask} disabled={taskSubmitting || customTask.trim().length < 2}
-                  className="inline-flex items-center gap-1 px-2.5 py-2 rounded-lg bg-secondary-600 text-white text-xs font-medium hover:bg-secondary-700 disabled:opacity-50">
+                  className="inline-flex items-center gap-1 px-2.5 py-2 rounded-ct-sm bg-ct-surface-2 text-ct-ink text-xs font-medium hover:bg-ct-surface-2 disabled:opacity-50">
                   {taskSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Suggest
                 </button>
               </div>
               {taskSubmitted
-                ? <p className="text-[11px] text-emerald-600 flex items-center gap-1"><Check className="w-3 h-3" /> Thanks — we’ll review this and may add it as a category.</p>
-                : <p className="text-[11px] text-gray-400">Can’t see your trade? Tell us and we’ll add popular requests. Your description also sharpens the estimate.</p>}
+                ? <p className="text-[11px] text-ct-teal flex items-center gap-1"><Check className="w-3 h-3" /> Thanks — we’ll review this and may add it as a category.</p>
+                : <p className="text-[11px] text-ct-mute">Can’t see your trade? Tell us and we’ll add popular requests. Your description also sharpens the estimate.</p>}
               {approvedTasks.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {approvedTasks.map((t) => (
                     <button key={t} type="button" onClick={() => setCustomTask(t)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border bg-white border-gray-200 text-gray-600 hover:bg-gray-50">
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2">
                       <Plus className="w-3 h-3" /> {t}
                     </button>
                   ))}
@@ -588,11 +588,11 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
           {/* Property type — reshapes the quantity questions (office/warehouse ≠ rooms) */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-gray-500">Property:</span>
+            <span className="text-[11px] text-ct-mute">Property:</span>
             {PROPERTY_TYPES.map((p) => (
               <button key={p} type="button" onClick={() => { setProperty(p); setQuantities({}); }}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                  property === p ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                  property === p ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                 }`}>{p}</button>
             ))}
           </div>
@@ -601,7 +601,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {fields.map((f) => (
               <div key={f.key}>
-                <label className="block text-[11px] text-gray-500 mb-0.5">{f.label}</label>
+                <label className="block text-[11px] text-ct-mute mb-0.5">{f.label}</label>
                 <input type="number" min="0" value={quantities[f.key] ?? ''}
                   onChange={(e) => setQuantities((q) => ({ ...q, [f.key]: e.target.value }))}
                   className={`w-full ${numInput}`} />
@@ -612,12 +612,12 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           {/* End-of-lease inclusions — yes/no toggles per bond-clean staple */}
           {property === 'End of lease' && (
             <div>
-              <span className="block text-[11px] text-gray-500 mb-1">Included in this clean:</span>
+              <span className="block text-[11px] text-ct-mute mb-1">Included in this clean:</span>
               <div className="flex flex-wrap gap-1.5">
                 {EOL_EXTRAS.map((x) => (
                   <button key={x} type="button" onClick={() => toggleEolExtra(x)}
                     className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                      eolExtras.has(x) ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                      eolExtras.has(x) ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                     }`}>{x}</button>
                 ))}
               </div>
@@ -626,29 +626,29 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
           {/* Condition */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-gray-500">Condition:</span>
+            <span className="text-[11px] text-ct-mute">Condition:</span>
             {CONDITIONS.map((c) => (
               <button key={c} type="button" onClick={() => setCondition(condition === c ? '' : c)}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium border capitalize transition-colors ${
-                  condition === c ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                  condition === c ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                 }`}>{c}</button>
             ))}
           </div>
 
           {/* Access */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-gray-500">Access:</span>
+            <span className="text-[11px] text-ct-mute">Access:</span>
             {ACCESS.map((a) => (
               <button key={a} type="button" onClick={() => toggleAccess(a)}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                  access.has(a) ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                  access.has(a) ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                 }`}>{a}</button>
             ))}
           </div>
 
           {/* Estimated time on site — feeds the pricing (hours × rate). */}
           <div>
-            <label className="block text-[11px] text-gray-500 mb-1">Estimated time on site</label>
+            <label className="block text-[11px] text-ct-mute mb-1">Estimated time on site</label>
             <div className="flex items-center gap-2">
               <div className="flex-1">
                 <select value={durHours} onChange={(e) => setDurHours(e.target.value)} className={`w-full ${numInput}`} aria-label="Hours on site">
@@ -664,32 +664,32 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               </div>
             </div>
             {enteredHours > 0 && (
-              <p className="text-[11px] text-gray-400 mt-1">Used for the estimate instead of the AI's hour guess.</p>
+              <p className="text-[11px] text-ct-mute mt-1">Used for the estimate instead of the AI's hour guess.</p>
             )}
           </div>
 
           {/* Crew size + how the on-site hours are counted (per-worker vs combined) */}
           <div>
-            <label className="block text-[11px] text-gray-500 mb-1">Workers on site</label>
+            <label className="block text-[11px] text-ct-mute mb-1">Workers on site</label>
             <div className="flex items-center gap-2 flex-wrap">
               <input type="number" min="1" value={workers}
                 onChange={(e) => setWorkers(e.target.value)}
                 className={`w-20 ${numInput}`} aria-label="Number of workers on site" />
               {Number(workers) > 1 && (
-                <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+                <div className="inline-flex rounded-ct-sm border border-ct-line overflow-hidden text-xs">
                   <button type="button" onClick={() => setHoursMode('perCleaner')}
-                    className={`px-2.5 py-2 font-medium transition-colors ${hoursMode === 'perCleaner' ? 'bg-secondary-100 text-secondary-700' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                    className={`px-2.5 py-2 font-medium transition-colors ${hoursMode === 'perCleaner' ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface text-ct-mute-2 hover:bg-ct-surface-2'}`}>
                     Hours each
                   </button>
                   <button type="button" onClick={() => setHoursMode('combined')}
-                    className={`px-2.5 py-2 font-medium border-l border-gray-200 transition-colors ${hoursMode === 'combined' ? 'bg-secondary-100 text-secondary-700' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                    className={`px-2.5 py-2 font-medium border-l border-ct-line transition-colors ${hoursMode === 'combined' ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface text-ct-mute-2 hover:bg-ct-surface-2'}`}>
                     Combined total
                   </button>
                 </div>
               )}
             </div>
             {Number(workers) > 1 && (
-              <p className="text-[11px] text-gray-400 mt-1">
+              <p className="text-[11px] text-ct-mute mt-1">
                 {hoursMode === 'combined'
                   ? `${workers} workers share the hours — labour billed as the combined time, not multiplied.`
                   : `Each of the ${workers} workers is on site for the full time — labour = hours × ${workers}.`}
@@ -699,12 +699,12 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
           {/* Preferred days — client-facing availability. */}
           <div>
-            <label className="block text-[11px] text-gray-500 mb-1">Preferred days to visit</label>
+            <label className="block text-[11px] text-ct-mute mb-1">Preferred days to visit</label>
             <div className="flex flex-wrap gap-1.5">
               {DAYS.map((d) => (
                 <button key={d} type="button" onClick={() => toggleDay(d)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    preferredDays.has(d) ? 'bg-secondary-100 border-secondary-300 text-secondary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    preferredDays.has(d) ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                   }`}>{d}</button>
               ))}
             </div>
@@ -714,9 +714,9 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           <div>
             <button type="button" onClick={() => setMultiVisit((v) => !v)}
               className="flex items-center justify-between w-full text-left">
-              <span className="text-[11px] text-gray-500">This job needs multiple visits</span>
-              <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${multiVisit ? 'bg-secondary-500' : 'bg-gray-200'}`}>
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${multiVisit ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              <span className="text-[11px] text-ct-mute">This job needs multiple visits</span>
+              <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${multiVisit ? 'bg-ct-surface-20' : 'bg-ct-line'}`}>
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-ct-surface transition-transform ${multiVisit ? 'translate-x-4' : 'translate-x-0.5'}`} />
               </span>
             </button>
             {multiVisit && (
@@ -724,7 +724,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                 <select value={visitCount} onChange={(e) => setVisitCount(e.target.value)} className={numInput} aria-label="Number of visits">
                   {Array.from({ length: 11 }, (_, i) => i + 2).map((n) => <option key={n} value={n}>{n} visits</option>)}
                 </select>
-                <span className="text-xs text-gray-400">over a few</span>
+                <span className="text-xs text-ct-mute">over a few</span>
                 <select value={visitSpan} onChange={(e) => setVisitSpan(e.target.value)} className={numInput} aria-label="Visit span">
                   <option value="days">days</option>
                   <option value="weeks">weeks</option>
@@ -736,7 +736,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           {/* Materials */}
           <div className="flex items-center gap-2 flex-wrap">
             <button type="button" onClick={() => setClientSupplies((v) => !v)}
-              className="px-2.5 py-1 rounded-full text-xs font-medium border bg-white border-gray-200 text-gray-600 hover:bg-gray-50">
+              className="px-2.5 py-1 rounded-full text-xs font-medium border bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2">
               Materials: <span className="font-semibold">{clientSupplies ? 'client supplies' : 'I supply'}</span>
             </button>
           </div>
@@ -744,65 +744,65 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           {/* Site photos — wrap across rows; count shows remaining capacity */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-gray-500">Site photos or video</span>
-              <span className="text-xs text-gray-400 tabular-nums">{photos.length}/{MAX_PHOTOS} photos</span>
+              <span className="text-xs font-medium text-ct-mute">Site photos or video</span>
+              <span className="text-xs text-ct-mute tabular-nums">{photos.length}/{MAX_PHOTOS} photos</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {photos.map((p, i) => (
-                <div key={i} className="relative w-14 h-14 rounded-lg overflow-hidden border border-gray-200">
+                <div key={i} className="relative w-14 h-14 rounded-ct-sm overflow-hidden border border-ct-line">
                   <img src={p} alt="" className="w-full h-full object-cover" />
                   <button type="button" onClick={() => setPhotos((prev) => prev.filter((_, j) => j !== i))}
                     aria-label="Remove photo"
-                    className="absolute -top-1 -right-1 bg-white rounded-full border border-gray-200 p-0.5"><X className="w-2.5 h-2.5 text-gray-500" /></button>
+                    className="absolute -top-1 -right-1 bg-ct-surface rounded-full border border-ct-line p-0.5"><X className="w-2.5 h-2.5 text-ct-mute" /></button>
                 </div>
               ))}
               {photos.length < MAX_PHOTOS && (
-                <label className="flex flex-col items-center justify-center gap-0.5 w-14 h-14 border border-dashed border-gray-300 rounded-lg text-[10px] text-gray-500 cursor-pointer hover:bg-gray-50">
+                <label className="flex flex-col items-center justify-center gap-0.5 w-14 h-14 border border-dashed border-ct-line rounded-ct-sm text-[10px] text-ct-mute cursor-pointer hover:bg-ct-surface-2">
                   <Camera className="w-4 h-4" /> Add
                   <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotos} />
                 </label>
               )}
               {photos.length < MAX_PHOTOS && (
-                <label className={`flex flex-col items-center justify-center gap-0.5 w-14 h-14 border border-dashed border-gray-300 rounded-lg text-[10px] text-gray-500 cursor-pointer hover:bg-gray-50 ${videoProcessing ? 'opacity-60 pointer-events-none' : ''}`}>
+                <label className={`flex flex-col items-center justify-center gap-0.5 w-14 h-14 border border-dashed border-ct-line rounded-ct-sm text-[10px] text-ct-mute cursor-pointer hover:bg-ct-surface-2 ${videoProcessing ? 'opacity-60 pointer-events-none' : ''}`}>
                   {videoProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
                   {videoProcessing ? 'Frames…' : 'Video'}
                   <input type="file" accept="video/*" className="hidden" onChange={handleVideo} disabled={videoProcessing} />
                 </label>
               )}
             </div>
-            <p className="text-[11px] text-gray-400 mt-1.5">Add a short walk-around video — we’ll pull the key frames on your device to help estimate. The video isn’t uploaded.</p>
+            <p className="text-[11px] text-ct-mute mt-1.5">Add a short walk-around video — we’ll pull the key frames on your device to help estimate. The video isn’t uploaded.</p>
           </div>
 
           {/* Anonymised area market range — Pro/PM see the numbers; free tier a
               subtle teaser, and only when there's enough data (≥5 quotes). */}
           {areaRange && areaRange.low != null && areaRange.high != null && (
             isPaidTier ? (
-              <div className="flex items-start gap-2 rounded-lg bg-secondary-50 border border-secondary-100 px-3 py-2">
-                <BarChart3 className="w-4 h-4 mt-0.5 flex-shrink-0 text-secondary-600" />
-                <p className="text-xs text-secondary-800">
+              <div className="flex items-start gap-2 rounded-ct-sm bg-ct-surface-2 border border-ct-line px-3 py-2">
+                <BarChart3 className="w-4 h-4 mt-0.5 flex-shrink-0 text-ct-mute-2" />
+                <p className="text-xs text-ct-mute-2">
                   Market range for {property.toLowerCase()} {trade.toLowerCase()} in this area:{' '}
                   <span className="font-semibold">{money(areaRange.low)}–{money(areaRange.high)}</span>
-                  {areaRange.mid != null && <span className="text-secondary-600"> · typically {money(areaRange.mid)}</span>}
-                  <span className="block text-[11px] text-secondary-600/80 mt-0.5">Anonymised from {areaRange.sampleSize} nearby quotes — a guide, not a target.</span>
+                  {areaRange.mid != null && <span className="text-ct-mute-2"> · typically {money(areaRange.mid)}</span>}
+                  <span className="block text-[11px] text-ct-mute-2/80 mt-0.5">Anonymised from {areaRange.sampleSize} nearby quotes — a guide, not a target.</span>
                 </p>
               </div>
             ) : (
-              <Link to="/pricing" className="flex items-center gap-2 rounded-lg border border-dashed border-gray-200 bg-white px-3 py-2 hover:bg-gray-50 transition-colors">
-                <BarChart3 className="w-4 h-4 flex-shrink-0 text-gray-400" />
-                <span className="text-[11px] text-gray-500"><span className="font-medium text-gray-700">See what {trade.toLowerCase()}s charge in this area</span> — market price ranges are a Pro feature.</span>
+              <Link to="/pricing" className="flex items-center gap-2 rounded-ct-sm border border-dashed border-ct-line bg-ct-surface px-3 py-2 hover:bg-ct-surface-2 transition-colors">
+                <BarChart3 className="w-4 h-4 flex-shrink-0 text-ct-mute" />
+                <span className="text-[11px] text-ct-mute"><span className="font-medium text-ct-mute-2">See what {trade.toLowerCase()}s charge in this area</span> — market price ranges are a Pro feature.</span>
               </Link>
             )
           )}
 
           {/* History anchors — your own recent accepted quotes, with context */}
           {history.length > 0 && (
-            <div className="text-[11px] text-gray-500">
-              <span className="text-gray-400">Anchored to your recent quotes</span>
+            <div className="text-[11px] text-ct-mute">
+              <span className="text-ct-mute">Anchored to your recent quotes</span>
               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
                 {history.slice(0, 4).map((h, i) => (
                   <span key={i} className="tabular-nums">
-                    <span className="font-medium text-gray-700">{money(h.price)}</span>
-                    <span className="text-gray-400"> · {h.title}{h.date ? ` · ${shortDate(h.date)}` : ''}</span>
+                    <span className="font-medium text-ct-mute-2">{money(h.price)}</span>
+                    <span className="text-ct-mute"> · {h.title}{h.date ? ` · ${shortDate(h.date)}` : ''}</span>
                   </span>
                 ))}
               </div>
@@ -810,19 +810,19 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           )}
 
           {/* Economics (collapsible) */}
-          <div className="border border-gray-200 rounded-lg bg-white">
-            <button type="button" onClick={() => setEconOpen((v) => !v)} className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-gray-700">
+          <div className="border border-ct-line rounded-ct-sm bg-ct-surface">
+            <button type="button" onClick={() => setEconOpen((v) => !v)} className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-ct-mute-2">
               <span>Your rates {rate ? `· ${money(Number(rate))}/h` : ''}{profile?.is_gst_registered ? ' · GST' : ''}{travelKm ? ` · ~${travelKm} km` : ''}</span>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${econOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-ct-mute transition-transform ${econOpen ? 'rotate-180' : ''}`} />
             </button>
             {econOpen && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 px-3 pb-3">
-                <div><label className="block text-[11px] text-gray-500 mb-0.5">Rate $/h</label><input type="number" min="0" value={rate} onChange={(e) => setRate(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div><label className="block text-[11px] text-gray-500 mb-0.5">Workers</label><input type="number" min="1" value={workers} onChange={(e) => setWorkers(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div><label className="block text-[11px] text-gray-500 mb-0.5">Margin %</label><input type="number" min="0" value={marginPct} onChange={(e) => setMarginPct(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div><label className="block text-[11px] text-gray-500 mb-0.5">Materials markup %</label><input type="number" min="0" value={markupPct} onChange={(e) => setMarkupPct(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div><label className="block text-[11px] text-gray-500 mb-0.5">Call-out $</label><input type="number" min="0" value={callOut} onChange={(e) => setCallOut(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div className="flex items-end text-[11px] text-gray-500 pb-2">GST: {profile?.is_gst_registered ? 'registered' : 'not registered'}</div>
+                <div><label className="block text-[11px] text-ct-mute mb-0.5">Rate $/h</label><input type="number" min="0" value={rate} onChange={(e) => setRate(e.target.value)} className={`w-full ${numInput}`} /></div>
+                <div><label className="block text-[11px] text-ct-mute mb-0.5">Workers</label><input type="number" min="1" value={workers} onChange={(e) => setWorkers(e.target.value)} className={`w-full ${numInput}`} /></div>
+                <div><label className="block text-[11px] text-ct-mute mb-0.5">Margin %</label><input type="number" min="0" value={marginPct} onChange={(e) => setMarginPct(e.target.value)} className={`w-full ${numInput}`} /></div>
+                <div><label className="block text-[11px] text-ct-mute mb-0.5">Materials markup %</label><input type="number" min="0" value={markupPct} onChange={(e) => setMarkupPct(e.target.value)} className={`w-full ${numInput}`} /></div>
+                <div><label className="block text-[11px] text-ct-mute mb-0.5">Call-out $</label><input type="number" min="0" value={callOut} onChange={(e) => setCallOut(e.target.value)} className={`w-full ${numInput}`} /></div>
+                <div className="flex items-end text-[11px] text-ct-mute pb-2">GST: {profile?.is_gst_registered ? 'registered' : 'not registered'}</div>
               </div>
             )}
           </div>
@@ -830,7 +830,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           {/* Extra details — free text fed to the AI. Answer the sharpening
               questions here, then Estimate again to tighten the quote. */}
           <div>
-            <label className="block text-[11px] text-gray-500 mb-1">Add details to sharpen the estimate (optional)</label>
+            <label className="block text-[11px] text-ct-mute mb-1">Add details to sharpen the estimate (optional)</label>
             <textarea value={notes}
               onChange={(e) => setNotes(e.target.value)}
               onInput={(e) => { const t = e.currentTarget; t.style.height = 'auto'; t.style.height = `${Math.max(t.scrollHeight, 120)}px`; }}
@@ -841,53 +841,53 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               placeholder="e.g. one-off deep clean, no carpets, after-hours access only, before a health inspection"
               className={`w-full ${numInput} resize-y min-h-[120px] leading-relaxed`} />
             {result && result.sharpeningQuestions.length > 0 && (
-              <p className="text-[11px] text-gray-400 mt-1">Answer the questions below here, then tap Estimate again.</p>
+              <p className="text-[11px] text-ct-mute mt-1">Answer the questions below here, then tap Estimate again.</p>
             )}
           </div>
 
           {aiLimitReached || aiBlocked ? (
             /* Out of estimates — Pro is the prominent option, the pack is secondary. */
-            <div className="rounded-xl border border-gray-200 bg-white p-3 space-y-3">
+            <div className="rounded-ct-md border border-ct-line bg-ct-surface p-3 space-y-3">
               <div className="flex items-start gap-2">
-                <Lock className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" />
+                <Lock className="w-4 h-4 mt-0.5 flex-shrink-0 text-ct-mute" />
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Out of free estimates this month</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Go Pro for unlimited, grab a top-up pack, or just enter your price manually below.</p>
+                  <p className="text-sm font-semibold text-ct-paper">Out of free estimates this month</p>
+                  <p className="text-xs text-ct-mute mt-0.5">Go Pro for unlimited, grab a top-up pack, or just enter your price manually below.</p>
                 </div>
               </div>
 
               {/* Primary: Go Pro */}
-              <Link to="/pricing" className="block rounded-lg border-2 border-emerald-500 bg-emerald-50 p-3 hover:bg-emerald-100 transition-colors">
+              <Link to="/pricing" className="block rounded-ct-sm border-2 border-ct-teal bg-ct-teal/[0.14] p-3 hover:bg-ct-teal/[0.14] transition-colors">
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-bold text-emerald-800">Go Pro — unlimited estimates</span>
-                      <span className="px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-semibold uppercase tracking-wide">Best value</span>
+                      <span className="text-sm font-bold text-ct-teal">Go Pro — unlimited estimates</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-ct-teal text-ct-ink text-[10px] font-semibold uppercase tracking-wide">Best value</span>
                     </div>
-                    <p className="text-xs text-emerald-700 mt-0.5">${TIER_PRICING.pro.monthly}/mo · unlimited AI estimates + lower platform fees</p>
+                    <p className="text-xs text-ct-teal mt-0.5">${TIER_PRICING.pro.monthly}/mo · unlimited AI estimates + lower platform fees</p>
                   </div>
-                  <span className="text-emerald-700 text-lg" aria-hidden="true">→</span>
+                  <span className="text-ct-teal text-lg" aria-hidden="true">→</span>
                 </div>
               </Link>
 
               {/* Secondary: buy a pack */}
               <button type="button" onClick={buyPack} disabled={buyingPack}
-                className="w-full flex items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left hover:bg-gray-50 disabled:opacity-50 transition-colors">
-                <span className="text-sm font-medium text-gray-700">
+                className="w-full flex items-center justify-between gap-2 rounded-ct-sm border border-ct-line bg-ct-surface px-3 py-2 text-left hover:bg-ct-surface-2 disabled:opacity-50 transition-colors">
+                <span className="text-sm font-medium text-ct-mute-2">
                   {buyingPack ? 'Starting checkout…' : 'Get 20 more — $4.99'}
-                  <span className="block text-[11px] text-gray-400 font-normal">One-time top-up · credits don’t expire</span>
+                  <span className="block text-[11px] text-ct-mute font-normal">One-time top-up · credits don’t expire</span>
                 </span>
-                {buyingPack ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : <Package className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+                {buyingPack ? <Loader2 className="w-4 h-4 animate-spin text-ct-mute" /> : <Package className="w-4 h-4 text-ct-mute flex-shrink-0" />}
               </button>
             </div>
           ) : (
             <button type="button" onClick={runEstimate} disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-secondary-600 text-white text-sm font-semibold rounded-lg hover:bg-secondary-700 disabled:opacity-50 transition-colors">
+              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-ct-surface-2 text-ct-ink text-sm font-semibold rounded-ct-sm hover:bg-ct-surface-2 disabled:opacity-50 transition-colors">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Estimate
             </button>
           )}
           {aiUsage && aiUsage.limit != null && !aiLimitReached && aiTotalRemaining !== null && (
-            <p className="text-[11px] text-gray-500 text-center">
+            <p className="text-[11px] text-ct-mute text-center">
               {aiPackRemaining > 0
                 ? `${aiTotalRemaining} estimate${aiTotalRemaining === 1 ? '' : 's'} remaining (${aiMonthlyRemaining} monthly + ${aiPackRemaining} pack credit${aiPackRemaining === 1 ? '' : 's'})`
                 : `${aiMonthlyRemaining}/${aiUsage.limit} free estimates this month`}
@@ -896,86 +896,86 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
         </>
       )}
 
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-ct-rose">{error}</p>}
 
       {/* Result — editable line items */}
       {result && priced && (
-        <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-2">
+        <div className="bg-ct-surface border border-ct-line rounded-ct-sm p-3 space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5">
               <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${CONF_CHIP[result.confidence]}`}>{result.confidence} confidence</span>
-              <span className="text-[11px] text-gray-400">{result.source === 'ai' ? 'AI' : 'estimate'}</span>
+              <span className="text-[11px] text-ct-mute">{result.source === 'ai' ? 'AI' : 'estimate'}</span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <div className="flex items-center gap-1.5 text-xs text-ct-mute">
               <span>Hours{visits > 1 ? '/visit' : ''}</span>
               {enteredHours > 0 ? (
-                <span className="font-semibold text-gray-700 tabular-nums">{enteredHours % 1 === 0 ? enteredHours : enteredHours.toFixed(2)}</span>
+                <span className="font-semibold text-ct-mute-2 tabular-nums">{enteredHours % 1 === 0 ? enteredHours : enteredHours.toFixed(2)}</span>
               ) : (
-                <input type="number" min="0" step="0.5" value={hoursEdit} onChange={(e) => setHoursEdit(e.target.value)} className="w-16 px-2 py-1 border border-gray-200 rounded text-sm" />
+                <input type="number" min="0" step="0.5" value={hoursEdit} onChange={(e) => setHoursEdit(e.target.value)} className="w-16 px-2 py-1 border border-ct-line rounded text-sm" />
               )}
             </div>
           </div>
 
           {!clientSupplies && (
-            <div className="flex items-center justify-end gap-1.5 text-xs text-gray-500">
+            <div className="flex items-center justify-end gap-1.5 text-xs text-ct-mute">
               <span>Materials $</span>
               <input type="number" min="0" value={materialsEdit} onChange={(e) => setMaterialsEdit(e.target.value)}
-                className="w-20 px-2 py-1 border border-gray-200 rounded text-sm" aria-label="Materials cost" />
-              <span className="text-[11px] text-gray-400">edit if it’s off</span>
+                className="w-20 px-2 py-1 border border-ct-line rounded text-sm" aria-label="Materials cost" />
+              <span className="text-[11px] text-ct-mute">edit if it’s off</span>
             </div>
           )}
 
           {result.needsSiteVisit && (
-            <div className="flex items-start gap-1.5 text-xs bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 text-amber-800">
-              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-amber-600" />
+            <div className="flex items-start gap-1.5 text-xs bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm px-2.5 py-1.5 text-ct-paper">
+              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-ct-amber" />
               Low confidence — a site visit is recommended before committing to a firm price.
             </div>
           )}
 
           {/* Line items */}
-          <div className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
+          <div className="divide-y divide-ct-line-soft border border-ct-line-soft rounded-ct-sm">
             {priced.items.map((li, i) => (
               <div key={i} className="flex items-center justify-between px-2.5 py-1.5 text-sm">
-                <span className="text-gray-700">{li.label}{li.detail && <span className="text-gray-400 text-xs"> · {li.detail}</span>}</span>
-                <span className="font-medium text-gray-900 tabular-nums">{money(li.amount)}</span>
+                <span className="text-ct-mute-2">{li.label}{li.detail && <span className="text-ct-mute text-xs"> · {li.detail}</span>}</span>
+                <span className="font-medium text-ct-paper tabular-nums">{money(li.amount)}</span>
               </div>
             ))}
             {priced.gst > 0 && (
               <div className="flex items-center justify-between px-2.5 py-1.5 text-sm">
-                <span className="text-gray-500">GST 10%</span><span className="text-gray-700 tabular-nums">{money(priced.gst)}</span>
+                <span className="text-ct-mute">GST 10%</span><span className="text-ct-mute-2 tabular-nums">{money(priced.gst)}</span>
               </div>
             )}
             {visits > 1 && (
-              <div className="flex items-center justify-between px-2.5 py-1.5 text-sm bg-secondary-50">
-                <span className="text-secondary-700">Per visit × {visits} visits</span>
-                <span className="text-secondary-700 tabular-nums">{money(priced.perVisitTotal)} × {visits}</span>
+              <div className="flex items-center justify-between px-2.5 py-1.5 text-sm bg-ct-surface-2">
+                <span className="text-ct-mute-2">Per visit × {visits} visits</span>
+                <span className="text-ct-mute-2 tabular-nums">{money(priced.perVisitTotal)} × {visits}</span>
               </div>
             )}
-            <div className="flex items-center justify-between px-2.5 py-2 bg-gray-50">
-              <span className="font-semibold text-gray-900">Total{visits > 1 ? ` (${visits} visits)` : ''}</span>
-              <span className="text-lg font-bold text-gray-900 tabular-nums">{money(priced.total)}</span>
+            <div className="flex items-center justify-between px-2.5 py-2 bg-ct-surface-2">
+              <span className="font-semibold text-ct-paper">Total{visits > 1 ? ` (${visits} visits)` : ''}</span>
+              <span className="text-lg font-bold text-ct-paper tabular-nums">{money(priced.total)}</span>
             </div>
           </div>
 
           {result.assumptions.length > 0 && (
             <ul className="space-y-0.5">
               {result.assumptions.map((a, i) => (
-                <li key={i} className="flex items-start gap-1.5 text-xs text-gray-600"><Info className="w-3 h-3 mt-0.5 flex-shrink-0 text-gray-400" /> {a}</li>
+                <li key={i} className="flex items-start gap-1.5 text-xs text-ct-mute-2"><Info className="w-3 h-3 mt-0.5 flex-shrink-0 text-ct-mute" /> {a}</li>
               ))}
             </ul>
           )}
 
           {result.sharpeningQuestions.length > 0 && (
-            <div className="text-xs text-gray-600 space-y-0.5">
-              <p className="font-medium text-gray-700">Answer these to tighten it, then re-estimate:</p>
+            <div className="text-xs text-ct-mute-2 space-y-0.5">
+              <p className="font-medium text-ct-mute-2">Answer these to tighten it, then re-estimate:</p>
               {result.sharpeningQuestions.map((qn, i) => (
-                <p key={i} className="flex items-start gap-1.5"><HelpCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-secondary-500" /> {qn}</p>
+                <p key={i} className="flex items-start gap-1.5"><HelpCircle className="w-3 h-3 mt-0.5 flex-shrink-0 text-ct-mute-2" /> {qn}</p>
               ))}
             </div>
           )}
 
           <button type="button" onClick={applyResult}
-            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-warm-500 text-white text-sm font-semibold rounded-lg hover:bg-warm-600 transition-colors">
+            className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-sm hover:brightness-110 transition-colors">
             <Check className="w-4 h-4" /> Use {money(priced.total)}
           </button>
         </div>

@@ -111,13 +111,13 @@ export default function WorkforceInvite() {
     <DashboardLayout>
       <SectionErrorBoundary fallbackTitle="Add a worker">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-          <Link to="/workforce" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900">
+          <Link to="/workforce" className="inline-flex items-center gap-2 text-sm text-ct-mute-2 hover:text-ct-paper">
             <ArrowLeft className="w-4 h-4" /> Back to workforce
           </Link>
 
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Add a worker</h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <h1 className="text-2xl font-bold text-ct-paper">Add a worker</h1>
+            <p className="text-sm text-ct-mute-2 mt-1">
               They will get a link to accept and manage their own tickets and licences.
             </p>
           </div>
@@ -125,49 +125,49 @@ export default function WorkforceInvite() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Form */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-xl shadow-sm p-6 space-y-4 max-w-lg">
+              <div className="bg-ct-surface rounded-ct-md shadow-sm p-6 space-y-4 max-w-lg">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Full name</label>
+                  <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1">Full name</label>
                   <input
                     type="text"
                     value={form.fullName}
                     onChange={(e) => setForm({ ...form, fullName: e.target.value })}
                     placeholder="e.g. Sam Taylor"
-                    className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                    className="w-full px-3 py-2 min-h-[44px] border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Email</label>
+                    <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1">Email</label>
                     <input
                       type="email"
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
                       placeholder="sam@example.com"
-                      className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                      className="w-full px-3 py-2 min-h-[44px] border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Mobile</label>
+                    <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1">Mobile</label>
                     <input
                       type="tel"
                       value={form.mobile}
                       onChange={(e) => setForm({ ...form, mobile: e.target.value })}
                       placeholder="04xx xxx xxx"
-                      className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                      className="w-full px-3 py-2 min-h-[44px] border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                     />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">Give at least one of email or mobile so we can send the invite.</p>
+                <p className="text-xs text-ct-mute">Give at least one of email or mobile so we can send the invite.</p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Employment type</label>
+                    <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1">Employment type</label>
                     <select
                       value={form.employmentType}
                       onChange={(e) => setForm({ ...form, employmentType: e.target.value })}
-                      className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                      className="w-full px-3 py-2 min-h-[44px] border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                     >
                       {EMPLOYMENT_TYPES.map((t) => (
                         <option key={t} value={t}>{EMPLOYMENT_TYPE_LABELS[t]}</option>
@@ -175,11 +175,11 @@ export default function WorkforceInvite() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Role</label>
+                    <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1">Role</label>
                     <select
                       value={form.role}
                       onChange={(e) => setForm({ ...form, role: e.target.value })}
-                      className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                      className="w-full px-3 py-2 min-h-[44px] border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                     >
                       {ROSTER_ROLES.map((r) => (
                         <option key={r.value} value={r.value}>{r.label}</option>
@@ -189,28 +189,28 @@ export default function WorkforceInvite() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Start date</label>
+                  <label className="block text-xs font-medium text-ct-mute uppercase tracking-wide mb-1">Start date</label>
                   <input
                     type="date"
                     value={form.startedAt}
                     onChange={(e) => setForm({ ...form, startedAt: e.target.value })}
-                    className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-secondary-500"
+                    className="w-full px-3 py-2 min-h-[44px] border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
                   />
                 </div>
 
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {error && <p className="text-sm text-ct-rose">{error}</p>}
 
                 <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
                   <Link
                     to="/workforce"
-                    className="inline-flex items-center justify-center px-4 py-2 min-h-[44px] border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                    className="inline-flex items-center justify-center px-4 py-2 min-h-[44px] border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2"
                   >
                     Cancel
                   </Link>
                   <button
                     onClick={() => void handleSubmit()}
                     disabled={!canSubmit || submitting}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2 min-h-[44px] bg-warm-500 hover:bg-warm-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2 min-h-[44px] bg-ct-teal hover:brightness-110 disabled:opacity-50 text-ct-ink rounded-ct-sm text-sm font-medium"
                   >
                     {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     Send invite
@@ -220,26 +220,26 @@ export default function WorkforceInvite() {
             </div>
 
             {/* Required credentials for this role */}
-            <div className="bg-white rounded-xl shadow-sm p-6 max-w-md h-fit">
-              <h2 className="text-lg font-semibold text-gray-900">What this role needs</h2>
-              <p className="text-sm text-gray-600 mt-1">
+            <div className="bg-ct-surface rounded-ct-md shadow-sm p-6 max-w-md h-fit">
+              <h2 className="text-lg font-semibold text-ct-paper">What this role needs</h2>
+              <p className="text-sm text-ct-mute-2 mt-1">
                 {trade
                   ? 'Based on your trade and state. You can record extra credentials any time.'
                   : 'Set your trade and state in your profile for a tailored list.'}
               </p>
               {required.length === 0 ? (
-                <p className="text-sm text-gray-500 mt-4">No credentials are tracked for this trade yet.</p>
+                <p className="text-sm text-ct-mute mt-4">No credentials are tracked for this trade yet.</p>
               ) : (
                 <ul className="mt-4 space-y-2">
                   {required.map((t) => (
-                    <li key={t.id} className="flex items-start gap-2 text-sm text-gray-600">
-                      <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-gray-400" />
+                    <li key={t.id} className="flex items-start gap-2 text-sm text-ct-mute-2">
+                      <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-ct-mute" />
                       <span>{t.label}</span>
                     </li>
                   ))}
                 </ul>
               )}
-              <p className="text-xs text-gray-500 mt-4">
+              <p className="text-xs text-ct-mute mt-4">
                 Employment type is recorded as you enter it. ConnecTradie does not determine
                 whether a worker is an employee or a contractor.
               </p>
@@ -248,7 +248,7 @@ export default function WorkforceInvite() {
         </div>
 
         {toast.show && (
-          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-sm text-white shadow-sm z-50 ${toast.isError ? 'bg-red-600' : 'bg-gray-900'}`}>
+          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-ct-sm text-sm text-ct-ink shadow-sm z-50 ${toast.isError ? 'bg-ct-rose' : 'bg-ct-surface'}`}>
             {toast.message}
           </div>
         )}

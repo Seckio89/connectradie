@@ -41,8 +41,8 @@ const ROLE_OPTIONS: { value: VacancyRoleType; label: string; hint: string }[] = 
 ];
 
 const inputCls =
-  'w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none';
-const labelCls = 'block text-sm font-medium text-gray-700 mb-1.5';
+  'w-full px-4 py-2.5 border border-ct-line rounded-ct-md focus:ring-2 focus:ring-ct-teal focus:border-ct-teal outline-none';
+const labelCls = 'block text-sm font-medium text-ct-mute-2 mb-1.5';
 
 export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy, duplicateFrom }: PostVacancyModalProps) {
   // Prefill source: an edit keeps its identity; a duplicate copies content into
@@ -143,12 +143,12 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="lg">
-      <div className="flex items-center justify-between p-6 border-b border-gray-100">
+      <div className="flex items-center justify-between p-6 border-b border-ct-line-soft">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-ct-paper">
             {editVacancy ? 'Edit Vacancy' : duplicateFrom ? 'Repost Vacancy' : 'Post a Vacancy'}
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-ct-mute mt-0.5">
             {editVacancy
               ? 'Update your job listing details'
               : duplicateFrom
@@ -156,14 +156,14 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
                 : 'Find your next team member'}
           </p>
         </div>
-        <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+        <button onClick={onClose} className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2">
           <X className="w-5 h-5" />
         </button>
       </div>
 
       <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
         {error && (
-          <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <div className="flex items-center gap-2 p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-ct-rose text-sm">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
           </div>
@@ -181,23 +181,23 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Role Type *</label>
+          <label className="block text-sm font-medium text-ct-mute-2 mb-2">Role Type *</label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {ROLE_OPTIONS.map(opt => (
               <button
                 key={opt.value}
                 type="button"
                 onClick={() => pickRole(opt.value)}
-                className={`p-3 rounded-xl border-2 text-left transition-all ${
+                className={`p-3 rounded-ct-md border-2 text-left transition-all ${
                   form.role_type === opt.value
-                    ? 'border-warm-500 bg-warm-50 ring-1 ring-primary-200'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-ct-teal bg-ct-amber/[0.13] ring-1 ring-ct-teal'
+                    : 'border-ct-line hover:border-ct-line hover:bg-ct-surface-2'
                 }`}
               >
-                <p className={`text-sm font-semibold ${form.role_type === opt.value ? 'text-primary-700' : 'text-gray-800'}`}>
+                <p className={`text-sm font-semibold ${form.role_type === opt.value ? 'text-ct-mute-2' : 'text-ct-paper'}`}>
                   {opt.label}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">{opt.hint}</p>
+                <p className="text-xs text-ct-mute mt-0.5">{opt.hint}</p>
               </button>
             ))}
           </div>
@@ -258,7 +258,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
           <label className={labelCls}>Pay</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm">$</span>
               <input
                 type="number"
                 min="0"
@@ -269,7 +269,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
               />
             </div>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm">$</span>
               <input
                 type="number"
                 min="0"
@@ -294,7 +294,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
               className={inputCls}
             />
           </div>
-          <p className="text-xs text-gray-400 mt-1">Listings with pay get far more applicants. Leave blank for “negotiable”.</p>
+          <p className="text-xs text-ct-mute mt-1">Listings with pay get far more applicants. Leave blank for “negotiable”.</p>
         </div>
 
         <div>
@@ -307,14 +307,14 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
                   key={t}
                   type="button"
                   onClick={() => toggleTicket(t)}
-                  // rounded-lg (not rounded-full): the mobile CSS adds an
+                  // rounded-ct-sm (not rounded-full): the mobile CSS adds an
                   // overlapping ::before tap-overlay to every rounded-full
                   // button (meant for toggle switches), which hijacks taps on
                   // these wrapped chips so they can't be selected.
-                  className={`px-3 py-2 rounded-lg text-xs font-medium border transition-colors ${
+                  className={`px-3 py-2 rounded-ct-sm text-xs font-medium border transition-colors ${
                     on
-                      ? 'bg-warm-500 border-warm-500 text-white'
-                      : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                      ? 'bg-ct-teal border-ct-teal text-ct-ink'
+                      : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:border-ct-line'
                   }`}
                 >
                   {t}
@@ -347,11 +347,11 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-sm font-medium text-gray-700">Description *</label>
+            <label className="block text-sm font-medium text-ct-mute-2">Description *</label>
             <button
               type="button"
               onClick={insertTemplate}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-primary-600 hover:text-primary-700"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2"
             >
               <Sparkles className="w-3.5 h-3.5" />
               Insert template
@@ -371,7 +371,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
             type="button"
             onClick={onClose}
             disabled={!!saving}
-            className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+            className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors"
           >
             Cancel
           </button>
@@ -380,10 +380,10 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
               type="button"
               onClick={() => submit('draft')}
               disabled={!!saving}
-              className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 font-medium rounded-ct-md hover:bg-ct-surface-2 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
               {saving === 'draft' ? (
-                <span className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                <span className="w-4 h-4 border-2 border-ct-line border-t-gray-600 rounded-full animate-spin" />
               ) : (
                 <FileText className="w-4 h-4" />
               )}
@@ -393,7 +393,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
           <button
             type="submit"
             disabled={!!saving}
-            className="flex-1 px-4 py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink font-medium rounded-ct-md hover:brightness-110 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
             {saving && saving !== 'draft' ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

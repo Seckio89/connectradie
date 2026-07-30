@@ -109,60 +109,60 @@ export default function ClientContactModal({
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="lg">
       <div className="p-6 space-y-5">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-ct-paper">
             {editContact ? 'Edit client' : 'Add a client'}
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-ct-mute mt-0.5">
             Save a client’s details to quote them and assign workers — they don’t need an account.
           </p>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Full name</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Full name</label>
             <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="e.g. Sarah Thompson"
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Email</label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@email.com"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Phone</label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="04xx xxx xxx"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
                 />
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Address</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Address</label>
             <AddressAutocomplete
               value={address}
               onChange={(value, coordinates, addressDetails) => {
@@ -181,21 +181,21 @@ export default function ClientContactModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Notes</label>
             <div className="relative">
-              <StickyNote className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
+              <StickyNote className="absolute left-4 top-3 w-5 h-5 text-ct-mute" />
               <textarea {...proseInputProps}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 placeholder="Gate code, pets, preferences…"
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal resize-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">How does this client pay?</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">How does this client pay?</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {([
                 {
@@ -217,17 +217,17 @@ export default function ClientContactModal({
                     key={value}
                     type="button"
                     onClick={() => setPaymentMethod(value)}
-                    className={`text-left p-3 rounded-xl border transition-colors ${
+                    className={`text-left p-3 rounded-ct-md border transition-colors ${
                       active
-                        ? 'border-warm-500 bg-warm-50 ring-1 ring-warm-500'
-                        : 'border-gray-200 hover:bg-gray-50'
+                        ? 'border-ct-teal bg-ct-amber/[0.13] ring-1 ring-ct-teal0'
+                        : 'border-ct-line hover:bg-ct-surface-2'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <Icon className={`w-4 h-4 ${active ? 'text-warm-600' : 'text-gray-400'}`} />
-                      <span className={`text-sm font-medium ${active ? 'text-warm-700' : 'text-gray-700'}`}>{title}</span>
+                      <Icon className={`w-4 h-4 ${active ? 'text-ct-amber' : 'text-ct-mute'}`} />
+                      <span className={`text-sm font-medium ${active ? 'text-ct-amber' : 'text-ct-mute-2'}`}>{title}</span>
                     </span>
-                    <span className="block mt-1 text-xs text-gray-500">{desc}</span>
+                    <span className="block mt-1 text-xs text-ct-mute">{desc}</span>
                   </button>
                 );
               })}
@@ -236,20 +236,20 @@ export default function ClientContactModal({
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>
+          <div className="p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md text-sm text-ct-rose">{error}</div>
         )}
 
         <div className="flex gap-3 pt-1">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+            className="flex-1 px-4 py-3 border border-ct-line text-ct-mute-2 rounded-ct-md font-medium hover:bg-ct-surface-2 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex-1 px-4 py-3 bg-warm-500 text-white rounded-xl font-medium hover:bg-warm-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-3 bg-ct-teal text-ct-ink rounded-ct-md font-medium hover:brightness-110 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             {editContact ? 'Save changes' : 'Add client'}

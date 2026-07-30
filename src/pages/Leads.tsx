@@ -1509,7 +1509,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     if (lead.quote_count > 0) return 'bg-ct-surface-2 text-ct-mute-2 border-ct-line';
     if (lead.tradie_id) return 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30';
     if (lead.is_flash_boost) return 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]';
-    if (lead.priority === 'high') return 'bg-orange-100 text-orange-700 border-orange-200';
+    if (lead.priority === 'high') return 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]';
     return 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]';
   };
 
@@ -1778,7 +1778,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
               )}
 
               {!isTradie && isFlashActive && lead.status === 'pending' && (
-                <div className="mx-5 mb-3 flex items-center justify-between px-3 py-2 bg-gradient-to-r from-warm-50 to-orange-50 border border-ct-amber/[0.34] rounded-ct-sm">
+                <div className="mx-5 mb-3 flex items-center justify-between px-3 py-2 bg-gradient-to-r from-ct-teal to-ct-amber border border-ct-amber/[0.34] rounded-ct-sm">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-ct-teal flex-shrink-0" />
                     <span className="text-sm font-medium text-ct-amber">
@@ -2239,7 +2239,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         {showUrgent && urgentLeads.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-ct-sm bg-gradient-to-br from-warm-400 to-red-400 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-ct-sm bg-gradient-to-br from-ct-teal to-ct-rose flex items-center justify-center">
                 <Zap className="w-4 h-4 text-ct-ink" />
               </div>
               <h3 className="font-bold text-ct-paper">Urgent / Now</h3>
@@ -2256,7 +2256,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
         {showGrouped && scheduledGroups.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-ct-sm bg-gradient-to-br from-secondary-400 to-secondary-400 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-ct-sm bg-gradient-to-br from-ct-surface-2 to-ct-surface-2 flex items-center justify-center">
                 <CalendarDays className="w-4 h-4 text-ct-ink" />
               </div>
               <h3 className="font-bold text-ct-paper">Ongoing Leads</h3>
@@ -2359,12 +2359,12 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           </div>
         )}
         {quoteAcceptedBanner === 'cancelled' && (
-          <div className="mb-4 bg-accent-50 border border-accent-200 rounded-ct-md p-4">
+          <div className="mb-4 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-4">
             <div className="flex items-center gap-3 mb-1">
-              <AlertCircle className="w-5 h-5 text-accent-600 flex-shrink-0" />
-              <p className="text-sm font-bold text-accent-800">Payment not completed</p>
+              <AlertCircle className="w-5 h-5 text-ct-amber flex-shrink-0" />
+              <p className="text-sm font-bold text-ct-paper">Payment not completed</p>
             </div>
-            <p className="text-xs text-accent-700 ml-8">The quote has been accepted but payment was not completed. You can complete payment from the Payments page.</p>
+            <p className="text-xs text-ct-amber ml-8">The quote has been accepted but payment was not completed. You can complete payment from the Payments page.</p>
           </div>
         )}
         {quoteAcceptedBanner === 'error' && (
@@ -2776,7 +2776,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             <div className="overflow-hidden">
               {/* Header */}
               <div className={`px-6 py-4 border-b ${
-                vlIsFlash ? 'bg-gradient-to-r from-warm-50 to-orange-50 border-ct-amber/[0.34]'
+                vlIsFlash ? 'bg-gradient-to-r from-ct-teal to-ct-amber border-ct-amber/[0.34]'
                 : vlIsUrgent ? 'bg-ct-rose/[0.13] border-ct-rose/[0.34]'
                 : 'bg-ct-surface-2 border-ct-line-soft'
               }`}>

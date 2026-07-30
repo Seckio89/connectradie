@@ -19,7 +19,7 @@ export default function RatingBreakdown({ rating }: RatingBreakdownProps) {
   return (
     <div className="flex items-start gap-6">
       <div className="text-center flex-shrink-0">
-        <div className="text-5xl font-bold text-gray-900">
+        <div className="text-5xl font-bold text-ct-paper">
           {rating.average_rating.toFixed(1)}
         </div>
         <div className="flex items-center justify-center gap-0.5 mt-2">
@@ -28,13 +28,13 @@ export default function RatingBreakdown({ rating }: RatingBreakdownProps) {
               key={i}
               className={`w-4 h-4 ${
                 i < Math.round(rating.average_rating)
-                  ? 'fill-yellow-400 text-yellow-400'
-                  : 'text-gray-300'
+                  ? 'fill-yellow-400 text-ct-amber'
+                  : 'text-ct-mute'
               }`}
             />
           ))}
         </div>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-ct-mute mt-1">
           {rating.total_reviews} {rating.total_reviews === 1 ? 'review' : 'reviews'}
         </p>
       </div>
@@ -42,15 +42,15 @@ export default function RatingBreakdown({ rating }: RatingBreakdownProps) {
       <div className="flex-1 space-y-1.5 min-w-0">
         {bars.map((bar) => (
           <div key={bar.label} className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 w-3 text-right flex-shrink-0">{bar.label}</span>
-            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400 flex-shrink-0" />
-            <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+            <span className="text-sm text-ct-mute-2 w-3 text-right flex-shrink-0">{bar.label}</span>
+            <Star className="w-3.5 h-3.5 text-ct-amber fill-yellow-400 flex-shrink-0" />
+            <div className="flex-1 bg-ct-surface-2 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-warm-400 h-full rounded-full transition-all duration-500"
+                className="bg-ct-teal h-full rounded-full transition-all duration-500"
                 style={{ width: `${(bar.count / maxCount) * 100}%` }}
               />
             </div>
-            <span className="text-xs text-gray-400 w-6 text-right flex-shrink-0">{bar.count}</span>
+            <span className="text-xs text-ct-mute w-6 text-right flex-shrink-0">{bar.count}</span>
           </div>
         ))}
       </div>

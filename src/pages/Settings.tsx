@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { User, Loader2, CheckCircle2, Shield, X, Zap, Crown, BadgeCheck, Wrench, Bell, Settings2, Lock, Moon, Sun, Monitor, CreditCard } from 'lucide-react';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { User, Loader2, CheckCircle2, Shield, X, Zap, Crown, BadgeCheck, Wrench, Bell, Settings2, Lock, CreditCard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { saveBaseCoords } from '../lib/profilePrivate';
@@ -27,7 +26,6 @@ type TabType = 'profile' | 'professional' | 'security' | 'verification' | 'notif
 
 export default function Settings() {
   const { user, profile, tradieDetails, refreshProfile, signOut } = useAuth();
-  const { isDark, toggle: toggleDarkMode } = useDarkMode();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     // ?tab=payments (used by the Stripe bank-update return URL) takes priority,
@@ -563,40 +561,40 @@ export default function Settings() {
     <DashboardLayout>
       <div>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-500 mt-1">Manage your account settings and profile</p>
+          <h1 className="text-2xl font-bold text-ct-paper">Settings</h1>
+          <p className="text-ct-mute mt-1">Manage your account settings and profile</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-x-hidden overflow-y-visible sm:overflow-hidden">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-x-hidden overflow-y-visible sm:overflow-hidden">
           {/* Wrapper separates border-b from flex so the mobile CSS rule
               `.border-b.flex { overflow-x:auto }` (mobile-responsive.css #10)
               doesn't turn this header into a scrollable touch-layer that
               bleeds into the tab bar and hijacks taps to the subscription button. */}
-          <div className="border-b border-gray-200">
+          <div className="border-b border-ct-line">
             <div className="flex flex-col sm:flex-row items-center gap-6 p-6 md:p-8 pb-8">
               <div className="flex flex-col items-center gap-3">
                 <button
                   type="button"
                   onClick={() => profile?.avatar_url && setShowAvatarModal(true)}
                   disabled={!profile?.avatar_url}
-                  className="relative w-28 h-28 rounded-xl flex-shrink-0 ring-4 ring-gray-200 hover:ring-primary-200 transition-all"
+                  className="relative w-28 h-28 rounded-ct-md flex-shrink-0 ring-4 ring-ct-line hover:ring-ct-teal transition-all"
                 >
                   {profile?.avatar_url ? (
                     <img
                       src={profile.avatar_url}
                       alt={profile.full_name || 'Avatar'}
-                      className="w-28 h-28 rounded-xl object-cover cursor-pointer"
+                      className="w-28 h-28 rounded-ct-md object-cover cursor-pointer"
                     />
                   ) : (
-                    <div className="w-28 h-28 bg-primary-100 rounded-xl flex items-center justify-center">
-                      <span className="text-4xl font-bold text-primary-600">
+                    <div className="w-28 h-28 bg-ct-surface-2 rounded-ct-md flex items-center justify-center">
+                      <span className="text-4xl font-bold text-ct-mute-2">
                         {profile?.full_name?.charAt(0) || 'U'}
                       </span>
                     </div>
                   )}
                   {avatarUploading && (
-                    <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
-                      <Loader2 className="w-8 h-8 text-white animate-spin" />
+                    <div className="absolute inset-0 bg-black/50 rounded-ct-md flex items-center justify-center">
+                      <Loader2 className="w-8 h-8 text-ct-ink animate-spin" />
                     </div>
                   )}
                 </button>
@@ -611,25 +609,25 @@ export default function Settings() {
                   type="button"
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={avatarUploading}
-                  className="text-sm font-medium text-primary-600 hover:text-primary-700 disabled:opacity-50 transition-colors"
+                  className="text-sm font-medium text-ct-mute-2 hover:text-ct-mute-2 disabled:opacity-50 transition-colors"
                 >
                   {profile?.avatar_url ? 'Change photo' : 'Upload photo'}
                 </button>
               </div>
               <div className="flex-1 text-center sm:text-left">
                 <div className="flex items-center gap-2 justify-center sm:justify-start">
-                  <h2 className="text-xl font-semibold text-gray-900">{profile?.full_name}</h2>
+                  <h2 className="text-xl font-semibold text-ct-paper">{profile?.full_name}</h2>
                   {(tradieDetails?.subscription_tier === 'pro' || profile?.is_premium) && (
-                    <BadgeCheck className="w-5 h-5 text-primary-500" />
+                    <BadgeCheck className="w-5 h-5 text-ct-teal0" />
                   )}
                 </div>
-                <p className="text-gray-500 capitalize">{profile?.role}</p>
+                <p className="text-ct-mute capitalize">{profile?.role}</p>
                 {(isTradie || (isAdmin && trainingModeEnabled)) && (
                   <div className="mt-3">
                     {(tradieDetails?.subscription_tier === 'pro' || profile?.is_premium) ? (
                       <button
                         onClick={() => setShowSubscriptionModal(true)}
-                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-1 bg-green-50 text-green-700 text-sm font-medium rounded-full border border-green-200 hover:bg-green-100 transition-colors"
+                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-1 bg-ct-teal/[0.14] text-ct-teal text-sm font-medium rounded-full border border-ct-teal/30 hover:bg-ct-teal/[0.14] transition-colors"
                       >
                         <Crown className="w-3.5 h-3.5" />
                         Pro Member — Manage
@@ -637,7 +635,7 @@ export default function Settings() {
                     ) : (
                       <button
                         onClick={() => setShowSubscriptionModal(true)}
-                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-1 text-warm-600 text-sm font-medium rounded-full border border-warm-200 hover:bg-warm-100 transition-colors"
+                        className="inline-flex items-center justify-center gap-1.5 min-h-[44px] px-3 py-1 text-ct-amber text-sm font-medium rounded-full border border-ct-amber/[0.34] hover:bg-ct-amber/[0.13] transition-colors"
                       >
                         <Crown className="w-3.5 h-3.5" />
                         Upgrade to Pro
@@ -650,31 +648,31 @@ export default function Settings() {
           </div>
 
           {profileCompletion < 100 && (
-            <div className="bg-gradient-to-r from-warm-50 to-warm-50 border-b border-warm-200 p-6 md:p-8">
+            <div className="bg-gradient-to-r from-ct-teal to-ct-teal border-b border-ct-amber/[0.34] p-6 md:p-8">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-warm-600" />
-                  <h3 className="font-semibold text-warm-900">Complete Your Profile</h3>
+                  <Zap className="w-5 h-5 text-ct-amber" />
+                  <h3 className="font-semibold text-ct-teal">Complete Your Profile</h3>
                 </div>
-                <span className="text-sm font-bold text-warm-700">{profileCompletion}%</span>
+                <span className="text-sm font-bold text-ct-amber">{profileCompletion}%</span>
               </div>
-              <div className="w-full bg-warm-200 rounded-full h-2 mb-3 overflow-hidden">
+              <div className="w-full bg-ct-teal/[0.14] rounded-full h-2 mb-3 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-warm-500 to-warm-500 h-full transition-all duration-500"
+                  className="bg-gradient-to-r from-ct-teal0 to-ct-teal0 h-full transition-all duration-500"
                   style={{ width: `${profileCompletion}%` }}
                 />
               </div>
               {incompleteTasks.length > 0 && (
-                <div className="text-sm text-warm-800">
+                <div className="text-sm text-ct-paper">
                   <p className="font-medium mb-2">Missing:</p>
                   <ul className="space-y-1">
                     {incompleteTasks.slice(0, 3).map((task, idx) => (
                       <li key={idx} className="flex items-center gap-2">
-                        <span className="text-warm-600">•</span> {task}
+                        <span className="text-ct-amber">•</span> {task}
                       </li>
                     ))}
                     {incompleteTasks.length > 3 && (
-                      <li className="text-warm-700 italic">+ {incompleteTasks.length - 3} more</li>
+                      <li className="text-ct-amber italic">+ {incompleteTasks.length - 3} more</li>
                     )}
                   </ul>
                 </div>
@@ -683,16 +681,16 @@ export default function Settings() {
           )}
 
           {profileCompletion === 100 && showCompleteBanner && (
-            <div className="bg-gradient-to-r from-green-50 to-secondary-50 border-b border-green-200 p-6 md:p-8 flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
+            <div className="bg-gradient-to-r from-ct-teal to-ct-surface-2 border-b border-ct-teal/30 p-6 md:p-8 flex items-center gap-3">
+              <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-green-900">Profile Complete!</h3>
-                <p className="text-sm text-green-800">Your profile is ready to go. Great job!</p>
+                <h3 className="font-semibold text-ct-teal">Profile Complete!</h3>
+                <p className="text-sm text-ct-teal">Your profile is ready to go. Great job!</p>
               </div>
             </div>
           )}
 
-          <div className="border-b border-gray-200 mt-2 bg-white sticky z-20" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 69px)' }}>
+          <div className="border-b border-ct-line mt-2 bg-ct-surface sticky z-20" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 69px)' }}>
             <div className="flex items-center gap-2 sm:gap-4 lg:gap-8 px-4 sm:px-6 md:px-8 pt-2 overflow-x-auto scrollbar-hide scrollbar-none">
               {settingsTabs.filter(tab => tab.show).map(tab => {
                 const Icon = tab.icon;
@@ -704,8 +702,8 @@ export default function Settings() {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-1.5 py-3 font-semibold text-xs sm:text-sm whitespace-nowrap border-b-2 transition-colors ${
                       activeTab === tab.id
-                        ? 'border-warm-500 text-warm-600'
-                        : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                        ? 'border-ct-teal text-ct-amber'
+                        : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -772,33 +770,9 @@ export default function Settings() {
                 onToggleSiteArrival={handleToggleSiteArrival}
                 role={profile?.role as 'tradie' | 'client' | 'admin'}
               />
-              <div className="border-t border-gray-200 p-6 md:p-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-gray-100 rounded-lg">
-                    <Monitor className="w-5 h-5 text-gray-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Appearance</h3>
-                    <p className="text-sm text-gray-500">Choose your preferred theme</p>
-                  </div>
-                </div>
-                <div className="flex gap-3 theme-toggle-group">
-                  <button
-                    onClick={() => { if (isDark) toggleDarkMode(); }}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-colors ${!isDark ? 'border-warm-500 text-warm-600' : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`}
-                  >
-                    <Sun className="w-4 h-4" />
-                    Light
-                  </button>
-                  <button
-                    onClick={() => { if (!isDark) toggleDarkMode(); }}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-colors ${isDark ? 'border-warm-500 text-warm-600' : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300'}`}
-                  >
-                    <Moon className="w-4 h-4" />
-                    Dark
-                  </button>
-                </div>
-              </div>
+              {/* The light/dark Appearance toggle lived here. Removed with the
+                  v2 cutover — the design system is dark-only, and a toggle
+                  that can no longer do anything is worse than none. */}
               {/* Native-only: background-location check-in toggle (tradies). */}
               {isTradie && isNativeApp() && <SiteCheckInSetting />}
             </>
@@ -848,7 +822,7 @@ export default function Settings() {
         >
           <button
             onClick={() => setShowAvatarModal(false)}
-            className="absolute top-4 right-4 w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-colors"
+            className="absolute top-4 right-4 w-10 h-10 bg-ct-surface/10 hover:bg-ct-surface/20 rounded-full flex items-center justify-center text-ct-ink transition-colors"
             aria-label="Close photo preview"
           >
             <X className="w-6 h-6" />
@@ -857,7 +831,7 @@ export default function Settings() {
             <img
               src={profile.avatar_url}
               alt={profile.full_name || 'Profile photo'}
-              className="max-w-full max-h-[90vh] object-contain rounded-2xl"
+              className="max-w-full max-h-[90vh] object-contain rounded-ct-lg"
               onClick={(e) => e.stopPropagation()}
             />
           </div>

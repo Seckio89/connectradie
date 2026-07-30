@@ -114,14 +114,14 @@ export default function Clients() {
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Clients</h1>
-            <p className="text-gray-500 mt-1 text-sm sm:text-base">
+            <h1 className="text-xl sm:text-2xl font-bold text-ct-paper">Clients</h1>
+            <p className="text-ct-mute mt-1 text-sm sm:text-base">
               Every client in one place. Send a professional quote in a couple of taps — they never need an account.
             </p>
           </div>
           <button
             onClick={() => { setEditContact(null); setShowModal(true); }}
-            className="flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 bg-warm-500 text-white font-medium rounded-xl hover:bg-warm-600 transition-colors text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
+            className="flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] px-3 sm:px-4 py-2 sm:py-2.5 bg-ct-teal text-ct-ink font-medium rounded-ct-md hover:brightness-110 transition-colors text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Add Client</span>
@@ -131,37 +131,37 @@ export default function Clients() {
 
         {contacts.length > 0 && (
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search clients…"
-              className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal"
             />
           </div>
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-gray-400">
+          <div className="flex items-center justify-center py-16 text-ct-mute">
             <Loader2 className="w-5 h-5 animate-spin mr-2" />
             <span className="text-sm">Loading clients…</span>
           </div>
         ) : contacts.length === 0 ? (
-          <div className="max-w-md mx-auto bg-white border border-gray-100 rounded-2xl shadow-sm px-6 py-12 sm:py-16 text-center">
+          <div className="max-w-md mx-auto bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm px-6 py-12 sm:py-16 text-center">
             <div>
-              <div className="w-14 h-14 rounded-full bg-secondary-50 flex items-center justify-center mx-auto mb-4">
-                <Users className="w-7 h-7 text-secondary-500" />
+              <div className="w-14 h-14 rounded-full bg-ct-surface-2 flex items-center justify-center mx-auto mb-4">
+                <Users className="w-7 h-7 text-ct-mute-2" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">Turn your regulars into repeat work</h3>
-              <p className="text-sm text-gray-600 mt-1.5">
+              <h3 className="text-lg font-semibold text-ct-paper">Turn your regulars into repeat work</h3>
+              <p className="text-sm text-ct-mute-2 mt-1.5">
                 Keep the people you already work with in one place, then send them professional
                 quotes by email and assign your team. Your clients don’t need a ConnecTradie account.
               </p>
               <div className="flex justify-center mt-6">
                 <button
                   onClick={() => { setEditContact(null); setShowModal(true); }}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white font-semibold rounded-xl hover:bg-emerald-600 transition-colors"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
                 >
                   <Plus className="w-4 h-4" /> Add your first client
                 </button>
@@ -169,29 +169,29 @@ export default function Clients() {
             </div>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-sm text-gray-500">No clients match “{search}”.</div>
+          <div className="text-center py-12 text-sm text-ct-mute">No clients match “{search}”.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filtered.map((c) => (
-              <div key={c.id} className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 group hover:border-secondary-200 transition-colors">
+              <div key={c.id} className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm p-5 group hover:border-ct-line transition-colors">
                 <Link to={`/clients/${c.id}`} className="block">
                   <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-secondary-100 to-secondary-200 flex items-center justify-center flex-shrink-0">
-                      <span className="text-base font-bold text-secondary-800">
+                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-ct-surface-2 to-ct-surface-2 flex items-center justify-center flex-shrink-0">
+                      <span className="text-base font-bold text-ct-mute-2">
                         {c.full_name.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-gray-900 truncate group-hover:text-secondary-700 transition-colors">{c.full_name}</span>
+                        <span className="font-semibold text-ct-paper truncate group-hover:text-ct-mute-2 transition-colors">{c.full_name}</span>
                         {c.linked_profile_id && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-ct-teal/[0.14] text-ct-teal">
                             <UserCheck className="w-3 h-3" />
                             On app
                           </span>
                         )}
                         {(siteCounts[c.id] ?? 0) > 1 && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-700">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute-2">
                             <MapPin className="w-3 h-3" />
                             {siteCounts[c.id]} locations
                           </span>
@@ -199,17 +199,17 @@ export default function Clients() {
                       </div>
                       <div className="mt-1.5 space-y-1">
                         {c.email && (
-                          <p className="flex items-center gap-1.5 text-xs text-gray-600 min-w-0">
+                          <p className="flex items-center gap-1.5 text-xs text-ct-mute-2 min-w-0">
                             <Mail className="w-3.5 h-3.5 flex-shrink-0" /> <span className="truncate">{c.email}</span>
                           </p>
                         )}
                         {c.phone && (
-                          <p className="flex items-center gap-1.5 text-xs text-gray-600">
+                          <p className="flex items-center gap-1.5 text-xs text-ct-mute-2">
                             <Phone className="w-3.5 h-3.5 flex-shrink-0" /> {c.phone}
                           </p>
                         )}
                         {c.address && (
-                          <p className="flex items-center gap-1.5 text-xs text-gray-500 truncate">
+                          <p className="flex items-center gap-1.5 text-xs text-ct-mute truncate">
                             <MapPin className="w-3.5 h-3.5 flex-shrink-0" /> {c.address}
                           </p>
                         )}
@@ -217,22 +217,22 @@ export default function Clients() {
                     </div>
                   </div>
                   {c.notes && (
-                    <p className="mt-3 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 line-clamp-2">{c.notes}</p>
+                    <p className="mt-3 text-xs text-ct-mute bg-ct-surface-2 rounded-ct-sm px-3 py-2 line-clamp-2">{c.notes}</p>
                   )}
                 </Link>
                 {/* Action footer: the primary thing you do with a client is quote them,
                     so it's a clear labelled button; edit/remove are quiet secondary icons. */}
-                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+                <div className="mt-4 pt-3 border-t border-ct-line-soft flex items-center justify-between gap-2">
                   <button
                     onClick={() => setQuoteContact(c)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-ct-sm text-sm font-semibold bg-ct-teal text-ct-ink hover:brightness-110 transition-colors"
                   >
                     <FileText className="w-4 h-4" /> New quote
                   </button>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => { setEditContact(c); setShowModal(true); }}
-                      className="p-2 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                      className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                       title="Edit client"
                       aria-label="Edit client"
                     >
@@ -240,7 +240,7 @@ export default function Clients() {
                     </button>
                     <button
                       onClick={() => setToDelete(c)}
-                      className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                      className="p-2 text-ct-mute hover:text-ct-rose rounded-ct-sm hover:bg-ct-rose/[0.13] transition-colors"
                       title="Remove client"
                       aria-label="Remove client"
                     >

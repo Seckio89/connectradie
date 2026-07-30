@@ -133,28 +133,28 @@ export default function OnboardingChecklist() {
   // If already completed (from localStorage), show "all set" immediately without waiting for fetch
   if (allComplete && profile) {
     return (
-      <div className={`bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 overflow-hidden p-5 text-center transition-opacity duration-500 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`bg-gradient-to-br from-ct-teal to-ct-teal rounded-ct-lg border border-ct-teal/30 overflow-hidden p-5 text-center transition-opacity duration-500 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}>
         <div className="flex items-center justify-between mb-3">
           <div />
           <button
             onClick={handleDismiss}
-            className="p-2.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-white/60 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-2.5 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface/60 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-          <PartyPopper className="w-6 h-6 text-green-600" />
+        <div className="w-12 h-12 bg-ct-teal/[0.14] rounded-full flex items-center justify-center mx-auto mb-3">
+          <PartyPopper className="w-6 h-6 text-ct-teal" />
         </div>
-        <h3 className="font-bold text-gray-900 text-sm">You&apos;re all set!</h3>
-        <p className="text-xs text-gray-600 mt-1 mb-3">
+        <h3 className="font-bold text-ct-paper text-sm">You&apos;re all set!</h3>
+        <p className="text-xs text-ct-mute-2 mt-1 mb-3">
           {profile.role === 'tradie'
             ? 'Your profile is live and clients can find you in search.'
             : "You're ready to find and hire great tradies."}
         </p>
         <button
           onClick={() => navigate(profile.role === 'tradie' ? '/work' : '/post-lead')}
-          className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors py-2 px-3"
+          className="text-xs font-semibold text-ct-mute-2 hover:text-ct-mute-2 transition-colors py-2 px-3"
         >
           {profile.role === 'tradie' ? 'Browse available leads \u2192' : 'Post your first job \u2192'}
         </button>
@@ -284,28 +284,28 @@ export default function OnboardingChecklist() {
 
   if (allComplete || percentage === 100) {
     return (
-      <div className={`bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border border-green-200 overflow-hidden p-5 text-center transition-opacity duration-500 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`bg-gradient-to-br from-ct-teal to-ct-teal rounded-ct-lg border border-ct-teal/30 overflow-hidden p-5 text-center transition-opacity duration-500 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}>
         <div className="flex items-center justify-between mb-3">
           <div />
           <button
             onClick={handleDismiss}
-            className="p-2.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-white/60 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-2.5 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface/60 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
-        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-          <PartyPopper className="w-6 h-6 text-green-600" />
+        <div className="w-12 h-12 bg-ct-teal/[0.14] rounded-full flex items-center justify-center mx-auto mb-3">
+          <PartyPopper className="w-6 h-6 text-ct-teal" />
         </div>
-        <h3 className="font-bold text-gray-900 text-sm">You&apos;re all set!</h3>
-        <p className="text-xs text-gray-600 mt-1 mb-3">
+        <h3 className="font-bold text-ct-paper text-sm">You&apos;re all set!</h3>
+        <p className="text-xs text-ct-mute-2 mt-1 mb-3">
           {profile.role === 'tradie'
             ? 'Your profile is live and clients can find you in search.'
             : "You're ready to find and hire great tradies."}
         </p>
         <button
           onClick={() => navigate(profile.role === 'tradie' ? '/work' : '/post-lead')}
-          className="text-xs font-semibold text-primary-600 hover:text-primary-700 transition-colors py-2 px-3"
+          className="text-xs font-semibold text-ct-mute-2 hover:text-ct-mute-2 transition-colors py-2 px-3"
         >
           {profile.role === 'tradie' ? 'Browse available leads \u2192' : 'Post your first job \u2192'}
         </button>
@@ -314,15 +314,15 @@ export default function OnboardingChecklist() {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
       <div className="p-5 pb-4">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="font-semibold text-gray-900 text-sm">Get Started</h3>
+          <h3 className="font-semibold text-ct-paper text-sm">Get Started</h3>
           <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-primary-600">{percentage}% Setup</span>
+            <span className="text-xs font-bold text-ct-mute-2">{percentage}% Setup</span>
             <button
               onClick={() => percentage < 100 ? setShowDismissWarning(true) : handleDismiss()}
-              className="p-2.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-2.5 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Dismiss checklist"
             >
               <X className="w-3.5 h-3.5" />
@@ -330,29 +330,29 @@ export default function OnboardingChecklist() {
           </div>
         </div>
         {showDismissWarning && (
-          <div className="mb-3 mx-3 sm:mx-5 p-3 bg-warm-50 border border-warm-200 rounded-lg">
-            <p className="text-xs text-warm-800 mb-2">
+          <div className="mb-3 mx-3 sm:mx-5 p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm">
+            <p className="text-xs text-ct-paper mb-2">
               {profile.role === 'tradie'
                 ? 'Completing setup helps clients find and trust you. Incomplete profiles rank lower in search.'
                 : 'Finishing setup helps tradies respond to you faster with accurate quotes.'}
             </p>
             <div className="flex items-center gap-2">
-              <button onClick={() => setShowDismissWarning(false)} className="text-xs font-medium text-warm-700 hover:text-warm-900 py-1.5 px-1">Keep going</button>
-              <span className="text-gray-300">|</span>
-              <button onClick={handleDismiss} className="text-xs text-gray-500 hover:text-gray-700 py-1.5 px-1">Hide anyway</button>
+              <button onClick={() => setShowDismissWarning(false)} className="text-xs font-medium text-ct-amber hover:text-ct-teal py-1.5 px-1">Keep going</button>
+              <span className="text-ct-mute">|</span>
+              <button onClick={handleDismiss} className="text-xs text-ct-mute hover:text-ct-mute-2 py-1.5 px-1">Hide anyway</button>
             </div>
           </div>
         )}
-        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-ct-surface-2 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all duration-700 ease-out"
+            className="h-full bg-gradient-to-r from-ct-teal0 to-ct-teal rounded-full transition-all duration-700 ease-out"
             style={{ width: `${percentage}%` }}
           />
         </div>
       </div>
 
       <div className="px-5 pb-1">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-ct-mute">
           {profile.role === 'tradie'
             ? 'Each step gets you closer to receiving leads and booking jobs'
             : 'Quick setup so tradies can find you and send accurate quotes'}
@@ -369,43 +369,43 @@ export default function OnboardingChecklist() {
               key={step.id}
               onClick={step.complete || isPaymentLoading ? undefined : step.action}
               disabled={step.complete || isPaymentLoading}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 group ${
+              className={`w-full flex items-center gap-3 p-3 rounded-ct-md text-left transition-all duration-200 group ${
                 step.complete
-                  ? 'bg-emerald-50/60 cursor-default'
+                  ? 'bg-ct-teal/[0.14]/60 cursor-default'
                   : isPaymentLoading
-                    ? 'bg-gray-50 cursor-wait'
-                    : 'hover:bg-gray-50 active:scale-[0.98] cursor-pointer'
+                    ? 'bg-ct-surface-2 cursor-wait'
+                    : 'hover:bg-ct-surface-2 active:scale-[0.98] cursor-pointer'
               }`}
             >
               <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                className={`w-8 h-8 rounded-ct-sm flex items-center justify-center flex-shrink-0 transition-colors ${
                   step.complete
-                    ? 'bg-emerald-100'
-                    : 'bg-gray-100 group-hover:bg-primary-50'
+                    ? 'bg-ct-teal/[0.14]'
+                    : 'bg-ct-surface-2 group-hover:bg-ct-surface-2'
                 }`}
               >
                 {step.complete ? (
-                  <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600" />
+                  <CheckCircle2 className="w-4.5 h-4.5 text-ct-teal" />
                 ) : isPaymentLoading ? (
-                  <Loader2 className="w-4 h-4 text-primary-600 animate-spin" />
+                  <Loader2 className="w-4 h-4 text-ct-mute-2 animate-spin" />
                 ) : (
-                  <Icon className="w-4 h-4 text-gray-500 group-hover:text-primary-600 transition-colors" />
+                  <Icon className="w-4 h-4 text-ct-mute group-hover:text-ct-mute-2 transition-colors" />
                 )}
               </div>
               <div className="flex-1 min-w-0">
                 <p
                   className={`text-sm font-medium leading-tight ${
-                    step.complete ? 'text-emerald-700 line-through decoration-emerald-400' : 'text-gray-900'
+                    step.complete ? 'text-ct-teal line-through decoration-emerald-400' : 'text-ct-paper'
                   }`}
                 >
                   {step.label}
                 </p>
-                <p className={`text-xs mt-0.5 ${isPaymentStep && connectError ? 'text-red-500' : 'text-gray-500'}`}>
+                <p className={`text-xs mt-0.5 ${isPaymentStep && connectError ? 'text-ct-rose' : 'text-ct-mute'}`}>
                   {isPaymentLoading ? 'Redirecting to Stripe...' : step.description}
                 </p>
               </div>
               {!step.complete && !isPaymentLoading && (
-                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 flex-shrink-0 transition-colors" />
+                <ChevronRight className="w-4 h-4 text-ct-mute group-hover:text-ct-teal0 flex-shrink-0 transition-colors" />
               )}
             </button>
           );

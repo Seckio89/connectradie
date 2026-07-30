@@ -27,14 +27,14 @@ export default class SectionErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
-          <AlertTriangle className="w-6 h-6 text-red-500 mx-auto mb-2" />
-          <p className="text-sm font-medium text-red-800 mb-3">
+        <div className="rounded-ct-md border border-ct-rose/[0.34] bg-ct-rose/[0.13] p-6 text-center">
+          <AlertTriangle className="w-6 h-6 text-ct-rose mx-auto mb-2" />
+          <p className="text-sm font-medium text-ct-paper mb-3">
             {this.props.fallbackTitle || 'This section failed to load'}
           </p>
           <button
             onClick={() => this.setState({ hasError: false })}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ct-rose bg-ct-surface border border-ct-rose/[0.34] rounded-ct-sm hover:bg-ct-rose/[0.13] transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Retry

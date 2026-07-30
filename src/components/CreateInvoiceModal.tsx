@@ -249,30 +249,30 @@ export default function CreateInvoiceModal({
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
-              <FileText className="w-5 h-5 text-secondary-600" />
+            <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-md flex items-center justify-center">
+              <FileText className="w-5 h-5 text-ct-mute-2" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Create Invoice</h2>
-              <p className="text-sm text-gray-600">Fill in the details below</p>
+              <h2 className="text-xl font-bold text-ct-paper">Create Invoice</h2>
+              <p className="text-sm text-ct-mute-2">Fill in the details below</p>
             </div>
           </div>
           <button
             onClick={() => { resetForm(); onClose(); }}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
-            <X className="w-5 h-5 text-gray-400" />
+            <X className="w-5 h-5 text-ct-mute" />
           </button>
         </div>
 
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b border-gray-200 pb-2">
+              <h3 className="text-sm font-semibold text-ct-mute-2 uppercase tracking-wide border-b border-ct-line pb-2">
                 From (Your Details)
               </h3>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1">
                   Business Name *
                 </label>
                 <input
@@ -280,21 +280,21 @@ export default function CreateInvoiceModal({
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   placeholder="e.g., Smith Electrical Pty Ltd"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ABN</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1">ABN</label>
                 <input
                   type="text"
                   value={businessAbn}
                   onChange={(e) => setBusinessAbn(e.target.value)}
                   placeholder="e.g., 12 345 678 901"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1">Address</label>
                 <AddressAutocomplete
                   value={businessAddress}
                   onChange={(value) => setBusinessAddress(value)}
@@ -303,43 +303,43 @@ export default function CreateInvoiceModal({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1">Phone</label>
                 <input
                   type="text"
                   value={businessPhone}
                   onChange={(e) => setBusinessPhone(e.target.value)}
                   placeholder="Phone"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1">Email</label>
                 <input
                   type="text"
                   value={businessEmail}
                   onChange={(e) => setBusinessEmail(e.target.value)}
                   placeholder="Email"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm"
                 />
               </div>
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b border-gray-200 pb-2">
+              <h3 className="text-sm font-semibold text-ct-mute-2 uppercase tracking-wide border-b border-ct-line pb-2">
                 Bill To
               </h3>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1">Name</label>
                 <input
                   type="text"
                   value={billToName}
                   onChange={(e) => setBillToName(e.target.value)}
                   placeholder="Client name"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1">Address</label>
                 <AddressAutocomplete
                   value={billToAddress}
                   onChange={(value) => setBillToAddress(value)}
@@ -351,12 +351,12 @@ export default function CreateInvoiceModal({
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide border-b border-gray-200 pb-2">
+            <h3 className="text-sm font-semibold text-ct-mute-2 uppercase tracking-wide border-b border-ct-line pb-2">
               Invoice Details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1">
                   Invoice Number *
                 </label>
                 <input
@@ -364,29 +364,29 @@ export default function CreateInvoiceModal({
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
                   placeholder="e.g., INV-001"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1">
                   Invoice Date
                 </label>
                 <input
                   type="date"
                   value={invoiceDate}
                   onChange={(e) => setInvoiceDate(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1">
                   Due Date
                 </label>
                 <input
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm"
+                  className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm"
                 />
               </div>
             </div>
@@ -394,31 +394,31 @@ export default function CreateInvoiceModal({
 
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+              <h3 className="text-sm font-semibold text-ct-mute-2 uppercase tracking-wide">
                 Line Items
               </h3>
               <button
                 type="button"
                 onClick={addLineItem}
-                className="text-xs font-medium text-secondary-600 hover:text-secondary-700 flex items-center gap-1"
+                className="text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 flex items-center gap-1"
               >
                 <Plus className="w-3 h-3" />
                 Add Item
               </button>
             </div>
 
-            <div className="border border-gray-200 rounded-xl overflow-hidden">
-              <div className="grid grid-cols-[1fr_80px_100px_100px_40px] gap-0 bg-gray-50 border-b border-gray-200">
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+            <div className="border border-ct-line rounded-ct-md overflow-hidden">
+              <div className="grid grid-cols-[1fr_80px_100px_100px_40px] gap-0 bg-ct-surface-2 border-b border-ct-line">
+                <div className="px-3 py-2.5 text-xs font-semibold text-ct-mute-2 uppercase tracking-wide">
                   Description
                 </div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wide text-center">
+                <div className="px-3 py-2.5 text-xs font-semibold text-ct-mute-2 uppercase tracking-wide text-center">
                   Qty
                 </div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                <div className="px-3 py-2.5 text-xs font-semibold text-ct-mute-2 uppercase tracking-wide text-right">
                   Unit Price
                 </div>
-                <div className="px-3 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wide text-right">
+                <div className="px-3 py-2.5 text-xs font-semibold text-ct-mute-2 uppercase tracking-wide text-right">
                   Amount
                 </div>
                 <div />
@@ -432,7 +432,7 @@ export default function CreateInvoiceModal({
                 return (
                   <div
                     key={idx}
-                    className="grid grid-cols-[1fr_80px_100px_100px_40px] gap-0 border-b border-gray-100 last:border-b-0 items-center"
+                    className="grid grid-cols-[1fr_80px_100px_100px_40px] gap-0 border-b border-ct-line-soft last:border-b-0 items-center"
                   >
                     <div className="px-2 py-1.5">
                       <input
@@ -464,7 +464,7 @@ export default function CreateInvoiceModal({
                         className="w-full px-2 py-1.5 border-0 bg-transparent text-sm text-right focus:ring-0 focus:outline-none"
                       />
                     </div>
-                    <div className="px-3 py-1.5 text-sm text-right font-medium text-gray-700">
+                    <div className="px-3 py-1.5 text-sm text-right font-medium text-ct-mute-2">
                       ${lineTotal.toFixed(2)}
                     </div>
                     <div className="px-1 py-1.5 flex justify-center">
@@ -472,7 +472,7 @@ export default function CreateInvoiceModal({
                         <button
                           type="button"
                           onClick={() => removeLineItem(idx)}
-                          className="p-2 text-gray-300 hover:text-red-500 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+                          className="p-2 text-ct-mute hover:text-ct-rose transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -486,37 +486,37 @@ export default function CreateInvoiceModal({
             <div className="mt-4 flex justify-end">
               <div className="w-64 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium text-gray-900">${subtotal.toFixed(2)}</span>
+                  <span className="text-ct-mute-2">Subtotal</span>
+                  <span className="font-medium text-ct-paper">${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <label className="flex items-center gap-2 text-gray-600 cursor-pointer">
+                  <label className="flex items-center gap-2 text-ct-mute-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={includeGst}
                       onChange={(e) => setIncludeGst(e.target.checked)}
-                      className="rounded border-gray-300 text-secondary-600 focus:ring-secondary-500"
+                      className="rounded border-ct-line text-ct-mute-2 focus:ring-ct-teal"
                     />
                     GST (10%)
                   </label>
-                  <span className="font-medium text-gray-900">${gstAmount.toFixed(2)}</span>
+                  <span className="font-medium text-ct-paper">${gstAmount.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-base pt-2 border-t border-gray-300">
-                  <span className="font-semibold text-gray-900">Total</span>
-                  <span className="font-bold text-gray-900 text-lg">${totalAmount.toFixed(2)}</span>
+                <div className="flex justify-between text-base pt-2 border-t border-ct-line">
+                  <span className="font-semibold text-ct-paper">Total</span>
+                  <span className="font-bold text-ct-paper text-lg">${totalAmount.toFixed(2)}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1">Notes</label>
             <textarea {...proseInputProps}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Additional notes, payment terms, bank details..."
               rows={3}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-transparent text-sm resize-none"
+              className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal text-sm resize-none"
             />
           </div>
 
@@ -524,14 +524,14 @@ export default function CreateInvoiceModal({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 px-4 py-3 bg-secondary-600 text-white rounded-xl hover:bg-secondary-700 disabled:bg-gray-400 font-semibold flex items-center justify-center gap-2 transition-colors"
+              className="flex-1 px-4 py-3 bg-ct-surface-2 text-ct-ink rounded-ct-md hover:bg-ct-surface-2 disabled:opacity-50 font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               <Calculator className="w-4 h-4" />
               {saving ? 'Creating...' : 'Create Invoice'}
             </button>
             <button
               onClick={() => { resetForm(); onClose(); }}
-              className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium transition-colors"
+              className="px-6 py-3 bg-ct-surface-2 text-ct-mute-2 rounded-ct-md hover:bg-ct-line font-medium transition-colors"
             >
               Cancel
             </button>

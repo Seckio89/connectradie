@@ -44,16 +44,16 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
   switch (type) {
     case 'QUOTE_RECEIVED':
     case 'quote_received':
-      return { icon: MessageCircle, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+      return { icon: MessageCircle, bgClass: 'bg-ct-teal/[0.14]', iconClass: 'text-ct-teal' };
     case 'JOB_ACCEPTED':
     case 'job_update':
-      return { icon: CheckCircle2, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+      return { icon: CheckCircle2, bgClass: 'bg-ct-teal/[0.14]', iconClass: 'text-ct-teal' };
     case 'new_job':
     case 'new_lead':
     case 'booking_request':
-      return { icon: Briefcase, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
+      return { icon: Briefcase, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute-2' };
     case 'quote_reminder':
-      return { icon: Clock, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
+      return { icon: Clock, bgClass: 'bg-ct-amber/[0.13]', iconClass: 'text-ct-amber' };
     case 'payment':
     case 'PAYMENT_RECEIVED':
     case 'invoice_ready':
@@ -67,60 +67,60 @@ function getNotifStyle(type: string): { icon: LucideIcon; bgClass: string; iconC
     case 'payment_received':
     case 'payment_sent':
     case 'becs_charge_initiated':
-      return { icon: DollarSign, bgClass: 'bg-emerald-500', iconClass: 'text-white' };
+      return { icon: DollarSign, bgClass: 'bg-ct-teal', iconClass: 'text-ct-ink' };
     case 'session_reminder':
     case 'session_rescheduled':
     case 'session_skipped':
     case 'extra_session_added':
     case 'BOOKING_REMINDER':
-      return { icon: CalendarDays, bgClass: 'bg-purple-100', iconClass: 'text-purple-600' };
+      return { icon: CalendarDays, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute-2' };
     case 'recurring_job_auto_confirmed':
     case 'recurring_job_confirmed':
     case 'session_completed':
     case 'recurring_resumed':
-      return { icon: CheckCircle2, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+      return { icon: CheckCircle2, bgClass: 'bg-ct-teal/[0.14]', iconClass: 'text-ct-teal' };
     case 'recurring_job_confirmation_required':
-      return { icon: Clock, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
+      return { icon: Clock, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute-2' };
     case 'recurring_paused':
-      return { icon: Clock, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
+      return { icon: Clock, bgClass: 'bg-ct-amber/[0.13]', iconClass: 'text-ct-amber' };
     case 'session_overdue':
     case 'recurring_session_not_completed':
-      return { icon: AlertTriangle, bgClass: 'bg-red-100', iconClass: 'text-red-600' };
+      return { icon: AlertTriangle, bgClass: 'bg-ct-rose/[0.13]', iconClass: 'text-ct-rose' };
     case 'vacancy_application':
     case 'team':
-      return { icon: Users, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
+      return { icon: Users, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute-2' };
     case 'vacancy_match':
-      return { icon: Briefcase, bgClass: 'bg-warm-100', iconClass: 'text-warm-600' };
+      return { icon: Briefcase, bgClass: 'bg-ct-amber/[0.13]', iconClass: 'text-ct-amber' };
     case 'service_assignment':
-      return { icon: Users, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+      return { icon: Users, bgClass: 'bg-ct-teal/[0.14]', iconClass: 'text-ct-teal' };
     case 'JOB_DECLINED':
-      return { icon: XCircle, bgClass: 'bg-red-100', iconClass: 'text-red-600' };
+      return { icon: XCircle, bgClass: 'bg-ct-rose/[0.13]', iconClass: 'text-ct-rose' };
     case 'JOB_COMPLETED':
-      return { icon: CheckCircle2, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+      return { icon: CheckCircle2, bgClass: 'bg-ct-teal/[0.14]', iconClass: 'text-ct-teal' };
     case 'REVIEW_RECEIVED':
-      return { icon: Star, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
+      return { icon: Star, bgClass: 'bg-ct-amber/[0.13]', iconClass: 'text-ct-amber' };
     case 'project_update':
-      return { icon: FileText, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
+      return { icon: FileText, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute-2' };
     case 'job_reminder_day_before':
-      return { icon: CalendarDays, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
+      return { icon: CalendarDays, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute-2' };
     case 'job_reminder_two_hours':
     case 'tradie_en_route':
-      return { icon: Clock, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
+      return { icon: Clock, bgClass: 'bg-ct-amber/[0.13]', iconClass: 'text-ct-amber' };
     case 'quote_accepted':
-      return { icon: CheckCircle2, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+      return { icon: CheckCircle2, bgClass: 'bg-ct-teal/[0.14]', iconClass: 'text-ct-teal' };
     case 'job_completed':
-      return { icon: CheckCircle2, bgClass: 'bg-emerald-100', iconClass: 'text-emerald-600' };
+      return { icon: CheckCircle2, bgClass: 'bg-ct-teal/[0.14]', iconClass: 'text-ct-teal' };
     case 'recurring_cancelled':
-      return { icon: XCircle, bgClass: 'bg-red-100', iconClass: 'text-red-600' };
+      return { icon: XCircle, bgClass: 'bg-ct-rose/[0.13]', iconClass: 'text-ct-rose' };
     case 'becs_setup_complete':
-      return { icon: CheckCircle2, bgClass: 'bg-emerald-500', iconClass: 'text-white' };
+      return { icon: CheckCircle2, bgClass: 'bg-ct-teal', iconClass: 'text-ct-ink' };
     case 'supply_restock_needed':
-      return { icon: AlertTriangle, bgClass: 'bg-amber-100', iconClass: 'text-amber-600' };
+      return { icon: AlertTriangle, bgClass: 'bg-ct-amber/[0.13]', iconClass: 'text-ct-amber' };
     case 'message':
     case 'new_message':
-      return { icon: MessageCircle, bgClass: 'bg-secondary-100', iconClass: 'text-secondary-600' };
+      return { icon: MessageCircle, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute-2' };
     default:
-      return { icon: Bell, bgClass: 'bg-gray-100', iconClass: 'text-gray-500' };
+      return { icon: Bell, bgClass: 'bg-ct-surface-2', iconClass: 'text-ct-mute' };
   }
 }
 
@@ -190,14 +190,14 @@ function relativeTime(dateStr: string): string {
 
 function ListSkeleton() {
   return (
-    <div className="divide-y divide-gray-100">
+    <div className="divide-y divide-ct-line-soft">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="p-4 flex items-start gap-3 animate-pulse">
-          <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0" />
+          <div className="w-10 h-10 bg-ct-line rounded-full flex-shrink-0" />
           <div className="flex-1 space-y-2">
-            <div className="h-4 bg-gray-200 rounded w-1/3" />
-            <div className="h-3 bg-gray-100 rounded w-2/3" />
-            <div className="h-3 bg-gray-100 rounded w-1/4" />
+            <div className="h-4 bg-ct-line rounded w-1/3" />
+            <div className="h-3 bg-ct-surface-2 rounded w-2/3" />
+            <div className="h-3 bg-ct-surface-2 rounded w-1/4" />
           </div>
         </div>
       ))}
@@ -428,9 +428,9 @@ export default function Notifications() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
           <div className="flex items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Notifications</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-ct-paper">Notifications</h1>
             {unreadCount > 0 && (
-              <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-bold text-white bg-red-500 rounded-full">
+              <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-bold text-ct-ink bg-ct-rose/[0.13]0 rounded-full">
                 {unreadCount}
               </span>
             )}
@@ -440,7 +440,7 @@ export default function Notifications() {
               <button
                 onClick={handleMarkAllRead}
                 disabled={markingAll}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50 min-h-[44px]"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-ct-teal hover:text-ct-teal hover:bg-ct-teal/[0.14] rounded-ct-sm transition-colors disabled:opacity-50 min-h-[44px]"
               >
                 {markingAll ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -454,7 +454,7 @@ export default function Notifications() {
               <button
                 onClick={handleClearAll}
                 disabled={clearingAll}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 min-h-[44px]"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs sm:text-sm font-medium text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors disabled:opacity-50 min-h-[44px]"
               >
                 {clearingAll ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -468,7 +468,7 @@ export default function Notifications() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center gap-3 sm:gap-6 border-b border-gray-200 mb-6 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex items-center gap-3 sm:gap-6 border-b border-ct-line mb-6 overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
           {FILTER_TABS.map(tab => {
             const isActive = activeTab === tab.key;
             return (
@@ -477,8 +477,8 @@ export default function Notifications() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                   isActive
-                    ? 'border-warm-500 text-warm-600'
-                    : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300'
+                    ? 'border-ct-teal text-ct-amber'
+                    : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
                 }`}
               >
                 {tab.label}
@@ -488,7 +488,7 @@ export default function Notifications() {
         </div>
 
         {/* Notification List */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
           {loading ? (
             <ListSkeleton />
           ) : filtered.length === 0 ? (
@@ -505,7 +505,7 @@ export default function Notifications() {
             />
           ) : (
             <>
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-ct-line-soft">
                 {filtered.map(notification => {
                   const style = getNotifStyle(notification.type);
                   const NotifIcon = style.icon;
@@ -515,8 +515,8 @@ export default function Notifications() {
                     <div
                       key={notification.id}
                       onClick={() => handleClick(notification)}
-                      className={`group w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-start gap-3 cursor-pointer ${
-                        isUnread ? 'bg-emerald-50/40' : ''
+                      className={`group w-full text-left p-4 hover:bg-ct-surface-2 transition-colors flex items-start gap-3 cursor-pointer ${
+                        isUnread ? 'bg-ct-teal/[0.14]/40' : ''
                       }`}
                     >
                       <div
@@ -529,26 +529,26 @@ export default function Notifications() {
                         <div className="flex items-center gap-2">
                           <h4
                             className={`text-sm truncate ${
-                              isUnread ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'
+                              isUnread ? 'font-semibold text-ct-paper' : 'font-medium text-ct-mute-2'
                             }`}
                           >
                             {notification.title}
                           </h4>
                           {isUnread && (
-                            <span className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0" />
+                            <span className="w-2 h-2 bg-ct-teal rounded-full flex-shrink-0" />
                           )}
-                          <span className="text-xs text-gray-400 ml-auto flex-shrink-0">
+                          <span className="text-xs text-ct-mute ml-auto flex-shrink-0">
                             {relativeTime(notification.created_at)}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
+                        <p className="text-sm text-ct-mute-2 mt-0.5 line-clamp-2">
                           {notification.message}
                         </p>
                       </div>
 
                       <button
                         onClick={(e) => handleDelete(e, notification.id)}
-                        className="p-2.5 text-gray-300 hover:text-red-500 sm:opacity-0 opacity-60 group-hover:opacity-100 transition-all flex-shrink-0 rounded hover:bg-red-50 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        className="p-2.5 text-ct-mute hover:text-ct-rose sm:opacity-0 opacity-60 group-hover:opacity-100 transition-all flex-shrink-0 rounded hover:bg-ct-rose/[0.13] min-w-[44px] min-h-[44px] flex items-center justify-center"
                         aria-label="Delete notification"
                       >
                         <X className="w-4 h-4" />
@@ -559,11 +559,11 @@ export default function Notifications() {
               </div>
 
               {hasMore && activeTab === 'all' && (
-                <div className="p-4 border-t border-gray-100">
+                <div className="p-4 border-t border-ct-line-soft">
                   <button
                     onClick={handleLoadMore}
                     disabled={loadingMore}
-                    className="w-full py-2.5 text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-2.5 text-sm font-medium text-ct-teal hover:text-ct-teal hover:bg-ct-teal/[0.14] rounded-ct-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {loadingMore ? (
                       <>
