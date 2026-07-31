@@ -39,10 +39,14 @@ export default function TooltipHint({
   const { user } = useAuth();
 
   const themeClasses = {
+    // A dim fill carrying the solid colour as text, per the v2 rule. The
+    // cutover left green, amber and purple all filled solid teal with teal
+    // text on top — 1:1. v2 has no purple, and rose would wrongly read as
+    // failure on a hint, so purple mirrors green.
     blue: 'from-ct-surface-2 to-ct-surface-2 border-ct-line text-ct-paper',
-    green: 'from-ct-teal to-ct-surface-2 border-ct-teal/30 text-ct-teal',
-    amber: 'from-ct-teal to-ct-teal border-ct-amber/[0.34] text-ct-teal',
-    purple: 'from-ct-teal to-ct-teal border-ct-amber/[0.34] text-ct-teal',
+    green: 'from-ct-teal/[0.14] to-ct-teal/[0.14] border-ct-teal/30 text-ct-teal',
+    amber: 'from-ct-amber/[0.13] to-ct-amber/[0.13] border-ct-amber/[0.34] text-ct-amber',
+    purple: 'from-ct-teal/[0.14] to-ct-teal/[0.14] border-ct-teal/30 text-ct-teal',
   };
 
   const iconColors = {

@@ -59,18 +59,29 @@ const parseBg = (cls) => {
 };
 
 const listFiles = () => execSync(
-  "git grep -l -E 'text-ct-(ink|paper)' -- 'src/*'", { encoding: 'utf8' },
+  "git grep -l -E 'text-ct-' -- 'src/*'", { encoding: 'utf8' },
 ).trim().split('\n').filter(Boolean);
 
-// Both directions matter. Ink on a dark fill is the original bug; paper on a
-// bright fill is its mirror image, and just as unreadable — the repair that
-// fixed the first introduced the second wherever it misread a fill.
-const TEXT = [['text-ct-ink', T.ink], ['text-ct-paper', T.paper]];
+// Every text token against every fill, not just ink and paper. Checking only
+// those two missed `text-ct-teal` on a solid teal fill — 1.00:1, the Settings
+// profile banner's heading simply absent from the page — because neither the
+// text nor the fill was one of the two colours being watched.
+const TEXT = Object.keys(T).map((k) => [`text-ct-${k}`, T[k]]);
+
+// WCAG 1.4.3 exempts inactive controls, and a disabled button SHOULD read as
+// unavailable. `bg-ct-line text-ct-mute` is the app's disabled pairing at
+// 4.29:1; raising it would make disabled look live.
+const INACTIVE = /cursor-not-allowed|disabled:|\bopacity-(?:[0-5]?[0-9])\b/;
 
 const files = listFiles();
 const fails = [];
 for (const file of files) {
-  readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+  const all = readFileSync(file, 'utf8').split('\n');
+  all.forEach((line, i) => {
+    // A ternary branch carries the colours but not the `disabled:` markers —
+    // those sit on the element, several lines up. Judge inactivity from the
+    // enclosing attribute block, the same reason the fill lookup has to.
+    const element = all.slice(Math.max(0, i - 8), i + 2).join(' ');
     // Per quoted segment, so a ternary's branches are judged independently.
     for (const seg of line.split(/['"`]/)) {
       const tokens = seg.split(/\s+/).filter(Boolean);
@@ -84,6 +95,7 @@ for (const file of files) {
       // migration means reading the ancestor by hand, or measuring computed
       // styles in a browser. This check cannot do it for you.
       if (!bgs.length) continue;
+      if (INACTIVE.test(element)) continue;
       for (const [cls, rgb] of TEXT) {
         // Resting state only. `hover:text-ct-ink` belongs to `hover:bg-*`.
         if (!tokens.some((t) => t === cls || t === `!${cls}`)) continue;
@@ -105,7 +117,7 @@ const unique = fails.filter((f) => {
 });
 
 if (!unique.length) {
-  console.log(`ink/paper: every resting fill is readable against its text (${files.length} files scanned).`);
+  console.log(`every resting fill is readable against its own text (${files.length} files scanned).`);
   process.exit(0);
 }
 

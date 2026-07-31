@@ -486,7 +486,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                           ? isCurrent
                             ? 'bg-ct-teal text-ct-ink ring-4 ring-ct-teal/30'
                             : 'bg-ct-teal text-ct-ink'
-                          : 'bg-ct-line text-ct-mute'
+                          : 'bg-ct-line text-ct-mute-2'
                       }`}>
                         {done && !isCurrent ? (
                           <CheckCircle2 className="w-5 h-5" />
