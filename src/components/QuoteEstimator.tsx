@@ -566,7 +566,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                   placeholder="e.g. Pressure washing, gutter vac, solar panel clean…"
                   className={`flex-1 ${numInput}`} />
                 <button type="button" onClick={submitTask} disabled={taskSubmitting || customTask.trim().length < 2}
-                  className="inline-flex items-center gap-1 px-2.5 py-2 rounded-ct-sm bg-ct-surface-2 text-ct-ink text-xs font-medium hover:bg-ct-surface-2 disabled:opacity-50">
+                  className="inline-flex items-center gap-1 px-2.5 py-2 rounded-ct-sm bg-ct-teal text-ct-ink text-xs font-medium hover:bg-ct-teal-deep disabled:opacity-50">
                   {taskSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Suggest
                 </button>
               </div>
@@ -882,7 +882,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             </div>
           ) : (
             <button type="button" onClick={runEstimate} disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-ct-surface-2 text-ct-ink text-sm font-semibold rounded-ct-sm hover:bg-ct-surface-2 disabled:opacity-50 transition-colors">
+              className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-sm hover:bg-ct-teal-deep disabled:opacity-50 transition-colors">
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Estimate
             </button>
           )}

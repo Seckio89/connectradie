@@ -273,7 +273,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             </button>
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 px-4 py-2 bg-ct-surface-2 text-ct-ink rounded-ct-sm hover:bg-ct-surface-2 text-sm font-medium transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm hover:bg-ct-teal-deep text-sm font-medium transition-colors"
             >
               <Printer className="w-4 h-4" />
               <span className="hidden sm:inline">Print / Save PDF</span>

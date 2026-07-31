@@ -527,7 +527,7 @@ function ProjectTimeline({ projects, onSelect, formatDate, getStatusColor, getSt
                     return (
                       <div key={job.id} className="relative flex items-start gap-4 pl-1">
                         <div className={`relative z-10 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center flex-shrink-0 ${getStatusDot(job.status)}`}>
-                          <span className="text-ct-ink text-xs font-bold">{index + 1}</span>
+                          <span className="text-ct-paper text-xs font-bold">{index + 1}</span>
                         </div>
                         <div className="flex-1 min-w-0 pb-1">
                           <div className="flex items-center gap-2">

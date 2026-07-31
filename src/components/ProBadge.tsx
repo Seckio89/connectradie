@@ -37,7 +37,7 @@ export default function ProBadge({
   const isVerified = variant === 'verified';
   const displayLabel = label ?? (isVerified ? 'VERIFIED PRO' : 'PRO');
   const tone = isVerified
-    ? 'bg-gradient-to-r from-ct-teal to-ct-teal text-ct-teal border-ct-teal/30'
+    ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30'
     : 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]';
   const Icon = isVerified ? BadgeCheck : Crown;
   const title = isVerified

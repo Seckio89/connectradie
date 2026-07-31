@@ -679,7 +679,7 @@ export default function JobManagementModal({
                   {job.status === 'pending' && !quote && (
                     <button
                       onClick={() => setShowQuoteModal(true)}
-                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 bg-ct-surface-2 text-ct-ink rounded-ct-md text-sm font-semibold hover:bg-ct-surface-2 transition-colors shadow-sm"
+                      className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 bg-ct-teal text-ct-ink rounded-ct-md text-sm font-semibold hover:bg-ct-teal-deep transition-colors shadow-sm"
                     >
                       <Send className="w-4 h-4" />
                       Quote Now
@@ -899,7 +899,7 @@ export default function JobManagementModal({
                         <button
                           onClick={() => handleReductionResponse(true)}
                           disabled={reductionLoading}
-                          className="flex-1 px-3 py-2 bg-ct-surface-2 text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+                          className="flex-1 px-3 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-teal-deep disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
                         >
                           {reductionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                           Approve & refund
@@ -998,7 +998,7 @@ export default function JobManagementModal({
                             className={`w-full sm:w-auto px-4 py-2.5 text-sm font-medium rounded-ct-sm transition-colors ${
                               finalPriceLoading || !finalPriceInput
                                 ? 'bg-ct-amber/[0.13] text-ct-amber cursor-not-allowed'
-                                : 'bg-ct-amber/[0.13] text-ct-ink hover:bg-ct-amber'
+                                : 'bg-ct-amber/[0.13] text-ct-amber hover:bg-ct-amber hover:text-ct-ink'
                             }`}
                           >
                             {finalPriceLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
@@ -1238,7 +1238,7 @@ export default function JobManagementModal({
                             <img src={photo.preview} alt="" className="w-full h-full object-cover" />
                             <button
                               onClick={() => setCompletionPhotos(prev => prev.filter((_, idx) => idx !== i))}
-                              className="absolute top-0.5 right-0.5 w-5 h-5 bg-ct-rose/[0.13] text-ct-ink rounded-full flex items-center justify-center"
+                              className="absolute top-0.5 right-0.5 w-5 h-5 bg-ct-rose/[0.13] text-ct-rose rounded-full flex items-center justify-center"
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -1392,9 +1392,9 @@ export default function JobManagementModal({
                             onClick={() => setPriority(p)}
                             className={`px-3 py-2 rounded-ct-sm text-xs font-medium transition-all border capitalize ${
                               priority === p
-                                ? p === 'low' ? 'bg-ct-surface-2 text-ct-ink border-ct-teal'
+                                ? p === 'low' ? 'bg-ct-surface-2 text-ct-paper border-ct-teal'
                                   : p === 'high' ? 'bg-ct-amber text-ct-ink border-ct-amber/[0.34]'
-                                  : 'bg-ct-surface-2 text-ct-ink border-ct-line'
+                                  : 'bg-ct-surface-2 text-ct-paper border-ct-line'
                                 : 'bg-ct-surface text-ct-mute border-ct-line'
                             }`}
                           >{p}</button>
@@ -1443,7 +1443,7 @@ export default function JobManagementModal({
                 <button
                   onClick={handleSave}
                   disabled={saving || isLicenseExpired}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-surface-2 text-ct-ink rounded-ct-md text-sm font-medium hover:bg-ct-surface-2 transition-colors disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-md text-sm font-medium hover:bg-ct-teal-deep transition-colors disabled:opacity-50"
                 >
                   {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Notes'}
                 </button>

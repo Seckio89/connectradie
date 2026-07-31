@@ -17,7 +17,7 @@ export default function EditableSection({ children, onEdit, label, dark }: Edita
         aria-label={`Edit ${label}`}
         className={`absolute top-3 right-3 p-2 rounded-ct-sm shadow-sm opacity-0 group-hover/edit:opacity-100 focus:opacity-100 transition-all duration-200 z-10 ${
           dark
-            ? 'bg-ct-surface/20 backdrop-blur-sm border border-white/20 text-ct-ink hover:bg-ct-surface/30'
+            ? 'bg-ct-surface/20 backdrop-blur-sm border border-white/20 text-ct-paper hover:bg-ct-surface/30'
             : 'bg-ct-surface border border-ct-line text-ct-mute hover:text-ct-mute-2 hover:border-ct-teal/30'
         }`}
       >

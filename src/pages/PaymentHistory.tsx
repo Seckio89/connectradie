@@ -1326,7 +1326,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
               Download PDF
             </button>
             <button onClick={onExportPDF}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-surface text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-ink transition-colors">
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-teal-deep transition-colors">
               <Receipt className="w-4 h-4" />
               Print Invoice
             </button>
@@ -1653,7 +1653,7 @@ function ReductionRequestSection({
           <button
             onClick={handleSubmit}
             disabled={processing || !isLower}
-            className="flex-1 px-3 py-2 bg-ct-surface-2 text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5"
+            className="flex-1 px-3 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-teal-deep disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5"
           >
             {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
             Send to tradie

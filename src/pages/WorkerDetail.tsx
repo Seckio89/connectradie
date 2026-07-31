@@ -576,7 +576,7 @@ export default function WorkerDetail() {
         )}
 
         {toast.show && (
-          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-ct-sm text-sm text-ct-ink shadow-sm z-50 ${toast.isError ? 'bg-ct-rose' : 'bg-ct-surface'}`}>
+          <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-ct-sm text-sm shadow-sm z-50 ${toast.isError ? 'bg-ct-rose text-ct-ink' : 'bg-ct-surface text-ct-paper'}`}>
             {toast.message}
           </div>
         )}

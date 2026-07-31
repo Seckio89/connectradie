@@ -47,7 +47,7 @@ export default function UserTradeBadges({ verifiedTrades, declaredTrades, size =
             <Clock className={iconClass} />
             {trade}
           </span>
-          <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-ct-surface text-ct-ink text-xs rounded-ct-sm whitespace-nowrap transition-all duration-200 pointer-events-none z-50 shadow-xl ${visibleTooltip === trade ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'}`}>
+          <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-ct-surface text-ct-paper text-xs rounded-ct-sm whitespace-nowrap transition-all duration-200 pointer-events-none z-50 shadow-xl ${visibleTooltip === trade ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'}`}>
             Awaiting Certificate Verification
             <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900" />
           </div>

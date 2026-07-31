@@ -571,7 +571,7 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
             ) : (
               <button
                 onClick={() => setStep(step + 1)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-surface text-ct-ink text-sm font-medium rounded-ct-md hover:bg-ct-surface transition-colors"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-md hover:bg-ct-teal-deep transition-colors"
               >
                 Next
                 <ArrowRight className="w-3.5 h-3.5" />

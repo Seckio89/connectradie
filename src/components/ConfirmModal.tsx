@@ -72,7 +72,7 @@ export default function ConfirmModal({
           </button>
           <button
             onClick={onConfirm}
-            className={`flex-1 px-4 py-3 ${colors.button} text-ct-ink rounded-ct-md font-medium transition-colors shadow-sm`}
+            className={`flex-1 px-4 py-3 ${colors.button} text-ct-paper rounded-ct-md font-medium transition-colors shadow-sm`}
           >
             {confirmText}
           </button>

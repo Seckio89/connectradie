@@ -226,7 +226,7 @@ export default function NewGroupModal({ isOpen, onClose, currentUserId, onCreate
         <div className="flex gap-3 pt-1">
           <button onClick={onClose} className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-md font-medium hover:bg-ct-surface-2 transition-colors">Cancel</button>
           <button onClick={create} disabled={creating || selected.size < 1}
-            className="flex-1 px-4 py-2.5 bg-ct-surface-2 text-ct-ink rounded-ct-md font-medium hover:bg-ct-surface-2 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+            className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-md font-medium hover:bg-ct-teal-deep disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
             {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />} Create group
           </button>
         </div>

@@ -1749,7 +1749,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     ) : (
                       <button
                         onClick={() => handleQuoteClick(lead)}
-                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-ct-sm text-xs font-semibold bg-ct-amber/[0.13] text-ct-ink hover:bg-ct-amber shadow-sm transition-all"
+                        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-ct-sm text-xs font-semibold bg-ct-amber/[0.13] text-ct-amber hover:bg-ct-amber hover:text-ct-ink shadow-sm transition-all"
                         title="Get verified to quote on this trade"
                       >
                         <Shield className="w-3.5 h-3.5" />
@@ -2025,7 +2025,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       });
                   }}
                   disabled={payingJobId === lead.id}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13] text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-amber transition-colors disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13] text-ct-amber text-sm font-medium rounded-ct-sm hover:bg-ct-amber hover:text-ct-ink transition-colors disabled:opacity-60"
                 >
                   {payingJobId === lead.id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2257,7 +2257,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           <div>
             <div className="flex items-center gap-2 mb-4">
               <div className="w-7 h-7 rounded-ct-sm bg-gradient-to-br from-ct-surface-2 to-ct-surface-2 flex items-center justify-center">
-                <CalendarDays className="w-4 h-4 text-ct-ink" />
+                <CalendarDays className="w-4 h-4 text-ct-paper" />
               </div>
               <h3 className="font-bold text-ct-paper">Ongoing Leads</h3>
               <span className="ml-auto px-3 py-1 bg-ct-surface-2 text-ct-mute-2 rounded-full text-xs font-medium">
@@ -2953,7 +2953,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   ) : (
                     <button
                       onClick={() => { setViewLeadDetail(null); handleQuoteClick(vl); }}
-                      className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-ct-sm text-sm font-semibold bg-ct-amber/[0.13] text-ct-ink hover:bg-ct-amber shadow-sm transition-all"
+                      className="inline-flex items-center justify-center gap-2 px-8 py-2.5 rounded-ct-sm text-sm font-semibold bg-ct-amber/[0.13] text-ct-amber hover:bg-ct-amber hover:text-ct-ink shadow-sm transition-all"
                     >
                       <Shield className="w-4 h-4" />
                       Get Verified
@@ -3256,7 +3256,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); removeEditPhoto(i); }}
-                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/50 hover:bg-black/70 text-ct-ink rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/50 hover:bg-black/70 text-ct-paper rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X className="w-3 h-3" />
                       </button>

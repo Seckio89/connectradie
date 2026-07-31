@@ -443,7 +443,7 @@ function QuickChat({ tradieId, tradieName, userId, recurringJobId }: { tradieId:
                 <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[75%] px-3 py-1.5 rounded-ct-sm text-xs ${
                     isOwn
-                      ? 'bg-ct-surface-2 text-ct-ink'
+                      ? 'bg-ct-teal text-ct-ink'
                       : 'bg-ct-surface border border-ct-line text-ct-mute-2'
                   }`}>
                     {msg.content}
@@ -474,7 +474,7 @@ function QuickChat({ tradieId, tradieName, userId, recurringJobId }: { tradieId:
           <button
             onClick={handleSend}
             disabled={!newMessage.trim() || sending}
-            className="px-3 py-2 bg-ct-surface-2 text-ct-ink rounded-ct-sm hover:bg-ct-surface-2 disabled:opacity-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="px-3 py-2 bg-ct-teal text-ct-ink rounded-ct-sm hover:bg-ct-teal-deep disabled:opacity-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
@@ -856,7 +856,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                       <button
                         type="button"
                         onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                        className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 text-ct-ink rounded-ct-xs hover:bg-black/80 transition-colors opacity-0 group-hover/photo:opacity-100"
+                        className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 text-ct-paper rounded-ct-xs hover:bg-black/80 transition-colors opacity-0 group-hover/photo:opacity-100"
                       >
                         <X className="w-2.5 h-2.5" />
                       </button>
@@ -1191,7 +1191,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
           <button
             onClick={handleSubmit}
             disabled={saving || !description.trim() || (hasSubcategories ? !serviceSubtype : !customSubtype.trim())}
-            className="w-full py-3.5 font-semibold rounded-ct-md disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg bg-ct-surface-2 text-ct-ink hover:bg-ct-surface-2 shadow-sm"
+            className="w-full py-3.5 font-semibold rounded-ct-md disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg bg-ct-teal text-ct-ink hover:bg-ct-teal-deep shadow-sm"
           >
             {saving ? (
               <>
@@ -1781,7 +1781,7 @@ export default function ClientServicesTab() {
                           </div>
                           <button
                             onClick={() => setExpandedQuoteServiceId(isExpanded ? null : job.id)}
-                            className="inline-flex items-center gap-1.5 bg-ct-surface-2 hover:bg-ct-surface-2 text-ct-ink px-3 py-1.5 rounded-ct-sm text-xs font-semibold transition-colors"
+                            className="inline-flex items-center gap-1.5 bg-ct-teal hover:bg-ct-teal-deep text-ct-ink px-3 py-1.5 rounded-ct-sm text-xs font-semibold transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             {isExpanded ? 'Hide' : 'View'} {qInfo.count === 1 ? 'Quote' : 'Quotes'}
@@ -2443,7 +2443,7 @@ export default function ClientServicesTab() {
                     <button
                       onClick={() => handlePause(job.id)}
                       disabled={!holdReason}
-                      className="px-4 py-1.5 bg-ct-amber/[0.13] hover:bg-ct-amber disabled:bg-ct-amber/[0.13] text-ct-ink text-xs font-medium rounded-ct-sm transition-colors"
+                      className="px-4 py-1.5 bg-ct-amber/[0.13] hover:bg-ct-amber hover:text-ct-ink disabled:bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-ct-sm transition-colors"
                     >
                       Confirm Hold
                     </button>

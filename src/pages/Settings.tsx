@@ -594,7 +594,7 @@ export default function Settings() {
                   )}
                   {avatarUploading && (
                     <div className="absolute inset-0 bg-black/50 rounded-ct-md flex items-center justify-center">
-                      <Loader2 className="w-8 h-8 text-ct-ink animate-spin" />
+                      <Loader2 className="w-8 h-8 text-ct-paper animate-spin" />
                     </div>
                   )}
                 </button>
@@ -647,18 +647,22 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Amber, not teal: this is blocked on the person reading it. The
+              retained amber border is what the fill was meant to match — the
+              cutover turned the panel solid teal and left every element on it
+              unreadable, the heading at 1:1 teal-on-teal. */}
           {profileCompletion < 100 && (
-            <div className="bg-gradient-to-r from-ct-teal to-ct-teal border-b border-ct-amber/[0.34] p-6 md:p-8">
+            <div className="bg-ct-amber/[0.13] border-b border-ct-amber/[0.34] p-6 md:p-8">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Zap className="w-5 h-5 text-ct-amber" />
-                  <h3 className="font-semibold text-ct-teal">Complete Your Profile</h3>
+                  <h3 className="font-semibold text-ct-paper">Complete your profile</h3>
                 </div>
-                <span className="text-sm font-bold text-ct-amber">{profileCompletion}%</span>
+                <span className="font-ct-mono text-sm font-bold text-ct-amber">{profileCompletion}%</span>
               </div>
-              <div className="w-full bg-ct-teal/[0.14] rounded-full h-2 mb-3 overflow-hidden">
+              <div className="w-full bg-ct-ink rounded-full h-2 mb-3 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-ct-teal to-ct-teal h-full transition-all duration-500"
+                  className="bg-ct-amber h-full transition-all duration-500"
                   style={{ width: `${profileCompletion}%` }}
                 />
               </div>
@@ -681,11 +685,11 @@ export default function Settings() {
           )}
 
           {profileCompletion === 100 && showCompleteBanner && (
-            <div className="bg-gradient-to-r from-ct-teal to-ct-surface-2 border-b border-ct-teal/30 p-6 md:p-8 flex items-center gap-3">
+            <div className="bg-ct-teal/[0.14] border-b border-ct-teal/30 p-6 md:p-8 flex items-center gap-3">
               <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-ct-teal">Profile Complete!</h3>
-                <p className="text-sm text-ct-teal">Your profile is ready to go. Great job!</p>
+                <h3 className="font-semibold text-ct-paper">Profile complete</h3>
+                <p className="text-sm text-ct-mute-2">Your profile is ready to go.</p>
               </div>
             </div>
           )}
@@ -822,7 +826,7 @@ export default function Settings() {
         >
           <button
             onClick={() => setShowAvatarModal(false)}
-            className="absolute top-4 right-4 w-10 h-10 bg-ct-surface/10 hover:bg-ct-surface/20 rounded-full flex items-center justify-center text-ct-ink transition-colors"
+            className="absolute top-4 right-4 w-10 h-10 bg-ct-surface/10 hover:bg-ct-surface/20 rounded-full flex items-center justify-center text-ct-paper transition-colors"
             aria-label="Close photo preview"
           >
             <X className="w-6 h-6" />

@@ -1071,7 +1071,7 @@ function PaymentTimelineItem({
             <div className="flex flex-col gap-1.5">
               {milestone.status === 'pending' && (
                 <button onClick={onApprove} disabled={loading}
-                  className="px-3 py-1.5 bg-ct-amber/[0.13] text-ct-ink text-xs rounded-ct-sm hover:bg-ct-amber disabled:opacity-50 flex items-center gap-1.5 font-medium whitespace-nowrap">
+                  className="px-3 py-1.5 bg-ct-amber/[0.13] text-ct-amber text-xs rounded-ct-sm hover:bg-ct-amber hover:text-ct-ink disabled:opacity-50 flex items-center gap-1.5 font-medium whitespace-nowrap">
                   <CheckCircle className="w-3.5 h-3.5" />Approve
                 </button>
               )}

@@ -78,7 +78,7 @@ export default function LicenseCard({
   };
 
   return (
-    <div className="relative bg-gradient-to-br from-ct-surface via-ct-surface-2 to-ct-ink rounded-ct-md p-6 shadow-md text-ct-ink overflow-hidden">
+    <div className="relative bg-gradient-to-br from-ct-surface via-ct-surface-2 to-ct-ink rounded-ct-md p-6 shadow-md text-ct-paper overflow-hidden">
       <div className="absolute top-0 right-0 w-64 h-64 bg-ct-surface-2 opacity-10 rounded-full -mr-32 -mt-32"></div>
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-ct-teal opacity-10 rounded-full -ml-24 -mb-24"></div>
 

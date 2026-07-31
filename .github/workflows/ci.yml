@@ -99,6 +99,30 @@ jobs:
       # credentials. Regenerate it whenever migrations land.
       - run: npm run check:columns
 
+  ink-contrast:
+    name: Ink Contrast
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # No `npm ci` — the script uses only Node builtins.
+      #
+      # --ink is the page background, and reads as a text colour only on a
+      # bright fill. The v2 dark cutover mapped `bg-X-600 text-white
+      # hover:bg-X-700` onto `bg-ct-surface-2 text-ct-ink
+      # hover:bg-ct-surface-2` wholesale, moving both halves — so 153 controls
+      # and headings shipped invisible at rest, the /hire hero H1 and the
+      # footer wordmark among them, on public signed-out pages.
+      #
+      # The Playwright contrast sweep reported 0 failures on that same tree: it
+      # measures routes at rest, never opened a modal, never rendered a sent
+      # message, never hovered, and its 14 routes were all authenticated. This
+      # reads every ternary branch in source instead, so a modal body is no
+      # harder to see than a landing page.
+      - run: npm run check:ink
+
   navigability:
     name: Navigability
     runs-on: ubuntu-latest

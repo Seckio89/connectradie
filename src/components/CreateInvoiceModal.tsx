@@ -524,7 +524,7 @@ export default function CreateInvoiceModal({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 px-4 py-3 bg-ct-surface-2 text-ct-ink rounded-ct-md hover:bg-ct-surface-2 disabled:opacity-50 font-semibold flex items-center justify-center gap-2 transition-colors"
+              className="flex-1 px-4 py-3 bg-ct-teal text-ct-ink rounded-ct-md hover:bg-ct-teal-deep disabled:opacity-50 font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               <Calculator className="w-4 h-4" />
               {saving ? 'Creating...' : 'Create Invoice'}

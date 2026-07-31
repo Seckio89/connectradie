@@ -375,7 +375,7 @@ export default function VerificationCenter() {
               <h3 className="text-lg font-semibold text-ct-paper">Your License Card</h3>
               <button
                 onClick={() => setShowCertificate(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-ct-surface text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-ink transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-teal-deep transition-colors"
               >
                 <Award className="w-4 h-4" />
                 View Certificate
@@ -796,7 +796,7 @@ export default function VerificationCenter() {
               <button
                 onClick={handleVerifyIdentity}
                 disabled={identityLoading}
-                className="w-full py-3 bg-ct-surface text-ct-ink text-sm font-semibold rounded-ct-sm hover:bg-ct-surface disabled:opacity-50 disabled:cursor-wait transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-sm hover:bg-ct-teal-deep disabled:opacity-50 disabled:cursor-wait transition-colors flex items-center justify-center gap-2"
               >
                 {identityLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting...</>
@@ -822,7 +822,7 @@ export default function VerificationCenter() {
               <button
                 onClick={handleVerifyIdentity}
                 disabled={identityLoading}
-                className="w-full py-3 bg-ct-surface text-ct-ink text-sm font-semibold rounded-ct-sm hover:bg-ct-surface disabled:opacity-50 disabled:cursor-wait transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-sm hover:bg-ct-teal-deep disabled:opacity-50 disabled:cursor-wait transition-colors flex items-center justify-center gap-2"
               >
                 {identityLoading ? (
                   <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting to verification...</>

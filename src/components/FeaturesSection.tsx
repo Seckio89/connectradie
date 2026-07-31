@@ -53,7 +53,7 @@ export default function FeaturesSection() {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-ct-surface text-ct-mute border border-ct-line rounded-full text-sm font-semibold mb-5">
             Built for Trust
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-ct-ink tracking-[-0.02em]">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-ct-paper tracking-[-0.02em]">
             Everything You Need to Hire <span className="text-ct-teal">Without the Risk.</span>
           </h2>
           <p className="mt-4 text-lg text-ct-mute">
@@ -72,7 +72,7 @@ export default function FeaturesSection() {
                 <div className={`inline-flex items-center justify-center w-12 h-12 rounded-ct-md ${feature.bg} border mb-5`}>
                   <Icon className={`w-6 h-6 ${feature.color}`} />
                 </div>
-                <h3 className="text-lg font-semibold text-ct-ink mb-2">{feature.title}</h3>
+                <h3 className="text-lg font-semibold text-ct-paper mb-2">{feature.title}</h3>
                 <p className="text-sm text-ct-mute leading-relaxed">{feature.description}</p>
               </div>
             );

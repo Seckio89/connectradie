@@ -180,7 +180,7 @@ export default function CostGuide() {
 
         {/* Footer CTA */}
         <section className="bg-ct-ink rounded-ct-lg px-6 py-10 sm:px-10 sm:py-12 text-center">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-ct-ink">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-ct-paper">
             Get fixed-price quotes from verified {plural.toLowerCase()}
           </h2>
           <p className="mt-3 text-base text-ct-mute max-w-xl mx-auto">

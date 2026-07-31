@@ -607,7 +607,7 @@ export default function MyProfile() {
           >
             <button
               onClick={() => setLightboxImage(null)}
-              className="absolute top-4 right-4 text-ct-ink/80 hover:text-ct-ink transition-colors p-2"
+              className="absolute top-4 right-4 text-ct-paper/80 hover:text-ct-ink transition-colors p-2"
             >
               <X className="w-6 h-6" />
             </button>

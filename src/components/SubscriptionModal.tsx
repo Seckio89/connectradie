@@ -567,7 +567,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     {showTestModeButton ? (
                       <button
                         onClick={handleTestModeSubscribe}
-                        className="w-full py-2.5 bg-gradient-to-r from-ct-surface-2 to-ct-surface-2 text-ct-ink text-sm font-semibold rounded-ct-md hover:from-ct-surface-2 hover:to-ct-surface-2 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                        className="w-full py-2.5 bg-gradient-to-r from-ct-surface-2 to-ct-surface-2 text-ct-paper text-sm font-semibold rounded-ct-md hover:from-ct-surface-2 hover:to-ct-surface-2 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                       >
                         <FlaskConical className="w-4 h-4" />
                         Activate Pro (Test)
