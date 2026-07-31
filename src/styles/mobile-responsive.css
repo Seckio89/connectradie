@@ -396,19 +396,15 @@ body {
     padding-bottom: 1.5rem !important;
   }
 
-  /* ── 9. "All caught up" banner compact ─────────────────────── */
-  main [class*="bg-emerald-50"][class*="border-y"] {
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
-    margin-top: 0.5rem !important;
-    margin-bottom: 0.25rem !important;
-  }
+  /* ── 9 and 12 removed ──────────────────────────────────────────
+     9 targeted [class*="bg-emerald-50"] on the "All caught up" banner.
+     That class went away with the v2 cutover, so the rule had stopped
+     matching anything long before it was deleted.
 
-  /* ── 12. Force CollapsibleSection headings to center on mobile ──
-     Keep button full-width; center the flex children instead. */
-  .collapsible-header-btn {
-    justify-content: center !important;
-  }
+     12 centred CollapsibleSection headings on mobile. It put "Completed
+     Jobs (4)" out of line with "Active Jobs" directly above it and with
+     every other heading in the column, which is the ragged left edge you
+     see on a phone. Headings are left-aligned at every width now. */
 
   /* ── 13. Compact form card sections on mobile ──────────────────
      Tighten vertical gaps between stacked form sections so cards
