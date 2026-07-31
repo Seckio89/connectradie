@@ -2150,7 +2150,7 @@ export default function TradieDashboard() {
                           }`}
                         >
                           <div className="flex flex-col items-center">
-                            <span className={`text-xs sm:text-sm font-medium ${isPast ? 'text-ct-mute' : isSelected ? 'text-ct-paper' : isToday ? 'text-ct-mute-2 font-bold' : 'text-ct-mute-2'}`}>{day}</span>
+                            <span className={`text-xs sm:text-sm font-medium ${isPast ? 'text-ct-mute' : isSelected ? 'text-ct-ink' : isToday ? 'text-ct-mute-2 font-bold' : 'text-ct-mute-2'}`}>{day}</span>
                             <div className="flex gap-0.5 mt-0.5">
                               {hasAvailable && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-teal/[0.14]' : 'bg-ct-teal/[0.14]'}`} />}
                               {hasBooked && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-rose/[0.13]' : 'bg-ct-rose/[0.13]'}`} />}

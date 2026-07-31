@@ -2240,7 +2240,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-7 h-7 rounded-ct-sm bg-gradient-to-br from-ct-teal to-ct-rose flex items-center justify-center">
-                <Zap className="w-4 h-4 text-ct-paper" />
+                <Zap className="w-4 h-4 text-ct-ink" />
               </div>
               <h3 className="font-bold text-ct-paper">Urgent / Now</h3>
               <span className="ml-auto px-3 py-1 bg-ct-rose/[0.13] text-ct-rose rounded-full text-xs font-medium">

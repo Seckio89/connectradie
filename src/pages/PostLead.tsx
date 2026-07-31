@@ -945,7 +945,7 @@ export default function PostLead() {
                     ? 'bg-gradient-to-br from-ct-teal to-ct-teal'
                     : 'bg-ct-amber/[0.13] group-hover:bg-ct-amber/[0.13]'
                 }`}>
-                  <Zap className={`w-6 h-6 ${scheduleMode === 'urgent' ? 'text-ct-paper' : 'text-ct-amber'}`} />
+                  <Zap className={`w-6 h-6 ${scheduleMode === 'urgent' ? 'text-ct-ink' : 'text-ct-amber'}`} />
                 </div>
                 <h3 className="font-bold text-ct-paper mb-1">Urgent / Next Available</h3>
                 <p className="text-sm text-ct-mute-2 leading-relaxed">

@@ -75,8 +75,14 @@ for (const file of files) {
     for (const seg of line.split(/['"`]/)) {
       const tokens = seg.split(/\s+/).filter(Boolean);
       const bgs = tokens.filter((t) => /^!?(bg|from|via|to)-ct-/.test(t) && !t.includes(':')).map(parseBg).filter(Boolean);
-      // No own fill means it inherits an ancestor's, which this cannot see.
-      // Silent by design: flagging those would drown the real hits.
+      // KNOWN LIMIT: no own fill means the element inherits an ancestor's, and
+      // this does not resolve the JSX tree. Silent by design — flagging every
+      // such element would drown the provable hits. It is a real gap, not a
+      // safe one: seven elements were missed this way, an icon coloured
+      // text-ct-paper sitting inside a parent div filled `from-ct-teal`, the
+      // fill and the text in separate class strings. Reviewing a token
+      // migration means reading the ancestor by hand, or measuring computed
+      // styles in a browser. This check cannot do it for you.
       if (!bgs.length) continue;
       for (const [cls, rgb] of TEXT) {
         // Resting state only. `hover:text-ct-ink` belongs to `hover:bg-*`.
