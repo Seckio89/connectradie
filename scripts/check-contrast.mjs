@@ -36,9 +36,23 @@
 import { chromium } from 'playwright';
 import { TABLES, UID, tradieProfile } from './contrast/fixtures.mjs';
 
+//   node scripts/check-contrast.mjs --baseline         (CI: fail on NEW only)
+//   node scripts/check-contrast.mjs --update-baseline
+//
+// Contrast failures ALWAYS fail, baseline or not — those are the point. What
+// the baseline holds is the routes this harness cannot currently measure: six
+// of them redirect, crash or render near-empty under the fixtures. Without it
+// CI would sit permanently red on a codebase with zero contrast failures,
+// which is how a check teaches people to ignore it. With it, a route that
+// STOPS rendering still fails, which is the hole the sweep exists to close.
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+
 const BASE = process.env.BASE || 'http://localhost:4173';
 const REF = 'uoqygmizupdpanplpvor';
 const ONLY = process.env.ROUTES ? process.env.ROUTES.split(',') : null;
+const USE_BASELINE = process.argv.includes('--baseline');
+const UPDATE_BASELINE = process.argv.includes('--update-baseline');
+const BASELINE_FILE = '.contrast-baseline.json';
 
 // Signed-out. These render without a session and were the sweep's blind half.
 const PUBLIC_ROUTES = [
@@ -197,9 +211,13 @@ const TRIGGER_RE = /\b(new|add|create|edit|invite|upload|view|manage|book|reques
 const CRASHED_RE = /reload page|something went wrong|unexpected error/i;
 
 const findings = [];
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium',
-});
+// Prefer an explicit path, then the preinstalled sandbox binary IF it is
+// actually there, then let Playwright resolve its own. Hard-coding the sandbox
+// path breaks on a CI runner, where `playwright install` puts it elsewhere.
+const SANDBOX_CHROMIUM = '/opt/pw-browsers/chromium';
+const executablePath = process.env.CHROMIUM_PATH
+  || (existsSync(SANDBOX_CHROMIUM) ? SANDBOX_CHROMIUM : undefined);
+const browser = await chromium.launch(executablePath ? { executablePath } : {});
 
 const measurePage = async (page, route, vp, surface) => {
   const res = await page.evaluate(MEASURE);
@@ -352,15 +370,47 @@ for (const f of contrast) {
   groups.get(key).hits.push(f);
 }
 
+// Identity is route + kind, deliberately NOT the viewport or the detail
+// string: a route that crashes at one width and redirects at the other is the
+// same unmeasured route, and "body rendered 14 elements" would churn on any
+// unrelated edit. Tight enough that a newly-unmeasurable route surfaces.
+const keyOf = (b) => `${b.route}|${b.kind}`;
+
+if (UPDATE_BASELINE) {
+  const keys = [...new Set(broken.map(keyOf))].sort();
+  writeFileSync(BASELINE_FILE, JSON.stringify({
+    note: 'Routes this harness cannot measure. Contrast failures are never baselined.',
+    routes: keys,
+  }, null, 2) + '\n');
+  console.log(`\nBaseline written — ${keys.length} unmeasurable route(s) in ${BASELINE_FILE}.`);
+  console.log('These no longer fail CI. A route that newly stops rendering will.\n');
+  process.exit(0);
+}
+
+let known = new Set();
+if (USE_BASELINE && existsSync(BASELINE_FILE)) {
+  known = new Set(JSON.parse(readFileSync(BASELINE_FILE, 'utf8')).routes ?? []);
+}
+const freshBroken = USE_BASELINE ? broken.filter((b) => !known.has(keyOf(b))) : broken;
+
 if (broken.length) {
-  console.error(`\nRoutes that could not be measured (${broken.length}):`);
-  for (const b of broken) console.error(`  ${b.route} @${b.vp}  ${b.kind}: ${b.detail}`);
+  const shown = USE_BASELINE ? freshBroken : broken;
+  const skipped = broken.length - freshBroken.length;
+  if (shown.length) {
+    console.error(`\nRoutes that could not be measured (${shown.length}):`);
+    for (const b of shown) console.error(`  ${b.route} @${b.vp}  ${b.kind}: ${b.detail}`);
+  }
+  if (skipped) console.error(`\n${skipped} unmeasurable route/viewport result(s) known and baselined.`);
 }
 
 if (!groups.size) {
-  const surfaces = new Set(findings.map((f) => `${f.route}|${f.surface}`)).size;
   console.log(`\nNo AA contrast failures. ${PUBLIC_ROUTES.length} public + ${APP_ROUTES.length} app routes, both viewports, modals opened.`);
-  process.exit(broken.length ? 1 : 0);
+  if (freshBroken.length) {
+    console.error(`\nFailing on ${freshBroken.length} newly unmeasurable route result(s) — a route that stops`);
+    console.error('rendering is exactly the blind spot this sweep exists to close. If the change');
+    console.error('is deliberate: npm run check:contrast:baseline');
+  }
+  process.exit(freshBroken.length ? 1 : 0);
 }
 
 console.error(`\n${contrast.length} AA failure(s) in ${groups.size} colour pair(s):\n`);

@@ -13,6 +13,8 @@
     "check:columns": "node scripts/check-db-columns.mjs",
     "check:ink": "node scripts/check-ink-contrast.mjs",
     "check:contrast": "node scripts/check-contrast.mjs",
+    "check:contrast:ci": "node scripts/check-contrast.mjs --baseline",
+    "check:contrast:baseline": "node scripts/check-contrast.mjs --update-baseline",
     "check:drift": "node scripts/check-schema-drift.mjs",
     "check:edge-drift": "node scripts/check-edge-drift.mjs",
     "check:nav": "node scripts/check-navigability.mjs",
