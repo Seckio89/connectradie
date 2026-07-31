@@ -2,15 +2,15 @@
   "generated": 62,
   "findings": [
     "N11|Verification.tsx has no route and nothing imports it — dead file|src/pages/Verification.tsx",
-    "N5|\"/careers/:id\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx:309",
-    "N5|\"/clients/:id\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx:491",
-    "N5|\"/invoice/:paymentId\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx:325",
-    "N5|\"/review/:jobId\" is in no navigation menu — only reachable from 20 links inside a page|src/App.tsx:577",
-    "N5|\"/tradie/:id\" is in no navigation menu — only reachable from 23 links inside a page|src/App.tsx:306",
-    "N5|\"/workforce/:workerId\" is in no navigation menu — only reachable from 10 links inside a page|src/App.tsx:529",
-    "N5|\"/workforce/invite\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx:520",
-    "N7|19 pages render <SEO> (react-helmet) as well as being titled by RouteTracker|src/App.tsx:184",
-    "N9|\"escrow\" appears in 1 heading/button|src/pages/Pricing.tsx:423",
-    "N9|\"lead\" appears in 8 headings/buttons|src/components/UnlockLeadModal.tsx:58"
+    "N5|\"/careers/:id\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx",
+    "N5|\"/clients/:id\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx",
+    "N5|\"/invoice/:paymentId\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx",
+    "N5|\"/review/:jobId\" is in no navigation menu — only reachable from 20 links inside a page|src/App.tsx",
+    "N5|\"/tradie/:id\" is in no navigation menu — only reachable from 23 links inside a page|src/App.tsx",
+    "N5|\"/workforce/:workerId\" is in no navigation menu — only reachable from 10 links inside a page|src/App.tsx",
+    "N5|\"/workforce/invite\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx",
+    "N7|19 pages render <SEO> (react-helmet) as well as being titled by RouteTracker|src/App.tsx",
+    "N9|\"escrow\" appears in 1 heading/button|src/pages/Pricing.tsx",
+    "N9|\"lead\" appears in 8 headings/buttons|src/components/UnlockLeadModal.tsx"
   ]
 }
