@@ -60,6 +60,44 @@ window.addEventListener('unhandledrejection', (e) => { if (isChunkLoadError(e.re
 // is next launched), so a bundle that keeps failing can never spin us in a
 // reload loop — critical in the Capacitor WebView.
 
+// ── Stale-bundle DETECTION ───────────────────────────────────────────────────
+// Everything above is reactive: it only fires when a chunk 404s. That misses the
+// failure mode that actually stranded a user — an old bundle that loads
+// perfectly and is simply out of date. Nothing errors, so nothing recovers, and
+// the app renders last week's UI indefinitely while the CDN serves the new one.
+//
+// The Capacitor app is the reason this matters. It points at the live site
+// (capacitor.config.ts `server.url`) and registers NO service worker — native
+// unregisters it on every launch, see lib/serviceWorker.ts — so the only cache
+// in play is the Android WebView's own, which we cannot configure from JS.
+//
+// So ask the server directly: fetch the document with `no-store`, read the entry
+// script it names, and compare with the one this page is actually running. A
+// mismatch means the WebView handed us a stale index.html, which is exactly the
+// condition the reactive path cannot see.
+const ENTRY_RE = /<script[^>]+type="module"[^>]+src="([^"]+)"/i;
+async function detectStaleDocument() {
+  // Dev serves /src/main.tsx unhashed, so there is nothing to compare.
+  if (import.meta.env.DEV) return;
+  if (!navigator.onLine) return;
+  const running = document.querySelector<HTMLScriptElement>('script[type="module"][src]')?.getAttribute('src');
+  if (!running) return;
+  try {
+    const res = await fetch(`/?_=${Date.now()}`, { cache: 'no-store', credentials: 'omit' });
+    if (!res.ok) return;
+    const served = ENTRY_RE.exec(await res.text())?.[1];
+    // No match means the shape changed; assume current rather than reload-loop.
+    if (!served || served === running) return;
+    console.warn(`[ct] stale document: running ${running}, server serves ${served} — reloading`);
+    recoverFromStaleBundle();
+  } catch {
+    // Offline or blocked — the cached bundle is the right thing to keep using.
+  }
+}
+// After first paint: correctness of the running app matters more than this
+// check, and a reload mid-boot would be worse than a beat of stale UI.
+window.addEventListener('load', () => { void detectStaleDocument(); });
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>

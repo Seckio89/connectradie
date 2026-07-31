@@ -68,7 +68,12 @@ const config: CapacitorConfig = {
     webContentsDebuggingEnabled: true,
     overScrollMode: 'never',
     backgroundColor: '#0F1B2D', // ConnecTradie navy
-    // Force WebView to not cache
+    // Identifies app traffic in logs. This does NOT affect caching — the comment
+    // here used to claim it forced the WebView not to cache, which is not
+    // something appendUserAgent (or any Capacitor config key) can do. Believing
+    // it meant nobody looked for a cache when the app started serving a
+    // week-old bundle. Staleness is handled in src/main.tsx instead, by asking
+    // the server which entry script it serves and reloading on a mismatch.
     appendUserAgent: 'ConnecTradie-App',
   },
 };
