@@ -173,7 +173,7 @@ export default function UnlockLeadModal({ isOpen, onClose, onUnlock, clientName,
             <button
               onClick={handleUnlock}
               disabled={loading || success}
-              className="flex-1 px-4 py-3 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-paper font-semibold rounded-ct-md hover:from-ct-teal hover:to-ct-teal transition-all shadow-lg hover:shadow-xl disabled:opacity-90 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink font-semibold rounded-ct-md hover:from-ct-teal hover:to-ct-teal transition-all shadow-lg hover:shadow-xl disabled:opacity-90 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

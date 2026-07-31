@@ -1281,7 +1281,7 @@ export default function PostLead() {
               disabled={submitting || !scheduleMode}
               className={`w-full py-3.5 font-semibold rounded-ct-md disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg ${
                 scheduleMode === 'urgent'
-                  ? 'bg-gradient-to-r from-ct-teal to-ct-teal text-ct-paper hover:from-ct-teal hover:to-ct-teal shadow-sm'
+                  ? 'bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink hover:from-ct-teal hover:to-ct-teal shadow-sm'
                   : scheduleMode === 'scheduled'
                   ? 'bg-gradient-to-r from-ct-surface-2 to-ct-surface-2 text-ct-paper hover:from-ct-surface-2 hover:to-ct-surface-2 shadow-sm'
                   : 'bg-ct-line text-ct-mute'

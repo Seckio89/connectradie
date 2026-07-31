@@ -46,50 +46,78 @@ const ratio = (a, b) => {
 // A tinted fill is composited over the card it sits on, not over nothing.
 const over = (fg, alpha, bg) => fg.map((c, i) => Math.round(c * alpha + bg[i] * (1 - alpha)));
 
-// bg-ct-teal · bg-ct-teal/20 · bg-ct-amber/[0.13]
+// A fill can be declared three ways, and missing any of them is how this class
+// of bug survives: bg-ct-teal · bg-ct-teal/20 · bg-ct-amber/[0.13], and the
+// gradient stops from-/via-/to-ct-*, which paint just as opaquely but carry no
+// `bg-` prefix. Treating a gradient as "no fill" once turned a correct
+// `text-ct-ink` on teal into an unreadable `text-ct-paper`.
 const parseBg = (cls) => {
-  const m = cls.match(/^!?bg-ct-([a-z0-9-]+?)(?:\/(?:\[([0-9.]+)\]|([0-9]+)))?$/);
+  const m = cls.match(/^!?(?:bg|from|via|to)-ct-([a-z0-9-]+?)(?:\/(?:\[([0-9.]+)\]|([0-9]+)))?$/);
   if (!m || !T[m[1]]) return null;
   const alpha = m[2] ? parseFloat(m[2]) : m[3] ? parseInt(m[3], 10) / 100 : 1;
   return { label: alpha === 1 ? `ct-${m[1]}` : `ct-${m[1]}/${alpha}`, rgb: alpha === 1 ? T[m[1]] : over(T[m[1]], alpha, T.surface) };
 };
 
-const files = execSync("git grep -l 'text-ct-ink' -- 'src/*'", { encoding: 'utf8' })
-  .trim().split('\n').filter(Boolean);
+const listFiles = () => execSync(
+  "git grep -l -E 'text-ct-(ink|paper)' -- 'src/*'", { encoding: 'utf8' },
+).trim().split('\n').filter(Boolean);
 
+// Both directions matter. Ink on a dark fill is the original bug; paper on a
+// bright fill is its mirror image, and just as unreadable — the repair that
+// fixed the first introduced the second wherever it misread a fill.
+const TEXT = [['text-ct-ink', T.ink], ['text-ct-paper', T.paper]];
+
+const files = listFiles();
 const fails = [];
 for (const file of files) {
   readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
-    if (!/text-ct-ink\b/.test(line)) return;
     // Per quoted segment, so a ternary's branches are judged independently.
     for (const seg of line.split(/['"`]/)) {
       const tokens = seg.split(/\s+/).filter(Boolean);
-      // Resting state only. `hover:text-ct-ink` belongs to `hover:bg-*`.
-      if (!tokens.some((t) => /^!?text-ct-ink$/.test(t))) continue;
-      const bgs = tokens.filter((t) => /^!?bg-ct-/.test(t) && !t.includes(':')).map(parseBg).filter(Boolean);
+      const bgs = tokens.filter((t) => /^!?(bg|from|via|to)-ct-/.test(t) && !t.includes(':')).map(parseBg).filter(Boolean);
       // No own fill means it inherits an ancestor's, which this cannot see.
       // Silent by design: flagging those would drown the real hits.
-      for (const bg of bgs) {
-        const cr = ratio(T.ink, bg.rgb);
-        if (cr < AA) fails.push({ file, line: i + 1, bg: bg.label, cr: cr.toFixed(2) });
+      if (!bgs.length) continue;
+      for (const [cls, rgb] of TEXT) {
+        // Resting state only. `hover:text-ct-ink` belongs to `hover:bg-*`.
+        if (!tokens.some((t) => t === cls || t === `!${cls}`)) continue;
+        for (const bg of bgs) {
+          const cr = ratio(rgb, bg.rgb);
+          if (cr < AA) fails.push({ file, line: i + 1, text: cls, bg: bg.label, cr: cr.toFixed(2) });
+        }
       }
     }
   });
 }
 
-if (!fails.length) {
-  console.log(`text-ct-ink: every resting fill is bright enough to read against (${files.length} files scanned).`);
+// A gradient declares two or three stops of the same colour, so the same
+// element reports once per stop. Collapse to one finding per site and colour.
+const seen = new Set();
+const unique = fails.filter((f) => {
+  const k = `${f.file}:${f.line}:${f.text}:${f.bg}`;
+  return seen.has(k) ? false : (seen.add(k), true);
+});
+
+if (!unique.length) {
+  console.log(`ink/paper: every resting fill is readable against its text (${files.length} files scanned).`);
   process.exit(0);
 }
 
-console.error(`text-ct-ink is unreadable on its own fill in ${fails.length} place(s):\n`);
-for (const f of fails) console.error(`  ${f.file}:${f.line}  ${f.cr}:1 on ${f.bg}`);
+console.error(`Text is unreadable on its own fill in ${unique.length} place(s):\n`);
+for (const f of unique) console.error(`  ${f.file}:${f.line}  ${f.text} on ${f.bg} — ${f.cr}:1`);
 console.error(`
---ink is the page background. On a dark fill it is invisible, not merely dim.
+--ink is the page background and --paper is the primary text colour. Each is
+readable on exactly the fills the other is not, so a mis-read fill does not
+degrade contrast, it inverts it.
 
-  a solid dark fill   →  the control was meant to be a primary action:
-                         bg-ct-teal text-ct-ink hover:bg-ct-teal-deep
-  a dim/tinted fill   →  carry the SOLID colour as text:
-                         bg-ct-amber/[0.13] text-ct-amber hover:bg-ct-amber hover:text-ct-ink
-  plain text          →  text-ct-paper`);
+  text-ct-ink on a dark fill — invisible, not merely dim:
+    a solid dark fill  →  the control was meant to be a primary action:
+                          bg-ct-teal text-ct-ink hover:bg-ct-teal-deep
+    a dim/tinted fill  →  carry the SOLID colour as text:
+                          bg-ct-amber/[0.13] text-ct-amber hover:bg-ct-amber hover:text-ct-ink
+    plain text         →  text-ct-paper
+
+  text-ct-paper on a bright fill — the same failure mirrored:
+    →  text-ct-ink. Note that a gradient paints its fill through
+       from-/via-/to-ct-*, with no bg- prefix to notice.`);
 process.exit(1);
