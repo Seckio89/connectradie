@@ -469,7 +469,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               <div className={`border-2 rounded-ct-lg p-6 relative flex flex-col ${
                 currentTier === 'pro'
                   ? 'border-ct-teal bg-ct-amber/[0.13]/30'
-                  : 'border-ct-teal/30 bg-gradient-to-b from-ct-teal/40 to-white shadow-sm'
+                  : 'border-ct-teal/30 bg-gradient-to-b from-ct-teal/[0.14] to-ct-surface shadow-sm'
               }`}>
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink text-xs font-bold rounded-full uppercase tracking-wide">
                   {currentTier === 'pro' ? 'Current Plan' : 'Most Popular'}

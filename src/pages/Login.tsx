@@ -174,7 +174,7 @@ export default function Login() {
         <BetaModal />
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <Link to="/" className="flex items-center justify-center">
-            <span className="text-2xl font-extrabold tracking-tight text-black">
+            <span className="text-2xl font-extrabold tracking-tight text-ct-paper">
               Connec<span className="text-ct-teal">Tradie</span>
             </span>
           </Link>
@@ -277,7 +277,7 @@ export default function Login() {
       <BetaModal />
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link to="/" className="flex items-center justify-center">
-          <span className="text-2xl font-extrabold tracking-tight text-black">
+          <span className="text-2xl font-extrabold tracking-tight text-ct-paper">
             Connec<span className="text-ct-teal">Tradie</span>
           </span>
         </Link>

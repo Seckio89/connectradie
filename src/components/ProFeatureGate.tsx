@@ -28,7 +28,7 @@ export default function ProFeatureGate({ feature, isProUser, children, className
         </div>
         <button
           onClick={() => setShowSubscriptionModal(true)}
-          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-white/80 via-white/90 to-white/80 backdrop-blur-[2px] rounded-ct-md border-2 border-dashed border-ct-line hover:border-ct-teal transition-all cursor-pointer group/gate min-h-[44px]"
+          className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-ct-ink/80 via-ct-ink/90 to-ct-ink/80 backdrop-blur-[2px] rounded-ct-md border-2 border-dashed border-ct-line hover:border-ct-teal transition-all cursor-pointer group/gate min-h-[44px]"
         >
           <div className="flex flex-col items-center gap-3 px-6 py-4">
             <div className="w-14 h-14 bg-gradient-to-br from-ct-teal to-ct-teal rounded-ct-md flex items-center justify-center shadow-sm group-hover/gate:shadow-md transition-shadow">

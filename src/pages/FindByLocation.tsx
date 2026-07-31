@@ -54,7 +54,7 @@ export default function FindByLocation() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center">
-              <span className="text-xl font-extrabold tracking-tight text-black">
+              <span className="text-xl font-extrabold tracking-tight text-ct-paper">
                 Connec<span className="text-ct-teal">Tradie</span>
               </span>
             </Link>

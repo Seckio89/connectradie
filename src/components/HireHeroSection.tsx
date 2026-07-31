@@ -121,7 +121,7 @@ export default function HireHeroSection() {
                       </div>
                     </div>
                     <div className="pt-1">
-                      <p className="text-sm font-semibold text-ct-ink">You approve — tradie gets paid</p>
+                      <p className="text-sm font-semibold text-ct-paper">You approve — tradie gets paid</p>
                       <p className="text-xs text-ct-mute">Not before. No auto-charge surprises.</p>
                     </div>
                   </div>
