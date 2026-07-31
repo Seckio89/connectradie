@@ -601,9 +601,21 @@ if (AS_JSON) {
 }
 
 // ── baseline ────────────────────────────────────────────────────────────────
-// Identity is check + title + location: enough that moving a finding to a new
-// file surfaces it again, but not so tight that an unrelated edit above it does.
-const keyOf = (f) => `${f.check}|${f.title}|${f.where}`;
+// Identity is check + title + FILE: enough that moving a finding to a new file
+// surfaces it again, but not so tight that an unrelated edit above it does.
+//
+// The line number is deliberately excluded, and used to be included — which
+// meant the second half of that sentence was not true. Adding a four-line
+// comment above a finding in Pricing.tsx moved N9 "escrow" from :419 to :423
+// and failed CI, on a change that touched nothing the checker looks at. A
+// baseline that churns on any edit above any finding teaches people to re-run
+// --update-baseline reflexively, and a baseline nobody reads before regenerating
+// has stopped being a baseline.
+//
+// The line is still SHOWN in the report; it just is not part of identity. Two
+// findings of the same check and title in the same file collapse to one entry,
+// which is the intended trade: those are the same problem stated twice.
+const keyOf = (f) => `${f.check}|${f.title}|${f.where.replace(/:\d+$/, '')}`;
 
 if (UPDATE_BASELINE) {
   writeFileSync(BASELINE_FILE, JSON.stringify({ generated: routes.length, findings: findings.map(keyOf).sort() }, null, 2) + '\n');
