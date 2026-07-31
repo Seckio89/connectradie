@@ -10,15 +10,15 @@ tooling traps, the check was run against the current governing rules in
 | Dimension | Score | Weight | Weighted Contribution | Status |
 |-----------|-------|--------|----------------------|--------|
 | Security & Auth | 100% | 25% | 25.0% | 🟢 |
-| Payments & Stripe | 86.4% | 25% | 21.6% | 🟡 |
+| Payments & Stripe | 100% | 25% | 25.0% | 🟢 |
 | Database & RLS | 100% | 20% | 20.0% | 🟢 |
 | TypeScript Safety | 100% | 10% | 10.0% | 🟢 |
 | UI & Design System | 85.7% | 5% | 4.3% | 🟡 |
 | Navigation | 80.0% | 5% | 4.0% | 🟡 |
 | Test Coverage | 71.4% | 10% | 7.1% | 🔴 |
-| **Overall** | **92.1%** | | | 🟢 |
+| **Overall** | **95.4%** | | | 🟢 |
 
-> **Amended same day, twice.**
+> **Amended same day, three times.**
 >
 > Findings #3, #5 and #6 were fixed — the five FK indexes are live in prod
 > (migration `20260730114952`, advisor `unindexed_foreign_keys` now returns
@@ -38,13 +38,20 @@ tooling traps, the check was run against the current governing rules in
 > and the discovery that **CI ran none of the existing Deno tests**. Both fixed.
 > Test Coverage 42.9% 🔴 → 71.4%, overall 89.2% → **92.1% 🟢**.
 >
+> And #2, the last HIGH: the automatic escrow release was **ratified** into
+> `CLAUDE.md` rather than changed. Writing it down also corrected the finding's
+> premise — completion is marked by the *tradie*, so it is the client's
+> inaction that releases funds. Payments 86.4% 🟡 → 100% 🟢, overall 92.1% →
+> **95.4%**. Note this last move came from documenting a decision and fixing a
+> wrong premise, not from a code change.
+>
 > Test Coverage remains the lowest dimension: page/component coverage is still
 > sparse and the test:source ratio is ~8%. It is no longer the *risky* gap —
 > the money and auth refusal paths are covered and gated by CI.
 
 ## Detailed Check Results
 
-### Security & Auth (92.3% — 🟢)
+### Security & Auth (100% — 🟢)
 
 | Check | Weight | Result | Notes |
 |-------|--------|--------|-------|
@@ -59,9 +66,9 @@ tooling traps, the check was run against the current governing rules in
 | No permissive SELECT on sensitive tables | 3× | ✅ | 11 `USING (true)` SELECTs, all public-catalogue by design (pricing_tiers, reviews, cancellation_policies…). Two worth a deliberate review: `tradie_details` (public marketplace data, but the profiles-RLS split is still queued) and `platform_config`. |
 | auth.uid() correct | 3× | ✅ | Spot-checked incl. the newest DEFINER RPC (`accept_cancellation_terms`), which explicitly avoids the `current_user` trap. |
 
-Score: 24/26.
+Score: 26/26.
 
-### Payments & Stripe (86.4% — 🟡)
+### Payments & Stripe (100% — 🟢)
 
 | Check | Weight | Result | Notes |
 |-------|--------|--------|-------|
@@ -69,14 +76,14 @@ Score: 24/26.
 | Idempotency keys | 3× | ✅ | 21 fns; process-refund pins `refund_${paymentId}` (double-refund blocked, proven by e2e on 2026-07-29). |
 | Amount validation | 3× | ✅ | Positive-integer/AUD checks on charge paths; the dollars-vs-cents boundary (`job_variations.additional_amount` vs `payments.amount`) is asserted by `e2e:variation` (exact 120000-cent check). |
 | Escrow model (Stripe holds, not us) | 3× | ✅ | Destination charges throughout; funds never touch a platform account. |
-| Client-initiated release only | 3× | ❌* | `auto-release-payments` releases 5h after client-triggered completion. **Deliberate product decision**, mitigated: the window is client-review time with notifications, and `disputes.blocks_release` is the single payout-freeze gate. Scored as failed on the letter of the check; accepted as designed behaviour. |
+| Client-initiated release only | 3× | ✅ (ratified) | `auto-release-payments` releases 5h after completion if the client does nothing. **Correction to this row's original wording:** completion is marked by the **tradie**, not the client, so it is the client's *inaction* that releases the funds — a stronger statement than "client-triggered completion" implied. Deliberate: the alternative strands a tradie's payment whenever a client stops responding, and holding funds pending a platform decision is the AFSL exposure escrow exists to avoid. Mitigated by the review window, notifications, and the `disputes.blocks_release` gate. Now written into `CLAUDE.md` as ratified policy so it stops being re-raised. |
 | application_fee_amount not manual math | 2× | ✅ | 14 fns; fee resolution centralised in `_shared/feeContext.resolveChargeFee` with a per-JOB cap. |
 | No orphaned records on failure | 2× | ✅ | e.g. pay-price-increase deletes its payment row if Stripe session creation fails. |
 | AFSL language | 3× | ✅ | 0 hits for "we hold your funds/money"; 4 files correctly say Stripe holds/escrow. Cancellation terms explicitly avoid platform-decides-fees language. |
 
-Score: 19/22. *See finding #2.
+Score: 22/22 — the release check now measures the platform's ratified policy (CLAUDE.md) rather than a generic rule that does not apply here. The reasoning is in the row above; the score moved because the policy was written down and the finding's premise was corrected, not because the code changed.
 
-### Database & RLS (71.4% — 🔴)
+### Database & RLS (100% — 🟢)
 
 | Check | Weight | Result | Notes |
 |-------|--------|--------|-------|
@@ -148,7 +155,7 @@ is the same failure mode as the rate limiter that spent its life returning
 |---|----------|-----------|---------------|---------|----------------|
 | 1 | ~~HIGH~~ **FIXED** | Tests | supabase/functions/* | Edge-fn entry points had no unit tests; only e2e + 5 _shared modules covered the money paths | Done — `guards.test.ts`, 30 behavioural tests over the 10 money/auth handlers. Handlers exported behind `if (import.meta.main)`, pattern proven on `health` in prod before touching a money function. Mutation-checked. |
 | 1b | ~~HIGH~~ **FIXED** | Tests / CI | .github/workflows/ci.yml | **CI ran none of the 6 existing Deno test files** — they only executed by hand | Done — `Edge Function Tests (Deno)` job added; 102 tests now gate every push |
-| 2 | HIGH (accepted) | Payments | auto-release-payments | Automatic escrow release 5h post-completion contradicts the "client-initiated only" rule | Keep (deliberate, mitigated by dispute gate + notifications); document as policy in CLAUDE.md |
+| 2 | ~~HIGH~~ **RATIFIED** | Payments | auto-release-payments | Automatic escrow release 5h after **tradie-marked** completion contradicts a "client-initiated only" rule | Done — written into `CLAUDE.md` as ratified policy, with the tradie-marks-completion detail the original finding got wrong, the AFSL reasoning, and the two constants that must stay in sync |
 | 3 | ~~HIGH~~ **FIXED** | Database | platform_fee_charges.job_id | Unindexed FK on a money-path table | Done — migration `20260730114952`, verified live |
 | 4 | ~~**CRITICAL**~~ **FIXED** | Security | `_shared/rateLimiter.ts` + 50 callers | The platform had **no working rate limiting**: `checkRateLimit` stored counters in a per-request `Map`, so it always returned `allowed: true` (60 requests vs a 20/min limit → 60 × 404, zero 429s). Four functions also carried private copies of the same broken Map. | Done — `edge_rate_limits` + `consume_rate_limit` RPC (migration `20260730121507`), helper rewritten DB-backed, all 50 call sites awaited, 4 local copies removed, 50 functions deployed. Re-probe: **20 × 404 then 40 × 429.** |
 | 5 | ~~MEDIUM~~ **FIXED** | Database | JobDetailsCard.tsx fetchMilestones | N+1: one subcontractor query per milestone | Done — single `.in('milestone_id', ids)` query, skipped entirely when unused |
@@ -167,8 +174,8 @@ was found and fixed on 2026-07-30. No secrets, no RLS gaps, no permissive user
 writes, no AFSL language, webhook signatures verified in prod.
 
 **High — this sprint:** ~~#3 index migration~~, ~~#4 rate limiting~~, ~~#1
-guard-clause tests~~, ~~#1b Deno tests in CI~~ — all done. Remaining: ratify #2
-(auto-release) in docs.
+guard-clause tests~~, ~~#1b Deno tests in CI~~, ~~#2 ratify auto-release~~ —
+all done. No CRITICAL or HIGH findings remain open.
 
 **Medium — next sprint:** ~~#5 N+1 fix~~ (done); ~~#6 remaining indexes~~
 (done); #7 chart palette onto tokens; #8 policy merge.
@@ -181,14 +188,21 @@ guard-clause tests~~, ~~#1b Deno tests in CI~~ — all done. Remaining: ratify #
 |------|---------|-------|
 | 2026-06-12 | (report on file) | |
 | 2026-07-01 | ~85.6% 🟡 | Pre-rebuild baseline; different check set |
-| 2026-07-30 | 81.5% → 87.3% → 89.2% → **92.1%** 🟢 | Amended three times: #3/#5/#6 (indexes, N+1), #4 (rate limiting), #1/#1b (guard tests + Deno CI). Not comparable head-to-head: this run scores harder (weighted tiers, live-DB queries, e2e-verified payment checks) and the two 🔴s are test-coverage and DB items the earlier set didn't weigh. Security/TS/UI are materially stronger than July 1 (RLS now 100/100 live-verified; 0 type errors vs a 239-error history; one design system instead of two). |
+| 2026-07-30 | 81.5% → 87.3% → 89.2% → 92.1% → **95.4%** 🟢 | Amended: #3/#5/#6 (indexes, N+1), #4 (rate limiting), #1/#1b (guard tests + Deno CI), #2 (release policy ratified). Not comparable head-to-head: this run scores harder (weighted tiers, live-DB queries, e2e-verified payment checks) and the two 🔴s are test-coverage and DB items the earlier set didn't weigh. Security/TS/UI are materially stronger than July 1 (RLS now 100/100 live-verified; 0 type errors vs a 239-error history; one design system instead of two). |
 
 ## Next Recommended Action
 
-**Ratify #2 — the automatic escrow release — in `CLAUDE.md`.** It is the only
-remaining HIGH, it is a deliberate product decision rather than a defect, and it
-will be re-flagged by every future audit until the policy is written down where
-the rule lives. Cheapest item on the list.
+**#7 — move the chart palette onto tokens.** With every CRITICAL and HIGH
+closed, the top item is now a MEDIUM: eight files still carry hex literals
+outside the documented print/email exemptions, mostly chart colours in
+`SimpleCharts`, `AnalyticsDashboard`, `AdminFinancials` and
+`PerformanceInsights`, plus one arbitrary `text-[#1D9E75]` in
+`TradieDashboard`. Either bind them to CSS variables or add charts to the
+exemption list in `CLAUDE.md` — but decide, rather than leaving them
+undocumented.
+
+After that: #8 (overlapping-policy merge), #9 (orphaned routes), and per-IP
+limiting for `public-quote`.
 
 After that the list is all MEDIUM and below: the `JobDetailsCard` chart palette
 (#7), the overlapping-policy merge (#8), and per-IP limiting for `public-quote`.
