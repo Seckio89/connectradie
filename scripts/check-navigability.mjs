@@ -315,6 +315,28 @@ const BY_DESIGN = {
   '/find-in/:locationSlug': 'SEO landing page — entered from search results',
   '/costs/:trade': 'SEO landing page — entered from search results',
   '/hire': 'second marketing entry point — linked from the landing page and footer',
+
+  // ── Added 2026-07-31, audit finding #9. Each was checked individually; none
+  // of the four wants a sidebar entry, and one must NOT have one.
+  //
+  // This scanner reads src/ only, so it cannot see a link that originates in an
+  // Edge Function, and it cannot tell a live <Link> from one inside a
+  // `{false && …}` branch. Both blind spots are represented below.
+  '/tax-invoice/:invoiceId':
+    'emailed to the tradie by the issue-fee-invoices cron ' +
+    '(supabase/functions/issue-fee-invoices/index.ts:255) — no in-app list exists, ' +
+    'so the email is the only way in',
+  '/explore':
+    'marketing browse page — entered from the landing page category grid ' +
+    '(CategoriesSection.tsx); the signed-in equivalent is /search',
+  '/how-fees-work':
+    'fee explainer, read in context rather than navigated to — linked from the ' +
+    'quote fee disclosure, Payouts and Pricing',
+  '/calendar-import':
+    'PARKED, not finished: its only entry point is disabled behind `{false && …}` ' +
+    'in Schedule.tsx until the Google Calendar import issue is fixed, and when it ' +
+    'resumes it belongs in Settings rather than back on Schedule. Do not add a ' +
+    'menu entry to satisfy this checker',
 };
 
 // N3 — link points at nothing.

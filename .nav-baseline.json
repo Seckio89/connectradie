@@ -2,12 +2,8 @@
   "generated": 62,
   "findings": [
     "N11|Verification.tsx has no route and nothing imports it — dead file|src/pages/Verification.tsx",
-    "N4|Route \"/tax-invoice/:invoiceId\" has no inbound links anywhere in src/|src/App.tsx:328",
-    "N5|\"/calendar-import\" is in no navigation menu — only reachable from one link inside a page|src/App.tsx:475",
     "N5|\"/careers/:id\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx:309",
     "N5|\"/clients/:id\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx:491",
-    "N5|\"/explore\" is in no navigation menu — only reachable from one link inside a page|src/App.tsx:307",
-    "N5|\"/how-fees-work\" is in no navigation menu — only reachable from 3 links inside a page|src/App.tsx:322",
     "N5|\"/invoice/:paymentId\" is in no navigation menu — only reachable from 2 links inside a page|src/App.tsx:325",
     "N5|\"/review/:jobId\" is in no navigation menu — only reachable from 20 links inside a page|src/App.tsx:577",
     "N5|\"/tradie/:id\" is in no navigation menu — only reachable from 23 links inside a page|src/App.tsx:306",
