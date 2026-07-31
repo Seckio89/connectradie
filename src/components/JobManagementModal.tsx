@@ -1259,7 +1259,9 @@ export default function JobManagementModal({
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                       {/* Off-app clients pay by emailed link after completion, and
                           funded jobs already hold the money — no request either way. */}
-                      {(isOffApp || jobPaid) ? 'Mark Complete' : 'Mark Complete & Request Payout'}
+                      {/* "payment", not "payout": same action as JobDetailModal's
+                          button, and the user-facing noun everywhere else. */}
+                      {(isOffApp || jobPaid) ? 'Mark complete' : 'Mark complete & request payment'}
                     </button>
                     {isOffApp && (
                       <p className="mt-2 text-xs text-ct-mute text-center">You'll email {job.profiles?.full_name ? job.profiles.full_name.split(' ')[0] : 'the client'} a payment link once the job is marked complete.</p>

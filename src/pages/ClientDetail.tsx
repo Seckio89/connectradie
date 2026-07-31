@@ -333,9 +333,9 @@ export default function ClientDetail() {
       const amt = `$${Number(data?.total ?? 0).toLocaleString('en-AU')}`;
       const first = contact.full_name.split(' ')[0];
       if (data?.external) {
-        showToast(data?.emailed ? `Invoice for ${amt} emailed to ${first}.` : `Invoice for ${amt} recorded.`);
+        showToast(data?.emailed ? `Invoice sent to ${first} — ${amt}.` : `Invoice for ${amt} recorded.`);
       } else {
-        showToast(`Invoice for ${amt} emailed to ${first}.`);
+        showToast(`Invoice sent to ${first} — ${amt}.`);
       }
       await load();
     } catch {
