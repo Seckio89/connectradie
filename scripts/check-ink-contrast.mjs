@@ -23,7 +23,7 @@
 //
 // Runs on source, needs no browser and no build.
 import { readFileSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 
 // Channel values mirror the token block at the top of src/index.css.
 const T = {
@@ -58,9 +58,25 @@ const parseBg = (cls) => {
   return { label: alpha === 1 ? `ct-${m[1]}` : `ct-${m[1]}/${alpha}`, rgb: alpha === 1 ? T[m[1]] : over(T[m[1]], alpha, T.surface) };
 };
 
-const listFiles = () => execSync(
-  "git grep -l -E 'text-ct-' -- 'src/*'", { encoding: 'utf8' },
-).trim().split('\n').filter(Boolean);
+// argv array, not a shell string. execSync goes through cmd.exe on Windows,
+// which does NOT strip single quotes, so git received 'text-ct-' and 'src/*'
+// with the quotes attached, matched nothing, and exited 1 — which execSync
+// turns into a thrown error. This check could not be run on Windows at all; it
+// only ever passed because CI is Linux. Every other script here already invokes
+// git this way (see check-edge-drift.mjs).
+const listFiles = () => {
+  let out;
+  try {
+    out = execFileSync('git', ['grep', '-l', '-E', 'text-ct-', '--', 'src/*'], { encoding: 'utf8' });
+  } catch (err) {
+    // git grep exits 1 for "no matches", which is not a failure. A real fault —
+    // a bad flag, no repo — exits 129 with a populated stderr, so keying on 1
+    // is specific rather than a blanket swallow.
+    if (err.status === 1) return [];
+    throw err;
+  }
+  return out.trim().split('\n').filter(Boolean);
+};
 
 // Every text token against every fill, not just ink and paper. Checking only
 // those two missed `text-ct-teal` on a solid teal fill — 1.00:1, the Settings
@@ -134,6 +150,18 @@ for (const [seg, shouldFail] of SELF_TEST) {
 }
 
 const files = listFiles();
+
+// A scan of nothing is not a clean tree. Without this the script would print
+// "every resting fill is readable (0 files scanned)" and exit 0 — a green pass
+// having looked at nothing. The self-test above does not cover it: it runs on
+// inline sample segments and passes no matter what the file scan returned.
+// Exit 2 (the checker is broken), not 1 (real findings).
+if (files.length === 0) {
+  console.error('check:ink scanned NO FILES — nothing under src/ matched `text-ct-`.');
+  console.error('That means this checker is broken, not that the tree is clean.');
+  process.exit(2);
+}
+
 const fails = [];
 for (const file of files) {
   readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
