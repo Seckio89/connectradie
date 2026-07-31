@@ -398,7 +398,7 @@ export default function Projects() {
                     )}
 
                     {project.jobs.length === 0 && !project.description && (
-                      <p className="text-sm text-ct-mute italic mb-3">No jobs added yet</p>
+                      <p className="text-sm text-ct-mute italic mb-3">No jobs in this group yet — open it and use “Add jobs”.</p>
                     )}
 
                     <div className="flex items-center gap-3 pt-3 border-t border-ct-line-soft">

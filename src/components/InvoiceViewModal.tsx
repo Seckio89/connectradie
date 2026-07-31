@@ -441,7 +441,7 @@ export default function InvoiceViewModal({ isOpen, onClose, invoiceId, viewerRol
             )}
           </div>
         ) : (
-          <div className="text-center py-16 text-ct-mute-2">Invoice not found</div>
+          <div className="text-center py-16 text-ct-mute-2">This invoice could not be loaded — close this window and open it again from the list.</div>
         )}
       </div>
     </Modal>
