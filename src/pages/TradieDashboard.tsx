@@ -1530,7 +1530,7 @@ export default function TradieDashboard() {
                           <Link
                             key={item.key}
                             to="/work?tab=services"
-                            className="flex items-center p-3 bg-ct-surface border border-ct-line rounded-ct-md hover:border-ct-teal/30 hover:bg-ct-teal/[0.14]/30 transition-colors group px-4 sm:px-3"
+                            className="flex items-center p-3 bg-ct-surface border border-ct-line rounded-ct-md hover:border-ct-teal/30 hover:bg-ct-teal/[0.14] transition-colors group px-4 sm:px-3"
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="w-9 h-9 rounded-full bg-ct-teal/[0.14] text-ct-teal font-semibold text-xs flex items-center justify-center flex-shrink-0">

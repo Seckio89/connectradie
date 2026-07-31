@@ -122,6 +122,18 @@ jobs:
       # reads every ternary branch in source instead, so a modal body is no
       # harder to see than a landing page.
       - run: npm run check:ink
+      # Same job rather than a new one: both are pure source reads that finish
+      # in under a second, and both catch a token migration going wrong.
+      #
+      # This one catches the OTHER failure mode — not a class that renders
+      # unreadably, but one that renders nothing at all. A Tailwind utility
+      # naming a token that does not exist, or carrying two opacity modifiers,
+      # emits no rule and fails silently: no build error, no warning, the
+      # property simply never applies. 171 elements shipped that way in one
+      # form and 52 in another, so selected rows looked unselected and overdue
+      # rows were not highlighted. The contrast checks cannot see it, because
+      # an unpainted background is not a contrast failure — it is an absent one.
+      - run: npm run check:tokens
 
   navigability:
     name: Navigability

@@ -958,7 +958,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={submitting}
-                  className="w-20 h-20 flex-shrink-0 flex flex-col items-center justify-center gap-1 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-teal/30 hover:bg-ct-teal/[0.14]/30 transition-colors group"
+                  className="w-20 h-20 flex-shrink-0 flex flex-col items-center justify-center gap-1 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-teal/30 hover:bg-ct-teal/[0.14] transition-colors group"
                 >
                   {photos.length === 0 ? (
                     <Camera className="w-5 h-5 text-ct-mute group-hover:text-ct-teal transition-colors" />

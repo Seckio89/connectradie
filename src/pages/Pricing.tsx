@@ -329,11 +329,15 @@ export default function Pricing() {
                       {calc.rows.map(({ tier: t, feePerJob, monthlyFees, total }) => {
                         const best = calc.cheapest.tier.id === t.id;
                         return (
-                          <tr key={t.id} className={best ? 'bg-ct-teal/[0.14]/60' : ''}>
+                          <tr key={t.id} className={best ? 'bg-ct-teal/[0.14]' : ''}>
                             <td className="py-2.5 pr-4 font-medium text-ct-paper">
                               {t.name}
+                              {/* Badge is solid, not another dim fill: the row
+                                  it sits in is already tinted, so a second
+                                  teal/[0.14] composites to a lighter teal and
+                                  drags teal-on-teal down to 4.48:1. */}
                               {best && (
-                                <span className="ml-2 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-ct-teal/[0.14] text-ct-teal">
+                                <span className="ml-2 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-ct-teal text-ct-ink">
                                   Cheapest for you
                                 </span>
                               )}
@@ -386,7 +390,7 @@ export default function Pricing() {
               </thead>
               <tbody className="divide-y divide-ct-line-soft">
                 {COMPETITORS.map((c) => (
-                  <tr key={c.name} className={c.highlight ? 'bg-ct-teal/[0.14]/60' : 'bg-ct-surface'}>
+                  <tr key={c.name} className={c.highlight ? 'bg-ct-teal/[0.14]' : 'bg-ct-surface'}>
                     <td className="px-4 py-3 font-medium text-ct-paper whitespace-nowrap">{c.name}</td>
                     <td className="px-4 py-3 text-ct-mute-2">{c.model}</td>
                     <td className="px-4 py-3 text-ct-mute-2 whitespace-nowrap">{c.quoting}</td>

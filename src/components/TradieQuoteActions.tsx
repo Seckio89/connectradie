@@ -357,7 +357,7 @@ function SubmitFinalQuoteModal({ isOpen, quote, onClose, onDone }: SubmitFinalQu
             ? 'Explain why the final differs from the estimate range — concealed damage, harder access, additional materials, etc.'
             : 'Any notes about the price, materials, or scope.'}
           className={`w-full px-3 py-2 border rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal ${
-            messageRequired && !messageOk ? 'border-ct-teal/30 bg-ct-amber/[0.13]/30' : 'border-ct-line'
+            messageRequired && !messageOk ? 'border-ct-teal/30 bg-ct-amber/[0.13]' : 'border-ct-line'
           }`}
         />
         {messageRequired && !messageOk && (

@@ -1101,7 +1101,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
                 const isLow = item.stock_level != null && item.restock_threshold != null && item.stock_level <= item.restock_threshold;
                 const alreadyNotified = !!item.restock_notified_at;
                 return (
-                  <tr key={item.id} className={isLow ? 'bg-ct-amber/[0.13]/50' : ''}>
+                  <tr key={item.id} className={isLow ? 'bg-ct-amber/[0.13]' : ''}>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-ct-paper">{item.name}</span>
@@ -1168,7 +1168,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
 
       {/* Add supply form */}
       {showAddForm && (
-        <div className="rounded-ct-sm border border-ct-teal/30 bg-ct-teal/[0.14]/50 p-4 space-y-3">
+        <div className="rounded-ct-sm border border-ct-teal/30 bg-ct-teal/[0.14] p-4 space-y-3">
           <p className="text-xs font-semibold text-ct-paper">New Supply Item</p>
 
           {/* Item selector */}

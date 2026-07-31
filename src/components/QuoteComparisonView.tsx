@@ -490,7 +490,7 @@ export default function QuoteComparisonView({
               key={quote.id}
               className={`rounded-ct-md overflow-hidden border transition-all ${
                 isAccepted
-                  ? 'border-ct-teal/30 bg-ct-teal/[0.14]/30'
+                  ? 'border-ct-teal/30 bg-ct-teal/[0.14]'
                   : 'border-ct-line hover:border-ct-line bg-ct-surface'
               }`}
             >

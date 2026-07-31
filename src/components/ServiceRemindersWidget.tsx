@@ -123,7 +123,7 @@ export default function ServiceRemindersWidget() {
           return (
             <div
               key={reminder.id}
-              className={`px-5 py-4 transition-colors ${isOverdue ? 'bg-ct-rose/[0.13]/50' : 'hover:bg-ct-surface-2'}`}
+              className={`px-5 py-4 transition-colors ${isOverdue ? 'bg-ct-rose/[0.13]' : 'hover:bg-ct-surface-2'}`}
             >
               <div className="flex items-start gap-3">
                 <div className={`w-9 h-9 rounded-ct-sm flex items-center justify-center flex-shrink-0 ${

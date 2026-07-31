@@ -1278,7 +1278,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                         day{weekAvailableDays === 1 ? '' : 's'} available
                       </p>
                     </div>
-                    <div className="w-px self-stretch bg-ct-teal/[0.14]/80 my-3" />
+                    <div className="w-px self-stretch bg-ct-teal/[0.14] my-3" />
                   </>
                 )}
                 <div className="flex-1 px-5 py-3.5">
@@ -1299,7 +1299,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 const now = new Date();
                 const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 return (
-                  <div key={i} className={`flex flex-col ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-ct-surface-2/30' : hasAvailable ? 'bg-ct-teal/[0.14]/20' : ''}`}>
+                  <div key={i} className={`flex flex-col ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-ct-surface-2/30' : hasAvailable ? 'bg-ct-teal/[0.14]' : ''}`}>
                     <div className={`px-2 py-3 text-center border-b border-ct-line-soft ${today ? 'bg-ct-surface-2' : ''}`}>
                       <p className="text-xs text-ct-mute uppercase tracking-wide">{day.toLocaleDateString('en-AU', { weekday: 'short' })}</p>
                       <p className={`text-lg font-bold mt-0.5 ${today ? 'text-ct-mute-2' : isPastDay ? 'text-ct-mute' : 'text-ct-paper'}`}>{day.getDate()}</p>
@@ -1666,7 +1666,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                     const now = new Date();
                     const isPastDay = day < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                     return (
-                      <div key={i} className={`min-h-[100px] p-2 ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-ct-surface-2/30' : hasAvailable ? 'bg-ct-teal/[0.14]/20 hover:bg-ct-teal/[0.14]/30' : 'hover:bg-ct-surface-2/50'} transition-colors`}>
+                      <div key={i} className={`min-h-[100px] p-2 ${isPastDay ? 'opacity-60' : ''} ${today ? 'bg-ct-surface-2/30' : hasAvailable ? 'bg-ct-teal/[0.14] hover:bg-ct-teal/[0.14]' : 'hover:bg-ct-surface-2/50'} transition-colors`}>
                         <div className="flex items-center gap-1 mb-1.5">
                           <p className={`text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full ${
                             today ? 'bg-ct-teal text-ct-ink' : isPastDay ? 'text-ct-mute' : 'text-ct-mute-2'

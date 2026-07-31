@@ -3266,7 +3266,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <button
                       type="button"
                       onClick={() => editFileRef.current?.click()}
-                      className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-teal hover:bg-ct-amber/[0.13]/30 transition-colors group"
+                      className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-teal hover:bg-ct-amber/[0.13] transition-colors group"
                     >
                       <Plus className="w-4 h-4 text-ct-mute group-hover:text-ct-amber transition-colors" />
                       <span className="text-[10px] text-ct-mute group-hover:text-ct-amber">Add</span>

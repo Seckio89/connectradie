@@ -371,7 +371,7 @@ export default function OnboardingChecklist() {
               disabled={step.complete || isPaymentLoading}
               className={`w-full flex items-center gap-3 p-3 rounded-ct-md text-left transition-all duration-200 group ${
                 step.complete
-                  ? 'bg-ct-teal/[0.14]/60 cursor-default'
+                  ? 'bg-ct-teal/[0.14] cursor-default'
                   : isPaymentLoading
                     ? 'bg-ct-surface-2 cursor-wait'
                     : 'hover:bg-ct-surface-2 active:scale-[0.98] cursor-pointer'

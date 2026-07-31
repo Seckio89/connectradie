@@ -126,7 +126,7 @@ export default function HowFeesWork() {
                   <td className="py-2.5 text-ct-mute-2">Card processing on materials — at cost, ~1.93%</td>
                   <td className="py-2.5 text-right tabular-nums text-ct-paper">−{money(HOT_WATER.cardProcessing)}</td>
                 </tr>
-                <tr className="bg-ct-teal/[0.14]/60">
+                <tr className="bg-ct-teal/[0.14]">
                   <td className="py-2.5 font-semibold text-ct-paper">Dave receives</td>
                   <td className="py-2.5 text-right tabular-nums font-semibold text-ct-paper">{money(HOT_WATER.net)}</td>
                 </tr>
