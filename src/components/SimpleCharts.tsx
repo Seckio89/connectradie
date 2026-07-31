@@ -112,7 +112,7 @@ export function LineChart({ data, height = 200, color = 'var(--teal)', formatVal
               cx={c.x}
               cy={c.y}
               r={hoveredIndex === i ? 6 : 4}
-              fill={hoveredIndex === i ? color : 'white'}
+              fill={hoveredIndex === i ? color : 'var(--surface)'}
               stroke={color}
               strokeWidth="2"
               className="cursor-pointer transition-all duration-200"
@@ -127,13 +127,13 @@ export function LineChart({ data, height = 200, color = 'var(--teal)', formatVal
                   width="60"
                   height="20"
                   rx="4"
-                  fill="#1f2937"
+                  fill="var(--ink-2)"
                 />
                 <text
                   x={c.x}
                   y={c.y - 17}
                   textAnchor="middle"
-                  fill="white"
+                  fill="var(--paper)"
                   fontSize="10"
                   fontWeight="600"
                 >
@@ -215,10 +215,13 @@ export function DonutChart({ data, size = 160, centerLabel = 'Total' }: DonutCha
             />
           );
         })}
-        <text x={center} y={center - 6} textAnchor="middle" className="text-lg font-bold" fill="#111827">
+        {/* These were #111827 and #6b7280 — gray-900 and gray-500, left behind by
+            the v2 cutover. On a card the total measured 1.06:1 (invisible) and
+            the label 3.46:1 (fails AA). Now 15.38:1 and 5.25:1. */}
+        <text x={center} y={center - 6} textAnchor="middle" className="text-lg font-bold" fill="var(--paper)">
           {total}
         </text>
-        <text x={center} y={center + 10} textAnchor="middle" className="text-xs" fill="#6b7280">
+        <text x={center} y={center + 10} textAnchor="middle" className="text-xs" fill="var(--mute)">
           {centerLabel}
         </text>
       </svg>

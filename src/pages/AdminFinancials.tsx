@@ -10,6 +10,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { token, tokenAlpha } from '../lib/themeTokens';
 import DashboardLayout from '../components/DashboardLayout';
 
 interface Metrics {
@@ -202,8 +203,8 @@ export default function AdminFinancials() {
           {
             label: 'Projected Revenue',
             data: revenueData,
-            borderColor: '#06D6A0',
-            backgroundColor: 'rgba(6, 214, 160, 0.1)',
+            borderColor: token('--teal'),
+            backgroundColor: tokenAlpha('teal', 0.1),
             fill: true,
             tension: 0.3,
             borderWidth: 2,
@@ -212,7 +213,7 @@ export default function AdminFinancials() {
           {
             label: 'Costs (Stripe + Ops)',
             data: costData,
-            borderColor: '#EF4444',
+            borderColor: token('--rose'),
             borderDash: [5, 5],
             fill: false,
             tension: 0,
@@ -231,6 +232,10 @@ export default function AdminFinancials() {
               usePointStyle: true,
               padding: 20,
               font: { size: 12 },
+              // Chart.js defaults every label and tick to #666, which is a
+              // light-mode assumption baked into the library. On a card that
+              // is 2.8:1 — the axis of this chart was barely readable.
+              color: token('--mute-2'),
             },
           },
           tooltip: {
@@ -247,10 +252,14 @@ export default function AdminFinancials() {
             beginAtZero: true,
             ticks: {
               callback: (value: number) => `$${value.toLocaleString()}`,
+              color: token('--mute-2'),
             },
-            grid: { color: 'rgba(0,0,0,0.05)' },
+            // Was rgba(0,0,0,0.05): black at 5% over a dark card, i.e. no grid
+            // at all.
+            grid: { color: token('--line') },
           },
           x: {
+            ticks: { color: token('--mute-2') },
             grid: { display: false },
           },
         },

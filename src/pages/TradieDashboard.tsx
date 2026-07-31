@@ -1118,7 +1118,7 @@ export default function TradieDashboard() {
           const unreadConvos = conversations.filter(c => c.messages.some(m => m.receiver_id === user?.id && !m.read_at));
           const pendingConfirmations = recurringSessions.filter(s => s.status === 'pending_confirmation');
           if (pendingJobs.length === 0 && inProgressJobs.length === 0 && unreadConvos.length === 0 && pendingConfirmations.length === 0 && newLeads.length === 0) return (
-            <div className="bg-ct-teal/[0.14] border rounded-ct-lg py-2 px-4 sm:p-3 mt-2 sm:mt-4 mb-1 sm:px-5" style={{ borderBottom: '0.5px solid #d1fae5' }}>
+            <div className="bg-ct-teal/[0.14] border rounded-ct-lg py-2 px-4 sm:p-3 mt-2 sm:mt-4 mb-1 sm:px-5" style={{ borderBottom: '0.5px solid var(--line-soft)' }}>
               <div className="flex items-center gap-2 text-ct-teal">
                 <CheckCircle2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 <span className="text-xs sm:text-sm font-medium">All caught up</span>
@@ -1136,7 +1136,7 @@ export default function TradieDashboard() {
                     {pendingJobs.length + inProgressJobs.length + unreadConvos.length + pendingConfirmations.length}
                   </span>
                 </p>
-                <Link to="/work" className="text-[11px] font-medium text-[#1D9E75] md:hidden">Manage</Link>
+                <Link to="/work" className="text-[11px] font-medium text-ct-teal md:hidden">Manage</Link>
               </div>
               <div className="space-y-2">
                 {pendingConfirmations.length > 0 && (
