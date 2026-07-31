@@ -514,7 +514,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
   <div class="detail-item"><div class="dl">Invoice #</div><div class="dv">${escapeHtml(invoiceNum)}</div></div>
   <div class="detail-item"><div class="dl">Date & Time</div><div class="dv">${formatDateTime(payment.created_at)}</div></div>
   <div class="detail-item"><div class="dl">Payment Type</div><div class="dv" style="text-transform:capitalize">${payment.payment_type.replace(/_/g, ' ')}</div></div>
-  <div class="detail-item"><div class="dl">Status</div><div class="dv"><span class="badge ${payment.status}">${payment.status}</span></div></div>
+  <div class="detail-item"><div class="dl">Status</div><div class="dv"><span class="badge ${payment.status}" style="text-transform:capitalize">${escapeHtml(payment.status.replace(/_/g, ' '))}</span></div></div>
   <div class="detail-item"><div class="dl">Currency</div><div class="dv">${(payment.currency || 'AUD').toUpperCase()}</div></div>
 </div>
 <div class="footer">
