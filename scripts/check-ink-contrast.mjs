@@ -69,41 +69,77 @@ const listFiles = () => execSync(
 const TEXT = Object.keys(T).map((k) => [`text-ct-${k}`, T[k]]);
 
 // WCAG 1.4.3 exempts inactive controls, and a disabled button SHOULD read as
-// unavailable. `bg-ct-line text-ct-mute` is the app's disabled pairing at
-// 4.29:1; raising it would make disabled look live.
-const INACTIVE = /cursor-not-allowed|disabled:|\bopacity-(?:[0-5]?[0-9])\b/;
+// unavailable. This app states that with one pairing, `bg-ct-line
+// text-ct-mute` at 4.29:1; raising it would make disabled look live.
+//
+// Exempt that ONE pair by token. The obvious alternative — skip any element
+// carrying `disabled:` or `cursor-not-allowed` — is worse than useless:
+// `disabled:opacity-50` sits on nearly every primary CTA in the app and says
+// nothing whatever about that button's RESTING colours. Keying off it made
+// this check skip most buttons in the codebase. Injecting `text-ct-paper` on
+// `bg-ct-teal` (1.76:1, the exact bug this script exists to catch) into a live
+// submit button and watching the run report clean is how that was found.
+const EXEMPT = new Set(['text-ct-mute on ct-line']);
+
+// One class string in, findings out.
+const scanSegment = (seg) => {
+  const out = [];
+  const tokens = seg.split(/\s+/).filter(Boolean);
+  const bgs = tokens.filter((t) => /^!?(bg|from|via|to)-ct-/.test(t) && !t.includes(':')).map(parseBg).filter(Boolean);
+  // KNOWN LIMIT: no own fill means the element inherits an ancestor's, and
+  // this does not resolve the JSX tree. Silent by design — flagging every
+  // such element would drown the provable hits. It is a real gap, not a
+  // safe one: seven elements were missed this way, an icon coloured
+  // text-ct-paper sitting inside a parent div filled `from-ct-teal`, the
+  // fill and the text in separate class strings. Reviewing a token
+  // migration means reading the ancestor by hand, or measuring computed
+  // styles in a browser. This check cannot do it for you.
+  if (!bgs.length) return out;
+  for (const [cls, rgb] of TEXT) {
+    // Resting state only. `hover:text-ct-ink` belongs to `hover:bg-*`.
+    if (!tokens.some((t) => t === cls || t === `!${cls}`)) continue;
+    for (const bg of bgs) {
+      if (EXEMPT.has(`${cls} on ${bg.label}`)) continue;
+      const cr = ratio(rgb, bg.rgb);
+      if (cr < AA) out.push({ text: cls, bg: bg.label, cr: cr.toFixed(2) });
+    }
+  }
+  return out;
+};
+
+// This script's own failure mode is reporting clean because it stopped
+// looking, which is indistinguishable from success. Three real defects
+// shipped behind exactly that. So prove it can still see, on every run,
+// before trusting a pass.
+const SELF_TEST = [
+  // The bug this exists to catch, on a button shaped like a real one.
+  ['px-4 py-2 bg-ct-teal text-ct-paper rounded-ct-md disabled:opacity-50', true],
+  // Gradient stops paint a fill despite carrying no bg- prefix.
+  ['bg-gradient-to-r from-ct-teal to-ct-teal text-ct-paper', true],
+  // Ink on a dark fill — the original direction.
+  ['bg-ct-surface-2 text-ct-ink', true],
+  // Correct pairings must NOT be reported, or the check is just noise.
+  ['bg-ct-teal text-ct-ink hover:bg-ct-teal-deep', false],
+  ['bg-ct-surface text-ct-paper', false],
+  ['bg-ct-amber/[0.13] text-ct-amber', false],
+];
+for (const [seg, shouldFail] of SELF_TEST) {
+  if (scanSegment(seg).length > 0 !== shouldFail) {
+    console.error(`check-ink-contrast self-test failed on: ${seg}`);
+    console.error(shouldFail
+      ? 'Expected a finding and got none — the check has been blinded and a pass means nothing.'
+      : 'Flagged a correct pairing — the check would fail valid code.');
+    process.exit(2);
+  }
+}
 
 const files = listFiles();
 const fails = [];
 for (const file of files) {
-  const all = readFileSync(file, 'utf8').split('\n');
-  all.forEach((line, i) => {
-    // A ternary branch carries the colours but not the `disabled:` markers —
-    // those sit on the element, several lines up. Judge inactivity from the
-    // enclosing attribute block, the same reason the fill lookup has to.
-    const element = all.slice(Math.max(0, i - 8), i + 2).join(' ');
+  readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
     // Per quoted segment, so a ternary's branches are judged independently.
     for (const seg of line.split(/['"`]/)) {
-      const tokens = seg.split(/\s+/).filter(Boolean);
-      const bgs = tokens.filter((t) => /^!?(bg|from|via|to)-ct-/.test(t) && !t.includes(':')).map(parseBg).filter(Boolean);
-      // KNOWN LIMIT: no own fill means the element inherits an ancestor's, and
-      // this does not resolve the JSX tree. Silent by design — flagging every
-      // such element would drown the provable hits. It is a real gap, not a
-      // safe one: seven elements were missed this way, an icon coloured
-      // text-ct-paper sitting inside a parent div filled `from-ct-teal`, the
-      // fill and the text in separate class strings. Reviewing a token
-      // migration means reading the ancestor by hand, or measuring computed
-      // styles in a browser. This check cannot do it for you.
-      if (!bgs.length) continue;
-      if (INACTIVE.test(element)) continue;
-      for (const [cls, rgb] of TEXT) {
-        // Resting state only. `hover:text-ct-ink` belongs to `hover:bg-*`.
-        if (!tokens.some((t) => t === cls || t === `!${cls}`)) continue;
-        for (const bg of bgs) {
-          const cr = ratio(rgb, bg.rgb);
-          if (cr < AA) fails.push({ file, line: i + 1, text: cls, bg: bg.label, cr: cr.toFixed(2) });
-        }
-      }
+      for (const f of scanSegment(seg)) fails.push({ file, line: i + 1, ...f });
     }
   });
 }
