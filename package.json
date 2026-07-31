@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "check:columns": "node scripts/check-db-columns.mjs",
     "check:ink": "node scripts/check-ink-contrast.mjs",
+    "check:tokens": "node scripts/check-ct-tokens.mjs",
     "check:contrast": "node scripts/check-contrast.mjs",
     "check:contrast:ci": "node scripts/check-contrast.mjs --baseline",
     "check:contrast:baseline": "node scripts/check-contrast.mjs --update-baseline",

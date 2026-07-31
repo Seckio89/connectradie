@@ -1173,7 +1173,7 @@ export default function JobManagementModal({
 
                 {/* ── Completion Form (only for in_progress jobs) ── */}
                 {(job.status === 'in_progress' || job.status === 'funded') && !isLicenseExpired && (
-                  <div className="border-2 border-ct-teal/30 rounded-ct-md p-4 bg-ct-teal/[0.14]/50">
+                  <div className="border-2 border-ct-teal/30 rounded-ct-md p-4 bg-ct-teal/[0.14]">
                     <h3 className="text-sm font-bold text-ct-paper flex items-center gap-2 mb-3">
                       <Camera className="w-4 h-4 text-ct-teal" />
                       Complete This Job
@@ -1269,7 +1269,7 @@ export default function JobManagementModal({
 
                 {/* ── Completion Summary (for completed jobs) ── */}
                 {job.status === 'completed' && job.completion_notes && (
-                  <div className="border border-ct-teal/30 rounded-ct-md p-4 bg-ct-teal/[0.14]/50">
+                  <div className="border border-ct-teal/30 rounded-ct-md p-4 bg-ct-teal/[0.14]">
                     <h3 className="text-sm font-bold text-ct-paper flex items-center gap-2 mb-2">
                       <CheckCircle2 className="w-4 h-4 text-ct-teal" />
                       Completion Notes
@@ -1288,7 +1288,7 @@ export default function JobManagementModal({
 
                 {/* Off-app + completed + unpaid → get paid: email a card link. */}
                 {job.status === 'completed' && isOffApp && !jobPaid && (
-                  <div className="border border-ct-teal/30 rounded-ct-md p-4 bg-ct-teal/[0.14]/50">
+                  <div className="border border-ct-teal/30 rounded-ct-md p-4 bg-ct-teal/[0.14]">
                     <div className="flex items-center gap-2 mb-2">
                       <DollarSign className="w-4 h-4 text-ct-teal" />
                       <h3 className="text-sm font-bold text-ct-paper">Get paid</h3>

@@ -667,7 +667,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
 
         {pendingRequests.length > 0 && (
           <div className="bg-ct-amber/[0.13] border-2 border-ct-teal/30 rounded-ct-lg overflow-hidden shadow-sm">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-ct-amber/[0.34] bg-ct-amber/[0.13]/60">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-ct-amber/[0.34] bg-ct-amber/[0.13]">
               <div className="w-8 h-8 bg-ct-teal/[0.14] rounded-ct-sm flex items-center justify-center">
                 <AlertCircle className="w-5 h-5 text-ct-amber" />
               </div>

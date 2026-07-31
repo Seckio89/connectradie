@@ -1493,7 +1493,7 @@ export default function ClientDashboard() {
 
 
                     return (
-                      <div key={job.id} className={`rounded-ct-md border transition-all ${isOverdue ? 'border-ct-rose/[0.34] bg-ct-rose/[0.13]/50' : isDueSoon ? 'border-ct-amber/[0.34] bg-ct-amber/[0.13]/30' : 'border-ct-line bg-ct-surface'}`}>
+                      <div key={job.id} className={`rounded-ct-md border transition-all ${isOverdue ? 'border-ct-rose/[0.34] bg-ct-rose/[0.13]' : isDueSoon ? 'border-ct-amber/[0.34] bg-ct-amber/[0.13]' : 'border-ct-line bg-ct-surface'}`}>
                         <div className="p-3 cursor-pointer hover:bg-ct-surface/50 transition-colors rounded-t-ct-lg" onClick={() => navigate('/leads?tab=services')} role="button" tabIndex={0}>
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
@@ -2370,7 +2370,7 @@ export default function ClientDashboard() {
                         key={job.id}
                         onClick={() => sendQuoteInvitation(job.id)}
                         disabled={sendingInvite}
-                        className="w-full text-left p-3 rounded-ct-md border border-ct-line hover:border-ct-teal/30 hover:bg-ct-teal/[0.14]/50 transition-colors disabled:opacity-50"
+                        className="w-full text-left p-3 rounded-ct-md border border-ct-line hover:border-ct-teal/30 hover:bg-ct-teal/[0.14] transition-colors disabled:opacity-50"
                       >
                         <p className="text-sm font-semibold text-ct-paper capitalize truncate">
                           {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
@@ -2603,7 +2603,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
     const freqLabel = formatFrequency(successState.frequency);
 
     return (
-      <div className="border border-ct-teal/30 rounded-ct-md p-4 mb-3 bg-ct-teal/[0.14]/50 space-y-3">
+      <div className="border border-ct-teal/30 rounded-ct-md p-4 mb-3 bg-ct-teal/[0.14] space-y-3">
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 bg-ct-teal/[0.14] rounded-full flex items-center justify-center flex-shrink-0">
             <CheckCircle2 className="w-5 h-5 text-ct-teal" />

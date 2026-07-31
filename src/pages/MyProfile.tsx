@@ -252,7 +252,7 @@ export default function MyProfile() {
 
                     <div className="flex flex-wrap items-center gap-2 mt-3">
                       {isIdentityVerified && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-teal/[0.14]/20 text-ct-teal text-xs font-medium rounded-full border border-ct-teal/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-teal/[0.14] text-ct-teal text-xs font-medium rounded-full border border-ct-teal/30">
                           <ShieldCheck className="w-3.5 h-3.5" />
                           ID Verified
                         </span>
@@ -270,7 +270,7 @@ export default function MyProfile() {
                         </span>
                       )}
                       {profile?.is_emergency_available && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-rose/[0.13]/20 text-ct-rose text-xs font-medium rounded-full border border-ct-rose/30">
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-rose/[0.13] text-ct-rose text-xs font-medium rounded-full border border-ct-rose/30">
                           <Zap className="w-3.5 h-3.5" />
                           Emergency
                         </span>

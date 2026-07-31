@@ -34,14 +34,14 @@ const features = [
     title: 'Verified Reviews Only',
     description: 'Every review is tied to a completed, paid job. No fake ratings, no inflated scores.',
     color: 'text-ct-amber',
-    bg: 'bg-ct-amber/10 border-ct-amber/[0.34]/20',
+    bg: 'bg-ct-amber/10 border-ct-amber/[0.34]',
   },
   {
     icon: FileText,
     title: 'GST Invoicing Built In',
     description: 'GST-compliant invoices with full line-item breakdowns and payment tracking. No surprises.',
     color: 'text-ct-teal',
-    bg: 'bg-ct-teal/10 border-ct-teal/300/20',
+    bg: 'bg-ct-teal/10 border-ct-teal/20',
   },
 ];
 

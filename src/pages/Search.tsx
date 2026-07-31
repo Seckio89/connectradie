@@ -1068,7 +1068,7 @@ export default function Search() {
                     key={job.id}
                     onClick={() => sendQuoteInvitation(job.id)}
                     disabled={sendingInvite}
-                    className="w-full text-left p-3 rounded-ct-md border border-ct-line hover:border-ct-teal/30 hover:bg-ct-teal/[0.14]/50 transition-colors disabled:opacity-50"
+                    className="w-full text-left p-3 rounded-ct-md border border-ct-line hover:border-ct-teal/30 hover:bg-ct-teal/[0.14] transition-colors disabled:opacity-50"
                   >
                     <p className="text-sm font-semibold text-ct-paper capitalize truncate">
                       {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}

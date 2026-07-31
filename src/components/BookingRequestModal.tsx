@@ -356,7 +356,7 @@ export default function BookingRequestModal({
                                   ? isSelected
                                     ? 'bg-ct-teal text-ct-ink shadow-md'
                                     : isPast
-                                    ? 'bg-ct-teal/[0.14]/50 text-ct-teal opacity-50 hover:opacity-75 border border-ct-teal/30'
+                                    ? 'bg-ct-teal/[0.14] text-ct-teal opacity-50 hover:opacity-75 border border-ct-teal/30'
                                     : 'bg-ct-teal/[0.14] text-ct-teal hover:bg-ct-teal/[0.14] border border-ct-teal/30'
                                   : isPast
                                   ? 'text-ct-mute opacity-50'

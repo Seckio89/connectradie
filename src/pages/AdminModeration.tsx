@@ -262,7 +262,7 @@ export default function AdminModeration() {
                 onClick={() => { setActiveTab('reports'); setSearchQuery(''); }}
                 className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'reports'
-                    ? 'text-ct-rose bg-ct-rose/[0.13]/50'
+                    ? 'text-ct-rose bg-ct-rose/[0.13]'
                     : 'text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface-2'
                 }`}
               >
@@ -284,7 +284,7 @@ export default function AdminModeration() {
                 onClick={() => { setActiveTab('flagged'); setSearchQuery(''); }}
                 className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'flagged'
-                    ? 'text-ct-amber bg-ct-amber/[0.13]/50'
+                    ? 'text-ct-amber bg-ct-amber/[0.13]'
                     : 'text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface-2'
                 }`}
               >
@@ -306,7 +306,7 @@ export default function AdminModeration() {
                 onClick={() => { setActiveTab('reviews'); setSearchQuery(''); }}
                 className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'reviews'
-                    ? 'text-ct-amber bg-ct-amber/[0.13]/50'
+                    ? 'text-ct-amber bg-ct-amber/[0.13]'
                     : 'text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface-2'
                 }`}
               >
@@ -403,7 +403,7 @@ export default function AdminModeration() {
               ) : (
                 <div className="divide-y divide-ct-line-soft">
                   {filteredReports.map(report => (
-                    <div key={report.id} className={`p-5 ${report.status === 'pending' ? 'bg-ct-rose/[0.13]/30' : ''}`}>
+                    <div key={report.id} className={`p-5 ${report.status === 'pending' ? 'bg-ct-rose/[0.13]' : ''}`}>
                       <div className="flex items-start gap-4">
                         <div className="w-10 h-10 bg-ct-rose/[0.13] rounded-ct-md flex items-center justify-center flex-shrink-0">
                           <Flag className="w-5 h-5 text-ct-rose" />
@@ -489,7 +489,7 @@ export default function AdminModeration() {
                     const category = job.description.match(/^\[([^\]]+)\]/)?.[1] || '';
                     const desc = job.description.replace(/^\[[^\]]+\]\s*/, '');
                     return (
-                      <div key={job.id} className="border border-ct-amber/[0.34] bg-ct-amber/[0.13]/30 rounded-ct-md p-4">
+                      <div key={job.id} className="border border-ct-amber/[0.34] bg-ct-amber/[0.13] rounded-ct-md p-4">
                         <div className="flex items-start justify-between gap-3 mb-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
@@ -505,7 +505,7 @@ export default function AdminModeration() {
                             </div>
                           </div>
                         </div>
-                        <div className="mt-3 pt-3 border-t border-ct-amber/[0.34]/50">
+                        <div className="mt-3 pt-3 border-t border-ct-amber/[0.34]">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5 text-xs text-ct-amber">
                               <AlertTriangle className="w-3.5 h-3.5" />

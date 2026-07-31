@@ -1711,7 +1711,7 @@ function DisputeSection({
   }
 
   return (
-    <div className="border border-ct-amber/[0.34] rounded-ct-sm p-4 bg-ct-amber/[0.13]/50">
+    <div className="border border-ct-amber/[0.34] rounded-ct-sm p-4 bg-ct-amber/[0.13]">
       <p className="text-sm font-semibold text-ct-paper">Raise a dispute</p>
       <p className="text-xs text-ct-mute-2 mt-1 mb-3">
         Tell us what went wrong. Our team reviews disputes within 2–3 business days, and

@@ -281,8 +281,8 @@ function SmartCalendar({
                   : isSelected
                   ? 'bg-ct-surface-2 text-ct-paper shadow-md'
                   : isWeekend
-                  ? 'bg-ct-teal/[0.14]/60 text-ct-mute hover:bg-ct-teal/[0.14] hover:text-ct-mute-2'
-                  : 'bg-ct-teal/[0.14]/60 text-ct-mute-2 hover:bg-ct-teal/[0.14] hover:text-ct-teal'
+                  ? 'bg-ct-teal/[0.14] text-ct-mute-2 hover:bg-ct-teal/[0.14] hover:text-ct-mute-2'
+                  : 'bg-ct-teal/[0.14] text-ct-mute-2 hover:bg-ct-teal/[0.14] hover:text-ct-teal'
               }`}
             >
               {day.getDate()}
@@ -896,7 +896,7 @@ export default function PostLead() {
                       <button
                         type="button"
                         onClick={() => photoInputRef.current?.click()}
-                        className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-teal hover:bg-ct-amber/[0.13]/30 transition-colors group"
+                        className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-teal hover:bg-ct-amber/[0.13] transition-colors group"
                       >
                         <Camera className="w-4 h-4 text-ct-mute group-hover:text-ct-amber transition-colors" />
                         <span className="text-[10px] text-ct-mute group-hover:text-ct-amber">

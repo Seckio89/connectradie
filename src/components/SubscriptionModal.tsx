@@ -468,7 +468,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               {/* Pro */}
               <div className={`border-2 rounded-ct-lg p-6 relative flex flex-col ${
                 currentTier === 'pro'
-                  ? 'border-ct-teal bg-ct-amber/[0.13]/30'
+                  ? 'border-ct-teal bg-ct-amber/[0.13]'
                   : 'border-ct-teal/30 bg-gradient-to-b from-ct-teal/[0.14] to-ct-surface shadow-sm'
               }`}>
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink text-xs font-bold rounded-full uppercase tracking-wide">
@@ -486,16 +486,16 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     <span className="text-3xl font-bold text-ct-paper">
                       ${billingCycle === 'annual' ? TIER_PRICING.pro.annualMonthly : TIER_PRICING.pro.monthly}
                     </span>
-                    <span className="text-ct-mute text-sm">/mo</span>
+                    <span className="text-ct-mute-2 text-sm">/mo</span>
                   </div>
                   {billingCycle === 'annual' && (
                     <div className="mt-1 flex items-center gap-1.5">
-                      <span className="text-xs text-ct-mute line-through">${TIER_PRICING.pro.monthly}/mo</span>
+                      <span className="text-xs text-ct-mute-2 line-through">${TIER_PRICING.pro.monthly}/mo</span>
                       <span className="text-xs text-ct-teal font-medium">Save ${annualSavingsPro}/yr</span>
                     </div>
                   )}
                   {billingCycle === 'monthly' && (
-                    <p className="text-xs text-ct-mute mt-1.5">or ${TIER_PRICING.pro.annualMonthly}/mo billed annually</p>
+                    <p className="text-xs text-ct-mute-2 mt-1.5">or ${TIER_PRICING.pro.annualMonthly}/mo billed annually</p>
                   )}
                 </div>
 
@@ -535,14 +535,14 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                           Free trial active
                         </div>
                         {trialConvertsOn && (
-                          <p className="text-[11px] text-ct-mute text-center leading-relaxed">
+                          <p className="text-[11px] text-ct-mute-2 text-center leading-relaxed">
                             Your card is charged on <span className="font-semibold text-ct-mute-2">{trialConvertsOn}</span> to
                             continue Pro. Cancel any time before then and you won&rsquo;t be charged.
                           </p>
                         )}
                         <button
                           onClick={handleCancel}
-                          className="w-full py-2 text-xs text-ct-mute hover:text-ct-rose font-medium rounded-ct-md hover:bg-ct-rose/[0.13] border border-transparent hover:border-ct-rose/[0.34] transition-colors"
+                          className="w-full py-2 text-xs text-ct-mute-2 hover:text-ct-rose font-medium rounded-ct-md hover:bg-ct-rose/[0.13] border border-transparent hover:border-ct-rose/[0.34] transition-colors"
                         >
                           Cancel trial — no charge
                         </button>
@@ -555,7 +555,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                         </div>
                         <button
                           onClick={handleCancel}
-                          className="w-full py-2 text-xs text-ct-mute hover:text-ct-rose font-medium rounded-ct-md hover:bg-ct-rose/[0.13] border border-transparent hover:border-ct-rose/[0.34] transition-colors"
+                          className="w-full py-2 text-xs text-ct-mute-2 hover:text-ct-rose font-medium rounded-ct-md hover:bg-ct-rose/[0.13] border border-transparent hover:border-ct-rose/[0.34] transition-colors"
                         >
                           Cancel Subscription
                         </button>
@@ -584,7 +584,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                           )}
                         </button>
                         {trialEligible ? (
-                          <p className="text-[11px] text-ct-mute text-center leading-relaxed">
+                          <p className="text-[11px] text-ct-mute-2 text-center leading-relaxed">
                             Free for 14 days, then{' '}
                             <span className="font-semibold text-ct-mute-2">
                               {billingCycle === 'annual'
@@ -594,7 +594,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                             . We&rsquo;ll email you before it ends — cancel any time during the trial and you won&rsquo;t be charged.
                           </p>
                         ) : (
-                          <p className="text-[11px] text-ct-mute text-center">
+                          <p className="text-[11px] text-ct-mute-2 text-center">
                             {billingCycle === 'annual'
                               ? `Billed $${TIER_PRICING.pro.annual}/yr. Cancel anytime.`
                               : `Billed $${TIER_PRICING.pro.monthly}/mo. Cancel anytime.`}

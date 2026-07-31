@@ -1079,7 +1079,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
             <label
               className={`flex items-start gap-3 p-3.5 rounded-ct-md border cursor-pointer transition-colors ${
                 consumablesProvider === 'client'
-                  ? 'border-ct-teal/30 bg-ct-teal/[0.14]/50'
+                  ? 'border-ct-teal/30 bg-ct-teal/[0.14]'
                   : 'border-ct-line hover:border-ct-teal/30'
               }`}
             >
@@ -1100,7 +1100,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
             <label
               className={`flex items-start gap-3 p-3.5 rounded-ct-md border cursor-pointer transition-colors ${
                 consumablesProvider === 'tradie_billed'
-                  ? 'border-ct-teal/30 bg-ct-teal/[0.14]/50'
+                  ? 'border-ct-teal/30 bg-ct-teal/[0.14]'
                   : 'border-ct-line hover:border-ct-teal/30'
               }`}
             >
@@ -1727,7 +1727,7 @@ export default function ClientServicesTab() {
                   <>
                   {/* Awaiting-quote CTA — only when no price is set */}
                   {(job.agreed_price == null || job.agreed_price <= 0) && (
-                    <div className="px-4 py-3 border-t border-ct-line-soft bg-ct-amber/[0.13]/60">
+                    <div className="px-4 py-3 border-t border-ct-line-soft bg-ct-amber/[0.13]">
                       {pendingQuoteJobIds.has(job.id) ? (
                         <div className="flex items-center gap-2 text-xs text-ct-amber">
                           <Clock className="w-3.5 h-3.5 flex-shrink-0" />

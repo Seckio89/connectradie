@@ -516,7 +516,7 @@ export default function Notifications() {
                       key={notification.id}
                       onClick={() => handleClick(notification)}
                       className={`group w-full text-left p-4 hover:bg-ct-surface-2 transition-colors flex items-start gap-3 cursor-pointer ${
-                        isUnread ? 'bg-ct-teal/[0.14]/40' : ''
+                        isUnread ? 'bg-ct-teal/[0.14]' : ''
                       }`}
                     >
                       <div
@@ -537,7 +537,7 @@ export default function Notifications() {
                           {isUnread && (
                             <span className="w-2 h-2 bg-ct-teal rounded-full flex-shrink-0" />
                           )}
-                          <span className="text-xs text-ct-mute ml-auto flex-shrink-0">
+                          <span className="text-xs text-ct-mute-2 ml-auto flex-shrink-0">
                             {relativeTime(notification.created_at)}
                           </span>
                         </div>
@@ -548,7 +548,7 @@ export default function Notifications() {
 
                       <button
                         onClick={(e) => handleDelete(e, notification.id)}
-                        className="p-2.5 text-ct-mute hover:text-ct-rose sm:opacity-0 opacity-60 group-hover:opacity-100 transition-all flex-shrink-0 rounded-ct-xs hover:bg-ct-rose/[0.13] min-w-[44px] min-h-[44px] flex items-center justify-center"
+                        className="p-2.5 text-ct-mute-2 hover:text-ct-rose sm:opacity-0 opacity-60 group-hover:opacity-100 transition-all flex-shrink-0 rounded-ct-xs hover:bg-ct-rose/[0.13] min-w-[44px] min-h-[44px] flex items-center justify-center"
                         aria-label="Delete notification"
                       >
                         <X className="w-4 h-4" />
