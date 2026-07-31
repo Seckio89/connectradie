@@ -337,7 +337,7 @@ export default function JobTracking() {
         {/* Attendance report — client + owner */}
         {(isClient || isOwner) && data.hasAnyVisit && (
           <button onClick={exportReport} disabled={exporting}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-ct-surface-2 text-ct-ink rounded-ct-md font-medium hover:bg-ct-surface-2 disabled:opacity-50 transition-colors">
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-ct-teal text-ct-ink rounded-ct-md font-medium hover:bg-ct-teal-deep disabled:opacity-50 transition-colors">
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Download Attendance Report
           </button>
         )}

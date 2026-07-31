@@ -229,7 +229,7 @@ export default function AccessPinModal({ isOpen, onClose, initialMode = 'auto', 
           <button
             onClick={mode === 'setup' ? submitSetup : mode === 'enter' ? submitEnter : mode === 'change' ? submitChange : submitReset}
             disabled={busy}
-            className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-surface-2 text-ct-ink text-sm font-semibold rounded-ct-md hover:bg-ct-surface-2 disabled:opacity-50 transition-colors"
+            className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-md hover:bg-ct-teal-deep disabled:opacity-50 transition-colors"
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             {mode === 'setup' ? 'Set PIN' : mode === 'enter' ? 'Unlock' : mode === 'change' ? 'Change PIN' : 'Reset PIN'}

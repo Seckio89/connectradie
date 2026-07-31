@@ -279,7 +279,7 @@ function SmartCalendar({
                 disabled
                   ? 'bg-ct-rose/[0.13] text-ct-rose cursor-not-allowed'
                   : isSelected
-                  ? 'bg-ct-surface-2 text-ct-ink shadow-md'
+                  ? 'bg-ct-surface-2 text-ct-paper shadow-md'
                   : isWeekend
                   ? 'bg-ct-teal/[0.14]/60 text-ct-mute hover:bg-ct-teal/[0.14] hover:text-ct-mute-2'
                   : 'bg-ct-teal/[0.14]/60 text-ct-mute-2 hover:bg-ct-teal/[0.14] hover:text-ct-teal'
@@ -886,7 +886,7 @@ export default function PostLead() {
                         <button
                           type="button"
                           onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                          className="absolute top-0.5 right-0.5 p-1 bg-black/60 text-ct-ink rounded-ct-xs hover:bg-black/80 transition-colors sm:opacity-0 sm:group-hover/photo:opacity-100"
+                          className="absolute top-0.5 right-0.5 p-1 bg-black/60 text-ct-paper rounded-ct-xs hover:bg-black/80 transition-colors sm:opacity-0 sm:group-hover/photo:opacity-100"
                         >
                           <X className="w-2.5 h-2.5" />
                         </button>
@@ -945,7 +945,7 @@ export default function PostLead() {
                     ? 'bg-gradient-to-br from-ct-teal to-ct-teal'
                     : 'bg-ct-amber/[0.13] group-hover:bg-ct-amber/[0.13]'
                 }`}>
-                  <Zap className={`w-6 h-6 ${scheduleMode === 'urgent' ? 'text-ct-ink' : 'text-ct-amber'}`} />
+                  <Zap className={`w-6 h-6 ${scheduleMode === 'urgent' ? 'text-ct-paper' : 'text-ct-amber'}`} />
                 </div>
                 <h3 className="font-bold text-ct-paper mb-1">Urgent / Next Available</h3>
                 <p className="text-sm text-ct-mute-2 leading-relaxed">
@@ -988,7 +988,7 @@ export default function PostLead() {
                     ? 'bg-gradient-to-br from-ct-surface-2 to-ct-surface-2'
                     : 'bg-ct-surface-2 group-hover:bg-ct-surface-2'
                 }`}>
-                  <CalendarDays className={`w-6 h-6 ${scheduleMode === 'scheduled' ? 'text-ct-ink' : 'text-ct-mute-2'}`} />
+                  <CalendarDays className={`w-6 h-6 ${scheduleMode === 'scheduled' ? 'text-ct-paper' : 'text-ct-mute-2'}`} />
                 </div>
                 <h3 className="font-bold text-ct-paper mb-1">Flexible / Scheduled</h3>
                 <p className="text-sm text-ct-mute-2 leading-relaxed">
@@ -1281,9 +1281,9 @@ export default function PostLead() {
               disabled={submitting || !scheduleMode}
               className={`w-full py-3.5 font-semibold rounded-ct-md disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-lg ${
                 scheduleMode === 'urgent'
-                  ? 'bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink hover:from-ct-teal hover:to-ct-teal shadow-sm'
+                  ? 'bg-gradient-to-r from-ct-teal to-ct-teal text-ct-paper hover:from-ct-teal hover:to-ct-teal shadow-sm'
                   : scheduleMode === 'scheduled'
-                  ? 'bg-gradient-to-r from-ct-surface-2 to-ct-surface-2 text-ct-ink hover:from-ct-surface-2 hover:to-ct-surface-2 shadow-sm'
+                  ? 'bg-gradient-to-r from-ct-surface-2 to-ct-surface-2 text-ct-paper hover:from-ct-surface-2 hover:to-ct-surface-2 shadow-sm'
                   : 'bg-ct-line text-ct-mute'
               }`}
             >

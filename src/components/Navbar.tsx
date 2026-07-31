@@ -54,7 +54,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center group">
             <span className="text-2xl font-extrabold tracking-tight">
-              <span className="text-ct-ink">Connec</span><span className="text-ct-teal">Tradie</span>
+              <span className="text-ct-paper">Connec</span><span className="text-ct-teal">Tradie</span>
             </span>
           </Link>
 

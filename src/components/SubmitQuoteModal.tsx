@@ -507,7 +507,7 @@ export default function SubmitQuoteModal({
             )}
             <button
               onClick={handleClose}
-              className="px-8 py-3 bg-ct-surface-2 text-ct-ink font-semibold rounded-ct-md hover:bg-ct-surface-2 transition-colors"
+              className="px-8 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:bg-ct-teal-deep transition-colors"
             >
               Done
             </button>

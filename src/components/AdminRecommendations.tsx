@@ -209,7 +209,7 @@ export default function AdminRecommendations() {
         <button
           onClick={generateRecommendations}
           disabled={generating}
-          className="flex items-center gap-2 px-4 py-2 bg-ct-surface text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-teal-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {generating ? (
             <>
@@ -276,7 +276,7 @@ export default function AdminRecommendations() {
           <button
             onClick={generateRecommendations}
             disabled={generating}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-surface text-ct-ink font-medium text-sm rounded-ct-sm hover:bg-ct-surface transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-teal text-ct-ink font-medium text-sm rounded-ct-sm hover:bg-ct-teal-deep transition-colors disabled:opacity-50"
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {generating ? 'Analysing...' : 'Run First Analysis'}
@@ -414,7 +414,7 @@ export default function AdminRecommendations() {
                           <Link
                             to={rec.action_url}
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-ct-surface text-ct-ink text-xs font-medium rounded-ct-xs hover:bg-ct-surface transition-colors"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-medium rounded-ct-xs hover:bg-ct-teal-deep transition-colors"
                           >
                             <ArrowUpRight className="w-3 h-3" />
                             Take Action

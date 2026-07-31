@@ -39,7 +39,7 @@ export default function Footer() {
             <div className="col-span-2">
               <Link to="/" className="flex items-center group">
                 <span className="text-xl font-bold">
-                  <span className="text-ct-ink">Connec</span><span className="text-ct-teal">Tradie</span>
+                  <span className="text-ct-paper">Connec</span><span className="text-ct-teal">Tradie</span>
                 </span>
               </Link>
 
@@ -60,7 +60,7 @@ export default function Footer() {
             </div>
 
             <div>
-              <h4 className="text-ct-ink font-semibold mb-4">For Tradies</h4>
+              <h4 className="text-ct-paper font-semibold mb-4">For Tradies</h4>
               {/* No space-y here: the links carry py-2.5 instead, which turns a
                   24px row + 12px gap into a real 44px tap target at roughly the
                   same visual rhythm. */}
@@ -82,7 +82,7 @@ export default function Footer() {
             </div>
 
             <div>
-              <h4 className="text-ct-ink font-semibold mb-4">For Homeowners</h4>
+              <h4 className="text-ct-paper font-semibold mb-4">For Homeowners</h4>
               {/* No space-y here: the links carry py-2.5 instead, which turns a
                   24px row + 12px gap into a real 44px tap target at roughly the
                   same visual rhythm. */}
@@ -104,7 +104,7 @@ export default function Footer() {
             </div>
 
             <div>
-              <h4 className="text-ct-ink font-semibold mb-4">Support</h4>
+              <h4 className="text-ct-paper font-semibold mb-4">Support</h4>
               {/* No space-y here: the links carry py-2.5 instead, which turns a
                   24px row + 12px gap into a real 44px tap target at roughly the
                   same visual rhythm. */}
@@ -120,7 +120,7 @@ export default function Footer() {
             </div>
 
             <div>
-              <h4 className="text-ct-ink font-semibold mb-4">Legal</h4>
+              <h4 className="text-ct-paper font-semibold mb-4">Legal</h4>
               {/* No space-y here: the links carry py-2.5 instead, which turns a
                   24px row + 12px gap into a real 44px tap target at roughly the
                   same visual rhythm. */}

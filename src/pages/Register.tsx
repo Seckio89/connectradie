@@ -346,7 +346,7 @@ export default function Register() {
               {/* Terms checkbox */}
               <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1">
                 <div className={`mt-px w-4 h-4 rounded-ct-xs flex items-center justify-center flex-shrink-0 border transition-colors ${agreedToTerms ? 'bg-ct-teal border-ct-teal' : 'border-ct-line bg-ct-surface'}`}>
-                  {agreedToTerms && <Check className="w-3 h-3 text-ct-ink" strokeWidth={3} />}
+                  {agreedToTerms && <Check className="w-3 h-3 text-ct-paper" strokeWidth={3} />}
                 </div>
                 <input
                   type="checkbox"

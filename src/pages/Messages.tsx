@@ -1016,10 +1016,9 @@ export default function Messages() {
                                 ? () => handleBookingRequestClick(message.id)
                                 : undefined
                             }
-                            style={isOwn ? { color: '#ffffff' } : undefined}
                             className={`max-w-[85%] sm:max-w-[70%] rounded-ct-lg px-4 py-2.5 ${
                               isOwn
-                                ? 'bg-ct-surface-2 text-ct-ink rounded-br-ct-xs'
+                                ? 'bg-ct-surface-2 text-ct-paper rounded-br-ct-xs'
                                 : 'bg-ct-surface text-ct-paper rounded-bl-ct-xs border border-ct-line shadow-sm'
                             } ${
                               message.is_booking_request
@@ -1077,7 +1076,7 @@ export default function Messages() {
                                   </a>
                                 )}
                                 {message.content && !message.content.startsWith('Sent a ') && (
-                                  <p style={isOwn ? { color: '#ffffff' } : undefined} className={`text-sm whitespace-pre-wrap ${isOwn ? 'text-ct-ink' : 'text-ct-paper'}`}>
+                                  <p className="text-sm whitespace-pre-wrap text-ct-paper">
                                     {isCrossMessageRedacted
                                       ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-ct-xs">[hidden]</span>
                                       : renderRedacted(maybeRedact(message.content, selectedConversation))}
@@ -1085,7 +1084,7 @@ export default function Messages() {
                                 )}
                               </div>
                             ) : (
-                              <p style={isOwn ? { color: '#ffffff' } : undefined} className={`text-sm whitespace-pre-wrap ${isOwn ? 'text-ct-ink' : 'text-ct-paper'}`}>
+                              <p className="text-sm whitespace-pre-wrap text-ct-paper">
                                 {isCrossMessageRedacted
                                   ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-ct-xs">[hidden]</span>
                                   : renderRedacted(maybeRedact(message.content.replace('[Booking Request] ', ''), selectedConversation))}
@@ -1328,7 +1327,7 @@ export default function Messages() {
           />
           <button
             onClick={() => setLightboxUrl(null)}
-            className="absolute top-4 right-4 w-10 h-10 bg-ct-surface/10 hover:bg-ct-surface/20 rounded-full flex items-center justify-center text-ct-ink transition-colors"
+            className="absolute top-4 right-4 w-10 h-10 bg-ct-surface/10 hover:bg-ct-surface/20 rounded-full flex items-center justify-center text-ct-paper transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

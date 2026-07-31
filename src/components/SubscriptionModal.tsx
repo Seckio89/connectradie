@@ -471,7 +471,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                   ? 'border-ct-teal bg-ct-amber/[0.13]/30'
                   : 'border-ct-teal/30 bg-gradient-to-b from-ct-teal/40 to-white shadow-sm'
               }`}>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink text-xs font-bold rounded-full uppercase tracking-wide">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-paper text-xs font-bold rounded-full uppercase tracking-wide">
                   {currentTier === 'pro' ? 'Current Plan' : 'Most Popular'}
                 </div>
 
@@ -567,7 +567,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     {showTestModeButton ? (
                       <button
                         onClick={handleTestModeSubscribe}
-                        className="w-full py-2.5 bg-gradient-to-r from-ct-surface-2 to-ct-surface-2 text-ct-ink text-sm font-semibold rounded-ct-md hover:from-ct-surface-2 hover:to-ct-surface-2 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                        className="w-full py-2.5 bg-gradient-to-r from-ct-surface-2 to-ct-surface-2 text-ct-paper text-sm font-semibold rounded-ct-md hover:from-ct-surface-2 hover:to-ct-surface-2 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                       >
                         <FlaskConical className="w-4 h-4" />
                         Activate Pro (Test)
@@ -576,7 +576,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                       <>
                         <button
                           onClick={handleUpgrade}
-                          className="w-full py-2.5 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink text-sm font-semibold rounded-ct-md hover:from-ct-teal hover:to-ct-teal transition-all shadow-md hover:shadow-lg"
+                          className="w-full py-2.5 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-paper text-sm font-semibold rounded-ct-md hover:from-ct-teal hover:to-ct-teal transition-all shadow-md hover:shadow-lg"
                         >
                           {trialEligible ? 'Start 14-day free trial' : 'Get Pro'}
                           {!trialEligible && billingCycle === 'annual' && (

@@ -150,7 +150,7 @@ export default function TaxInvoice() {
         </Link>
         <button
           onClick={() => window.print()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-ct-surface text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-surface transition-colors min-h-[44px]"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-teal-deep transition-colors min-h-[44px]"
         >
           <Printer className="w-4 h-4" />
           Print / Save PDF

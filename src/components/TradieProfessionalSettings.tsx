@@ -59,7 +59,7 @@ function InfoTooltip({ text }: InfoTooltipProps) {
         <Info className="w-4 h-4" />
       </button>
       {show && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-ct-surface text-ct-ink text-xs rounded-ct-sm shadow-lg whitespace-nowrap z-50 animate-in fade-in duration-150">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-ct-surface text-ct-paper text-xs rounded-ct-sm shadow-lg whitespace-nowrap z-50 animate-in fade-in duration-150">
           {text}
           <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-ct-surface rotate-45" />
         </div>

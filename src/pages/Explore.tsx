@@ -446,7 +446,7 @@ export default function Explore() {
       <footer className="bg-ct-surface text-ct-mute py-8 mt-12">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <Link to="/" className="inline-flex items-center mb-4">
-            <span className="text-2xl font-extrabold tracking-tight text-ct-ink">
+            <span className="text-2xl font-extrabold tracking-tight text-ct-paper">
               Connec<span className="text-ct-teal">Tradie</span>
             </span>
           </Link>

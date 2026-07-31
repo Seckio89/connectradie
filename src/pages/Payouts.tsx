@@ -984,7 +984,7 @@ export default function Payouts() {
                   <button
                     onClick={runInstantPayout}
                     disabled={instantBusy}
-                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 text-ct-ink text-xs font-semibold rounded-ct-sm hover:bg-ct-surface-2 disabled:opacity-50 transition-colors"
+                    className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:bg-ct-teal-deep disabled:opacity-50 transition-colors"
                   >
                     {instantBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '⚡'} Send {formatCurrency(instantStatus.netCents)} now
                   </button>
@@ -1053,7 +1053,7 @@ export default function Payouts() {
                 {onboardingComplete === false ? (
                   <button
                     onClick={() => setOnboardingWarning(true)}
-                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-ct-surface text-ct-ink font-semibold rounded-ct-md hover:bg-ct-surface transition-colors"
+                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:bg-ct-teal-deep transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                     Bank Settings
@@ -1063,7 +1063,7 @@ export default function Payouts() {
                     href={accountDetails.dashboardUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-ct-surface text-ct-ink font-semibold rounded-ct-md hover:bg-ct-surface transition-colors"
+                    className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:bg-ct-teal-deep transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                     Bank Settings

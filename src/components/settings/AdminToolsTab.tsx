@@ -79,7 +79,7 @@ export default function AdminToolsTab({
           <div className="flex-1">
             <h4 className="font-semibold text-ct-paper mb-1">Flash Boost Algorithm</h4>
             <p className="text-sm text-ct-mute-2 mb-4">Finds all pending jobs created more than 2 hours ago that haven't been picked up yet, and marks them as Flash Deals with priority visibility for 1 hour to incentivize fast pickup.</p>
-            <button onClick={onRunFlashBoost} disabled={flashBoostLoading} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink font-semibold rounded-ct-md hover:from-ct-teal hover:to-ct-teal disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg min-h-[44px]">
+            <button onClick={onRunFlashBoost} disabled={flashBoostLoading} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-paper font-semibold rounded-ct-md hover:from-ct-teal hover:to-ct-teal disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg min-h-[44px]">
               {flashBoostLoading ? (<><Loader2 className="w-4 h-4 animate-spin" />Running...</>) : (<><Zap className="w-4 h-4" />Run Flash Boost Algorithm</>)}
             </button>
           </div>

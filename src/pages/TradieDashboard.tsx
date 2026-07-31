@@ -1231,7 +1231,7 @@ export default function TradieDashboard() {
             </div>
             <button
               onClick={() => navigate('/work?tab=services')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13] hover:bg-ct-amber text-ct-ink text-sm font-semibold rounded-ct-sm transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13] hover:bg-ct-amber hover:text-ct-ink text-ct-amber text-sm font-semibold rounded-ct-sm transition-colors"
             >
               Review &amp; Send
               <ArrowRight className="w-4 h-4" />
@@ -2150,7 +2150,7 @@ export default function TradieDashboard() {
                           }`}
                         >
                           <div className="flex flex-col items-center">
-                            <span className={`text-xs sm:text-sm font-medium ${isPast ? 'text-ct-mute' : isSelected ? 'text-ct-ink' : isToday ? 'text-ct-mute-2 font-bold' : 'text-ct-mute-2'}`}>{day}</span>
+                            <span className={`text-xs sm:text-sm font-medium ${isPast ? 'text-ct-mute' : isSelected ? 'text-ct-paper' : isToday ? 'text-ct-mute-2 font-bold' : 'text-ct-mute-2'}`}>{day}</span>
                             <div className="flex gap-0.5 mt-0.5">
                               {hasAvailable && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-teal/[0.14]' : 'bg-ct-teal/[0.14]'}`} />}
                               {hasBooked && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-rose/[0.13]' : 'bg-ct-rose/[0.13]'}`} />}

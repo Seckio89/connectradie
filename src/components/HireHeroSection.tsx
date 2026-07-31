@@ -22,7 +22,7 @@ export default function HireHeroSection() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-[-0.02em]">
-              <span className="text-ct-ink">Your money stays yours until the job's </span>
+              <span className="text-ct-paper">Your money stays yours until the job's </span>
               <span className="text-ct-teal">done right.</span>
             </h1>
 
@@ -40,7 +40,7 @@ export default function HireHeroSection() {
               </button>
               <a
                 href="#protected"
-                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-ct-surface text-ct-ink font-semibold rounded-ct-md border border-ct-line hover:bg-ct-surface-2 transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-ct-teal text-ct-ink font-semibold rounded-ct-md border border-ct-line hover:bg-ct-teal-deep transition-colors"
               >
                 See how it's protected
               </a>
@@ -78,7 +78,7 @@ export default function HireHeroSection() {
                     <Lock className="w-5 h-5 text-ct-amber" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-ct-ink">How your money's protected</p>
+                    <p className="text-sm font-semibold text-ct-paper">How your money's protected</p>
                     <p className="text-xs text-ct-mute">You're in control at every step</p>
                   </div>
                 </div>
@@ -86,31 +86,31 @@ export default function HireHeroSection() {
                 <div className="space-y-0">
                   <div className="flex items-start gap-4">
                     <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full bg-ct-surface/10 border border-white/20 flex items-center justify-center text-ct-ink text-xs font-bold">1</div>
+                      <div className="w-8 h-8 rounded-full bg-ct-surface/10 border border-white/20 flex items-center justify-center text-ct-paper text-xs font-bold">1</div>
                       <div className="w-0.5 h-8 bg-ct-surface/10" />
                     </div>
                     <div className="pt-1 pb-4">
-                      <p className="text-sm font-semibold text-ct-ink">You accept a quote</p>
+                      <p className="text-sm font-semibold text-ct-paper">You accept a quote</p>
                       <p className="text-xs text-ct-mute tabular-nums">Kitchen rewiring — $1,250</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
                     <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full bg-ct-surface/10 border border-white/20 flex items-center justify-center text-ct-ink text-xs font-bold">2</div>
+                      <div className="w-8 h-8 rounded-full bg-ct-surface/10 border border-white/20 flex items-center justify-center text-ct-paper text-xs font-bold">2</div>
                       <div className="w-0.5 h-8 bg-ct-surface/10" />
                     </div>
                     <div className="pt-1 pb-4">
-                      <p className="text-sm font-semibold text-ct-ink">Payment secured with Stripe</p>
+                      <p className="text-sm font-semibold text-ct-paper">Payment secured with Stripe</p>
                       <p className="text-xs text-ct-mute">Held safely — never touched by us</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
                     <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full bg-ct-surface/10 border border-white/20 flex items-center justify-center text-ct-ink text-xs font-bold">3</div>
+                      <div className="w-8 h-8 rounded-full bg-ct-surface/10 border border-white/20 flex items-center justify-center text-ct-paper text-xs font-bold">3</div>
                       <div className="w-0.5 h-8 bg-ct-surface/10" />
                     </div>
                     <div className="pt-1 pb-4">
-                      <p className="text-sm font-semibold text-ct-ink">Tradie completes the work</p>
+                      <p className="text-sm font-semibold text-ct-paper">Tradie completes the work</p>
                       <p className="text-xs text-ct-mute">You track progress in real time</p>
                     </div>
                   </div>
@@ -138,7 +138,7 @@ export default function HireHeroSection() {
                     <ShieldCheck className="w-4 h-4 text-ct-amber" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-ct-ink">Payment Protected</p>
+                    <p className="text-xs font-semibold text-ct-paper">Payment Protected</p>
                     <p className="text-[10px] text-ct-mute leading-snug mt-0.5">Held securely until you approve the work</p>
                   </div>
                 </div>
@@ -149,7 +149,7 @@ export default function HireHeroSection() {
                     <Wallet className="w-4 h-4 text-ct-amber" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-ct-ink">$0 to post, $0 to quote</p>
+                    <p className="text-xs font-semibold text-ct-paper">$0 to post, $0 to quote</p>
                     <p className="text-[10px] text-ct-mute leading-snug mt-0.5">Compare quotes with no obligation</p>
                   </div>
                 </div>

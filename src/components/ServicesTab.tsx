@@ -135,7 +135,7 @@ function ServiceControls({ jobId, jobLabel, isActive, isCancelled, onChanged }: 
         <button
           onClick={handlePause}
           disabled={loading}
-          className="px-3 py-1.5 bg-ct-amber/[0.13] text-ct-ink text-xs font-medium rounded-ct-sm hover:bg-ct-amber disabled:opacity-50 transition-colors"
+          className="px-3 py-1.5 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-ct-sm hover:bg-ct-amber hover:text-ct-ink disabled:opacity-50 transition-colors"
         >
           {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Confirm'}
         </button>
@@ -910,7 +910,7 @@ function QuickChat({ clientId, clientName, userId, recurringJobId }: { clientId:
                 <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[75%] px-3 py-1.5 rounded-ct-sm text-xs ${
                     isOwn
-                      ? 'bg-ct-surface-2 text-ct-ink'
+                      ? 'bg-ct-teal text-ct-ink'
                       : 'bg-ct-surface border border-ct-line text-ct-mute-2'
                   }`}>
                     {msg.content}
@@ -941,7 +941,7 @@ function QuickChat({ clientId, clientName, userId, recurringJobId }: { clientId:
           <button
             onClick={handleSend}
             disabled={!newMessage.trim() || sending}
-            className="px-3 py-2 bg-ct-surface-2 text-ct-ink rounded-ct-sm hover:bg-ct-surface-2 disabled:opacity-50 transition-colors"
+            className="px-3 py-2 bg-ct-teal text-ct-ink rounded-ct-sm hover:bg-ct-teal-deep disabled:opacity-50 transition-colors"
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
@@ -1138,7 +1138,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
                           <button
                             onClick={() => handleFlagRestock(item)}
                             disabled={restocking === item.id}
-                            className="px-2 py-1 bg-ct-amber/[0.13] hover:bg-ct-amber text-ct-ink text-[9px] font-semibold rounded-ct-xs transition-colors disabled:opacity-50"
+                            className="px-2 py-1 bg-ct-amber/[0.13] hover:bg-ct-amber hover:text-ct-ink text-ct-amber text-[9px] font-semibold rounded-ct-xs transition-colors disabled:opacity-50"
                           >
                             {restocking === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Restock'}
                           </button>

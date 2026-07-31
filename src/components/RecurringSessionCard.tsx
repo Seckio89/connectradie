@@ -862,7 +862,7 @@ export default function RecurringSessionCard({
           <button
             onClick={handleDecline}
             disabled={loading}
-            className="inline-flex items-center gap-1 bg-ct-rose/[0.13] hover:bg-ct-rose text-ct-ink px-3 py-1 rounded-ct-xs text-xs font-medium disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1 bg-ct-rose/[0.13] hover:bg-ct-rose hover:text-ct-ink text-ct-rose px-3 py-1 rounded-ct-xs text-xs font-medium disabled:opacity-50 transition-colors"
           >
             {loading ? 'Declining...' : 'Decline'}
           </button>
@@ -1248,7 +1248,7 @@ export default function RecurringSessionCard({
           <button
             onClick={handleSkip}
             disabled={loading || !reason.trim()}
-            className="inline-flex items-center gap-1 bg-ct-amber/[0.13] hover:bg-ct-amber text-ct-ink px-3 py-1 rounded-ct-xs text-xs font-medium disabled:opacity-50 transition-colors"
+            className="inline-flex items-center gap-1 bg-ct-amber/[0.13] hover:bg-ct-amber hover:text-ct-ink text-ct-amber px-3 py-1 rounded-ct-xs text-xs font-medium disabled:opacity-50 transition-colors"
           >
             {loading ? 'Skipping...' : 'Skip'}
           </button>

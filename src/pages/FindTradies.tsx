@@ -513,7 +513,7 @@ export default function FindTradies() {
 
         {/* Footer CTA */}
         <section className="mt-10 bg-ct-ink rounded-ct-lg px-6 py-10 sm:px-10 sm:py-12 text-center">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-ct-ink">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-ct-paper">
             Post your {suburb.name} {tradeLabel.toLowerCase()} job free
           </h2>
           <p className="mt-3 text-base text-ct-mute max-w-xl mx-auto">
@@ -529,7 +529,7 @@ export default function FindTradies() {
             </Link>
             <Link
               to={tradeHubUrl(trade)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-ct-surface hover:bg-ct-surface-2 border border-ct-line text-ct-ink font-semibold rounded-ct-md transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ct-teal hover:bg-ct-teal-deep border border-ct-line text-ct-ink font-semibold rounded-ct-md transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               All {tradeLabelPlural.toLowerCase()} by suburb

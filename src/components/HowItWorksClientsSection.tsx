@@ -42,7 +42,7 @@ export default function HowItWorksClientsSection() {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-ct-surface text-ct-mute rounded-full text-sm font-semibold mb-5 border border-ct-line">
             Why Switch to ConnecTradie
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-ct-ink tracking-[-0.02em]">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-ct-paper tracking-[-0.02em]">
             Built Different. <span className="text-ct-teal">Here's the Proof.</span>
           </h2>
           <p className="mt-4 text-lg text-ct-mute">
@@ -59,7 +59,7 @@ export default function HowItWorksClientsSection() {
                   <div className="w-10 h-10 rounded-ct-sm bg-ct-teal/10 border border-ct-teal/20 flex items-center justify-center">
                     <Icon className="w-5 h-5 text-ct-amber" />
                   </div>
-                  <h3 className="text-lg font-semibold text-ct-ink">{row.feature}</h3>
+                  <h3 className="text-lg font-semibold text-ct-paper">{row.feature}</h3>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex items-start gap-3 p-3 bg-ct-teal/10 border border-ct-teal/20 rounded-ct-sm">

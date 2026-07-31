@@ -594,7 +594,7 @@ export default function Settings() {
                   )}
                   {avatarUploading && (
                     <div className="absolute inset-0 bg-black/50 rounded-ct-md flex items-center justify-center">
-                      <Loader2 className="w-8 h-8 text-ct-ink animate-spin" />
+                      <Loader2 className="w-8 h-8 text-ct-paper animate-spin" />
                     </div>
                   )}
                 </button>
@@ -822,7 +822,7 @@ export default function Settings() {
         >
           <button
             onClick={() => setShowAvatarModal(false)}
-            className="absolute top-4 right-4 w-10 h-10 bg-ct-surface/10 hover:bg-ct-surface/20 rounded-full flex items-center justify-center text-ct-ink transition-colors"
+            className="absolute top-4 right-4 w-10 h-10 bg-ct-surface/10 hover:bg-ct-surface/20 rounded-full flex items-center justify-center text-ct-paper transition-colors"
             aria-label="Close photo preview"
           >
             <X className="w-6 h-6" />

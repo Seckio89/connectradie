@@ -38,7 +38,7 @@ export default function ProFeatureGate({ feature, isProUser, children, className
               <p className="text-base font-bold text-ct-paper">{getFeatureLabel(feature)}</p>
               <p className="text-sm text-ct-mute-2 mt-1 max-w-[240px]">{getFeatureDescription(feature)}</p>
             </div>
-            <div className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink text-sm font-bold rounded-ct-md shadow-sm group-hover/gate:shadow-md transition-all min-h-[44px]">
+            <div className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-paper text-sm font-bold rounded-ct-md shadow-sm group-hover/gate:shadow-md transition-all min-h-[44px]">
               <Lock className="w-4 h-4" />
               Upgrade to Unlock
             </div>
@@ -64,7 +64,7 @@ export function ProBadgeButton({ onClick, label = 'Pro', className = '' }: ProBa
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink text-xs font-bold rounded-ct-xs shadow-sm hover:shadow-md transition-all ${className}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-paper text-xs font-bold rounded-ct-xs shadow-sm hover:shadow-md transition-all ${className}`}
     >
       <Crown className="w-2.5 h-2.5" />
       {label}

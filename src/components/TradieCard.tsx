@@ -154,7 +154,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
                 <ShieldCheck className="w-3 h-3" />
                 ID Verified
               </span>
-              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-ct-surface text-ct-ink text-xs rounded-ct-sm whitespace-nowrap opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl">
+              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-ct-surface text-ct-paper text-xs rounded-ct-sm whitespace-nowrap opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   <span>{redactName(tradie.full_name)} - Identity & Credentials Verified</span>
@@ -169,7 +169,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
                 <Shield className="w-3 h-3" />
                 Insured
               </span>
-              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-ct-surface text-ct-ink text-xs rounded-ct-sm whitespace-nowrap opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl">
+              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-ct-surface text-ct-paper text-xs rounded-ct-sm whitespace-nowrap opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl">
                 <div className="flex items-center gap-1.5 font-medium">
                   <Shield className="w-3.5 h-3.5" />
                   <span>Insurance Verified</span>
@@ -184,7 +184,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
                 <FileCheck className="w-3 h-3" />
                 Licensed
               </span>
-              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-ct-surface text-ct-ink text-xs rounded-ct-sm opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl max-w-xs">
+              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-ct-surface text-ct-paper text-xs rounded-ct-sm opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl max-w-xs">
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5 font-medium whitespace-nowrap">
                     <FileCheck className="w-3.5 h-3.5" />

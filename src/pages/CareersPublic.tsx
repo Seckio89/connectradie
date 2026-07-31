@@ -75,7 +75,7 @@ export default function CareersPublic() {
                 <HardHat className="w-4 h-4 text-ct-amber" />
                 Trade careers
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-ct-ink tracking-[-0.02em] leading-tight">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-ct-paper tracking-[-0.02em] leading-tight">
                 Trade jobs &amp; <span className="text-ct-teal">apprenticeships</span>
               </h1>
               <p className="mt-4 text-lg text-ct-mute">

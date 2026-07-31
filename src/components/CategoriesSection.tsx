@@ -96,7 +96,7 @@ export default function CategoriesSection() {
     <section className="py-20 lg:py-28 bg-ct-ink">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-ct-ink tracking-[-0.02em]">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-ct-paper tracking-[-0.02em]">
             What Do You <span className="text-ct-teal">Need Done?</span>
           </h2>
           <p className="mt-4 text-lg text-ct-mute">
@@ -122,7 +122,7 @@ export default function CategoriesSection() {
                   <ArrowRight className="w-5 h-5 text-ct-mute group-hover:text-ct-mute group-hover:translate-x-1 transition-all" />
                 </div>
 
-                <h3 className="text-lg font-semibold text-ct-ink mb-1">
+                <h3 className="text-lg font-semibold text-ct-paper mb-1">
                   {category.title}
                 </h3>
                 <p className="text-sm text-ct-mute mb-3">

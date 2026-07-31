@@ -843,7 +843,7 @@ export default function AdminDisputes() {
                               <button
                                 onClick={() => updateDisputeStatus(dispute.id, 'under_review')}
                                 disabled={busy}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-ct-surface-2 text-ct-ink rounded-ct-md text-sm font-medium hover:bg-ct-surface-2 transition-colors disabled:opacity-50"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-md text-sm font-medium hover:bg-ct-teal-deep transition-colors disabled:opacity-50"
                               >
                                 {busy ? (
                                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -883,7 +883,7 @@ export default function AdminDisputes() {
                             <button
                               onClick={() => recordDecision(dispute, 'dismissed')}
                               disabled={blocked}
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-ct-surface-2 text-ct-ink rounded-ct-md text-sm font-medium hover:bg-ct-surface-2 transition-colors disabled:opacity-50"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-md text-sm font-medium hover:bg-ct-teal-deep transition-colors disabled:opacity-50"
                             >
                               {busy ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -926,7 +926,7 @@ export default function AdminDisputes() {
                                 <button
                                   onClick={() => recordSplit(dispute)}
                                   disabled={blocked}
-                                  className="inline-flex items-center gap-2 px-4 py-2 bg-ct-surface-2 text-ct-ink rounded-ct-md text-sm font-medium hover:bg-ct-surface-2 transition-colors disabled:opacity-50"
+                                  className="inline-flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-md text-sm font-medium hover:bg-ct-teal-deep transition-colors disabled:opacity-50"
                                 >
                                   {busy ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />

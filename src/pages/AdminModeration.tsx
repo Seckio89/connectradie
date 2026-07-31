@@ -271,7 +271,7 @@ export default function AdminModeration() {
                   <span className="hidden sm:inline">Abuse Reports</span>
                   <span className="sm:hidden">Reports</span>
                   {pendingReportsCount > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-ct-rose/[0.13] text-ct-ink">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-ct-rose/[0.13] text-ct-rose">
                       {pendingReportsCount}
                     </span>
                   )}
@@ -293,7 +293,7 @@ export default function AdminModeration() {
                   <span className="hidden sm:inline">Flagged Jobs</span>
                   <span className="sm:hidden">Flagged</span>
                   {flaggedJobs.length > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-ct-amber/[0.13] text-ct-ink">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-ct-amber/[0.13] text-ct-amber">
                       {flaggedJobs.length}
                     </span>
                   )}

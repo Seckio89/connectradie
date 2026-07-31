@@ -235,7 +235,7 @@ export default function PublicTradieProfile() {
 
             <button
               onClick={() => navigate(-1)}
-              className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface/15 backdrop-blur-sm border border-white/20 text-ct-ink/90 text-sm font-medium rounded-ct-sm hover:bg-ct-surface/25 hover:text-ct-ink transition-colors"
+              className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface/15 backdrop-blur-sm border border-white/20 text-ct-paper/90 text-sm font-medium rounded-ct-sm hover:bg-ct-surface/25 hover:text-ct-ink transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back

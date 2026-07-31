@@ -33,7 +33,7 @@ export default function GeofenceCrossingToast() {
     <div className="fixed inset-x-4 top-20 sm:top-6 sm:left-auto sm:right-6 sm:max-w-sm z-[70] animate-in slide-in-from-top-2">
       <div className={`flex items-start gap-3 rounded-ct-md border shadow-lg p-4 ${isIn ? 'bg-ct-teal/[0.14] border-ct-teal/30' : 'bg-ct-surface border-ct-line'}`}>
         <div className={`w-9 h-9 rounded-ct-sm flex items-center justify-center flex-shrink-0 ${isIn ? 'bg-ct-teal' : 'bg-ct-surface-2'}`}>
-          {isIn ? <LogIn className="w-5 h-5 text-ct-ink" /> : <LogOut className="w-5 h-5 text-ct-mute" />}
+          {isIn ? <LogIn className="w-5 h-5 text-ct-paper" /> : <LogOut className="w-5 h-5 text-ct-mute" />}
         </div>
         <div className="min-w-0 flex-1">
           <p className={`text-sm font-semibold ${isIn ? 'text-ct-teal' : 'text-ct-paper'}`}>

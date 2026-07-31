@@ -831,7 +831,7 @@ export default function ClientDashboard() {
                         }
                       }}
                       disabled={payingPendingId === pp.id}
-                      className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-ct-amber/[0.13] text-ct-ink text-xs font-medium rounded-ct-sm hover:bg-ct-amber disabled:opacity-60 transition-colors min-h-[44px]"
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-ct-sm hover:bg-ct-amber hover:text-ct-ink disabled:opacity-60 transition-colors min-h-[44px]"
                     >
                       {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
                       Pay Now
@@ -1325,7 +1325,7 @@ export default function ClientDashboard() {
                                         });
                                     }}
                                     disabled={payingIncreaseJobId === job.id}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13] text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-amber transition-colors disabled:opacity-60"
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13] text-ct-amber text-sm font-medium rounded-ct-sm hover:bg-ct-amber hover:text-ct-ink transition-colors disabled:opacity-60"
                                   >
                                     {payingIncreaseJobId === job.id ? (
                                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1340,8 +1340,8 @@ export default function ClientDashboard() {
                             {job.status === 'in_progress' && !pendingIncreases[job.id] && (
                               <div className="flex items-center justify-between px-5 py-3 border-t border-ct-line-soft">
                                 <span className="text-xs text-ct-mute">Click to check progress</span>
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 !text-ct-ink text-xs font-semibold rounded-ct-sm">
-                                  <Eye className="w-3.5 h-3.5 text-ct-ink" />
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 !text-ct-paper text-xs font-semibold rounded-ct-sm">
+                                  <Eye className="w-3.5 h-3.5 text-ct-paper" />
                                   In Progress
                                 </span>
                               </div>
@@ -2278,7 +2278,7 @@ export default function ClientDashboard() {
                   onClick={() => setCancelReason(reason)}
                   className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
                     cancelReason === reason
-                      ? 'bg-ct-rose/[0.13] text-ct-ink border-ct-rose'
+                      ? 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose'
                       : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:border-ct-rose/40'
                   }`}
                 >

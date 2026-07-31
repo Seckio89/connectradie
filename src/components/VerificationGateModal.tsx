@@ -76,7 +76,7 @@ export default function VerificationGateModal({ isOpen, onClose, reason = 'unver
                 onClose();
                 navigate('/settings', { state: { tab: 'verification' } });
               }}
-              className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-ct-ink font-medium rounded-ct-md transition-colors ${
+              className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-ct-paper font-medium rounded-ct-md transition-colors ${
                 isExpired ? 'bg-ct-rose hover:brightness-110' : 'bg-ct-teal hover:brightness-110'
               }`}
             >

@@ -947,7 +947,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                   <button
                     onClick={() => removePhoto(i)}
                     disabled={submitting}
-                    className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 text-ct-ink rounded-ct-xs hover:bg-black/80 transition-colors"
+                    className="absolute top-0.5 right-0.5 p-0.5 bg-black/60 text-ct-paper rounded-ct-xs hover:bg-black/80 transition-colors"
                   >
                     <X className="w-3 h-3" />
                   </button>

@@ -329,7 +329,7 @@ export default function LicenseCertificate({
           <div className="flex items-center gap-3">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 px-4 py-2 bg-ct-surface text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-ink transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-teal-deep transition-colors"
             >
               <Printer className="w-4 h-4" />
               Print / Save PDF

@@ -282,7 +282,7 @@ export default function RequestVariationModal({
                     onClick={() => removePhoto(idx)}
                     className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                   >
-                    <X className="w-4 h-4 text-ct-ink" />
+                    <X className="w-4 h-4 text-ct-paper" />
                   </button>
                 </div>
               ))}
