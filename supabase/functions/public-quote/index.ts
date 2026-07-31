@@ -42,6 +42,44 @@ function json(body: unknown, status = 200) {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * The caller's IP, or null when no proxy header carries one.
+ *
+ * Returns null rather than a placeholder ON PURPOSE. Bucketing every
+ * header-less request under a shared "unknown" key would turn a missing header
+ * into one global limit that all legitimate clients share — a self-inflicted
+ * outage, worse than the gap being closed. No IP means no IP limit.
+ */
+function clientIp(req: Request): string | null {
+  const forwarded = req.headers.get("x-forwarded-for");
+  // Leftmost entry is the originating client; the rest are proxies.
+  const first = forwarded?.split(",")[0]?.trim();
+  return first || req.headers.get("cf-connecting-ip")?.trim() ||
+    req.headers.get("x-real-ip")?.trim() || null;
+}
+
+/**
+ * A stable, non-reversible bucket id for an IP.
+ *
+ * edge_rate_limits.key lands in Postgres, and a raw IP is personal information
+ * under the Privacy Act — there is no reason to accumulate one to count
+ * requests. A plain SHA-256 would not help: IPv4 is 2^32, so an unsalted digest
+ * is brute-forced in seconds. Keyed with a real secret it is not reversible by
+ * someone holding only the table, and needs no new secret provisioned.
+ */
+async function ipBucket(ip: string, secret: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(ip));
+  return Array.from(new Uint8Array(sig).slice(0, 16))
+    .map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -67,10 +105,28 @@ Deno.serve(async (req: Request) => {
     const declineReason = typeof payload.reason === "string" ? payload.reason.trim().slice(0, 1000) : "";
     if (!UUID_RE.test(token)) return json({ error: "Invalid quote link" }, 400);
 
-    // No caller identity exists here — this endpoint is deliberately public, so
-    // the quote token is the only thing to key on. Against a distributed
-    // attacker an in-process limiter is a speed bump, not a bound; the token is
-    // still the real security boundary. See docs/edge-function-rate-limits.md.
+    // Two limits, because they stop different things.
+    //
+    // PER IP first. The token limit below is worthless against someone spraying
+    // random tokens — every request carries a fresh token, so every request
+    // gets a fresh bucket. Measured before this existed: 70 requests with 70
+    // different tokens returned 70 × 404 and not one 429.
+    //
+    // 60/min leaves room for an office or mobile carrier behind CGNAT, where
+    // many real clients share one address, while holding a sprayer to ~1/sec.
+    //
+    // ⚠️ x-forwarded-for is client-supplied unless the proxy overwrites it, so
+    // an attacker who can forge it rotates the header and evades this. It is
+    // defence in depth, not a bound on a determined attacker — the unguessable
+    // token remains the real security boundary.
+    const ip = clientIp(req);
+    if (ip) {
+      const bucket = await ipBucket(ip, serviceKey);
+      const { allowed: ipAllowed } = await checkRateLimit(`ip:${bucket}-public-quote`, 60, 60000);
+      if (!ipAllowed) return json({ error: "Too many requests. Please try again in a minute." }, 429);
+    }
+
+    // PER TOKEN. Caps hammering of one link someone legitimately holds.
     const { allowed } = await checkRateLimit(`${token}-public-quote`, 20, 60000);
     if (!allowed) return json({ error: "Too many requests. Please try again in a minute." }, 429);
 

@@ -121,21 +121,48 @@ Added 2026-07-30 (the eleven gaps this inventory found):
 | `estimate-quote` | user id | 10 | Real control is the `ai_estimate_usage` meter; this bounds pre-meter CPU |
 | `worker-claim-profile` | user id | 10 | Bounds invite-token guessing per account |
 | `mark-invoice-paid` | user id | 20 | State change, no spend |
-| ⚠ `public-quote` | quote token | 20 | **No caller identity** — public by design. See below |
+| ⚠ `public-quote` | quote token **and** hashed IP | 20 / 60 | **No caller identity** — public by design. Two limits; see below |
 | ⚠ `geofence-event` | device token | 120 | Generous ceiling, not a throttle — crossings are bursty and `batchSync` posts a backlog after signal returns |
 
 ### ⚠ The two without a user identity
 
 `public-quote` is open by design: an off-app client opens their quote link from
 any browser, so the unguessable `quotes.public_token` is the security boundary,
-not the origin or a JWT. There is no caller identity, so the limit keys on the
-token — which now genuinely caps abuse of *one* token but still does nothing
-about someone spraying many random ones. The token is a UUID, so guessing is not
-the practical risk; unbounded volume across many keys is.
+not the origin or a JWT. There is no caller identity to key on.
 
-**Open follow-up: per-IP limiting for `public-quote`.** It needs a decision on
-extracting the client IP from `x-forwarded-for` behind Supabase's proxy, which
-is why it is not in this change.
+It therefore carries **two** limits, because they stop different things:
+
+| Limit | Key | Per min | Stops |
+|---|---|---|---|
+| per IP | HMAC of the client IP | 60 | spraying many random tokens |
+| per token | the quote token | 20 | hammering one link someone holds |
+
+The token limit alone was worthless against a sprayer: every request carries a
+fresh token, so every request got a fresh bucket. Measured against prod —
+70 requests, 70 different tokens, one machine:
+
+| | Before | After |
+|---|---|---|
+| 404 (allowed through) | 70 | **60** |
+| 429 (limited) | **0** | **10** |
+
+The IP is not stored. The bucket id is `HMAC-SHA256(service-role key, ip)`
+truncated to 16 bytes: `edge_rate_limits.key` lands in Postgres and a raw IP is
+personal information under the Privacy Act. A plain SHA-256 would be pointless —
+IPv4 is 2^32, brute-forced in seconds — so it is keyed with a real secret.
+
+If no proxy header yields an IP the check is **skipped**, not bucketed under a
+shared `"unknown"` key. A shared bucket would turn a missing header into one
+global limit every legitimate client shares, which is worse than the gap.
+
+⚠️ **This is defence in depth, not a bound on a determined attacker.**
+`x-forwarded-for` is client-supplied unless the proxy overwrites it, so someone
+who can forge it rotates the header and evades the IP limit. The unguessable
+token remains the real security boundary.
+
+`geofence-event` still has only its device-token limit. Its token is issued
+per device and is not sprayable the way a quote link is, so the same treatment
+has not been applied there.
 
 `geofence-event` authenticates with a per-device opaque token. Same caveat,
 lower exposure: an invalid token is rejected before any write.
