@@ -204,23 +204,28 @@ textarea::placeholder {
   background: var(--surface-2);
 }
 
-/* Custom scrollbar styles */
+/* Custom scrollbar styles.
+   These carried a light beige/mauve palette (#F5F0EF, #DDD0CC, #A294BE,
+   #9A7F79 …) that predates the dark cutover — a pale scrollbar sitting on a
+   dark surface. Both classes are live: .messages-scrollbar is used by the
+   Messages thread and BookingRequestModal. Now on the same tokens as the
+   app-wide scrollbar defined above. */
 .overflow-y-scroll::-webkit-scrollbar {
   width: 8px;
 }
 
 .overflow-y-scroll::-webkit-scrollbar-track {
-  background: #F5F0EF;
+  background: var(--ink-2);
   border-radius: 4px;
 }
 
 .overflow-y-scroll::-webkit-scrollbar-thumb {
-  background: #DDD0CC;
+  background: var(--line);
   border-radius: 4px;
 }
 
 .overflow-y-scroll::-webkit-scrollbar-thumb:hover {
-  background: #A294BE;
+  background: var(--surface-2);
 }
 
 /* Always visible scrollbar for messages */
@@ -228,7 +233,7 @@ textarea::placeholder {
   overflow-y: scroll !important;
   overflow-x: hidden !important;
   scrollbar-width: auto;
-  scrollbar-color: #9A7F79 #DDD0CC;
+  scrollbar-color: var(--line) var(--ink-2);
 }
 
 .messages-scrollbar::-webkit-scrollbar {
@@ -237,25 +242,25 @@ textarea::placeholder {
 }
 
 .messages-scrollbar::-webkit-scrollbar-track {
-  background: #DDD0CC;
+  background: var(--ink-2);
   border-radius: 8px;
   margin: 8px 4px;
 }
 
 .messages-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #B49A94 0%, #9A7F79 100%);
+  background: var(--line);
   border-radius: 8px;
-  border: 3px solid #DDD0CC;
+  border: 3px solid var(--ink-2);
   min-height: 60px;
   cursor: pointer;
 }
 
 .messages-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #9A7F79 0%, #7A635E 100%);
+  background: var(--surface-2);
 }
 
 .messages-scrollbar::-webkit-scrollbar-thumb:active {
-  background: #7A635E;
+  background: var(--teal-deep);
 }
 
 .messages-scrollbar::-webkit-scrollbar-button {
@@ -357,9 +362,9 @@ textarea::placeholder {
 /* Flash highlight — two pulses to draw attention */
 @keyframes flash-highlight {
   0% { background-color: transparent; }
-  15% { background-color: rgb(209 250 229); }
+  15% { background-color: var(--teal-dim); }
   30% { background-color: transparent; }
-  50% { background-color: rgb(209 250 229); }
+  50% { background-color: var(--teal-dim); }
   70% { background-color: transparent; }
   100% { background-color: transparent; }
 }

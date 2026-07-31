@@ -177,11 +177,32 @@ mapped onto Tailwind under the `ct-` namespace. The marketing site does
 not run Tailwind and consumes the same variables directly.
 
 **Never hard-code a hex value.** The only place a colour literal may
-appear is the token block in `src/index.css`. The sole exception is
-PDF/print/email HTML-string generators (`LicenseCertificate.tsx`,
-`InvoiceViewModal.tsx`, `Payouts.tsx`, `PaymentHistory.tsx`,
-`Leads.tsx`, `JobTracking.tsx`), which render outside the DOM where CSS
-variables do not resolve.
+appear is the token block in `src/index.css`. There are three exemptions,
+and they are the whole list:
+
+1. **PDF/print/email HTML-string generators** — `LicenseCertificate.tsx`,
+   `InvoiceViewModal.tsx`, `Payouts.tsx`, `PaymentHistory.tsx`,
+   `Leads.tsx`, `JobTracking.tsx`. They render outside the DOM, where CSS
+   variables do not resolve.
+2. **The Stripe Elements config** in `BecsSetupForm.tsx` — an iframe CSS
+   variables cannot cross.
+3. **Third-party brand marks** — the Google "G" in `Login.tsx` and
+   `Register.tsx`. Google's branding terms require its exact colours;
+   re-tinting the logo to our palette is not ours to do.
+
+**Charts are NOT exempt.** SVG charts sit in the DOM, so `var(--teal)`
+works in a `fill`/`stroke` exactly as it does in CSS — see
+`SimpleCharts.tsx`. Canvas is the one hard case: Chart.js has no cascade,
+so `var()` reaches it as an uninterpretable string and the shape silently
+does not draw. Read the real token at runtime instead, via `token()` /
+`tokenAlpha()` in `src/lib/themeTokens.ts` (`AdminFinancials.tsx` is the
+only current canvas chart). Chart.js also defaults every tick and legend
+label to `#666`, a light-mode assumption — always set `color` explicitly.
+
+One value is deliberately a literal and is not styling: the calendar
+colour fallback in `CalendarImport.tsx`. It is persisted to
+`business_team_members.color` alongside colours Google supplies, so it
+must be a real colour, not a `var()` reference.
 
 ### v2 · Colour
 

@@ -481,11 +481,13 @@ export default function WelcomeGuide({ role, userName, forceShow }: WelcomeGuide
             <rect x={x} y={y} width={w} height={h} rx={r} ry={r} fill="black" />
           </mask>
         </defs>
-        <rect width="100%" height="100%" fill="rgba(17,24,39,0.5)" mask="url(#tour-mask)" />
+        <rect width="100%" height="100%" fill="rgb(var(--ink-c) / 0.72)" mask="url(#tour-mask)" />
         <rect
           x={x} y={y} width={w} height={h} rx={r} ry={r}
           fill="none" strokeWidth="2" className="animate-pulse"
-          style={{ stroke: '#f97316' }}
+          // Amber: the tour ring marks the thing waiting on the user to act.
+          // Was #f97316, an orange that is not in the palette at all.
+          style={{ stroke: 'var(--amber)' }}
         />
       </svg>
     );

@@ -424,7 +424,7 @@ export default function AnalyticsDashboard() {
               <LineChart
                 data={monthlyRevenue.map(m => ({ label: m.label, value: m.amount }))}
                 height={220}
-                color="#06D6A0"
+                color="var(--teal)"
                 formatValue={(v) => formatCurrency(v)}
               />
             </div>
@@ -439,11 +439,16 @@ export default function AnalyticsDashboard() {
                 <p className="text-xs sm:text-sm text-ct-mute-2 mb-4">Distribution of jobs by current status</p>
                 <DonutChart
                   data={[
-                    { label: 'Completed', value: jobs.filter(j => j.status === 'completed').length, color: '#06D6A0' },
-                    { label: 'In Progress', value: jobs.filter(j => j.status === 'in_progress').length, color: '#3b82f6' },
-                    { label: 'Pending', value: jobs.filter(j => j.status === 'pending' || j.status === 'open').length, color: '#f59e0b' },
-                    { label: 'Declined', value: jobs.filter(j => j.status === 'declined').length, color: '#f97316' },
-                    { label: 'Cancelled', value: jobs.filter(j => j.status === 'cancelled').length, color: '#ef4444' },
+                    // Assigned by MEANING, not by picking five distinguishable
+                    // hues — the semantic rule in CLAUDE.md is what makes a
+                    // status legible at a glance across the app. Declined is the
+                    // failure (rose); cancelled is merely over, so it reads
+                    // neutral rather than borrowing rose's alarm.
+                    { label: 'Completed', value: jobs.filter(j => j.status === 'completed').length, color: 'var(--teal)' },
+                    { label: 'In Progress', value: jobs.filter(j => j.status === 'in_progress').length, color: 'var(--teal-deep)' },
+                    { label: 'Pending', value: jobs.filter(j => j.status === 'pending' || j.status === 'open').length, color: 'var(--amber)' },
+                    { label: 'Declined', value: jobs.filter(j => j.status === 'declined').length, color: 'var(--rose)' },
+                    { label: 'Cancelled', value: jobs.filter(j => j.status === 'cancelled').length, color: 'var(--mute)' },
                   ].filter(d => d.value > 0)}
                   size={160}
                   centerLabel="Jobs"
@@ -459,9 +464,11 @@ export default function AnalyticsDashboard() {
                   {/* CSS Donut */}
                   <div className="relative w-24 h-24 flex-shrink-0">
                     <svg className="w-24 h-24 -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#E5E7EB" strokeWidth="3" />
+                      {/* Track was #E5E7EB — gray-200, which measures 13.51:1 on a
+                          card and so shouted louder than the value it sits behind. */}
+                      <circle cx="18" cy="18" r="15.9155" fill="none" stroke="var(--line)" strokeWidth="3" />
                       <circle
-                        cx="18" cy="18" r="15.9155" fill="none" stroke="#06D6A0"
+                        cx="18" cy="18" r="15.9155" fill="none" stroke="var(--teal)"
                         strokeWidth="3" strokeDasharray={`${winRate} ${100 - winRate}`} strokeLinecap="round"
                       />
                     </svg>

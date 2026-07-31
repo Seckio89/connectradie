@@ -828,7 +828,7 @@ export default function Messages() {
 
         <div className="bg-ct-surface rounded-ct-lg border border-ct-line shadow-sm overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] h-[calc(100dvh-14rem)] overflow-hidden">
-            <div className={`border-r border-ct-line overflow-y-auto flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`} style={{ scrollbarWidth: 'thin', scrollbarColor: '#DDD0CC #F5F0EF' }}>
+            <div className={`border-r border-ct-line overflow-y-auto flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`} style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--line) var(--ink-2)' }}>
               <div className="px-4 pt-4 pb-3">
                 <div className="relative">
                   <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
