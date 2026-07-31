@@ -317,6 +317,33 @@ These do as much work as the visual tokens.
 - Placeholder text uses `--placeholder` (4.59:1). Do not use the
   reference file's `#4E635E`; it measures 3.00:1 and fails AA.
 
+⚠️ **`--mute` fails on a tinted fill over a card.** The line above
+measures flat surfaces only. It says nothing about the dim fills, and
+dim fills are everywhere — which is why this survived the migration and
+two audits, and had to be found three separate times by measurement.
+Composited over `--surface`:
+
+| Fill | `--mute` | `--mute-2` |
+|---|---|---|
+| `bg-ct-teal/[0.14]` | **3.95:1** ✗ | 6.38:1 |
+| `bg-ct-amber/[0.13]` | **4.16:1** ✗ | 6.72:1 |
+| `bg-ct-rose/[0.13]` | 4.52:1 | 7.30:1 |
+
+Use `--mute-2` for secondary text inside a tinted panel. The same tints
+over `--ink` all pass (4.76 / 4.96 / 5.25), so the failures cluster in
+cards and modals rather than on the page background — the base matters
+as much as the tint.
+
+⚠️ **Tints compound.** A tinted chip inside a tinted row composites to a
+fill lighter than either alone. `bg-ct-teal/[0.14]` nested in itself
+measured 4.48:1 for `--teal` text — under AA, from two classes that are
+each correct in isolation. Inside a container that already carries a
+tint, use the solid fill, not a second dim layer.
+
+The prescribed dim-fill/solid-text pairing measures 6.58:1 for teal,
+6.49:1 for amber and **4.63:1** for rose. Rose is the narrow one; do not
+dim its fill further or set that text below AA's large-text threshold.
+
 ⚠️ **Do not lift colour literals out of the two reference HTML files.**
 Both predate this contrast pass and six of their values fail AA:
 `#4E635E` (3.00:1), `#98A8A5` (2.28:1), `#0A8C79` as text (3.83:1),
