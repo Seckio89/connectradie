@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { fetchEscrowReserveCents } from "../_shared/escrowReserve.ts";
 import { recordInstantPayoutFee } from "../_shared/feeContext.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 import {
   classifyInstantFailure,
   computeInstantPayout,
@@ -54,7 +55,10 @@ function corsFor(req: Request) {
   };
 }
 
-Deno.serve(async (req: Request) => {
+// Exported so tests can call it with a fabricated Request. `import.meta.main`
+// is true for the runtime entrypoint and false when a test imports this module,
+// so importing it does not start a server.
+export const handler = async (req: Request): Promise<Response> => {
   const cors = corsFor(req);
   const json = (b: unknown, s = 200) =>
     new Response(JSON.stringify(b), { status: s, headers: { ...cors, "Content-Type": "application/json" } });
@@ -72,6 +76,10 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey);
     const { data: { user }, error: authErr } = await supabase.auth.getUser(authHeader.slice(7));
     if (authErr || !user) return json({ error: "Unauthorized" }, 401);
+
+    // Money out. Same ceiling as release-escrow.
+    const { allowed } = await checkRateLimit(`${user.id}-instant-payout`, 5, 60000);
+    if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     let body: { action?: string; value?: string };
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
@@ -403,4 +411,6 @@ Deno.serve(async (req: Request) => {
       (err instanceof Error ? err.message : null);
     return json({ error: stripeMsg || "Could not process the payout. Please try again." }, 500);
   }
-});
+};
+
+if (import.meta.main) Deno.serve(handler);

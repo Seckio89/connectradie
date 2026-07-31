@@ -1,20 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
-const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
-function checkRateLimit(
-  key: string, maxRequests: number, windowMs: number,
-): { allowed: boolean; remaining: number } {
-  const now = Date.now();
-  const entry = rateLimitStore.get(key);
-  if (!entry || now > entry.resetAt) {
-    rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: maxRequests - 1 };
-  }
-  if (entry.count >= maxRequests) return { allowed: false, remaining: 0 };
-  entry.count++;
-  return { allowed: true, remaining: maxRequests - entry.count };
-}
+// Rate limiting is shared, and DB-backed. This file used to carry its own copy
+// of the in-process Map version, which enforced nothing.
+import { checkRateLimit } from '../_shared/rateLimiter.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -83,7 +72,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Rate limit: 5 requests per minute per user
-    const { allowed } = checkRateLimit(`${user.id}-create-checkout-session`, 5, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-create-checkout-session`, 5, 60000);
     if (!allowed) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),

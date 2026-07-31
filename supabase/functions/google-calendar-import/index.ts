@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import type { Insert } from "../_shared/dbTypes.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 /*
   google-calendar-import — one-time Google Calendar → ConnecTradie import.
@@ -62,6 +63,10 @@ Deno.serve(async (req: Request) => {
     if (!authHeader?.startsWith("Bearer ")) return json({ error: "Missing authorization" }, 401);
     const { data: { user }, error: authErr } = await supabase.auth.getUser(authHeader.slice(7));
     if (authErr || !user) return json({ error: "Unauthorized" }, 401);
+
+    // Spends Google Calendar API quota.
+    const { allowed } = await checkRateLimit(`${user.id}-google-calendar-import`, 5, 60000);
+    if (!allowed) return json({ error: "Rate limit exceeded. Please try again later." }, 429);
 
     // --- Google access token (from google-calendar-oauth), refreshed if stale ---
     const { data: integration } = await supabase

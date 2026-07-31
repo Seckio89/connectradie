@@ -4,6 +4,7 @@ import Stripe from "npm:stripe@14.21.0";
 import { resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
 import type { Insert } from "../_shared/dbTypes.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -59,6 +60,11 @@ Deno.serve(async (req: Request) => {
     } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return errorJson(authError?.message || "Unauthorized", 401);
+    }
+
+    const { allowed } = await checkRateLimit(`${user.id}-generate-recurring-invoice`, 10, 60000);
+    if (!allowed) {
+      return errorJson("Rate limit exceeded. Please try again later.", 429);
     }
 
     let body: Record<string, unknown>;

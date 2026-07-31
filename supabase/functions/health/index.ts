@@ -7,7 +7,10 @@ const corsHeaders = {
   "Content-Type": "application/json",
 };
 
-Deno.serve(async (req) => {
+// The handler is exported so tests can call it directly with a fabricated
+// Request. `import.meta.main` is true for the runtime's entrypoint and false
+// when a test imports this module, so importing it does not start a server.
+export const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -41,4 +44,6 @@ Deno.serve(async (req) => {
       status: 503, headers: corsHeaders,
     });
   }
-});
+};
+
+if (import.meta.main) Deno.serve(handler);

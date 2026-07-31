@@ -113,9 +113,37 @@ targets tsconfig.app.json.
 
 ## Business Context
 - HIA-aligned milestone payment templates
-- Client-side escrow release (homeowner triggers, not platform)
+- Escrow release is client-side — see the escrow release policy below
 - AUD, Australian state licensing, ABN verification
 - Competitors: hipages, Airtasker, Oneflare, ServiceSeeking
+
+### Escrow release policy — ratified, not a bug
+
+Escrow does **not** require a client click to release. The rule is:
+
+1. The **tradie** marks the job complete (`jobs.status='completed'`,
+   `completed_at` stamped). The client does not trigger this.
+2. The client gets a **5-hour review window** to approve early or raise a
+   dispute.
+3. If the client does nothing, the `auto-release-payments` cron (every 6h)
+   releases escrow to the tradie.
+4. A dispute with `disputes.blocks_release = true` excludes the job. That
+   generated column is the **only** payout-freeze decider — never enumerate
+   dispute statuses.
+
+So the client's **inaction** releases their money, not their action. That is
+deliberate: without it, a client who simply stops responding strands a tradie's
+payment indefinitely — and holding funds pending a platform decision is
+precisely the AFSL exposure the escrow model exists to avoid. The platform
+never adjudicates by default; it runs a clock the client can stop.
+
+The window is defined in two places that **must stay in sync**:
+`RELEASE_WINDOW_HOURS` in `src/lib/releaseWindow.ts` and the constant of the
+same name in `supabase/functions/auto-release-payments/index.ts`.
+
+⚠️ A generic "client-initiated release only" audit check fails against this, and
+the check is wrong, not the code. Raised as finding #2 in
+`AUDIT-REPORT-2026-07-30.md`; ratified 2026-07-30. Do not "fix" it.
 
 ---
 

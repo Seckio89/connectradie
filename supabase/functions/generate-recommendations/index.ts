@@ -124,7 +124,7 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Forbidden: admin access required" }, 403);
     }
 
-    const { allowed } = checkRateLimit(`${user.id}-generate-recommendations`, 15, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-generate-recommendations`, 15, 60000);
     if (!allowed) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),

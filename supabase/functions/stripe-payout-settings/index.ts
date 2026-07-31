@@ -66,7 +66,7 @@ Deno.serve(async (req: Request) => {
     const { data: { user }, error: authError } = await authClient.auth.getUser(token);
     if (authError || !user) return errorResponse(authError?.message || "Unauthorized", 401);
 
-    const { allowed } = checkRateLimit(`${user.id}-stripe-payout-settings`, 10, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-stripe-payout-settings`, 10, 60000);
     if (!allowed) return errorResponse("Rate limit exceeded. Please try again later.", 429);
 
     const { data: profile } = await authClient

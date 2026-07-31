@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import type { Insert } from "../_shared/dbTypes.ts";
+import { checkRateLimit } from "../_shared/rateLimiter.ts";
 
 /*
   geofence-event — receives native background-geolocation geofence crossings.
@@ -68,6 +69,12 @@ Deno.serve(async (req: Request) => {
 
     if (tokenError || !tokenRow) return json({ error: "Invalid device token" }, 401);
     const tradieId = tokenRow.tradie_id as string;
+
+    // A generous ceiling, not a throttle — crossings are bursty and batchSync
+    // legitimately posts a backlog after the device regains signal. This exists
+    // to stop a wedged device writing without bound, not to shape normal use.
+    const { allowed } = await checkRateLimit(`${deviceToken}-geofence-event`, 120, 60000);
+    if (!allowed) return json({ error: "Too many events. Please try again shortly." }, 429);
 
     // Best-effort touch of last_used_at (non-critical).
     supabase

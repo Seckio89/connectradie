@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       return corsResponse({ error: 'User not found' }, 404);
     }
 
-    const { allowed } = checkRateLimit(`${user.id}-stripe-checkout`, 15, 60000);
+    const { allowed } = await checkRateLimit(`${user.id}-stripe-checkout`, 15, 60000);
     if (!allowed) {
       return corsResponse({ error: "Rate limit exceeded. Please try again later." }, 429);
     }
