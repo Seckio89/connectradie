@@ -229,7 +229,7 @@ export default function PublicTradieProfile() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-ct-teal via-ct-teal to-ct-ink" />
+              <div className="w-full h-full bg-gradient-to-br from-ct-teal/[0.14] to-ct-ink" />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
 

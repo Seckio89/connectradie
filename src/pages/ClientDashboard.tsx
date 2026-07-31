@@ -721,7 +721,7 @@ export default function ClientDashboard() {
       <WelcomeGuide role="client" userName={profile?.full_name} />
       {showOnboardedBanner && (
         <div className="mb-4">
-          <div className="bg-gradient-to-r from-ct-teal to-ct-surface-2 border border-ct-line rounded-ct-lg p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-lg p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="font-bold text-ct-teal mb-1">Welcome to ConnecTradie!</h3>
               <p className="text-sm text-ct-teal">Post your first job to get quotes from verified tradies in your area.</p>
@@ -856,15 +856,19 @@ export default function ClientDashboard() {
         })()}
 
         {availableThisWeek > 0 && showSlotsBanner && (
-          <div className="mb-8 p-4 bg-gradient-to-r from-ct-amber to-ct-amber border border-ct-amber/[0.34] rounded-ct-md flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="w-10 h-10 bg-ct-amber/[0.13] rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="mb-8 p-4 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+            {/* The icon well was a dim amber tint nested in a SOLID amber fill,
+                so an amber icon sat on amber. Tints do not compound now the
+                parent is dim, but keep the well at the solid fill rather than
+                stacking a second tint — see the compounding note in CLAUDE.md. */}
+            <div className="w-10 h-10 bg-ct-amber/20 rounded-full flex items-center justify-center flex-shrink-0">
               <Bell className="w-5 h-5 text-ct-amber animate-pulse" />
             </div>
             <div className="flex-1">
               <p className="font-semibold text-ct-paper">
                 One of your saved tradies opened up slots this week
               </p>
-              <p className="text-sm text-ct-paper mt-0.5">
+              <p className="text-sm text-ct-mute-2 mt-0.5">
                 Check their calendars now — popular times fill up fast
               </p>
             </div>
@@ -2183,8 +2187,8 @@ export default function ClientDashboard() {
                 onClick={() => setShowSubscriptionModal(true)}
                 className={`w-full rounded-ct-lg border p-5 text-left transition-all hover:shadow-lg ${
                   isClientPro
-                    ? 'bg-gradient-to-br from-ct-teal to-ct-amber border-ct-teal/30'
-                    : 'bg-gradient-to-br from-ct-surface-2 to-ct-teal border-ct-line hover:border-ct-teal/30'
+                    ? 'bg-ct-teal/[0.14] border-ct-teal/30'
+                    : 'bg-ct-surface-2 border-ct-line hover:border-ct-teal/30'
                 }`}
               >
                 <div className="flex items-center gap-3">

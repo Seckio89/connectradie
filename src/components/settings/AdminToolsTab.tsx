@@ -22,7 +22,9 @@ export default function AdminToolsTab({
         <p className="text-sm text-ct-mute-2 mb-6">Administrative tools for testing and managing platform features.</p>
       </div>
 
-      <div className={`rounded-ct-md p-6 border-2 transition-colors ${trainingModeEnabled ? 'bg-gradient-to-br from-ct-surface-2 to-ct-surface-2 border-ct-line' : 'bg-gradient-to-br from-ct-surface-2 to-ct-teal border-ct-line'}`}>
+      {/* The two branches had ended up near-identical, and the OFF one carried
+          the brighter fill. Active is the teal one now, off is plain. */}
+      <div className={`rounded-ct-md p-6 border-2 transition-colors ${trainingModeEnabled ? 'bg-ct-teal/[0.14] border-ct-teal/30' : 'bg-ct-surface-2 border-ct-line'}`}>
         <div className="flex items-start gap-4">
           <div className={`w-12 h-12 rounded-ct-md flex items-center justify-center flex-shrink-0 ${trainingModeEnabled ? 'bg-ct-surface-2' : 'bg-ct-line'}`}>
             <FlaskConical className={`w-6 h-6 ${trainingModeEnabled ? 'text-ct-mute-2' : 'text-ct-mute'}`} />
@@ -71,7 +73,7 @@ export default function AdminToolsTab({
         </div>
       </Link>
 
-      <div className="bg-gradient-to-br from-ct-teal to-ct-teal border border-ct-amber/[0.34] rounded-ct-md p-6">
+      <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-6">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 bg-ct-amber/[0.13] rounded-ct-md flex items-center justify-center flex-shrink-0">
             <Zap className="w-6 h-6 text-ct-amber" />

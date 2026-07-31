@@ -854,7 +854,7 @@ export default function TradieDashboard() {
       <WelcomeGuide role="tradie" userName={profile?.full_name} />
       {showOnboardedBanner && (
         <div className="mb-4">
-          <div className="bg-gradient-to-r from-ct-teal to-ct-surface-2 border border-ct-line rounded-ct-lg p-5 px-4 sm:px-5">
+          <div className="bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-lg p-5 px-4 sm:px-5">
             <h3 className="font-bold text-ct-teal mb-1">Welcome to ConnecTradie!</h3>
             <p className="text-sm text-ct-teal">Your account is set up. Set your availability below so clients can find and book you for jobs.</p>
           </div>
@@ -994,7 +994,7 @@ export default function TradieDashboard() {
 
         {/* First-Time Guidance — shown when tradie has no jobs and no availability */}
         {jobs.length === 0 && slots.length === 0 && !slotsLoading && (
-          <div className="bg-gradient-to-r from-ct-teal to-ct-surface-2 border border-ct-amber/[0.34] rounded-ct-lg p-4 sm:p-5">
+          <div className="bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-lg p-4 sm:p-5">
             <h3 className="font-bold text-ct-paper mb-1">What to do first</h3>
             <p className="text-sm text-ct-mute-2 mb-4">Complete these three steps to start getting work — most tradies are set up in under 5 minutes.</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

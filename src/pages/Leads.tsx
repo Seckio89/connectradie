@@ -1777,15 +1777,17 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 </div>
               )}
 
+              {/* Was a ramp from teal to amber. A boost that is running is not
+                  blocked on anyone — it is the thing working, so teal. */}
               {!isTradie && isFlashActive && lead.status === 'pending' && (
-                <div className="mx-5 mb-3 flex items-center justify-between px-3 py-2 bg-gradient-to-r from-ct-teal to-ct-amber border border-ct-amber/[0.34] rounded-ct-sm">
+                <div className="mx-5 mb-3 flex items-center justify-between px-3 py-2 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-ct-teal flex-shrink-0" />
-                    <span className="text-sm font-medium text-ct-amber">
+                    <span className="text-sm font-medium text-ct-teal">
                       Boosted — finding tradies faster
                     </span>
                   </div>
-                  <div className="text-xs text-ct-amber">
+                  <div className="text-xs text-ct-teal">
                     <FlashCountdown
                       expiry={lead.flash_expiry!}
                       onExpired={() => handleFlashExpired(lead.id)}
@@ -2776,7 +2778,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             <div className="overflow-hidden">
               {/* Header */}
               <div className={`px-6 py-4 border-b ${
-                vlIsFlash ? 'bg-gradient-to-r from-ct-teal to-ct-amber border-ct-amber/[0.34]'
+                vlIsFlash ? 'bg-ct-teal/[0.14] border-ct-teal/30'
                 : vlIsUrgent ? 'bg-ct-rose/[0.13] border-ct-rose/[0.34]'
                 : 'bg-ct-surface-2 border-ct-line-soft'
               }`}>

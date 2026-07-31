@@ -133,7 +133,7 @@ export default function OnboardingChecklist() {
   // If already completed (from localStorage), show "all set" immediately without waiting for fetch
   if (allComplete && profile) {
     return (
-      <div className={`bg-gradient-to-br from-ct-teal to-ct-teal rounded-ct-lg border border-ct-teal/30 overflow-hidden p-5 text-center transition-opacity duration-500 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`bg-ct-teal/[0.14] rounded-ct-lg border border-ct-teal/30 overflow-hidden p-5 text-center transition-opacity duration-500 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}>
         <div className="flex items-center justify-between mb-3">
           <div />
           <button
@@ -284,7 +284,7 @@ export default function OnboardingChecklist() {
 
   if (allComplete || percentage === 100) {
     return (
-      <div className={`bg-gradient-to-br from-ct-teal to-ct-teal rounded-ct-lg border border-ct-teal/30 overflow-hidden p-5 text-center transition-opacity duration-500 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`bg-ct-teal/[0.14] rounded-ct-lg border border-ct-teal/30 overflow-hidden p-5 text-center transition-opacity duration-500 ${fadingOut ? 'opacity-0' : 'opacity-100'}`}>
         <div className="flex items-center justify-between mb-3">
           <div />
           <button

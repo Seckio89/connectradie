@@ -81,18 +81,22 @@ interface UpgradeBannerProps {
 
 export function UpgradeBanner({ message, remainingCount, totalCount, onUpgrade }: UpgradeBannerProps) {
   return (
-    <div className="bg-gradient-to-r from-ct-teal to-ct-teal border border-ct-amber/[0.34] rounded-ct-md p-4 flex items-center justify-between gap-4">
+    <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-4 flex items-center justify-between gap-4">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-ct-amber/[0.13] rounded-ct-sm flex items-center justify-center flex-shrink-0">
           <Crown className="w-5 h-5 text-ct-amber" />
         </div>
         <div>
-          <p className="text-sm font-medium text-ct-teal">{message}</p>
+          {/* Amber throughout: a usage limit is blocked on the person, not money
+              moving. The border, icon and counter were already amber; only the
+              message and the meter were teal, on a teal fill they were unreadable
+              against anyway. */}
+          <p className="text-sm font-medium text-ct-amber">{message}</p>
           {remainingCount !== undefined && totalCount !== undefined && (
             <div className="flex items-center gap-2 mt-1">
-              <div className="w-24 h-1.5 bg-ct-teal/[0.14] rounded-full overflow-hidden">
+              <div className="w-24 h-1.5 bg-ct-amber/[0.13] rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-ct-teal rounded-full transition-all"
+                  className="h-full bg-ct-amber rounded-full transition-all"
                   style={{ width: `${((totalCount - remainingCount) / totalCount) * 100}%` }}
                 />
               </div>

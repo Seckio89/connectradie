@@ -345,7 +345,7 @@ export default function VerificationCenter() {
   if (isVerified) {
     return (
       <div className="space-y-6 p-6 md:p-8">
-        <div className="bg-gradient-to-br from-ct-teal to-ct-surface-2 border border-ct-teal/30 rounded-ct-lg p-8 text-center">
+        <div className="bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-lg p-8 text-center">
           <div className="w-16 h-16 bg-ct-teal/[0.14] rounded-full flex items-center justify-center mx-auto mb-4">
             <BadgeCheck className="w-8 h-8 text-ct-teal" />
           </div>
@@ -418,11 +418,13 @@ export default function VerificationCenter() {
   if (isAlreadyPending) {
     return (
       <div className="space-y-6 p-6 md:p-8">
-        <div className="bg-gradient-to-br from-ct-teal to-ct-teal border border-ct-amber/[0.34] rounded-ct-lg p-8 text-center">
+        <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-lg p-8 text-center">
           <div className="w-16 h-16 bg-ct-amber/[0.13] rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
             <Clock className="w-8 h-8 text-ct-amber" />
           </div>
-          <h3 className="text-xl font-bold text-ct-teal mb-2">Verification Under Review</h3>
+          {/* Awaiting a reviewer is amber, not teal — and the heading was teal on
+              a teal fill, i.e. 1:1. */}
+          <h3 className="text-xl font-bold text-ct-amber mb-2">Verification Under Review</h3>
           <p className="text-ct-amber max-w-md mx-auto">
             Your documents have been submitted and are being reviewed by our team. This usually takes 1-2 business days.
           </p>

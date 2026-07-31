@@ -105,7 +105,7 @@ export default function UnlockLeadModal({ isOpen, onClose, onUnlock, clientName,
             </div>
           )}
 
-          <div className={`rounded-ct-md p-6 mb-6 border-2 ${isProUser ? 'bg-gradient-to-br from-ct-teal to-ct-surface-2 border-ct-teal/30' : 'bg-gradient-to-br from-ct-teal to-ct-teal border-ct-line'}`}>
+          <div className={`rounded-ct-md p-6 mb-6 border-2 ${isProUser ? 'bg-ct-teal/[0.14] border-ct-teal/30' : 'bg-ct-surface-2 border-ct-line'}`}>
             {isProUser ? (
               <>
                 <div className="flex items-center justify-center gap-2 mb-4">
