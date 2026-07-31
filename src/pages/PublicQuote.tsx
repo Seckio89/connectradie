@@ -224,7 +224,7 @@ export default function PublicQuote() {
               className="h-7 w-auto"
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'inline'; }}
             />
-            <span className="hidden text-xl font-extrabold tracking-tight text-black">
+            <span className="hidden text-xl font-extrabold tracking-tight text-ct-paper">
               Connec<span className="text-ct-teal">Tradie</span>
             </span>
           </Link>

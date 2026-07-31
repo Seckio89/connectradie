@@ -1,0 +1,11 @@
+{
+  "note": "Routes this harness cannot measure. Contrast failures are never baselined.",
+  "routes": [
+    "/my-trades|redirected",
+    "/payment-cancelled|BLANK",
+    "/payment-success|redirected",
+    "/post-lead|redirected",
+    "/projects|redirected",
+    "/schedule|CRASHED"
+  ]
+}

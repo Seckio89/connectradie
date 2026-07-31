@@ -193,3 +193,51 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+
+  contrast:
+    name: Contrast (browser)
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # The one check here that needs a real browser, and the only one that can
+      # see a fill declared on a PARENT and text on a CHILD. check:ink reads
+      # class strings, so those two live in different strings and nothing static
+      # connects them — seven defects hid in that gap, including the /hire hero
+      # headline at 1:1 on a public page.
+      #
+      # Placeholder Supabase vars because the client throws at module load
+      # without them and React never mounts. Every request is answered from
+      # fixtures, so these reach nothing: no credentials, no network, which is
+      # why this can run in CI at all where audit:nav cannot.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://uoqygmizupdpanplpvor.supabase.co
+          VITE_SUPABASE_ANON_KEY: ci-contrast-sweep-placeholder
+      # Server and sweep in ONE step: a process backgrounded in its own step is
+      # not reliably still alive in the next one.
+      #
+      # --baseline: contrast failures ALWAYS fail. What is baselined is the set
+      # of routes this harness cannot currently measure — six of them redirect,
+      # crash or render near-empty under the fixtures. Without that, this job
+      # would sit permanently red on a codebase with zero contrast failures,
+      # which is how a check teaches people to ignore it. A route that NEWLY
+      # stops rendering still fails, because scoring an unmeasured route as a
+      # pass is the exact blind spot this sweep was built to close.
+      - name: Sweep
+        run: |
+          npx vite preview --port 4173 &
+          PREVIEW=$!
+          trap 'kill $PREVIEW 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:4173/ && break
+            sleep 1
+          done
+          curl -sf -o /dev/null http://localhost:4173/ || { echo "preview never came up"; exit 1; }
+          npm run check:contrast:ci

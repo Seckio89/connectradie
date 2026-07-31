@@ -2885,7 +2885,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-teal/[0.14] rounded-ct-md">
                       <DollarSign className="w-4 h-4 text-ct-teal mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Budget</p>
+                        <p className="text-[10px] font-semibold text-ct-mute-2 uppercase tracking-wider">Budget</p>
                         <p className="text-sm font-semibold text-ct-teal mt-0.5">${vl.budget_amount.toLocaleString()}</p>
                       </div>
                     </div>
@@ -2893,7 +2893,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
                       <FileText className="w-4 h-4 text-ct-mute-2 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Budget</p>
+                        <p className="text-[10px] font-semibold text-ct-mute-2 uppercase tracking-wider">Budget</p>
                         <p className="text-sm font-medium text-ct-mute-2 mt-0.5">Requesting Quote</p>
                       </div>
                     </div>

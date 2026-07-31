@@ -632,7 +632,7 @@ export default function AnalyticsDashboard() {
             </div>
 
             {/* Insights */}
-            <div className="bg-gradient-to-r from-ct-surface-2 to-ct-teal rounded-ct-md border border-ct-line p-4 sm:p-6 shadow-sm overflow-hidden">
+            <div className="bg-ct-teal/[0.14] rounded-ct-md border border-ct-line p-4 sm:p-6 shadow-sm overflow-hidden">
               <div className="flex items-center gap-2 mb-4">
                 <Lightbulb className="w-5 h-5 text-ct-mute-2" />
                 <h2 className="text-lg font-semibold text-ct-paper">Insights & Tips</h2>

@@ -965,7 +965,13 @@ export default function ClientDashboard() {
                   </p>
                 </div>
               ) : recentJobs.length === 0 ? (
-                <div className="bg-gradient-to-br from-ct-teal to-ct-surface-2 rounded-ct-lg border border-ct-amber/[0.34] p-8 sm:p-10">
+                <div className="bg-ct-teal/[0.14] rounded-ct-lg border border-ct-teal/30 p-8 sm:p-10">
+                  {/* A flat dim fill, not a gradient. `from-ct-teal to-ct-surface-2`
+                      ran from a bright end to a dark one, so the same text was
+                      readable at the bottom and washed out at the top — the body
+                      copy measured 1.03:1 over the teal. The dim form carries the
+                      colour without competing with the words on it, and the border
+                      now matches the fill rather than being left amber. */}
                   <h3 className="text-lg font-bold text-ct-paper mb-2">Get started</h3>
                   <p className="text-ct-mute-2 mb-6 max-w-lg">
                     Post a job to get quotes from verified tradies, or browse and save tradies you like.
@@ -974,7 +980,7 @@ export default function ClientDashboard() {
                     <Link
                       to="/post-lead"
                       data-tour="post-job"
-                      className="flex items-center gap-4 p-4 bg-ct-surface rounded-ct-lg border border-ct-line hover:border-ct-teal/30 hover:shadow-sm transition-all"
+                      className="flex items-center gap-4 p-4 bg-ct-surface rounded-ct-md border border-ct-line hover:border-ct-teal/30 hover:shadow-sm transition-all"
                     >
                       <div className="w-10 h-10 bg-ct-amber/[0.13] rounded-ct-md flex items-center justify-center flex-shrink-0">
                         <span className="text-lg font-bold text-ct-amber">1</span>
@@ -987,7 +993,7 @@ export default function ClientDashboard() {
                     </Link>
                     <Link
                       to="/search"
-                      className="flex items-center gap-4 p-4 bg-ct-surface rounded-ct-lg border border-ct-line hover:border-ct-teal/30 hover:shadow-sm transition-all"
+                      className="flex items-center gap-4 p-4 bg-ct-surface rounded-ct-md border border-ct-line hover:border-ct-teal/30 hover:shadow-sm transition-all"
                     >
                       <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-md flex items-center justify-center flex-shrink-0">
                         <span className="text-lg font-bold text-ct-mute-2">2</span>
@@ -999,7 +1005,10 @@ export default function ClientDashboard() {
                       <ArrowRight className="w-4 h-4 text-ct-mute ml-auto flex-shrink-0" />
                     </Link>
                   </div>
-                  <p className="text-xs text-ct-mute">
+                  {/* mute measures 3.95:1 on a teal tint and fails AA; mute-2
+                      is 6.38:1. The token table records mute against surface,
+                      ink and surface-2 but never against a tinted fill. */}
+                  <p className="text-xs text-ct-mute-2">
                     Once you post a job, tradies will send you quotes. Compare them side by side, then accept the best one and message the tradie to confirm details.
                   </p>
                 </div>

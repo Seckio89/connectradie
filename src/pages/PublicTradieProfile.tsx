@@ -172,7 +172,7 @@ export default function PublicTradieProfile() {
         <header className="sticky top-0 z-30 bg-ct-surface border-b border-ct-line-soft">
           <div className="max-w-[1600px] mx-auto px-4 py-3 flex items-center justify-between">
             <Link to="/" className="flex items-center">
-              <span className="text-2xl font-extrabold tracking-tight text-black">
+              <span className="text-2xl font-extrabold tracking-tight text-ct-paper">
                 Connec<span className="text-ct-teal">Tradie</span>
               </span>
             </Link>

@@ -78,7 +78,7 @@ export default function BetaModal() {
           <X className="w-5 h-5" />
         </button>
 
-        <div className="px-6 pt-6 pb-4 bg-gradient-to-br from-ct-amber to-ct-teal/40 border-b border-ct-amber/[0.34]">
+        <div className="px-6 pt-6 pb-4 bg-ct-amber/[0.13] border-b border-ct-amber/[0.34]">
           <div className="flex items-center gap-2.5">
             <span className="text-2xl leading-none" aria-hidden="true">🚧</span>
             <h2 id="beta-modal-title" className="text-lg font-bold text-ct-paper">

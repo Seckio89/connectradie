@@ -774,7 +774,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
           </div>
             {/* Fade on the right edge so the cut-off tab reads as "scroll me",
                 not as a broken layout. Mobile only — the row fits from sm up. */}
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent sm:hidden" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-ct-surface to-transparent sm:hidden" />
           </div>
 
           {loading ? (

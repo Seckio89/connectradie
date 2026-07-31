@@ -469,7 +469,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
               <div className={`border-2 rounded-ct-lg p-6 relative flex flex-col ${
                 currentTier === 'pro'
                   ? 'border-ct-teal bg-ct-amber/[0.13]/30'
-                  : 'border-ct-teal/30 bg-gradient-to-b from-ct-teal/40 to-white shadow-sm'
+                  : 'border-ct-teal/30 bg-gradient-to-b from-ct-teal/[0.14] to-ct-surface shadow-sm'
               }`}>
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink text-xs font-bold rounded-full uppercase tracking-wide">
                   {currentTier === 'pro' ? 'Current Plan' : 'Most Popular'}
@@ -505,7 +505,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     <Percent className="w-3.5 h-3.5 text-ct-amber" />
                     <span className="text-xs font-medium text-ct-amber">Lowest platform fees — keep more of every job</span>
                   </div>
-                  <p className="text-[11px] text-ct-mute mt-1">Up to 50% lower fees than free. The bigger the job, the more you save.</p>
+                  <p className="text-[11px] text-ct-mute-2 mt-1">Up to 50% lower fees than free. The bigger the job, the more you save.</p>
                 </div>
 
                 <div className="space-y-2.5 flex-1">

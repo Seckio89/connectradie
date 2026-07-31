@@ -1624,7 +1624,7 @@ export default function TradieDashboard() {
                           onClick={() => { if (!isLicenseExpired) { setSelectedJob(job.id); setShowJobManagement(true); } }}
                           onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !isLicenseExpired) { e.preventDefault(); setSelectedJob(job.id); setShowJobManagement(true); } }}
                           className={`border rounded-ct-md overflow-hidden transition-all hover:shadow-sm cursor-pointer ${
-                            job.priority === 'high' ? 'border-ct-amber/[0.34] bg-gradient-to-r from-ct-amber/40 to-white' : 'border-ct-line hover:border-ct-line'
+                            job.priority === 'high' ? 'border-ct-amber/[0.34] bg-gradient-to-r from-ct-amber/[0.13] to-ct-surface' : 'border-ct-line hover:border-ct-line'
                           }`}
                         >
                           <div className="px-4 pt-4 pb-3">
@@ -2097,7 +2097,7 @@ export default function TradieDashboard() {
                           </div>
                         </div>
                       </div>
-                      <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent sm:hidden" />
+                      <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-ct-surface to-transparent sm:hidden" />
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
                         <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
@@ -2384,7 +2384,7 @@ export default function TradieDashboard() {
 
         {/* Push Notification Banner — dismissible */}
         {showPushBanner && pushStatus !== 'granted' && pushStatus !== 'unsupported' && (
-          <div className="bg-gradient-to-r from-ct-teal to-ct-teal rounded-ct-lg border border-ct-line p-5 mb-6 mt-6">
+          <div className="bg-ct-teal/[0.14] rounded-ct-lg border border-ct-teal/30 p-5 mb-6 mt-6">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-ct-surface-2 rounded-ct-md flex items-center justify-center flex-shrink-0">

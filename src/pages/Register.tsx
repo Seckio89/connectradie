@@ -133,7 +133,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-ct-surface-2 via-white to-ct-teal/30 flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-ct-surface flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
       <SEO title="Create Account" description="Create a free ConnecTradie account." noindex />
       <BetaModal />
 
@@ -141,7 +141,7 @@ export default function Register() {
         {/* Header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center justify-center mb-6">
-            <span className="text-2xl font-extrabold tracking-tight text-black">
+            <span className="text-2xl font-extrabold tracking-tight text-ct-paper">
               Connec<span className="text-ct-teal">Tradie</span>
             </span>
           </Link>

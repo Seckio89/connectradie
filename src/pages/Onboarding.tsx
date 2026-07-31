@@ -233,7 +233,7 @@ export default function Onboarding() {
     <div className="min-h-screen bg-ct-surface flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-lg">
         <div className="flex items-center justify-center mb-8">
-          <span className="text-2xl font-extrabold tracking-tight text-black">
+          <span className="text-2xl font-extrabold tracking-tight text-ct-paper">
             Connec<span className="text-ct-teal">Tradie</span>
           </span>
         </div>
