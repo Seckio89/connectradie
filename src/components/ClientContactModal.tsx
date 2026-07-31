@@ -227,7 +227,7 @@ export default function ClientContactModal({
                       <Icon className={`w-4 h-4 ${active ? 'text-ct-amber' : 'text-ct-mute'}`} />
                       <span className={`text-sm font-medium ${active ? 'text-ct-amber' : 'text-ct-mute-2'}`}>{title}</span>
                     </span>
-                    <span className="block mt-1 text-xs text-ct-mute">{desc}</span>
+                    <span className="block mt-1 text-xs text-ct-mute-2">{desc}</span>
                   </button>
                 );
               })}

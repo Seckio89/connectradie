@@ -877,7 +877,7 @@ export default function Payouts() {
 
         {/* Not Connected state */}
         {!accountDetails?.connected && paymentFilter !== 'external' && (
-          <div className="bg-gradient-to-r from-ct-surface-2 to-ct-teal rounded-ct-lg border border-ct-line p-8 text-center">
+          <div className="bg-ct-teal/[0.14] rounded-ct-lg border border-ct-line p-8 text-center">
             <div className="w-16 h-16 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mx-auto mb-4">
               <Wallet className="w-8 h-8 text-ct-mute-2" />
             </div>

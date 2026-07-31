@@ -505,7 +505,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     <Percent className="w-3.5 h-3.5 text-ct-amber" />
                     <span className="text-xs font-medium text-ct-amber">Lowest platform fees — keep more of every job</span>
                   </div>
-                  <p className="text-[11px] text-ct-mute mt-1">Up to 50% lower fees than free. The bigger the job, the more you save.</p>
+                  <p className="text-[11px] text-ct-mute-2 mt-1">Up to 50% lower fees than free. The bigger the job, the more you save.</p>
                 </div>
 
                 <div className="space-y-2.5 flex-1">

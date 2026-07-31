@@ -66,7 +66,7 @@ export default function HowItWorksClientsSection() {
                     <CheckCircle2 className="w-5 h-5 text-ct-teal shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs font-semibold text-ct-teal uppercase tracking-wide mb-1">ConnecTradie</p>
-                      <p className="text-sm text-ct-mute">{row.us}</p>
+                      <p className="text-sm text-ct-mute-2">{row.us}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-3 bg-ct-rose/[0.13]/5 border border-ct-rose/10 rounded-ct-sm">
