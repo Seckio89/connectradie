@@ -163,7 +163,7 @@ export default function SmartInsightsWidget() {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-r from-ct-amber to-ct-amber rounded-ct-lg border border-ct-amber/[0.34] p-6 animate-pulse">
+      <div className="bg-ct-amber/[0.13] rounded-ct-lg border border-ct-amber/[0.34] p-6 animate-pulse">
         <div className="flex items-center gap-3">
           <Loader2 className="w-5 h-5 text-ct-amber animate-spin" />
           <span className="text-sm text-ct-amber">Analyzing your performance...</span>
@@ -180,8 +180,8 @@ export default function SmartInsightsWidget() {
     <div
       className={`rounded-ct-lg border p-5 transition-all hover:shadow-md ${
         isPositive
-          ? 'bg-gradient-to-r from-ct-surface-2 via-ct-surface-2 to-ct-surface-2 border-ct-line'
-          : 'bg-gradient-to-r from-ct-amber via-ct-amber to-ct-amber border-ct-amber/[0.34]'
+          ? 'bg-ct-surface-2 border-ct-line'
+          : 'bg-ct-amber/[0.13] border-ct-amber/[0.34]'
       }`}
     >
       <div className="flex items-start gap-4">

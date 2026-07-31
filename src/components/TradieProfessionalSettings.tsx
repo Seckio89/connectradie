@@ -605,7 +605,7 @@ export default function TradieProfessionalSettings() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-ct-teal to-ct-teal rounded-ct-md border border-ct-amber/[0.34]">
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-ct-teal/[0.14] rounded-ct-md border border-ct-amber/[0.34]">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-ct-amber/[0.13] rounded-ct-sm flex items-center justify-center">
                 <Zap className="w-5 h-5 text-ct-amber" />

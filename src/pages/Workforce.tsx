@@ -202,14 +202,17 @@ export default function Workforce() {
             </Link>
           </div>
 
-          {/* Compliance summary — constrained, never full width */}
+          {/* Compliance summary — constrained, never full width. Two up on a
+              phone: at grid-cols-1 each of these was a full-width ~200px-tall
+              card for a single digit, so the four of them filled the screen
+              before any worker was visible. */}
           {!loading && entries.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {(['expired', 'expiring_soon', 'compliant', 'not_tracked'] as WorkerComplianceState[]).map((state) => (
                 <button
                   key={state}
                   onClick={() => setComplianceFilter(complianceFilter === state ? 'all' : state)}
-                  className={`max-w-sm w-full text-left bg-ct-surface rounded-ct-md shadow-sm p-6 border transition-colors ${
+                  className={`max-w-sm w-full text-left bg-ct-surface rounded-ct-md shadow-sm p-4 sm:p-6 border transition-colors ${
                     complianceFilter === state ? 'border-ct-teal' : 'border-ct-line hover:bg-ct-surface-2'
                   }`}
                 >

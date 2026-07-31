@@ -63,18 +63,20 @@ export default function PayoutSummaryCard() {
         </Link>
       </div>
 
-      {/* Next payout, or available balance heading to the bank */}
+      {/* Next payout, or available balance heading to the bank.
+          mute-2, not mute: this panel is a teal tint, where --mute measures
+          3.95:1 and fails AA. See the tinted-fill table in CLAUDE.md. */}
       <div className="rounded-ct-sm bg-ct-teal/[0.14] border border-ct-teal/30 p-3 mb-3">
         {upcoming ? (
           <p className="text-sm text-ct-paper">
             <span className="font-semibold">Next payout: {fmtAud(upcoming.amount)}</span>
-            {last4 && <span className="text-ct-mute"> → •••• {last4}</span>}
-            <span className="text-ct-mute"> on {fmtDay(upcoming.arrival_date)}</span>
+            {last4 && <span className="text-ct-mute-2"> → •••• {last4}</span>}
+            <span className="text-ct-mute-2"> on {fmtDay(upcoming.arrival_date)}</span>
           </p>
         ) : (
           <p className="text-sm text-ct-paper">
             <span className="font-semibold">{fmtAud(details.balance?.available ?? 0)} available</span>
-            {last4 && <span className="text-ct-mute"> → •••• {last4}</span>}
+            {last4 && <span className="text-ct-mute-2"> → •••• {last4}</span>}
           </p>
         )}
       </div>

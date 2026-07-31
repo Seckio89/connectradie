@@ -913,7 +913,7 @@ export default function Payouts() {
           <>
             {/* Account Status banner */}
             {isFullyActive ? (
-              <div className="bg-gradient-to-r from-ct-teal to-ct-surface-2 rounded-ct-lg border border-ct-teal/30 p-5">
+              <div className="bg-ct-teal/[0.14] rounded-ct-lg border border-ct-teal/30 p-5">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-6 h-6 text-ct-teal" />
                   <div>
@@ -923,7 +923,7 @@ export default function Payouts() {
                 </div>
               </div>
             ) : hasRequirements ? (
-              <div className="bg-gradient-to-r from-ct-amber to-ct-amber rounded-ct-lg border border-ct-amber/[0.34] p-5">
+              <div className="bg-ct-amber/[0.13] rounded-ct-lg border border-ct-amber/[0.34] p-5">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-6 h-6 text-ct-amber flex-shrink-0" />
@@ -1023,15 +1023,17 @@ export default function Payouts() {
               </p>
             </div>
 
-            {/* Stripe Connect onboarding warning */}
+            {/* Stripe Connect onboarding warning. Was a ramp from rose to amber
+                — two different meanings in one fill. Nothing has failed here;
+                the tradie has a step left to do, which is amber. */}
             {onboardingWarning && onboardingComplete === false && (
-              <div className="bg-gradient-to-r from-ct-rose to-ct-amber rounded-ct-lg border border-ct-rose/[0.34] p-5">
+              <div className="bg-ct-amber/[0.13] rounded-ct-lg border border-ct-amber/[0.34] p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-6 h-6 text-ct-rose" />
+                    <AlertTriangle className="w-6 h-6 text-ct-amber" />
                     <div>
                       <p className="font-semibold text-ct-paper">Stripe Connect Setup Required</p>
-                      <p className="text-sm text-ct-rose">
+                      <p className="text-sm text-ct-amber">
                         You must complete your Stripe Connect setup before you can manage payouts or access your payout dashboard. Please complete onboarding first.
                       </p>
                     </div>

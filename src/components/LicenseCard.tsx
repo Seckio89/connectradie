@@ -35,10 +35,13 @@ export default function LicenseCard({
 
   const effectiveStatus = verificationStatus || (verified ? 'verified' : 'pending');
 
+  // These badges set a fill but no text colour, so they inherited the card's
+  // text-ct-paper and painted it on full-strength rose (2.69:1) or teal
+  // (1.90:1). Dim fill + solid text + border is the documented badge pattern.
   const renderStatusBadge = () => {
     if (isExpired) {
       return (
-        <div className="flex items-center gap-1 bg-ct-rose px-3 py-1 rounded-full text-xs font-medium">
+        <div className="flex items-center gap-1 bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34] px-3 py-1 rounded-full text-xs font-medium">
           <AlertCircle className="h-3 w-3" />
           <span>Expired</span>
         </div>
@@ -48,21 +51,21 @@ export default function LicenseCard({
     switch (effectiveStatus) {
       case 'verified':
         return (
-          <div className="flex items-center gap-1 bg-ct-teal px-3 py-1 rounded-full text-xs font-medium">
+          <div className="flex items-center gap-1 bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30 px-3 py-1 rounded-full text-xs font-medium">
             <CheckCircle className="h-3 w-3" />
             <span>Verified</span>
           </div>
         );
       case 'rejected':
         return (
-          <div className="flex items-center gap-1 bg-ct-rose px-3 py-1 rounded-full text-xs font-medium">
+          <div className="flex items-center gap-1 bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34] px-3 py-1 rounded-full text-xs font-medium">
             <XCircle className="h-3 w-3" />
             <span>Rejected</span>
           </div>
         );
       case 'pending':
         return (
-          <div className="flex items-center gap-1 bg-ct-teal px-3 py-1 rounded-full text-xs font-medium">
+          <div className="flex items-center gap-1 bg-ct-amber/[0.13] text-ct-amber border border-ct-amber/[0.34] px-3 py-1 rounded-full text-xs font-medium">
             <Clock className="h-3 w-3" />
             <span>Pending Admin Approval</span>
           </div>
@@ -85,8 +88,8 @@ export default function LicenseCard({
       <div className="relative z-10">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="bg-ct-teal p-3 rounded-ct-sm">
-              <Shield className="h-6 w-6" />
+            <div className="bg-ct-teal/[0.14] p-3 rounded-ct-sm">
+              <Shield className="h-6 w-6 text-ct-teal" />
             </div>
             <div>
               <div className="text-xs text-ct-mute uppercase tracking-wide">Trade License</div>
@@ -97,7 +100,7 @@ export default function LicenseCard({
           <div className="flex items-center gap-2">
             {renderStatusBadge()}
             {apiVerified && (
-              <div className="flex items-center gap-1 bg-ct-teal px-3 py-1 rounded-full text-xs font-medium">
+              <div className="flex items-center gap-1 bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30 px-3 py-1 rounded-full text-xs font-medium">
                 <BadgeCheck className="h-3 w-3" />
                 <span>API Verified</span>
               </div>

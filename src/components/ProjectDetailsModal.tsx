@@ -869,7 +869,7 @@ export default function ProjectDetailsModal({
                 <button
                   onClick={handleEndOngoing}
                   disabled={!endOngoingReason.trim() || loading || (endOngoingStatus === 'end_date' && !endOngoingDate)}
-                  className={`flex-1 px-4 py-2.5 text-sm font-medium text-ct-paper rounded-ct-sm transition-colors disabled:opacity-50 ${
+                  className={`flex-1 px-4 py-2.5 text-sm font-medium text-ct-ink rounded-ct-sm transition-colors disabled:opacity-50 ${
                     endOngoingStatus === 'completed'
                       ? 'bg-ct-teal hover:brightness-110'
                       : endOngoingStatus === 'end_date'

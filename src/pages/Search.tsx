@@ -1133,8 +1133,8 @@ export default function Search() {
                 </p>
               </div>
             ) : remainingViews <= 0 ? (
-              <div className="bg-gradient-to-r from-ct-teal to-ct-teal border border-ct-amber/[0.34] rounded-ct-lg p-6 text-center">
-                <Crown className="w-10 h-10 text-ct-teal mx-auto mb-3" />
+              <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-lg p-6 text-center">
+                <Crown className="w-10 h-10 text-ct-amber mx-auto mb-3" />
                 <h3 className="text-lg font-bold text-ct-paper mb-2">You've reached your daily view limit</h3>
                 <p className="text-ct-mute-2 mb-4 max-w-md mx-auto">
                   Free accounts can view {DAILY_VIEW_LIMIT_VALUE} tradie profiles per day. Upgrade to Pro for unlimited views, verified badge, and priority search.

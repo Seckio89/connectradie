@@ -70,6 +70,65 @@ const APP_ROUTES = [
   '/my-trades', '/workforce',
 ];
 
+// Whole surfaces render only for a particular ACCOUNT STATE, and a sweep that
+// visits each route once with one fixture never sees them. That is not a
+// hypothetical: the Settings "Fully Verified" card, the Payouts "Account
+// Active" banner and the Pro upgrade gate were each a full-strength teal fill
+// with teal text on it — 1.00:1 — and this sweep reported /settings, /payouts
+// and /search clean, because under the default fixture none of the three
+// rendered at all.
+//
+// `verification_status` is the specific miss worth naming: the fixture set
+// license_verified/abn_verified/is_identity_verified, which LOOKS verified, but
+// VerificationCenter keys off verification_status and nothing set it.
+const VARIANTS = [
+  {
+    name: 'pro-verified',
+    profile: { verification_status: 'verified' },
+    // Blanket {ok:true} left accountDetails.connected undefined, so both
+    // branches of the Payouts banner were dead code to this sweep. Keys are
+    // camelCase because that is what ConnectAccountDetails declares in
+    // src/lib/stripe.ts — snake_case here made Payouts throw on
+    // `requirements.currentlyDue.length` and render its error boundary.
+    edge: {
+      'stripe-connect-account': {
+        connected: true, payouts: [],
+        balance: { available: 6590, pending: 450 },
+        bankAccount: { last4: '4321', bankName: 'Test Bank', currency: 'aud' },
+        account: {
+          chargesEnabled: true, payoutsEnabled: true, detailsSubmitted: true,
+          requirements: { currentlyDue: [], pastDue: [] },
+        },
+      },
+    },
+    routes: ['/settings', '/payouts', '/dashboard'],
+    tabs: ['Verify', 'Pay', 'Notify', 'Pro', 'Security'],
+  },
+  {
+    name: 'free-unverified',
+    // onboarding_completed stays true: the ROUTER keys off it and bounces to
+    // /onboarding when false, so every route in this variant measured nothing.
+    // The checklist keys off onboarding_stage, which is what we actually want low.
+    profile: {
+      verification_status: 'pending', subscription_tier: 'free', is_premium: false,
+      onboarding_stage: 1, onboarding_completed: true,
+      stripe_connect_onboarding_complete: false, stripe_connect_account_id: null,
+    },
+    edge: {
+      'stripe-connect-account': {
+        connected: true, payouts: [],
+        balance: { available: 0, pending: 0 }, bankAccount: null,
+        account: {
+          chargesEnabled: false, payoutsEnabled: false, detailsSubmitted: false,
+          requirements: { currentlyDue: ['external_account'], pastDue: [] },
+        },
+      },
+    },
+    routes: ['/settings', '/payouts', '/dashboard', '/search', '/leads'],
+    tabs: ['Verify', 'Pay'],
+  },
+];
+
 const VIEWPORTS = [
   { name: '390', width: 390, height: 844, mobile: true },
   { name: '1440', width: 1440, height: 900, mobile: false },
@@ -231,10 +290,20 @@ const measurePage = async (page, route, vp, surface) => {
   return res;
 };
 
+// Passes, not a hard-coded pair: the variants below are extra authenticated
+// passes over a small route subset, each with its own account state.
+const PASSES = [
+  { name: 'public', authed: false, routes: PUBLIC_ROUTES, variant: null },
+  { name: 'app', authed: true, routes: APP_ROUTES, variant: null },
+  ...VARIANTS.map((v) => ({ name: v.name, authed: true, routes: v.routes, variant: v })),
+];
+
 for (const vp of VIEWPORTS) {
-  for (const [authed, routes] of [[false, PUBLIC_ROUTES], [true, APP_ROUTES]]) {
+  for (const { authed, routes, variant } of PASSES) {
     const list = ONLY ? routes.filter((r) => ONLY.includes(r)) : routes;
     if (!list.length) continue;
+    const activeProfile = variant ? { ...tradieProfile, ...variant.profile } : tradieProfile;
+    const activeEdge = variant?.edge ?? {};
 
     const ctx = await browser.newContext({
       viewport: { width: vp.width, height: vp.height },
@@ -251,11 +320,17 @@ for (const vp of VIEWPORTS) {
       let body;
       if (url.includes('/auth/v1/user')) body = authed ? user : { error: 'no session' };
       else if (url.includes('/auth/v1/token')) body = authed ? session : { error: 'no session' };
-      else if (url.includes('/functions/v1/')) body = { ok: true };
-      else if (url.includes('/rest/v1/rpc/')) body = 0;
+      else if (url.includes('/functions/v1/')) {
+        const fn = url.split('/functions/v1/')[1].split(/[?/]/)[0];
+        body = activeEdge[fn] ?? { ok: true };
+      } else if (url.includes('/rest/v1/rpc/')) body = 0;
       else {
         const t = (url.match(/\/rest\/v1\/([a-z_]+)/) || [])[1];
-        let rows = TABLES[t] ?? [];
+        // The signed-in profile has to come from the variant, not the fixture,
+        // or every variant renders as the default persona.
+        let rows = t === 'profiles'
+          ? [activeProfile, ...(TABLES.profiles ?? []).slice(1)]
+          : TABLES[t] ?? [];
         const qs = new URLSearchParams(url.split('?')[1] || '');
         for (const [col, raw] of qs.entries()) {
           if (['select', 'order', 'limit', 'offset'].includes(col)) continue;
@@ -264,7 +339,7 @@ for (const vp of VIEWPORTS) {
             rows = rows.filter((r) => r[col] === undefined || String(r[col]) === w);
           }
         }
-        body = wantsOne ? (rows[0] ?? (t === 'profiles' ? tradieProfile : {})) : rows;
+        body = wantsOne ? (rows[0] ?? (t === 'profiles' ? activeProfile : {})) : rows;
       }
       const n = Array.isArray(body) ? body.length : 1;
       await route.fulfill({
@@ -310,8 +385,27 @@ for (const vp of VIEWPORTS) {
           continue;
         }
 
-        const res = await measurePage(page, path, vp, 'page');
+        // Findings carry the pass name so a variant-only surface is not
+        // mistaken for a regression on the default one, and so the baseline
+        // keys them apart.
+        const tag = variant ? `page[${variant.name}]` : 'page';
+        const res = await measurePage(page, path, vp, tag);
         let opened = 0;
+
+        // Tabbed pages hide most of their surfaces behind a tab that no
+        // trigger word matches: "Verify" and "Pay" are nouns here, not verbs.
+        // The Settings verification card lived behind exactly that.
+        if (variant?.tabs && res.bodyEls >= 20) {
+          for (const label of variant.tabs) {
+            const tab = await page.$(`button:visible:has-text("${label}")`);
+            if (!tab) continue;
+            try {
+              await tab.click({ timeout: 1500 });
+              await page.waitForTimeout(650);
+              await measurePage(page, path, vp, `tab:${label}[${variant.name}]`);
+            } catch { /* tab not clickable in this state — nothing to measure */ }
+          }
+        }
 
         if (authed && res.bodyEls >= 20) {
           const triggers = await page.$$('button:visible, [role="button"]:visible');
@@ -404,7 +498,10 @@ if (broken.length) {
 }
 
 if (!groups.size) {
-  console.log(`\nNo AA contrast failures. ${PUBLIC_ROUTES.length} public + ${APP_ROUTES.length} app routes, both viewports, modals opened.`);
+  const variantSurfaces = VARIANTS.reduce((n, v) => n + v.routes.length * (1 + (v.tabs?.length ?? 0)), 0);
+  console.log(`\nNo AA contrast failures. ${PUBLIC_ROUTES.length} public + ${APP_ROUTES.length} app routes, `
+    + `plus ${VARIANTS.length} account-state variant(s) over ${variantSurfaces} route/tab surface(s), `
+    + 'both viewports, modals opened.');
   if (freshBroken.length) {
     console.error(`\nFailing on ${freshBroken.length} newly unmeasurable route result(s) — a route that stops`);
     console.error('rendering is exactly the blind spot this sweep exists to close. If the change');
