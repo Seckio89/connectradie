@@ -762,7 +762,7 @@ export default function ClientDashboard() {
 
           return (
             <div id="attention-section" className="mb-8 bg-ct-surface border-2 border-ct-amber/[0.34] rounded-ct-lg overflow-hidden shadow-sm">
-              <div className="px-5 py-3 bg-ct-amber/[0.13] border-b border-ct-amber/[0.34] flex items-center gap-2">
+              <div className="px-4 sm:px-5 py-3 bg-ct-amber/[0.13] border-b border-ct-amber/[0.34] flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-ct-amber" />
                 <h2 className="text-sm font-semibold text-ct-paper">
                   {totalItems === 1 ? '1 item needs your attention' : `${totalItems} items need your attention`}
@@ -773,7 +773,7 @@ export default function ClientDashboard() {
                   const category = job.description.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || null;
                   const label = (job.title || category || 'Job').toString();
                   return (
-                    <div key={`release-${job.id}`} className="px-3 sm:px-5 py-3 flex items-center gap-3 hover:bg-ct-surface-2 transition-colors">
+                    <div key={`release-${job.id}`} className="px-4 sm:px-5 py-3 flex items-center gap-3 hover:bg-ct-surface-2 transition-colors">
                       <div className="w-8 h-8 bg-ct-teal/[0.14] rounded-full flex items-center justify-center flex-shrink-0">
                         <CheckCircle2 className="w-4 h-4 text-ct-teal" />
                       </div>
@@ -797,7 +797,7 @@ export default function ClientDashboard() {
                   const label = (job.title || category || 'Job').toString();
                   const isRecurring = recurringJobIds.has(job.id);
                   return (
-                    <Link key={`quote-${job.id}`} to={isRecurring ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`} className="px-5 py-3 flex items-center gap-3 hover:bg-ct-surface-2 transition-colors">
+                    <Link key={`quote-${job.id}`} to={isRecurring ? `/leads?tab=ongoing&job=${job.id}` : `/leads?job=${job.id}`} className="px-4 sm:px-5 py-3 flex items-center gap-3 hover:bg-ct-surface-2 transition-colors">
                       <div className="w-8 h-8 bg-ct-surface-2 rounded-full flex items-center justify-center flex-shrink-0">
                         <FileText className="w-4 h-4 text-ct-mute-2" />
                       </div>
@@ -810,7 +810,7 @@ export default function ClientDashboard() {
                   );
                 })}
                 {pendingPayments.map(pp => (
-                  <div key={`pay-${pp.id}`} className="px-3 sm:px-5 py-3 flex items-center gap-3 hover:bg-ct-surface-2 transition-colors">
+                  <div key={`pay-${pp.id}`} className="px-4 sm:px-5 py-3 flex items-center gap-3 hover:bg-ct-surface-2 transition-colors">
                     <div className="w-8 h-8 bg-ct-amber/[0.13] rounded-full flex items-center justify-center flex-shrink-0">
                       <CreditCard className="w-4 h-4 text-ct-amber" />
                     </div>
@@ -839,7 +839,7 @@ export default function ClientDashboard() {
                   </div>
                 ))}
                 {invoices.map(inv => (
-                  <Link key={`inv-${inv.id}`} to="/payments" className="px-5 py-3 flex items-center gap-3 hover:bg-ct-surface-2 transition-colors">
+                  <Link key={`inv-${inv.id}`} to="/payments" className="px-4 sm:px-5 py-3 flex items-center gap-3 hover:bg-ct-surface-2 transition-colors">
                     <div className="w-8 h-8 bg-ct-surface-2 rounded-full flex items-center justify-center flex-shrink-0">
                       <FileText className="w-4 h-4 text-ct-mute-2" />
                     </div>
@@ -1120,23 +1120,39 @@ export default function ClientDashboard() {
                       : job.quote_count > 0 ? `${job.quote_count} Quote${job.quote_count !== 1 ? 's' : ''}`
                       : 'Waiting';
 
+                    // Tones mirror getStatusTone in Jobs.tsx and TONE in
+                    // components/ui/Pill.tsx, so the same job reads the same on
+                    // every screen: teal = money moving as agreed, amber =
+                    // blocked on a person, grey = no state yet.
+                    //
+                    // Three disagreed before. `in_progress` was grey here but
+                    // teal on /leads and the tradie dashboard. `accepted` had no
+                    // branch at all, so a job labelled "Accepted" fell through to
+                    // the grey default. And quotes waiting to be reviewed were
+                    // grey, though they are the one state on this card that is
+                    // blocked on the client — the "needs your attention" panel
+                    // above already lists them as an action item.
                     const statusColor = isArchived ? 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'
                       : job.status === 'completed' && isReleased ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30'
                       : job.status === 'completed' ? 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]'
-                      : job.status === 'in_progress' ? 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'
+                      : job.status === 'in_progress' ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30'
                       : job.status === 'funded' ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30'
+                      : job.status === 'accepted' ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30'
                       : job.quoting_status === 'awarded' ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30'
-                      : job.quote_count > 0 ? 'bg-ct-surface-2 text-ct-mute-2 border-ct-line'
+                      : job.quote_count > 0 ? 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]'
                       : 'bg-ct-surface-2 text-ct-mute-2 border-ct-line';
 
+                    // The accent stripe has to say the same thing as the pill.
+                    // "Waiting" was a grey pill beside a teal stripe.
                     const accentColor = isArchived ? 'bg-ct-line'
                       : job.status === 'completed' && isReleased ? 'bg-ct-teal'
                       : job.status === 'completed' ? 'bg-ct-amber'
-                      : job.status === 'in_progress' ? 'bg-ct-surface-2'
+                      : job.status === 'in_progress' ? 'bg-ct-teal'
                       : job.status === 'funded' ? 'bg-ct-teal'
+                      : job.status === 'accepted' ? 'bg-ct-teal'
                       : job.quoting_status === 'awarded' ? 'bg-ct-teal'
-                      : job.quote_count > 0 ? 'bg-ct-surface-2'
-                      : 'bg-ct-teal';
+                      : job.quote_count > 0 ? 'bg-ct-amber'
+                      : 'bg-ct-surface-2';
 
                     const SLOT_LABELS: Record<string, string> = { morning: '7-9 AM', midday: '10 AM-12 PM', afternoon: '1-5 PM' };
 
@@ -1381,7 +1397,7 @@ export default function ClientDashboard() {
 
 
             {/* Ongoing Services */}
-            <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
+            <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 sm:p-5">
               <div className="flex items-center justify-between mb-4">
                 <Link to="/leads?tab=services" className="font-semibold text-ct-paper flex items-center gap-2 hover:text-ct-mute-2 transition-colors">
                   <Repeat className="w-4 h-4 text-ct-mute-2" />
@@ -1447,7 +1463,7 @@ export default function ClientDashboard() {
               )}
 
               {recurringJobs.filter(j => j.is_active).length === 0 && !showRecurringForm ? (
-                <div className="bg-ct-surface-2 rounded-ct-md p-5 border border-ct-line-soft text-center">
+                <div className="bg-ct-surface-2 rounded-ct-md p-4 sm:p-5 border border-ct-line-soft text-center">
                   <RefreshCw className="w-7 h-7 text-ct-mute mx-auto mb-2" />
                   <p className="text-sm font-semibold text-ct-paper">Set up an ongoing service</p>
                   <p className="text-xs text-ct-mute mt-1">Schedule regular cleaning, lawn mowing, pool service and more. One setup, automatic reminders every cycle.</p>
@@ -1890,7 +1906,7 @@ export default function ClientDashboard() {
             </div>
 
               {/* Invoices */}
-              <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
+              <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 sm:p-5">
                 <Link to="/payments" className="font-semibold text-ct-paper flex items-center gap-2 mb-4 hover:text-ct-mute-2 transition-colors">
                   <DollarSign className="w-4 h-4 text-ct-mute-2" />
                   Invoices
@@ -2185,7 +2201,7 @@ export default function ClientDashboard() {
             {trainingModeEnabled && (
               <button
                 onClick={() => setShowSubscriptionModal(true)}
-                className={`w-full rounded-ct-lg border p-5 text-left transition-all hover:shadow-lg ${
+                className={`w-full rounded-ct-lg border p-4 sm:p-5 text-left transition-all hover:shadow-lg ${
                   isClientPro
                     ? 'bg-ct-teal/[0.14] border-ct-teal/30'
                     : 'bg-ct-surface-2 border-ct-line hover:border-ct-teal/30'
@@ -2209,7 +2225,7 @@ export default function ClientDashboard() {
               </button>
             )}
             {/* Spending Summary */}
-            <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
+            <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 sm:p-5">
               <h3 className="font-semibold text-ct-paper flex items-center gap-2 mb-4">
                 <DollarSign className="w-4 h-4 text-ct-teal" />
                 Spending Summary

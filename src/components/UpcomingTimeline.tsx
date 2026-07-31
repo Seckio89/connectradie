@@ -255,7 +255,7 @@ export default function UpcomingTimeline() {
   }, []);
 
   return (
-    <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6">
+    <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 sm:p-6">
       <h3 className="font-semibold text-ct-paper mb-4 flex items-center gap-2">
         <Calendar className="w-5 h-5 text-ct-amber" />
         This Week
