@@ -79,11 +79,15 @@ export default function NewGroupModal({ isOpen, onClose, currentUserId, onCreate
 
       setCandidates(list);
 
-      // Recent jobs for the optional link.
+      // Live jobs only for the optional link. A group thread is for work still
+      // in front of you, so finished and cancelled jobs are excluded — the
+      // picker was otherwise dominated by dead jobs. Same status set as
+      // recurringJobs.ts:1457.
       const { data: jobRows } = await supabase
         .from('jobs')
         .select('id, title')
         .eq('tradie_id', currentUserId)
+        .in('status', ['pending', 'open', 'accepted', 'funded', 'in_progress'])
         .order('created_at', { ascending: false })
         .limit(20);
       setJobs((jobRows as { id: string; title: string | null }[] | null) ?? []);
