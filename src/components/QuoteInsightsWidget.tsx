@@ -154,7 +154,7 @@ export default function QuoteInsightsWidget() {
         </div>
         <div className="flex items-center justify-between text-sm py-2 sm:py-0">
           <span className="flex items-center gap-2 text-ct-mute-2">
-            <span className="w-2 h-2 rounded-full bg-ct-teal/[0.14]0 sm:hidden" />
+            <span className="w-2 h-2 rounded-full bg-ct-teal/[0.14] sm:hidden" />
             <CheckCircle2 className="w-4 h-4 text-ct-teal hidden sm:block" />
             Won
           </span>

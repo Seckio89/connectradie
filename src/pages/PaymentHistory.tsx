@@ -413,9 +413,9 @@ export default function PaymentHistory() {
   const getStatusBadge = (status: string) => {
     const map: Record<string, { bg: string; dot: string; label: string }> = {
       pending:   { bg: 'bg-ct-amber/[0.13] text-ct-amber border border-ct-amber/[0.34]', dot: 'bg-ct-amber', label: 'Pending' },
-      completed: { bg: 'bg-ct-amber/[0.13] text-ct-amber border border-ct-amber/[0.34]', dot: 'bg-ct-amber/[0.13]0', label: 'Completed' },
+      completed: { bg: 'bg-ct-amber/[0.13] text-ct-amber border border-ct-amber/[0.34]', dot: 'bg-ct-amber/[0.13]', label: 'Completed' },
       released:  { bg: 'bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30', dot: 'bg-ct-teal', label: 'Released' },
-      refunded:  { bg: 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line', dot: 'bg-ct-surface-20', label: 'Refunded' },
+      refunded:  { bg: 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line', dot: 'bg-ct-surface-2', label: 'Refunded' },
       failed:    { bg: 'bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34]', dot: 'bg-ct-rose', label: 'Failed' },
     };
     const cfg = map[status] || { bg: 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line', dot: 'bg-ct-surface-2', label: status };
@@ -886,8 +886,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     >
                       <div className="flex items-center gap-2">
                         <ChevronDown className={`w-4 h-4 transition-transform ${isCollapsed ? '-rotate-90' : ''} ${chevronText}`} />
-                        {isActionNeeded && <span className="w-2 h-2 rounded-full bg-ct-amber/[0.13]0 flex-shrink-0" />}
-                        {isPending && <span className="w-2 h-2 rounded-full bg-ct-surface-20 flex-shrink-0" />}
+                        {isActionNeeded && <span className="w-2 h-2 rounded-full bg-ct-amber/[0.13] flex-shrink-0" />}
+                        {isPending && <span className="w-2 h-2 rounded-full bg-ct-surface-2 flex-shrink-0" />}
                         <h3 className={`text-sm font-semibold ${headerText}`}>{group.label}</h3>
                         <span className={`text-xs ${subText}`}>
                           {group.payments.length} {group.payments.length === 1 ? 'payment' : 'payments'}
@@ -937,7 +937,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                               p.status === 'pending' ? 'text-ct-amber' : 'text-ct-mute'
                                             }`} />
                                           ) : p.payment_type === 'subscription' ? (
-                                            <CreditCard className="w-3.5 h-3.5 text-ct-teal0" />
+                                            <CreditCard className="w-3.5 h-3.5 text-ct-teal" />
                                           ) : (
                                             <DollarSign className="w-3.5 h-3.5 text-ct-mute" />
                                           )}

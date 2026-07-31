@@ -412,13 +412,13 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                             : hasSlots
                             ? 'bg-ct-surface-2 text-ct-mute-2 hover:bg-ct-surface-2 font-semibold border border-ct-line'
                             : 'hover:bg-ct-surface-2 text-ct-mute-2'
-                        } ${isToday && !isSelected ? 'ring-2 ring-ct-teal0' : ''}`}
+                        } ${isToday && !isSelected ? 'ring-2 ring-ct-teal' : ''}`}
                       >
                         <span className={isPast && !isSelected ? 'text-ct-mute' : ''}>
                           {day}
                         </span>
                         {hasSlots && !isSelected && (
-                          <span className="absolute bottom-0.5 w-2 h-2 bg-ct-surface-20 rounded-full" />
+                          <span className="absolute bottom-0.5 w-2 h-2 bg-ct-surface-2 rounded-full" />
                         )}
                       </button>
                     );

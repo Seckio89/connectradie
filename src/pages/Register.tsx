@@ -207,7 +207,7 @@ export default function Register() {
                 <label htmlFor="firstName" className="block text-sm font-medium text-ct-mute-2 mb-1.5">
                   Name
                 </label>
-                <div className="rounded-ct-md border border-ct-line overflow-hidden focus-within:ring-2 focus-within:ring-ct-teal0 focus-within:border-transparent transition-all">
+                <div className="rounded-ct-md border border-ct-line overflow-hidden focus-within:ring-2 focus-within:ring-ct-teal focus-within:border-transparent transition-all">
                   <div className="relative">
                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-ct-mute" />
                     <input
@@ -260,7 +260,7 @@ export default function Register() {
                 <label htmlFor="phone" className="block text-sm font-medium text-ct-mute-2 mb-1.5">
                   Mobile phone
                 </label>
-                <div className="relative rounded-ct-md border border-ct-line overflow-hidden focus-within:ring-2 focus-within:ring-ct-teal0 focus-within:border-transparent transition-all">
+                <div className="relative rounded-ct-md border border-ct-line overflow-hidden focus-within:ring-2 focus-within:ring-ct-teal focus-within:border-transparent transition-all">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-ct-mute" />
                   <input
                     id="phone"
@@ -281,7 +281,7 @@ export default function Register() {
                 <label htmlFor="email" className="block text-sm font-medium text-ct-mute-2 mb-1.5">
                   Email address
                 </label>
-                <div className="relative rounded-ct-md border border-ct-line overflow-hidden focus-within:ring-2 focus-within:ring-ct-teal0 focus-within:border-transparent transition-all">
+                <div className="relative rounded-ct-md border border-ct-line overflow-hidden focus-within:ring-2 focus-within:ring-ct-teal focus-within:border-transparent transition-all">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-ct-mute" />
                   <input
                     id="email"
@@ -303,7 +303,7 @@ export default function Register() {
                 <label htmlFor="password" className="block text-sm font-medium text-ct-mute-2 mb-1.5">
                   Password
                 </label>
-                <div className="relative rounded-ct-md border border-ct-line overflow-hidden focus-within:ring-2 focus-within:ring-ct-teal0 focus-within:border-transparent transition-all">
+                <div className="relative rounded-ct-md border border-ct-line overflow-hidden focus-within:ring-2 focus-within:ring-ct-teal focus-within:border-transparent transition-all">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-ct-mute" />
                   <input
                     id="password"

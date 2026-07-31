@@ -301,7 +301,7 @@ export default function PerformanceInsights() {
               <TrendingUp className="w-8 h-8 text-ct-teal" />
             </div>
             <div className="flex items-center justify-center gap-2 mb-2">
-              <h1 className="text-3xl font-bold text-ct-ink">Performance Insights</h1>
+              <h1 className="text-3xl font-bold text-ct-paper">Performance Insights</h1>
               <ProBadge size="md" />
             </div>
             <p className="text-ct-mute">Win rate, response time, conversion, and revenue trends — track every metric that matters.</p>
@@ -351,7 +351,7 @@ export default function PerformanceInsights() {
               <TrendingUp className="w-5 h-5 text-ct-teal" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-ct-ink">Performance Insights</h1>
+              <h1 className="text-2xl font-bold text-ct-paper">Performance Insights</h1>
               <p className="text-ct-mute-2 text-sm">
                 Understand how your business is performing and where to improve
               </p>
@@ -362,7 +362,7 @@ export default function PerformanceInsights() {
         <section className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="w-5 h-5 text-ct-mute-2" />
-            <h2 className="text-lg font-bold text-ct-ink">Health Check</h2>
+            <h2 className="text-lg font-bold text-ct-paper">Health Check</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <HealthCard
@@ -444,7 +444,7 @@ export default function PerformanceInsights() {
         <section>
           <div className="flex items-center gap-2 mb-4">
             <Lightbulb className="w-5 h-5 text-ct-mute-2" />
-            <h2 className="text-lg font-bold text-ct-ink">Strengths & Focus Areas</h2>
+            <h2 className="text-lg font-bold text-ct-paper">Strengths & Focus Areas</h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -453,7 +453,7 @@ export default function PerformanceInsights() {
                 <div className="w-8 h-8 bg-ct-teal/[0.14] rounded-ct-sm flex items-center justify-center">
                   <Award className="w-4 h-4 text-ct-teal" />
                 </div>
-                <h3 className="font-bold text-ct-ink">What's Working</h3>
+                <h3 className="font-bold text-ct-paper">What's Working</h3>
               </div>
 
               {strengths ? (
@@ -519,7 +519,7 @@ export default function PerformanceInsights() {
                 <div className="w-8 h-8 bg-ct-amber/[0.13] rounded-ct-sm flex items-center justify-center">
                   <Lightbulb className="w-4 h-4 text-ct-amber" />
                 </div>
-                <h3 className="font-bold text-ct-ink">Where to Improve</h3>
+                <h3 className="font-bold text-ct-paper">Where to Improve</h3>
               </div>
 
               {focusAreas.length > 0 ? (
@@ -602,7 +602,7 @@ function HealthCard({
         )}
       </div>
       <p className="text-sm font-medium text-ct-mute-2 mb-1">{label}</p>
-      <p className="text-3xl font-bold text-ct-ink mb-1">{value}</p>
+      <p className="text-3xl font-bold text-ct-paper mb-1">{value}</p>
       {detail && <p className="text-xs text-ct-mute-2 leading-relaxed">{detail}</p>}
     </div>
   );
@@ -626,7 +626,7 @@ function StrengthRow({
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs text-ct-mute-2 font-medium uppercase tracking-wide">{label}</p>
-        <p className="font-semibold text-ct-ink">{value}</p>
+        <p className="font-semibold text-ct-paper">{value}</p>
         <p className="text-xs text-ct-mute-2 mt-0.5">{detail}</p>
       </div>
     </div>
@@ -671,7 +671,7 @@ function FocusAreaRow({ area }: { area: FocusArea }) {
           {/* items-start, and the badge must not shrink: without whitespace-nowrap
               it broke "High Priority" across two lines beside a wrapping title. */}
           <div className="flex items-start justify-between gap-2 mb-1">
-            <p className="font-semibold text-ct-ink text-sm min-w-0">{area.title}</p>
+            <p className="font-semibold text-ct-paper text-sm min-w-0">{area.title}</p>
             <span
               className={`text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${badgeStyles[area.severity]}`}
             >

@@ -1099,7 +1099,7 @@ export default function PostLead() {
                         >
                           {isSelected && (
                             <div className="absolute -top-2 right-2">
-                              <span className="inline-block w-2 h-2 rounded-full bg-ct-surface-20" title="Your selected time" />
+                              <span className="inline-block w-2 h-2 rounded-full bg-ct-surface-2" title="Your selected time" />
                             </div>
                           )}
                           <Icon className={`w-5 h-5 mx-auto mb-1.5 ${

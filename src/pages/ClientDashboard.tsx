@@ -831,7 +831,7 @@ export default function ClientDashboard() {
                         }
                       }}
                       disabled={payingPendingId === pp.id}
-                      className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-ct-amber/[0.13]0 text-ct-ink text-xs font-medium rounded-ct-sm hover:bg-ct-amber disabled:opacity-60 transition-colors min-h-[44px]"
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-ct-amber/[0.13] text-ct-ink text-xs font-medium rounded-ct-sm hover:bg-ct-amber disabled:opacity-60 transition-colors min-h-[44px]"
                     >
                       {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
                       Pay Now
@@ -1325,7 +1325,7 @@ export default function ClientDashboard() {
                                         });
                                     }}
                                     disabled={payingIncreaseJobId === job.id}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13]0 text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-amber transition-colors disabled:opacity-60"
+                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13] text-ct-ink text-sm font-medium rounded-ct-sm hover:bg-ct-amber transition-colors disabled:opacity-60"
                                   >
                                     {payingIncreaseJobId === job.id ? (
                                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2278,7 +2278,7 @@ export default function ClientDashboard() {
                   onClick={() => setCancelReason(reason)}
                   className={`px-3 py-2 rounded-full text-xs font-medium border transition-all ${
                     cancelReason === reason
-                      ? 'bg-ct-rose/[0.13]0 text-ct-ink border-ct-rose'
+                      ? 'bg-ct-rose/[0.13] text-ct-ink border-ct-rose'
                       : 'bg-ct-surface text-ct-mute-2 border-ct-line hover:border-ct-rose/40'
                   }`}
                 >
@@ -2292,7 +2292,7 @@ export default function ClientDashboard() {
                 onChange={(e) => setCancelReason(e.target.value || 'Other')}
                 placeholder="Please describe the reason..."
                 rows={2}
-                className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-rose0 resize-none mb-3"
+                className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-rose resize-none mb-3"
               />
             )}
             <div className="flex gap-3 mt-4">
@@ -2749,7 +2749,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
                 onBlur={() => setDescFocused(false)}
                 className={`w-full px-3 py-2 border rounded-ct-sm text-sm resize-none transition-all duration-200 ${
                   descFocused
-                    ? 'min-h-[200px] ring-2 ring-ct-teal0 ring-offset-1 border-ct-teal'
+                    ? 'min-h-[200px] ring-2 ring-ct-teal ring-offset-1 border-ct-teal'
                     : 'min-h-[120px] border-ct-line'
                 }`}
               />

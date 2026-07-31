@@ -181,7 +181,7 @@ function WorkerCard({ member, activity }: { member: ActiveMember; activity?: Wor
                       {/* Visit */}
                       <div className="flex gap-3">
                         <div className="flex flex-col items-center pt-1">
-                          <span className="w-2.5 h-2.5 rounded-full bg-ct-surface-20" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-ct-surface-2" />
                           {(i < day.visits.length - 1 || leg) && (
                             <span className="w-px flex-1 bg-ct-line my-1" />
                           )}

@@ -38,8 +38,8 @@ const CATEGORY_CONFIG: Record<
 };
 
 const PRIORITY_CONFIG: Record<RecommendationPriority, { label: string; dot: string; text: string }> = {
-  high: { label: 'High', dot: 'bg-ct-rose/[0.13]0', text: 'text-ct-rose' },
-  medium: { label: 'Medium', dot: 'bg-ct-amber/[0.13]0', text: 'text-ct-amber' },
+  high: { label: 'High', dot: 'bg-ct-rose/[0.13]', text: 'text-ct-rose' },
+  medium: { label: 'Medium', dot: 'bg-ct-amber/[0.13]', text: 'text-ct-amber' },
   low: { label: 'Low', dot: 'bg-ct-surface-2', text: 'text-ct-mute-2' },
 };
 

@@ -1019,7 +1019,7 @@ export default function Messages() {
                             style={isOwn ? { color: '#ffffff' } : undefined}
                             className={`max-w-[85%] sm:max-w-[70%] rounded-ct-lg px-4 py-2.5 ${
                               isOwn
-                                ? 'bg-ct-surface-20 text-ct-ink rounded-br-ct-xs'
+                                ? 'bg-ct-surface-2 text-ct-ink rounded-br-ct-xs'
                                 : 'bg-ct-surface text-ct-paper rounded-bl-ct-xs border border-ct-line shadow-sm'
                             } ${
                               message.is_booking_request

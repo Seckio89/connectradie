@@ -838,7 +838,7 @@ export default function QuoteComparisonView({
                         <button
                           onClick={() => setConfirmingBookVisitId(quote.id)}
                           disabled={busy}
-                          className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-ct-surface-20 text-ct-ink font-semibold rounded-ct-sm hover:bg-ct-surface-2 transition-colors disabled:opacity-50 text-sm shadow-sm"
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-ct-surface-2 text-ct-ink font-semibold rounded-ct-sm hover:bg-ct-surface-2 transition-colors disabled:opacity-50 text-sm shadow-sm"
                         >
                           {bookingVisitId === quote.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -1023,7 +1023,7 @@ export default function QuoteComparisonView({
                 <button
                   onClick={handleConfirm}
                   disabled={!hasChoice || bookingVisitId === confirmingBookVisitId}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-ct-surface-20 text-ct-ink font-semibold rounded-ct-sm hover:bg-ct-surface-2 transition-colors text-sm disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-ct-surface-2 text-ct-ink font-semibold rounded-ct-sm hover:bg-ct-surface-2 transition-colors text-sm disabled:opacity-50"
                 >
                   {bookingVisitId === confirmingBookVisitId ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

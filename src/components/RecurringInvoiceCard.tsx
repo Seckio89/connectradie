@@ -304,7 +304,7 @@ export default function RecurringInvoiceCard({ invoice, userRole, paymentMethod 
                     }
                   }}
                   disabled={!tradieResponseText.trim() || responding}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-surface-20 hover:bg-ct-surface-2 text-ct-ink text-sm font-medium rounded-ct-sm transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-surface-2 hover:bg-ct-surface-2 text-ct-ink text-sm font-medium rounded-ct-sm transition-colors disabled:opacity-50"
                 >
                   {responding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquare className="w-3.5 h-3.5" />}
                   Send Response
@@ -426,7 +426,7 @@ export default function RecurringInvoiceCard({ invoice, userRole, paymentMethod 
                       setDisputeReason('');
                     }}
                     disabled={!disputeReason || declining}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-rose/[0.13]0 hover:bg-ct-rose text-ct-ink text-sm font-medium rounded-ct-sm transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-rose/[0.13] hover:bg-ct-rose text-ct-ink text-sm font-medium rounded-ct-sm transition-colors disabled:opacity-50"
                   >
                     {declining ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
                     Confirm Dispute
@@ -475,7 +475,7 @@ export default function RecurringInvoiceCard({ invoice, userRole, paymentMethod 
                   onClick={() => setShowApproveConfirm(true)}
                   disabled={approving}
                   className={`inline-flex items-center gap-1.5 px-4 py-2 text-ct-ink text-sm font-medium rounded-ct-sm transition-colors disabled:opacity-50 ${
-                    isScheduledAutoDebit ? 'bg-ct-surface-20 hover:bg-ct-surface-2' : 'bg-ct-teal hover:brightness-110'
+                    isScheduledAutoDebit ? 'bg-ct-surface-2 hover:bg-ct-surface-2' : 'bg-ct-teal hover:brightness-110'
                   }`}
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />

@@ -219,7 +219,7 @@ export default function ClientContactModal({
                     onClick={() => setPaymentMethod(value)}
                     className={`text-left p-3 rounded-ct-md border transition-colors ${
                       active
-                        ? 'border-ct-teal bg-ct-amber/[0.13] ring-1 ring-ct-teal0'
+                        ? 'border-ct-teal bg-ct-amber/[0.13] ring-1 ring-ct-teal'
                         : 'border-ct-line hover:bg-ct-surface-2'
                     }`}
                   >

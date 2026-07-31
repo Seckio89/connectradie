@@ -86,23 +86,23 @@ export default function Terms() {
                 </p>
                 <ul className="mt-4 space-y-3">
                   <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Facilitation Only:</strong> ConnecTradie is a facilitator and is not a party to any agreement, contract, or job initiated between Clients and Tradies.</span>
                   </li>
                   <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Independence:</strong> No agency, partnership, joint venture, or employer-employee relationship is created between ConnecTradie and any user.</span>
                   </li>
                   <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Contractual Separation:</strong> Any contract for work is strictly a private agreement between the Client and the Tradie. ConnecTradie is not liable under any such agreement.</span>
                   </li>
                   <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">No Guarantee:</strong> ConnecTradie does not warrant the availability, quality, suitability, or legality of any Tradie, service, or job posted on the Platform. Clients must perform their own due diligence.</span>
                   </li>
                   <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
-                    <span className="w-1.5 h-1.5 bg-ct-surface-20 rounded-full flex-shrink-0 mt-2" />
+                    <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Platform Modification:</strong> ConnecTradie may modify, suspend, or discontinue any aspect of the Platform at any time, with reasonable notice where practicable.</span>
                   </li>
                 </ul>

@@ -318,7 +318,7 @@ const iconColors: Record<string, string> = {
   dark: 'text-ct-paper',
   indigo: 'text-ct-mute-2',
   silver: 'text-ct-mute',
-  beige: 'text-ct-mute-20',
+  beige: 'text-ct-mute-2',
   gold: 'text-ct-amber',
   burgundy: 'text-ct-amber',
 };

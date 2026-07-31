@@ -538,7 +538,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                         <span className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
                           selectedSiteId === s.id ? 'border-ct-teal' : 'border-ct-line'
                         }`}>
-                          {selectedSiteId === s.id && <span className="w-2 h-2 rounded-full bg-ct-surface-20" />}
+                          {selectedSiteId === s.id && <span className="w-2 h-2 rounded-full bg-ct-surface-2" />}
                         </span>
                         <span className="min-w-0">
                           <span className="text-sm font-medium text-ct-paper">{s.site_name}</span>

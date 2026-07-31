@@ -159,7 +159,7 @@ function MarkPaidModal({ invoice, onClose, onDone }: { invoice: InvoiceRow; onCl
                 onClick={() => setMethod(m)}
                 className={`px-3 py-2 rounded-ct-sm border text-sm font-medium transition-colors ${
                   method === m
-                    ? 'border-ct-teal bg-ct-amber/[0.13] text-ct-amber ring-1 ring-ct-teal0'
+                    ? 'border-ct-teal bg-ct-amber/[0.13] text-ct-amber ring-1 ring-ct-teal'
                     : 'border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                 }`}
               >

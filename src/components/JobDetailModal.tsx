@@ -484,8 +484,8 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
                         done
                           ? isCurrent
-                            ? 'bg-ct-surface-20 text-ct-ink ring-4 ring-ct-teal'
-                            : 'bg-ct-surface-20 text-ct-ink'
+                            ? 'bg-ct-surface-2 text-ct-ink ring-4 ring-ct-teal'
+                            : 'bg-ct-surface-2 text-ct-ink'
                           : 'bg-ct-line text-ct-mute'
                       }`}>
                         {done && !isCurrent ? (
@@ -574,7 +574,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                     className={`px-4 py-2.5 text-sm font-medium rounded-ct-sm transition-colors ${
                       finalPriceLoading || !finalPriceInput
                         ? 'bg-ct-amber/[0.13] text-ct-amber cursor-not-allowed'
-                        : 'bg-ct-amber/[0.13]0 text-ct-ink hover:bg-ct-amber'
+                        : 'bg-ct-amber/[0.13] text-ct-ink hover:bg-ct-amber'
                     }`}
                   >
                     {finalPriceLoading ? (

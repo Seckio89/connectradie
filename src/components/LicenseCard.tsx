@@ -69,7 +69,7 @@ export default function LicenseCard({
         );
       default:
         return (
-          <div className="flex items-center gap-1 bg-ct-surface-20 px-3 py-1 rounded-full text-xs font-medium">
+          <div className="flex items-center gap-1 bg-ct-surface-2 px-3 py-1 rounded-full text-xs font-medium">
             <AlertCircle className="h-3 w-3" />
             <span>Unverified</span>
           </div>
@@ -79,7 +79,7 @@ export default function LicenseCard({
 
   return (
     <div className="relative bg-gradient-to-br from-ct-surface via-ct-surface-2 to-ct-ink rounded-ct-md p-6 shadow-md text-ct-ink overflow-hidden">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-ct-surface-20 opacity-10 rounded-full -mr-32 -mt-32"></div>
+      <div className="absolute top-0 right-0 w-64 h-64 bg-ct-surface-2 opacity-10 rounded-full -mr-32 -mt-32"></div>
       <div className="absolute bottom-0 left-0 w-48 h-48 bg-ct-teal opacity-10 rounded-full -ml-24 -mb-24"></div>
 
       <div className="relative z-10">

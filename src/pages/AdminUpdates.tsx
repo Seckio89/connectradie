@@ -313,7 +313,7 @@ export default function AdminUpdates() {
                       {/* Read progress bar */}
                       <div className="mt-2 h-1 bg-ct-surface-2 rounded-full overflow-hidden w-48">
                         <div
-                          className="h-full bg-ct-surface-20 rounded-full transition-all"
+                          className="h-full bg-ct-surface-2 rounded-full transition-all"
                           style={{ width: `${readPct}%` }}
                         />
                       </div>

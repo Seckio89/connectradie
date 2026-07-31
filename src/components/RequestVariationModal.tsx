@@ -299,7 +299,7 @@ export default function RequestVariationModal({
                     disabled={uploading}
                   />
                   {uploading ? (
-                    <Loader2 className="w-5 h-5 text-ct-teal0 animate-spin" />
+                    <Loader2 className="w-5 h-5 text-ct-teal animate-spin" />
                   ) : (
                     <Camera className="w-5 h-5 text-ct-mute" />
                   )}

@@ -74,7 +74,7 @@ export default function HireHeroSection() {
             <div className="relative pt-8 pb-8 px-4">
               <div className="bg-ct-surface rounded-ct-lg shadow-xl shadow-black/30 border border-ct-line p-6 max-w-md mx-auto">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-ct-md bg-ct-amber/[0.13]0/15 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-ct-md bg-ct-amber/[0.13]/15 flex items-center justify-center">
                     <Lock className="w-5 h-5 text-ct-amber" />
                   </div>
                   <div>
@@ -134,7 +134,7 @@ export default function HireHeroSection() {
             <div className="flex items-stretch justify-center gap-4 mt-4 px-4">
               <div className="bg-ct-surface rounded-ct-md shadow-lg shadow-black/30 border border-ct-line p-4 w-56">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-ct-sm bg-ct-amber/[0.13]0/15 flex items-center justify-center shrink-0">
+                  <div className="w-9 h-9 rounded-ct-sm bg-ct-amber/[0.13]/15 flex items-center justify-center shrink-0">
                     <ShieldCheck className="w-4 h-4 text-ct-amber" />
                   </div>
                   <div className="min-w-0">

@@ -46,7 +46,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
       return { text: 'Request Availability', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', dot: 'bg-ct-teal', border: 'border-ct-teal/30' };
     }
     if (availabilityHours >= 10) {
-      return { text: 'Available This Week', color: 'text-ct-teal', bg: 'bg-ct-teal/[0.14]', dot: 'bg-ct-teal/[0.14]0', border: 'border-ct-teal/30' };
+      return { text: 'Available This Week', color: 'text-ct-teal', bg: 'bg-ct-teal/[0.14]', dot: 'bg-ct-teal/[0.14]', border: 'border-ct-teal/30' };
     } else if (availabilityHours > 0) {
       return { text: 'Limited Availability', color: 'text-ct-amber', bg: 'bg-ct-amber/[0.13]', dot: 'bg-ct-teal', border: 'border-ct-teal/30' };
     } else {
@@ -89,7 +89,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
                 {displayName}
               </Link>
               {isPro && (
-                <BadgeCheck className="w-4 h-4 text-ct-teal0 flex-shrink-0" />
+                <BadgeCheck className="w-4 h-4 text-ct-teal flex-shrink-0" />
               )}
               {isPro && <ProBadge size="sm" variant={isVerifiedPro ? 'verified' : 'pro'} />}
             </div>

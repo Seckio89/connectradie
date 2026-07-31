@@ -36,7 +36,7 @@ export default function AdminToolsTab({
             </div>
             <p className="text-sm text-ct-mute-2 mb-4">When enabled, all tradies and clients will see a "Subscribe (Test Mode)" button that activates Pro features instantly without requiring Stripe payment.</p>
             <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold ${trainingModeEnabled ? 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line' : 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line'}`}>
-              <span className={`w-2 h-2 rounded-full ${trainingModeEnabled ? 'bg-ct-surface-20 animate-pulse' : 'bg-ct-surface-2'}`} />
+              <span className={`w-2 h-2 rounded-full ${trainingModeEnabled ? 'bg-ct-surface-2 animate-pulse' : 'bg-ct-surface-2'}`} />
               {trainingModeEnabled ? 'Training Mode Active' : 'Training Mode Off'}
             </div>
           </div>
@@ -79,7 +79,7 @@ export default function AdminToolsTab({
           <div className="flex-1">
             <h4 className="font-semibold text-ct-paper mb-1">Flash Boost Algorithm</h4>
             <p className="text-sm text-ct-mute-2 mb-4">Finds all pending jobs created more than 2 hours ago that haven't been picked up yet, and marks them as Flash Deals with priority visibility for 1 hour to incentivize fast pickup.</p>
-            <button onClick={onRunFlashBoost} disabled={flashBoostLoading} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-ct-teal0 to-ct-teal0 text-ct-ink font-semibold rounded-ct-md hover:from-ct-teal hover:to-ct-teal disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg min-h-[44px]">
+            <button onClick={onRunFlashBoost} disabled={flashBoostLoading} className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink font-semibold rounded-ct-md hover:from-ct-teal hover:to-ct-teal disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg min-h-[44px]">
               {flashBoostLoading ? (<><Loader2 className="w-4 h-4 animate-spin" />Running...</>) : (<><Zap className="w-4 h-4" />Run Flash Boost Algorithm</>)}
             </button>
           </div>

@@ -430,7 +430,7 @@ export default function Notifications() {
           <div className="flex items-center gap-3">
             <h1 className="text-xl sm:text-2xl font-bold text-ct-paper">Notifications</h1>
             {unreadCount > 0 && (
-              <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-bold text-ct-ink bg-ct-rose/[0.13]0 rounded-full">
+              <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 text-xs font-bold text-ct-rose bg-ct-rose/[0.13] rounded-full">
                 {unreadCount}
               </span>
             )}
