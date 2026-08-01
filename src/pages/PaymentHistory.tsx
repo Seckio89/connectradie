@@ -1390,7 +1390,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
               <button onClick={handleReleaseEscrow} disabled={actionLoading}
                 className="w-full px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:bg-ct-teal disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                Release Now
+                Release payment
               </button>
             </div>
           )}
@@ -1495,7 +1495,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
               <button onClick={handleReleaseEscrow} disabled={actionLoading}
                 className="w-full px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:bg-ct-teal disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                Release Payment
+                Release payment
               </button>
             </div>
           )}

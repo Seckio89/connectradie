@@ -981,7 +981,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
             {/* "Request Payment" only makes sense for an ON-APP, not-yet-funded
                 job. Off-app clients pay by an emailed link after completion, and
                 already-paid jobs have nothing to request. */}
-            {(jobPaid || isOffApp) ? 'Mark Complete' : 'Mark Complete & Request Payment'}
+            {(jobPaid || isOffApp) ? 'Mark complete' : 'Mark complete & request payment'}
           </button>
         )}
 
