@@ -1,6 +1,5 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { HelmetProvider } from 'react-helmet-async';
 import * as Sentry from '@sentry/react';
 import App from './App.tsx';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -101,9 +100,7 @@ window.addEventListener('load', () => { void detectStaleDocument(); });
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
-      <HelmetProvider>
-        <App />
-      </HelmetProvider>
+      <App />
     </ErrorBoundary>
   </StrictMode>
 );
