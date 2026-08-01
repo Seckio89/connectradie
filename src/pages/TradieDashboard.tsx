@@ -890,7 +890,7 @@ export default function TradieDashboard() {
       <div className="space-y-3 sm:space-y-6">
         {/* Header */}
         <div className="bg-ct-ink rounded-ct-lg p-4 sm:p-6 md:p-8 border border-ct-line px-4 sm:px-6 md:px-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-ct-paper mb-1">Your Business Hub</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-[-0.02em] text-ct-paper mb-1">Your business hub</h1>
           <p className="text-ct-mute">Manage your schedule, jobs, and conversations in one place</p>
           {profile && (
             <div className="mt-4">
@@ -906,7 +906,7 @@ export default function TradieDashboard() {
         {showPayoutBanner && (
           <div className="flex items-center gap-2 sm:gap-2 px-4 py-3 bg-ct-surface sm:bg-ct-teal/[0.14] border border-ct-line-soft sm:border-ct-teal/30 rounded-ct-md">
             <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0" />
-            <span className="text-sm font-semibold text-ct-teal">Pro Member<span className="hidden sm:inline"> — Lowest Fees</span></span>
+            <span className="text-sm font-semibold text-ct-teal">Pro member<span className="hidden sm:inline"> — lowest fees</span></span>
             <span className="text-sm text-ct-teal flex-1 hidden sm:inline">You're keeping more of every job with Pro.</span>
             <button
               onClick={() => { localStorage.setItem('dismissedPayoutBanner', 'true'); setShowPayoutBanner(false); }}
@@ -925,7 +925,7 @@ export default function TradieDashboard() {
                 <ShieldAlert className="w-6 h-6 text-ct-rose" />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-ct-paper text-lg">License Expired</h3>
+                <h3 className="font-bold text-ct-paper text-lg">License expired</h3>
                 <p className="text-ct-paper mt-1">
                   Your trade license expired
                   {profile?.license_expiry && (
@@ -938,7 +938,7 @@ export default function TradieDashboard() {
                   className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-ct-rose text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
                 >
                   <Settings className="w-4 h-4" />
-                  Upload Renewed License
+                  Upload renewed license
                 </Link>
               </div>
             </div>
@@ -949,7 +949,7 @@ export default function TradieDashboard() {
         {!isProUser && (
           <div className="bg-ct-surface rounded-ct-lg shadow-sm p-3 sm:p-4 border border-ct-line-soft px-4 sm:px-6">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-ct-paper">Free Plan Usage</h3>
+              <h3 className="text-xs font-semibold text-ct-paper">Free plan usage</h3>
               <button onClick={() => setShowSubscriptionModal(true)} className="text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 transition-colors">
                 Upgrade to Pro
               </button>
@@ -1050,7 +1050,7 @@ export default function TradieDashboard() {
             <div className="bg-ct-surface rounded-ct-md border-2 border-ct-amber/[0.34] shadow-sm p-5">
               <div className="flex items-center gap-2 mb-3">
                 <AlertCircle className="w-5 h-5 text-ct-amber" />
-                <h3 className="text-sm font-bold text-ct-paper">New Service Request{pendingConfirmations.length !== 1 ? 's' : ''} Awaiting Your Response</h3>
+                <h3 className="text-sm font-bold text-ct-paper">New service request{pendingConfirmations.length !== 1 ? 's' : ''} awaiting your response</h3>
                 <span className="ml-auto px-3 py-1 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-full">
                   {pendingConfirmations.length}
                 </span>
@@ -1144,7 +1144,7 @@ export default function TradieDashboard() {
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs md:text-sm font-semibold text-ct-paper flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-ct-amber" />
-                  Your Next Steps
+                  Your next steps
                   <span className="bg-ct-amber/[0.13] text-ct-amber text-[10px] md:text-xs font-medium px-2 md:px-3 py-0.5 md:py-1 rounded-full">
                     {pendingJobs.length + inProgressJobs.length + unreadConvos.length + pendingConfirmations.length}
                   </span>
@@ -1246,7 +1246,7 @@ export default function TradieDashboard() {
               onClick={() => navigate('/work?tab=services')}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-amber/[0.13] hover:bg-ct-amber hover:text-ct-ink text-ct-amber text-sm font-semibold rounded-ct-sm transition-colors"
             >
-              Review &amp; Send
+              Review &amp; send
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -1292,7 +1292,7 @@ export default function TradieDashboard() {
                     <Zap className="w-4 h-4 text-ct-amber" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-ct-paper">New Leads</h3>
+                    <h3 className="text-sm font-semibold text-ct-paper">New leads</h3>
                     <p className="text-xs text-ct-mute">Jobs matching your trades</p>
                   </div>
                 </div>
@@ -1307,7 +1307,7 @@ export default function TradieDashboard() {
                   const isInvited = invitedLeadIds.has(lead.id);
                   const category = extractCategory(lead.description);
                   const desc = cleanDescription(lead.description);
-                  const title = (lead.title || category || 'Untitled Job').replace(/_/g, ' ');
+                  const title = (lead.title || category || 'Untitled job').replace(/_/g, ' ');
                   const clientName = (lead.profiles?.full_name || 'Client').split(' ')[0];
                   return (
                     <div
@@ -1388,7 +1388,7 @@ export default function TradieDashboard() {
                               ) : lead.budget_type === 'request_quote' ? (
                                 <span className="inline-flex items-center gap-1 text-ct-mute-2 font-medium">
                                   <FileText className="w-3 h-3" />
-                                  Quote Requested
+                                  Quote requested
                                 </span>
                               ) : null}
                               {typeof lead.parking_available === 'boolean' && (
@@ -1532,7 +1532,7 @@ export default function TradieDashboard() {
                       <div className="flex items-center justify-between mb-3 flex-wrap gap-y-1">
                         <div className="flex items-center gap-2">
                           <RefreshCw className="w-4 h-4 text-ct-teal" />
-                          <h2 className="text-base sm:text-lg font-bold text-ct-paper">Ongoing Services</h2>
+                          <h2 className="text-base sm:text-lg font-bold text-ct-paper">Ongoing services</h2>
                           <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-teal/[0.14] text-ct-teal">
                             {items.length}
                           </span>
@@ -1591,7 +1591,7 @@ export default function TradieDashboard() {
                 {/* ─── Active Jobs (one-off) ─── */}
                 {(() => {
                   const hasOngoing = agreements.length > 0 || recurringJobs.length > 0;
-                  const heading = hasOngoing ? 'One-Off Jobs' : 'Active Jobs';
+                  const heading = hasOngoing ? 'One-off jobs' : 'Active jobs';
                   const emptyTitle = hasOngoing ? 'No one-off jobs right now' : 'Get found by local clients';
                   const emptyDesc = hasOngoing
                     ? "Your ongoing services are above. One-off jobs will show up here as they come in."
@@ -1611,7 +1611,7 @@ export default function TradieDashboard() {
                             title={emptyTitle}
                             description={emptyDesc}
                             compact
-                            actionLabel="Set Your Availability"
+                            actionLabel="Set your availability"
                             onAction={() => setShowAddSlot(true)}
                           />
                           <div className="text-center -mt-1 sm:mt-1 pb-1">
@@ -1726,7 +1726,7 @@ export default function TradieDashboard() {
                   return (
                     <div className="mt-4 sm:mt-8">
                       <CollapsibleSection
-                        title={`Completed Jobs (${completedJobs.length})`}
+                        title={`Completed jobs (${completedJobs.length})`}
                         defaultOpen={false}
                       >
                         <div className="space-y-2 mt-3">
@@ -1843,7 +1843,7 @@ export default function TradieDashboard() {
                     icon={MessageSquare}
                     title="No messages yet"
                     description="When clients message you about jobs, their conversations will appear here."
-                    actionLabel="Browse Leads"
+                    actionLabel="Browse leads"
                     onAction={() => navigate('/work')}
                   />
                 ) : (
@@ -1933,11 +1933,11 @@ export default function TradieDashboard() {
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 w-full overflow-visible">
                   {isProUser ? (
                     <button onClick={() => setShowAddSlot(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-teal transition-colors min-h-[36px] sm:min-h-[44px]">
-                      <Plus className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots
+                      <Plus className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk add</span><span className="sm:hidden">Add</span> slots
                     </button>
                   ) : (
                     <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[10px] sm:text-sm font-medium rounded-ct-md hover:brightness-110 transition-all min-h-[36px] sm:min-h-[44px]">
-                      <Crown className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk Add</span><span className="sm:hidden">Add</span> Slots<span className="text-xs font-bold bg-ct-surface/20 px-1.5 py-0.5 rounded-ct-xs ml-1">PRO</span>
+                      <Crown className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk add</span><span className="sm:hidden">Add</span> slots<span className="text-xs font-bold bg-ct-surface/20 px-1.5 py-0.5 rounded-ct-xs ml-1">PRO</span>
                     </button>
                   )}
                   {isProUser ? (
@@ -1984,10 +1984,10 @@ export default function TradieDashboard() {
                         <div className="fixed inset-0 z-10" onClick={() => setShowManageMenu(false)} />
                         <div className="absolute right-0 mt-2 w-56 bg-ct-surface rounded-ct-md shadow-lg border border-ct-line z-20 py-2">
                           <button onClick={handleRemoveDups} className="w-full px-4 py-2.5 text-left text-sm text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-3">
-                            <Copy className="w-4 h-4 text-ct-mute" />Remove Duplicates
+                            <Copy className="w-4 h-4 text-ct-mute" />Remove duplicates
                           </button>
                           <button onClick={() => setConfirmClearAll(true)} className="w-full px-4 py-2.5 text-left text-sm text-ct-rose hover:bg-ct-rose/[0.13] flex items-center gap-3">
-                            <Trash2 className="w-4 h-4" />Clear All Upcoming
+                            <Trash2 className="w-4 h-4" />Clear all upcoming
                           </button>
                         </div>
                       </>
@@ -2201,7 +2201,7 @@ export default function TradieDashboard() {
               <h3 className="font-semibold text-ct-paper mb-4">
                 {selectedDay
                   ? new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
-                  : 'Upcoming Slots'}
+                  : 'Upcoming slots'}
               </h3>
 
               {selectedDay && (
@@ -2275,7 +2275,7 @@ export default function TradieDashboard() {
         {/* Quick Stats */}
         <div data-tour="quick-stats" className="[&>div]:rounded-ct-md">
         <CollapsibleSection
-          title="Quick Stats"
+          title="Quick stats"
           defaultOpen={true}
           icon={<div className="w-7 h-7 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center"><Clock className="w-4 h-4 text-ct-mute-2" /></div>}
         >
@@ -2286,22 +2286,22 @@ export default function TradieDashboard() {
             <div className="flex flex-col items-center gap-1 text-center p-1">
               <Clock className="w-5 h-5 text-ct-teal" />
               <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight tabular-nums">{totalAvailableHours.toFixed(0)}</p>
-              <p className="text-[11px] text-ct-mute leading-tight">Available<br className="sm:hidden" /> Hours</p>
+              <p className="text-[11px] text-ct-mute leading-tight">Available<br className="sm:hidden" /> hours</p>
             </div>
             <div className="flex flex-col items-center gap-1 text-center p-1">
               <Calendar className="w-5 h-5 text-ct-mute-2" />
               <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight tabular-nums">{bookedSlots}</p>
-              <p className="text-[11px] text-ct-mute leading-tight">Booked<br className="sm:hidden" /> Slots</p>
+              <p className="text-[11px] text-ct-mute leading-tight">Booked<br className="sm:hidden" /> slots</p>
             </div>
             <Link to="/work?tab=active" className="flex flex-col items-center gap-1 text-center p-1 rounded-ct-sm hover:bg-ct-surface transition-colors">
               <Users className="w-5 h-5 text-ct-mute-2" />
               <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight tabular-nums">{activeJobCount}</p>
-              <p className="text-[11px] text-ct-mute leading-tight">Active<br className="sm:hidden" /> Jobs</p>
+              <p className="text-[11px] text-ct-mute leading-tight">Active<br className="sm:hidden" /> jobs</p>
             </Link>
             <button onClick={() => setShowSubscriptionModal(true)} className="flex flex-col items-center gap-1 text-center p-1 rounded-ct-sm hover:bg-ct-surface transition-colors">
               <Crown className={`w-5 h-5 ${isProUser ? 'text-ct-mute-2' : 'text-ct-mute'}`} />
               <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight">{isProUser ? 'Pro' : 'Free'}</p>
-              <p className="text-[11px] text-ct-mute leading-tight">Your<br className="sm:hidden" /> Plan</p>
+              <p className="text-[11px] text-ct-mute leading-tight">Your<br className="sm:hidden" /> plan</p>
             </button>
           </div>
         </CollapsibleSection>
@@ -2314,7 +2314,7 @@ export default function TradieDashboard() {
             <div className="p-2 bg-ct-surface-2 rounded-ct-sm">
               <TrendingUp className="w-5 h-5 text-ct-mute-2" />
             </div>
-            <h3 className="text-lg font-semibold text-ct-paper">Earnings Summary</h3>
+            <h3 className="text-lg font-semibold text-ct-paper">Earnings summary</h3>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:gap-4" data-earnings-grid>
             <div className="bg-ct-surface-2 rounded-ct-md p-2 sm:p-4 text-center">
@@ -2324,7 +2324,7 @@ export default function TradieDashboard() {
               ) : (
                 <p className="text-sm text-ct-mute-2 font-medium mt-1">Quote on leads to start earning</p>
               )}
-              <p className="text-xs text-ct-mute-2 mt-1">This Month</p>
+              <p className="text-xs text-ct-mute-2 mt-1">This month</p>
             </div>
             <div className="bg-ct-surface rounded-ct-md p-2 sm:p-4 text-center border border-ct-line">
               <TrendingUp className="w-5 h-5 text-ct-mute-2 mx-auto mb-1" />
@@ -2333,12 +2333,12 @@ export default function TradieDashboard() {
               ) : (
                 <p className="text-sm text-ct-mute font-medium mt-1">Complete your first job!</p>
               )}
-              <p className="text-xs text-ct-mute mt-1">All Time</p>
+              <p className="text-xs text-ct-mute mt-1">All time</p>
             </div>
             <div className="bg-ct-surface rounded-ct-md p-2 sm:p-4 text-center border border-ct-line">
               <Briefcase className="w-5 h-5 text-ct-mute-2 mx-auto mb-1" />
               <p className="text-base sm:text-xl font-bold text-ct-paper">{earnings.pendingJobs}</p>
-              <p className="text-xs text-ct-mute mt-1">Active Jobs</p>
+              <p className="text-xs text-ct-mute mt-1">Active jobs</p>
             </div>
           </div>
         </div>
@@ -2353,10 +2353,10 @@ export default function TradieDashboard() {
                 <div className="p-1.5 bg-ct-amber/[0.13] rounded-ct-sm">
                   <Star className="w-4 h-4 text-ct-amber fill-yellow-400" />
                 </div>
-                <h3 className="text-base font-semibold text-ct-paper">Recent Reviews</h3>
+                <h3 className="text-base font-semibold text-ct-paper">Recent reviews</h3>
               </div>
               <Link to="/my-profile" className="text-sm text-ct-mute-2 hover:text-ct-mute-2 font-medium">
-                View All
+                View all
               </Link>
             </div>
             <div className="divide-y divide-ct-line-soft">
@@ -2407,7 +2407,7 @@ export default function TradieDashboard() {
                   <BellRing className="w-6 h-6 text-ct-mute-2" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-ct-paper">Never Miss an Urgent Lead</h3>
+                  <h3 className="font-semibold text-ct-paper">Never miss an urgent lead</h3>
                   <p className="text-sm text-ct-mute-2 mt-0.5">Get instant desktop alerts when high-priority jobs are posted in your area.</p>
                 </div>
               </div>
@@ -2447,7 +2447,7 @@ export default function TradieDashboard() {
           <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setEditingSlot(null)} />
           <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape') setEditingSlot(null); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-ct-surface rounded-ct-lg shadow-2xl z-50 w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-ct-paper">Edit Time Slot</h3>
+              <h3 className="text-lg font-semibold text-ct-paper">Edit time slot</h3>
               <button onClick={() => setEditingSlot(null)} className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors" aria-label="Close">
                 <X className="w-5 h-5" />
               </button>
@@ -2458,11 +2458,11 @@ export default function TradieDashboard() {
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Start Time</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Start time</label>
                   <input type="time" step="300" value={editStartTime} onChange={(e) => setEditStartTime(e.target.value)} className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">End Time</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">End time</label>
                   <input type="time" step="300" value={editEndTime} onChange={(e) => setEditEndTime(e.target.value)} className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" />
                 </div>
               </div>
@@ -2470,7 +2470,7 @@ export default function TradieDashboard() {
             </div>
             <div className="flex gap-3">
               <button onClick={() => setEditingSlot(null)} className="flex-1 px-4 py-3 text-ct-mute-2 font-medium border border-ct-line rounded-ct-md hover:bg-ct-surface-2 transition-colors">Cancel</button>
-              <button onClick={handleUpdateSlot} className="flex-1 px-4 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors">Save Changes</button>
+              <button onClick={handleUpdateSlot} className="flex-1 px-4 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors">Save changes</button>
             </div>
           </div>
         </>
@@ -2484,14 +2484,14 @@ export default function TradieDashboard() {
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-ct-rose/[0.13] rounded-full flex items-center justify-center"><Trash2 className="w-6 h-6 text-ct-rose" /></div>
               <div>
-                <h3 className="text-lg font-semibold text-ct-paper">Clear All Upcoming Slots</h3>
+                <h3 className="text-lg font-semibold text-ct-paper">Clear all upcoming slots</h3>
                 <p className="text-sm text-ct-mute">This action cannot be undone</p>
               </div>
             </div>
             <p className="text-ct-mute-2 mb-6">Are you sure you want to delete all upcoming available slots? Booked slots will not be affected.</p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmClearAll(false)} className="flex-1 px-4 py-3 text-ct-mute-2 font-medium border border-ct-line rounded-ct-md hover:bg-ct-surface-2 transition-colors">Cancel</button>
-              <button onClick={handleClearAll} className="flex-1 px-4 py-3 bg-ct-rose text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors">Clear All</button>
+              <button onClick={handleClearAll} className="flex-1 px-4 py-3 bg-ct-rose text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors">Clear all</button>
             </div>
           </div>
         </>
@@ -2503,7 +2503,7 @@ export default function TradieDashboard() {
           <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowAddSlotForDay(false)} />
           <div role="dialog" aria-modal="true" onKeyDown={(e) => { if (e.key === 'Escape') setShowAddSlotForDay(false); }} className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-ct-surface rounded-ct-lg shadow-2xl z-50 w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-ct-paper">Add Time Slot</h3>
+              <h3 className="text-lg font-semibold text-ct-paper">Add time slot</h3>
               <button onClick={() => setShowAddSlotForDay(false)} className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors" aria-label="Close">
                 <X className="w-5 h-5" />
               </button>
@@ -2514,11 +2514,11 @@ export default function TradieDashboard() {
               </p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Start Time</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">Start time</label>
                   <input type="time" step="300" value={newSlotStartTime} onChange={(e) => setNewSlotStartTime(e.target.value)} className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">End Time</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">End time</label>
                   <input type="time" step="300" value={newSlotEndTime} onChange={(e) => setNewSlotEndTime(e.target.value)} className="w-full px-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" />
                 </div>
               </div>
@@ -2527,7 +2527,7 @@ export default function TradieDashboard() {
             <div className="flex gap-3">
               <button onClick={() => setShowAddSlotForDay(false)} className="flex-1 px-4 py-3 text-ct-mute-2 font-medium border border-ct-line rounded-ct-md hover:bg-ct-surface-2 transition-colors">Cancel</button>
               <button onClick={handleAddSlotForDay} disabled={newSlotStartTime >= newSlotEndTime || addingSlot} className="flex-1 px-4 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                {addingSlot ? <><Loader2 className="w-4 h-4 animate-spin" />Adding...</> : 'Add Slot'}
+                {addingSlot ? <><Loader2 className="w-4 h-4 animate-spin" />Adding...</> : 'Add slot'}
               </button>
             </div>
           </div>
@@ -2578,7 +2578,7 @@ export default function TradieDashboard() {
             <div className="flex items-center justify-center mb-4">
               <div className="w-12 h-12 bg-ct-rose/[0.13] rounded-full flex items-center justify-center"><Trash2 className="w-6 h-6 text-ct-rose" /></div>
             </div>
-            <h3 className="text-xl font-bold text-ct-paper text-center mb-2">Delete Job</h3>
+            <h3 className="text-xl font-bold text-ct-paper text-center mb-2">Delete job</h3>
             <p className="text-ct-mute-2 text-center mb-6">Are you sure you want to delete this job? This action cannot be undone.</p>
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="flex-1 px-4 py-2 border border-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors disabled:opacity-50">Cancel</button>

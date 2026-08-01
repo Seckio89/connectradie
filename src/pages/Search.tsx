@@ -541,7 +541,7 @@ export default function Search() {
   const searchContent = (
     <div>
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-ct-paper tracking-tight">Find a Tradie</h1>
+          <h1 className="text-2xl font-bold text-ct-paper tracking-tight">Find a tradie</h1>
           <p className="text-sm text-ct-mute mt-1">Licensed professionals in your area, ready to quote</p>
         </div>
 
@@ -708,7 +708,7 @@ export default function Search() {
                   }`}
                 >
                   <Zap className="w-3.5 h-3.5" />
-                  Emergency Available
+                  Emergency available
                 </button>
               </div>
 
@@ -718,13 +718,13 @@ export default function Search() {
                   className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors flex items-center justify-center gap-2 min-h-[40px]"
                 >
                   <X className="w-3.5 h-3.5" />
-                  Clear All
+                  Clear all
                 </button>
                 <button
                   onClick={() => { setShowFilters(false); showToast('Filters applied'); }}
                   className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-md hover:brightness-110 transition-colors min-h-[40px] shadow-sm shadow-warm-500/20"
                 >
-                  Apply Filters
+                  Apply filters
                 </button>
               </div>
             </div>
@@ -740,7 +740,7 @@ export default function Search() {
                 className="text-sm font-medium text-ct-mute-2 hover:text-ct-paper flex items-center gap-2 transition-colors"
               >
                 <Bookmark className="w-4 h-4" />
-                Saved Searches ({savedSearches.length})
+                Saved searches ({savedSearches.length})
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showSavedSearches ? 'rotate-180' : ''}`} />
               </button>
               {(tradeFilter || postcodeFilter || ratingFilter > 0 || contractorTypeFilter) && (
@@ -749,7 +749,7 @@ export default function Search() {
                   className="text-sm font-medium text-ct-mute-2 hover:text-ct-mute-2 flex items-center gap-1.5 transition-colors"
                 >
                   <Bookmark className="w-3.5 h-3.5" />
-                  Save Current Search
+                  Save current search
                 </button>
               )}
             </div>
@@ -757,7 +757,7 @@ export default function Search() {
             {showSaveForm && (
               <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 mb-3 flex gap-3 items-end">
                 <div className="flex-1">
-                  <label className="block text-xs font-medium text-ct-mute mb-1.5">Search Name</label>
+                  <label className="block text-xs font-medium text-ct-mute mb-1.5">Search name</label>
                   <input
                     type="text"
                     value={saveSearchName}
@@ -888,7 +888,7 @@ export default function Search() {
               className="inline-flex items-center gap-2 px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors shadow-sm shadow-warm-500/20"
             >
               <Briefcase className="w-5 h-5" />
-              Post a Job Instead
+              Post a job instead
             </Link>
           </div>
         ) : (
@@ -935,7 +935,7 @@ export default function Search() {
                       disabled={loading}
                       className="px-8 py-2.5 bg-ct-surface border border-ct-line text-ct-mute-2 text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 min-h-[44px] shadow-sm"
                     >
-                      {loading ? 'Loading...' : 'Load More'}
+                      {loading ? 'Loading...' : 'Load more'}
                     </button>
                   </div>
                 )}
@@ -965,7 +965,7 @@ export default function Search() {
         <div className="w-16 h-16 bg-ct-amber/[0.13] rounded-full flex items-center justify-center mx-auto mb-6">
           <Eye className="w-8 h-8 text-ct-amber" />
         </div>
-        <h2 className="text-2xl font-bold text-ct-paper mb-3">Want Unlimited Access?</h2>
+        <h2 className="text-2xl font-bold text-ct-paper mb-3">Want unlimited access?</h2>
         <p className="text-ct-mute-2 mb-6">
           You've viewed {DAILY_VIEW_LIMIT_VALUE} profiles today. Post what you need and let verified tradies come to you — it's free.
         </p>
@@ -975,7 +975,7 @@ export default function Search() {
             className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
           >
             <Briefcase className="w-5 h-5" />
-            Post What You Need
+            Post what you need
           </Link>
           <button
             onClick={() => setShowViewLimitModal(false)}
@@ -998,7 +998,7 @@ export default function Search() {
         <div className="w-16 h-16 bg-ct-surface-2 rounded-full flex items-center justify-center mx-auto mb-6">
           <LogIn className="w-8 h-8 text-ct-mute-2" />
         </div>
-        <h2 className="text-2xl font-bold text-ct-paper mb-3">One Step Away</h2>
+        <h2 className="text-2xl font-bold text-ct-paper mb-3">One step away</h2>
         <p className="text-ct-mute-2 mb-8">
           Create a free account to message tradies, check their availability, and get quotes — takes 30 seconds.
         </p>
@@ -1007,13 +1007,13 @@ export default function Search() {
             to="/register"
             className="w-full px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
           >
-            Create Free Account
+            Create free account
           </Link>
           <Link
             to="/login"
             className="w-full px-6 py-3 border-2 border-ct-line text-ct-mute-2 font-semibold rounded-ct-md hover:bg-ct-surface-2 transition-colors"
           >
-            Sign In
+            Sign in
           </Link>
         </div>
         <button
@@ -1044,7 +1044,7 @@ export default function Search() {
             <FileText className="w-5 h-5 text-ct-teal" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-ct-paper">Request Quote</h2>
+            <h2 className="text-lg font-bold text-ct-paper">Request quote</h2>
             <p className="text-sm text-ct-mute">
               from {quoteRequestTradie.tradie_details?.business_name || quoteRequestTradie.full_name}
             </p>
@@ -1071,7 +1071,7 @@ export default function Search() {
                     className="w-full text-left p-3 rounded-ct-md border border-ct-line hover:border-ct-teal/30 hover:bg-ct-teal/[0.14] transition-colors disabled:opacity-50"
                   >
                     <p className="text-sm font-semibold text-ct-paper capitalize truncate">
-                      {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
+                      {(job.title || category || 'Untitled job').replace(/_/g, ' ')}
                     </p>
                     <p className="text-xs text-ct-mute truncate mt-0.5">{desc}</p>
                     {job.location_address && (
@@ -1090,7 +1090,7 @@ export default function Search() {
                 className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-ct-line text-ct-mute-2 text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                Post a New Job Instead
+                Post a new job instead
               </button>
             </div>
           </div>
@@ -1102,7 +1102,7 @@ export default function Search() {
               className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-md hover:brightness-110 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Post a Job
+              Post a job
             </button>
           </div>
         )}
@@ -1208,13 +1208,13 @@ export default function Search() {
                 to="/login"
                 className="px-4 py-2 text-ct-mute-2 font-medium hover:text-ct-paper transition-colors"
               >
-                Sign In
+                Sign in
               </Link>
               <Link
                 to="/register"
                 className="px-4 py-2 bg-ct-teal text-ct-ink font-medium rounded-ct-sm hover:brightness-110 transition-colors"
               >
-                Get Started
+                Get started
               </Link>
             </div>
           </div>

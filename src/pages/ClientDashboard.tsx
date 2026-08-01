@@ -727,7 +727,7 @@ export default function ClientDashboard() {
               <p className="text-sm text-ct-teal">Post your first job to get quotes from verified tradies in your area.</p>
             </div>
             <Link to="/post-lead" className="flex-shrink-0 px-4 py-2.5 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors text-sm text-center min-h-[44px] inline-flex items-center justify-center">
-              Post a Job
+              Post a job
             </Link>
           </div>
         </div>
@@ -746,7 +746,7 @@ export default function ClientDashboard() {
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors min-h-[44px]"
           >
             <Plus className="w-5 h-5" />
-            Find New Tradie
+            Find new tradie
           </Link>
         </div>
 
@@ -787,7 +787,7 @@ export default function ClientDashboard() {
                         className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-ct-teal text-ct-ink text-xs font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-60 transition-colors min-h-[44px]"
                       >
                         {releasingJobId === job.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                        Release & Review
+                        Release & review
                       </button>
                     </div>
                   );
@@ -834,7 +834,7 @@ export default function ClientDashboard() {
                       className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-ct-sm hover:bg-ct-amber hover:text-ct-ink disabled:opacity-60 transition-colors min-h-[44px]"
                     >
                       {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
-                      Pay Now
+                      Pay now
                     </button>
                   </div>
                 ))}
@@ -893,11 +893,11 @@ export default function ClientDashboard() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-ct-paper flex items-center gap-2">
                   <Briefcase className="w-5 h-5 text-ct-teal" />
-                  My Jobs
+                  My jobs
                 </h2>
                 <div className="flex items-center gap-3">
                   <Link to="/leads" className="text-sm font-medium text-ct-mute-2 hover:text-ct-mute-2 flex items-center gap-1">
-                    View All <ArrowRight className="w-3.5 h-3.5" />
+                    View all <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
@@ -990,7 +990,7 @@ export default function ClientDashboard() {
                         <span className="text-lg font-bold text-ct-amber">1</span>
                       </div>
                       <div>
-                        <p className="font-semibold text-ct-paper">Post a Job</p>
+                        <p className="font-semibold text-ct-paper">Post a job</p>
                         <p className="text-sm text-ct-mute">Describe what you need — takes 60 seconds</p>
                       </div>
                       <ArrowRight className="w-4 h-4 text-ct-mute ml-auto flex-shrink-0" />
@@ -1003,7 +1003,7 @@ export default function ClientDashboard() {
                         <span className="text-lg font-bold text-ct-mute-2">2</span>
                       </div>
                       <div>
-                        <p className="font-semibold text-ct-paper">Find a Tradie</p>
+                        <p className="font-semibold text-ct-paper">Find a tradie</p>
                         <p className="text-sm text-ct-mute">Find and save tradies near you</p>
                       </div>
                       <ArrowRight className="w-4 h-4 text-ct-mute ml-auto flex-shrink-0" />
@@ -1071,7 +1071,7 @@ export default function ClientDashboard() {
                                       <div className="flex-1 min-w-0">
                                         <div className="px-5 py-4">
                                           <div className="flex items-start justify-between gap-3 mb-2">
-                                            <h3 className="text-base font-bold text-ct-paper leading-snug capitalize line-clamp-2">{(job.title || category || 'Untitled Job').replace(/_/g, ' ')}</h3>
+                                            <h3 className="text-base font-bold text-ct-paper leading-snug capitalize line-clamp-2">{(job.title || category || 'Untitled job').replace(/_/g, ' ')}</h3>
                                             <span className={`px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 ${statusColor}`}>{statusLabel}</span>
                                           </div>
                                           <p className="text-sm text-ct-mute line-clamp-3">{desc}</p>
@@ -1112,9 +1112,9 @@ export default function ClientDashboard() {
                     const isReviewed = reviewedJobIds.has(job.id);
                     const statusLabel = isArchived ? 'Archived'
                       : job.status === 'completed' && isReleased ? 'Paid'
-                      : job.status === 'completed' ? 'Awaiting Release'
-                      : job.status === 'in_progress' ? 'In Progress'
-                      : job.status === 'funded' ? 'Paid — Tradie Assigned'
+                      : job.status === 'completed' ? 'Awaiting release'
+                      : job.status === 'in_progress' ? 'In progress'
+                      : job.status === 'funded' ? 'Paid — tradie assigned'
                       : job.status === 'accepted' ? 'Accepted'
                       : job.quoting_status === 'awarded' ? 'Awarded'
                       : job.quote_count > 0 ? `${job.quote_count} Quote${job.quote_count !== 1 ? 's' : ''}`
@@ -1170,7 +1170,7 @@ export default function ClientDashboard() {
                               {/* Header: title + status badge + archive icon */}
                               <div className="flex items-start justify-between gap-3 mb-2">
                                 <h3 className="text-base font-bold text-ct-paper leading-snug capitalize line-clamp-2">
-                                  {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
+                                  {(job.title || category || 'Untitled job').replace(/_/g, ' ')}
                                 </h3>
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                   <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusColor}`}>
@@ -1263,7 +1263,7 @@ export default function ClientDashboard() {
                                   ) : (
                                     <CheckCircle2 className="w-3.5 h-3.5" />
                                   )}
-                                  Release & Review
+                                  Release & review
                                 </button>
                               </div>
                             )}
@@ -1293,7 +1293,7 @@ export default function ClientDashboard() {
                                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:brightness-110 transition-colors"
                                   >
                                     <Star className="w-3.5 h-3.5" />
-                                    Leave a Review
+                                    Leave a review
                                   </Link>
                                 </div>
                               </div>
@@ -1371,7 +1371,7 @@ export default function ClientDashboard() {
                                 <span className="text-xs text-ct-mute">Click to check progress</span>
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 !text-ct-paper text-xs font-semibold rounded-ct-sm">
                                   <Eye className="w-3.5 h-3.5 text-ct-paper" />
-                                  In Progress
+                                  In progress
                                 </span>
                               </div>
                             )}
@@ -1388,7 +1388,7 @@ export default function ClientDashboard() {
                     className="flex items-center justify-center gap-2 p-2.5 rounded-ct-md border-2 border-dashed border-ct-line text-sm font-medium text-ct-mute hover:border-ct-teal/30 hover:text-ct-amber transition-colors"
                   >
                     <Plus className="w-4 h-4" />
-                    Post Another Job
+                    Post another job
                   </Link>
 
                 </div>
@@ -1401,7 +1401,7 @@ export default function ClientDashboard() {
               <div className="flex items-center justify-between mb-4">
                 <Link to="/leads?tab=services" className="font-semibold text-ct-paper flex items-center gap-2 hover:text-ct-mute-2 transition-colors">
                   <Repeat className="w-4 h-4 text-ct-mute-2" />
-                  Ongoing Services
+                  Ongoing services
                 </Link>
                 <button
                   onClick={() => setShowRecurringForm(!showRecurringForm)}
@@ -1472,7 +1472,7 @@ export default function ClientDashboard() {
                     className="mt-3 inline-flex items-center justify-center gap-1.5 min-h-[44px] px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-medium hover:brightness-110 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
-                    Schedule a Service
+                    Schedule a service
                   </button>
                 </div>
               ) : (
@@ -1630,7 +1630,7 @@ export default function ClientDashboard() {
                                   className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 border border-ct-teal/30 text-ct-teal rounded-ct-sm text-xs font-medium hover:bg-ct-teal/[0.14] transition-colors"
                                 >
                                   <Eye className="w-3.5 h-3.5" />
-                                  {isExpanded ? 'Hide Sessions' : `View ${sessions.length} Sessions`}
+                                  {isExpanded ? 'Hide sessions' : `View ${sessions.length} sessions`}
                                 </button>
                               );
                             }
@@ -1662,7 +1662,7 @@ export default function ClientDashboard() {
                                   className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-ct-teal text-ct-ink rounded-ct-sm text-xs font-medium hover:brightness-110 transition-colors"
                                 >
                                   <Send className="w-3.5 h-3.5" />
-                                  Send to {job.tradie.full_name.split(' ')[0]} & Request Quote
+                                  Send to {job.tradie.full_name.split(' ')[0]} & request quote
                                 </button>
                               );
                             }
@@ -1672,7 +1672,7 @@ export default function ClientDashboard() {
                                 className="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-ct-teal text-ct-ink rounded-ct-sm text-xs font-medium hover:brightness-110 transition-colors"
                               >
                                 <Briefcase className="w-3.5 h-3.5" />
-                                Find a Tradie
+                                Find a tradie
                                 <ArrowRight className="w-3 h-3" />
                               </Link>
                             );
@@ -1714,7 +1714,7 @@ export default function ClientDashboard() {
                               {/* Upcoming sessions — next one shown, rest behind toggle */}
                               {upcoming.length > 0 && (
                                 <>
-                                  <p className="text-xs font-medium text-ct-mute mb-2">Upcoming Sessions</p>
+                                  <p className="text-xs font-medium text-ct-mute mb-2">Upcoming sessions</p>
                                   <div className="space-y-2 mb-2">
                                     {visibleUpcoming.map(session => (
                                       <RecurringSessionCard
@@ -1760,7 +1760,7 @@ export default function ClientDashboard() {
                                     </button>
                                   ) : (
                                     <>
-                                      <p className="text-xs font-medium text-ct-mute mb-2">Past Sessions</p>
+                                      <p className="text-xs font-medium text-ct-mute mb-2">Past sessions</p>
                                       <div className="space-y-2">
                                         {sortedMonths.map(monthKey => {
                                           const sessions = monthGroups[monthKey];
@@ -1805,7 +1805,7 @@ export default function ClientDashboard() {
                                                         onClick={(e) => e.stopPropagation()}
                                                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-ct-teal text-ct-ink hover:brightness-110 transition-colors"
                                                       >
-                                                        Pay Now
+                                                        Pay now
                                                         <ExternalLink className="w-2.5 h-2.5" />
                                                       </a>
                                                     ) : invoice.status === 'sent' ? (
@@ -1814,7 +1814,7 @@ export default function ClientDashboard() {
                                                         onClick={(e) => e.stopPropagation()}
                                                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-ct-teal text-ct-ink hover:brightness-110 transition-colors"
                                                       >
-                                                        Pay Now
+                                                        Pay now
                                                       </Link>
                                                     ) : (
                                                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -1941,7 +1941,7 @@ export default function ClientDashboard() {
                             className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-60 transition-colors"
                           >
                             {payingPendingId === pp.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
-                            Pay Now
+                            Pay now
                           </button>
                         </div>
                       ))}
@@ -2031,7 +2031,7 @@ export default function ClientDashboard() {
                   <summary className="px-5 py-4 border-b border-ct-line-soft cursor-pointer list-none flex items-center justify-between hover:bg-ct-surface-2 transition-colors">
                     <h3 className="font-semibold text-ct-paper flex items-center gap-2">
                       <Pause className="w-4 h-4 text-ct-amber" />
-                      Paused Services
+                      Paused services
                       <span className="text-xs font-normal text-ct-mute">({resumable.length})</span>
                     </h3>
                     <ChevronDown className="w-4 h-4 text-ct-mute transition-transform group-open:rotate-180" />
@@ -2125,7 +2125,7 @@ export default function ClientDashboard() {
                               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs text-ct-rose hover:text-ct-rose hover:bg-ct-rose/[0.13] font-medium rounded-ct-sm transition-colors min-h-[44px]"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
-                              Cancel Service
+                              Cancel service
                             </button>
                           </div>
                         </details>
@@ -2154,7 +2154,7 @@ export default function ClientDashboard() {
             {savedTradies.length > 0 && (
               <div>
                 <div className="flex items-center justify-center sm:justify-between mb-4 gap-2" data-tour="saved-tradies">
-                  <h2 className="text-lg font-semibold text-ct-paper">Saved Tradies</h2>
+                  <h2 className="text-lg font-semibold text-ct-paper">Saved tradies</h2>
                   <span className="text-sm text-ct-mute-2">{savedTradies.length} saved</span>
                 </div>
                 {loading ? (
@@ -2215,7 +2215,7 @@ export default function ClientDashboard() {
                   </div>
                   <div>
                     <p className={`text-sm font-semibold ${isClientPro ? 'text-ct-teal' : 'text-ct-paper'}`}>
-                      {isClientPro ? 'Pro Member' : 'Upgrade to Pro'}
+                      {isClientPro ? 'Pro member' : 'Upgrade to Pro'}
                     </p>
                     <p className="text-xs text-ct-mute-2">
                       {isClientPro ? 'All features unlocked' : 'Get premium features'}
@@ -2228,28 +2228,28 @@ export default function ClientDashboard() {
             <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4 sm:p-5">
               <h3 className="font-semibold text-ct-paper flex items-center gap-2 mb-4">
                 <DollarSign className="w-4 h-4 text-ct-teal" />
-                Spending Summary
+                Spending summary
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-ct-mute-2">This Month</span>
+                  <span className="text-sm text-ct-mute-2">This month</span>
                   <span className="text-sm font-semibold text-ct-paper">${(spendingSummary.thisMonth / 100).toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-ct-mute-2">All Time</span>
+                  <span className="text-sm text-ct-mute-2">All time</span>
                   <span className="text-sm font-semibold text-ct-paper">${(spendingSummary.total / 100).toFixed(2)}</span>
                 </div>
                 <Link to="/leads" className="flex items-center justify-between min-h-[44px] pt-2 border-t border-ct-line-soft hover:bg-ct-surface-2 -mx-2 px-2 rounded-ct-sm transition-colors">
-                  <span className="text-sm text-ct-mute-2">Active Jobs</span>
+                  <span className="text-sm text-ct-mute-2">Active jobs</span>
                   <span className="text-sm font-semibold text-ct-amber">{spendingSummary.pendingJobs}</span>
                 </Link>
                 <Link to="/leads?tab=services" className="flex items-center justify-between min-h-[44px] hover:bg-ct-surface-2 -mx-2 px-2 rounded-ct-sm transition-colors">
-                  <span className="text-sm text-ct-mute-2">Ongoing Services</span>
+                  <span className="text-sm text-ct-mute-2">Ongoing services</span>
                   <span className="text-sm font-semibold text-ct-mute-2">{spendingSummary.activeServices}</span>
                 </Link>
               </div>
               <Link to="/payments" className="mt-4 block text-center text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2">
-                View Payment History
+                View payment history
               </Link>
             </div>
             {(profile?.onboarding_stage ?? 4) < 4 && (
@@ -2293,7 +2293,7 @@ export default function ClientDashboard() {
                 <Trash2 className="w-5 h-5 text-ct-rose" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-ct-paper">Cancel Service</h2>
+                <h2 className="text-lg font-bold text-ct-paper">Cancel service</h2>
                 <p className="text-sm text-ct-mute capitalize">{cancelServiceTarget.label}</p>
               </div>
             </div>
@@ -2329,7 +2329,7 @@ export default function ClientDashboard() {
                 onClick={() => setCancelServiceTarget(null)}
                 className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-md text-sm font-medium hover:bg-ct-surface-2 transition-colors"
               >
-                Keep Service
+                Keep service
               </button>
               <button
                 onClick={async () => {
@@ -2349,7 +2349,7 @@ export default function ClientDashboard() {
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-rose text-ct-ink rounded-ct-md text-sm font-semibold hover:brightness-110 transition-colors disabled:opacity-50"
               >
                 {cancellingService ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                Cancel Service
+                Cancel service
               </button>
             </div>
           </div>
@@ -2368,7 +2368,7 @@ export default function ClientDashboard() {
                 <FileText className="w-5 h-5 text-ct-teal" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-ct-paper">Request Quote</h2>
+                <h2 className="text-lg font-bold text-ct-paper">Request quote</h2>
                 <p className="text-sm text-ct-mute">from {quoteRequestTradie.tradie_details?.business_name || quoteRequestTradie.full_name}</p>
               </div>
             </div>
@@ -2393,7 +2393,7 @@ export default function ClientDashboard() {
                         className="w-full text-left p-3 rounded-ct-md border border-ct-line hover:border-ct-teal/30 hover:bg-ct-teal/[0.14] transition-colors disabled:opacity-50"
                       >
                         <p className="text-sm font-semibold text-ct-paper capitalize truncate">
-                          {(job.title || category || 'Untitled Job').replace(/_/g, ' ')}
+                          {(job.title || category || 'Untitled job').replace(/_/g, ' ')}
                         </p>
                         <p className="text-xs text-ct-mute truncate mt-0.5">{desc}</p>
                         {job.location_address && (
@@ -2412,7 +2412,7 @@ export default function ClientDashboard() {
                     className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-ct-line text-ct-mute-2 text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
-                    Post a New Job Instead
+                    Post a new job instead
                   </button>
                 </div>
               </div>
@@ -2424,7 +2424,7 @@ export default function ClientDashboard() {
                   className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-md hover:brightness-110 transition-colors"
                 >
                   <Plus className="w-4 h-4" />
-                  Post a Job
+                  Post a job
                 </button>
               </div>
             )}
@@ -2467,10 +2467,10 @@ export default function ClientDashboard() {
 
       {cancelJobTarget && (
         <ConfirmModal
-          title="Cancel Job?"
+          title="Cancel job?"
           message={`Are you sure you want to cancel "${(cancelJobTarget.title || 'this job').replace(/_/g, ' ')}"?${cancelJobTarget.quote_count > 0 ? ' Any quotes received will be removed.' : ''} This action cannot be undone.`}
-          confirmText="Cancel Job"
-          cancelText="Keep Job"
+          confirmText="Cancel job"
+          cancelText="Keep job"
           onConfirm={handleCancelJob}
           onCancel={() => setCancelJobTarget(null)}
           type="danger"
@@ -2479,10 +2479,10 @@ export default function ClientDashboard() {
 
       {cancelRecurringTarget && (
         <ConfirmModal
-          title="Permanently Cancel Service?"
+          title="Permanently cancel service?"
           message={`This will permanently cancel "${cancelRecurringTarget.service_subtype || cancelRecurringTarget.trade_category.replace(/_/g, ' ')}" — all upcoming sessions will be cancelled and the service agreement will be ended. The tradie will be notified. This cannot be undone.`}
-          confirmText="Cancel Permanently"
-          cancelText="Keep Service"
+          confirmText="Cancel permanently"
+          cancelText="Keep service"
           onConfirm={async () => {
             try {
               await cancelRecurringJob(cancelRecurringTarget.id, 'client');
@@ -2693,7 +2693,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
               className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-medium hover:brightness-110 disabled:opacity-50 transition-colors"
             >
               {sendingQuote ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Send to {successState.tradieName.split(' ')[0]} & Request Quote
+              Send to {successState.tradieName.split(' ')[0]} & request quote
             </button>
             <Link
               to={`/search?trade=${encodeURIComponent(successState.category)}`}
@@ -2708,7 +2708,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
               to={`/search?trade=${encodeURIComponent(successState.category)}`}
               className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-medium hover:brightness-110 transition-colors"
             >
-              Find a Tradie for this Job
+              Find a tradie for this job
               <ArrowRight className="w-4 h-4" />
             </Link>
             <button
@@ -2741,7 +2741,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
 
       {category && (
         <div>
-          <label className="block text-xs font-medium text-ct-mute-2 mb-1">Service Type</label>
+          <label className="block text-xs font-medium text-ct-mute-2 mb-1">Service type</label>
           {hasSubcategories ? (
             <select
               value={serviceSubtype}
@@ -2831,7 +2831,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
                     : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:border-ct-line'
                 }`}
               >
-                Require a Quote
+                Require a quote
               </button>
               <button
                 type="button"
@@ -2842,7 +2842,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
                     : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:border-ct-line'
                 }`}
               >
-                Set a Budget
+                Set a budget
               </button>
             </div>
             {budgetType === 'set' && (
@@ -2879,7 +2879,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
             return savedTradies.length > 0 ? (
               <div>
                 <label className="block text-xs font-medium text-ct-mute-2 mb-1">
-                  Preferred Tradie
+                  Preferred tradie
                   {matchingTradies.length > 0 && (
                     <span className="text-ct-amber ml-1">({matchingTradies.length} matching)</span>
                   )}
@@ -2996,7 +2996,7 @@ function RecurringJobForm({ onSave, onCancel, onDone, onSendQuote, savedTradies 
               className="flex-1 px-3 py-1.5 bg-ct-teal text-ct-ink rounded-ct-sm text-xs font-medium hover:brightness-110 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              Schedule Service
+              Schedule service
             </button>
           </div>
         </>
@@ -3071,7 +3071,7 @@ function RecurringJobEditForm({ job, savedTradies, onSave, onCancel }: {
         return (
           <div>
             <label className="block text-xs font-medium text-ct-mute-2 mb-1">
-              Assigned Tradie
+              Assigned tradie
               {matchingTradies.length > 0 && (
                 <span className="text-ct-amber ml-1">({matchingTradies.length} matching)</span>
               )}
@@ -3147,7 +3147,7 @@ function RecurringJobEditForm({ job, savedTradies, onSave, onCancel }: {
           className="flex-1 px-3 py-1.5 bg-ct-teal text-ct-ink rounded-ct-sm text-xs font-medium hover:brightness-110 disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
         >
           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-          Save Changes
+          Save changes
         </button>
       </div>
     </div>

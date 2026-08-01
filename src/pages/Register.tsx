@@ -146,7 +146,7 @@ export default function Register() {
             </span>
           </Link>
           <h1 className="text-2xl sm:text-3xl font-bold text-ct-paper tracking-tight">
-            {isTradie ? 'Join as a Verified Tradie' : 'Create your account'}
+            {isTradie ? 'Join as a verified tradie' : 'Create your account'}
           </h1>
           <p className="mt-2 text-sm text-ct-mute">
             {isTradie
@@ -183,7 +183,7 @@ export default function Register() {
                     to="/login"
                     className="block w-full py-3 px-4 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors text-center"
                   >
-                    Go to Sign In
+                    Go to sign in
                   </Link>
                   <p className="text-xs text-ct-mute">
                     Didn't get the email? Check your spam folder or{' '}
@@ -375,9 +375,9 @@ export default function Register() {
                     Creating account...
                   </>
                 ) : isTradie ? (
-                  'Create Tradie Account'
+                  'Create tradie account'
                 ) : (
-                  'Create Free Account'
+                  'Create free account'
                 )}
               </button>
             </form>

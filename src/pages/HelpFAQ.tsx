@@ -15,7 +15,7 @@ interface FAQSection {
 
 const faqSections: FAQSection[] = [
   {
-    title: 'Getting Started',
+    title: 'Getting started',
     items: [
       {
         question: 'What is ConnecTradie?',
@@ -45,7 +45,7 @@ const faqSections: FAQSection[] = [
     ],
   },
   {
-    title: 'For Homeowners (Clients)',
+    title: 'For homeowners (clients)',
     items: [
       {
         question: 'How do I find and book a tradie?',
@@ -75,7 +75,7 @@ const faqSections: FAQSection[] = [
     ],
   },
   {
-    title: 'For Tradies',
+    title: 'For tradies',
     items: [
       {
         question: 'How do I set up my tradie profile?',
@@ -105,7 +105,7 @@ const faqSections: FAQSection[] = [
     ],
   },
   {
-    title: 'Account & Security',
+    title: 'Account & security',
     items: [
       {
         question: 'How do I reset my password?',
@@ -125,7 +125,7 @@ const faqSections: FAQSection[] = [
     ],
   },
   {
-    title: 'Payments & Billing',
+    title: 'Payments & billing',
     items: [
       {
         question: 'What payment methods are accepted?',
@@ -226,7 +226,7 @@ export default function HelpFAQ() {
       </header>
 
       <main id="main-content" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <h1 className="text-3xl font-bold text-ct-paper mb-2">Help & Frequently Asked Questions</h1>
+        <h1 className="text-3xl font-bold text-ct-paper mb-2">Help & frequently asked questions</h1>
         <p className="text-ct-mute-2 mb-8">
           Find answers to common questions about using ConnecTradie. Can't find what you're looking for?{' '}
           <Link to="/contact" className="text-ct-mute-2 hover:text-ct-mute-2 font-medium">
@@ -290,13 +290,13 @@ export default function HelpFAQ() {
               to="/contact"
               className="inline-flex items-center gap-2 px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
             >
-              Contact Us
+              Contact us
             </Link>
             <a
               href="mailto:admin@connectradie.com"
               className="inline-flex items-center gap-2 px-6 py-3 bg-ct-surface border border-ct-line text-ct-mute-2 font-semibold rounded-ct-md hover:bg-ct-surface-2 transition-colors"
             >
-              Email Support
+              Email support
             </a>
           </div>
         </div>

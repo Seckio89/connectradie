@@ -9,19 +9,19 @@ interface FooterLink {
 
 const footerLinks: Record<string, FooterLink[]> = {
   tradies: [
-    { name: 'Register as Tradie', href: '/register?type=tradie' },
-    { name: 'Trade Jobs', href: '/careers' },
+    { name: 'Register as tradie', href: '/register?type=tradie' },
+    { name: 'Trade jobs', href: '/careers' },
     { name: 'Features', href: '/#for-tradies', isHash: true },
-    { name: 'How It Works', href: '/#how-it-works', isHash: true },
+    { name: 'How it works', href: '/#how-it-works', isHash: true },
     { name: 'Pricing', href: '/pricing' },
   ],
   homeowners: [
-    { name: 'Hire a Tradie', href: '/hire' },
-    { name: 'Post a Job', href: '/register?type=client' },
-    { name: 'How Escrow Works', href: '/hire#protected' },
+    { name: 'Hire a tradie', href: '/hire' },
+    { name: 'Post a job', href: '/register?type=client' },
+    { name: 'How escrow works', href: '/hire#protected' },
   ],
   support: [
-    { name: 'Contact Us', href: '/contact' },
+    { name: 'Contact us', href: '/contact' },
     { name: 'Help & FAQs', href: '/help' },
   ],
   legal: [
@@ -60,7 +60,7 @@ export default function Footer() {
             </div>
 
             <div>
-              <h4 className="text-ct-paper font-semibold mb-4">For Tradies</h4>
+              <h4 className="text-ct-paper font-semibold mb-4">For tradies</h4>
               {/* No space-y here: the links carry py-2.5 instead, which turns a
                   24px row + 12px gap into a real 44px tap target at roughly the
                   same visual rhythm. */}
@@ -82,7 +82,7 @@ export default function Footer() {
             </div>
 
             <div>
-              <h4 className="text-ct-paper font-semibold mb-4">For Homeowners</h4>
+              <h4 className="text-ct-paper font-semibold mb-4">For homeowners</h4>
               {/* No space-y here: the links carry py-2.5 instead, which turns a
                   24px row + 12px gap into a real 44px tap target at roughly the
                   same visual rhythm. */}

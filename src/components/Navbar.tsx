@@ -18,28 +18,29 @@ export default function Navbar() {
   const navLinks = user
     ? isTradie
       ? [
-          { name: 'Find Work', href: '/leads', isRoute: true },
-          { name: 'My Jobs', href: '/work', isRoute: true },
+          // /work, not /jobs: that route is only a query-string-dropping redirect.
+          { name: 'Find work', href: '/leads', isRoute: true },
+          { name: 'My jobs', href: '/work', isRoute: true },
           { name: 'Messages', href: '/messages', isRoute: true },
         ]
       : [
-          { name: 'Post a Job', href: postJobHref, isRoute: true },
-          { name: 'Find a Trade', href: '/search', isRoute: true },
-          { name: 'My Jobs', href: '/leads', isRoute: true },
+          { name: 'Post a job', href: postJobHref, isRoute: true },
+          { name: 'Find a trade', href: '/search', isRoute: true },
+          { name: 'My jobs', href: '/leads', isRoute: true },
           { name: 'Schedule', href: '/schedule', isRoute: true },
           { name: 'Messages', href: '/messages', isRoute: true },
         ]
     : onHirePage
       ? [
-          { name: 'How It Works', href: '/hire#protected', isRoute: false },
+          { name: 'How it works', href: '/hire#protected', isRoute: false },
           { name: 'Pricing', href: '/pricing', isRoute: true },
-          { name: 'For Tradies', href: '/', isRoute: true },
+          { name: 'For tradies', href: '/', isRoute: true },
         ]
       : [
           { name: 'Features', href: '/#for-tradies', isRoute: false },
-          { name: 'How It Works', href: '/#how-it-works', isRoute: false },
+          { name: 'How it works', href: '/#how-it-works', isRoute: false },
           { name: 'Pricing', href: '/pricing', isRoute: true },
-          { name: 'Hire a Tradie', href: '/hire', isRoute: true },
+          { name: 'Hire a tradie', href: '/hire', isRoute: true },
         ];
 
   const handleSignOut = async () => {
@@ -108,7 +109,7 @@ export default function Navbar() {
                   className="h-full inline-flex items-center gap-1.5 text-base font-medium text-ct-mute hover:text-ct-amber transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
-                  Sign Out
+                  Sign out
                 </button>
               </>
             ) : (
@@ -117,13 +118,13 @@ export default function Navbar() {
                   to="/login"
                   className="h-full inline-flex items-center text-base font-medium text-ct-mute hover:text-ct-amber transition-colors"
                 >
-                  Log In
+                  Log in
                 </Link>
                 <Link
                   to="/register"
                   className="h-full inline-flex items-center text-base font-medium text-ct-amber hover:text-ct-teal transition-colors"
                 >
-                  Get Started Free
+                  Get started free
                 </Link>
               </>
             )}
@@ -188,7 +189,7 @@ export default function Navbar() {
                       className="flex items-center justify-center gap-2 py-3 text-center text-ct-mute font-medium border border-ct-line rounded-ct-sm hover:bg-ct-surface transition-colors"
                     >
                       <LogOut className="w-4 h-4" />
-                      Sign Out
+                      Sign out
                     </button>
                   </>
                 ) : (
@@ -198,14 +199,14 @@ export default function Navbar() {
                       className="py-3 text-center text-ct-mute font-medium border border-ct-line rounded-ct-sm hover:bg-ct-surface transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Log In
+                      Log in
                     </Link>
                     <Link
                       to="/register"
                       className="py-3 text-center bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      Get Started Free
+                      Get started free
                     </Link>
                   </>
                 )}
