@@ -17,23 +17,6 @@ with the date.
 
 ---
 
-## D3 — Retire `mobile-responsive.css` page by page (after launch)
-
-**What:** A 1,080-line file of forced style overrides patches the mobile
-layout of ~30 screens. It regularly breaks *new* screens by accident because
-its rules latch onto anything that looks similar. Plan: move each patch into
-the page it belongs to, one page at a time, with screenshots.
-**Why it matters:** It's the single biggest source of "mystery" mobile bugs.
-**Pros:** Mobile bugs stop appearing out of nowhere; each page owns its own
-layout; easier for any future developer.
-**Cons:** Slow, careful work across ~30 screens; each step needs mobile
-re-testing; small regression risk per step (mitigated by screenshots + the
-checks).
-**Risk if we don't:** Every new screen risks silent mobile breakage; the file
-keeps growing.
-**Effort:** Large, spread over weeks; safe to defer until after launch.
-**Recommendation:** Approve, scheduled after go-live.
-**Owner decision:** [ ] approve · [ ] reject · [ ] ask me later
 
 ## D4 — Move chart colours onto design tokens (audit finding #7)
 
@@ -81,6 +64,12 @@ review, not a blanket flip.
 ---
 
 ## Decided
+
+- **D3 — mobile-responsive.css phased retirement: APPROVED 2026-08-01.**
+  Running as a 7-tranche track, one tranche per PR with 375px verification —
+  plan at `docs/audit/MOBILE-CSS-RETIREMENT.md`. Tranche 1 (breadcrumb
+  catch-all selectors defused) shipped as PR #211 the same day; the dead-rule
+  deletion had already landed as PR #204.
 
 - **D7 — Nightly code audit: APPROVED 2026-08-01.** Registered as a cloud
   routine running 3:00am Sydney nightly. Detection only — it runs the
