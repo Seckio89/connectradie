@@ -248,13 +248,16 @@ body {
    MOBILE LAYOUT FIXES — Issues #1-#9
    ============================================================================= */
 
-/* --- Hide breadcrumb on mobile — nuclear approach with multiple selectors --- */
+/* --- Hide breadcrumbs on mobile --- */
 @media (max-width: 639px) {
+  /* aria-label ONLY. Every breadcrumb in the app carries
+     aria-label="Breadcrumb" (Breadcrumbs.tsx + the four SEO hub pages), so
+     the old catch-alls — `main > div > nav:first-of-type` and
+     `[class*="breadcrumb" i]` — matched nothing extra today and were a trap
+     for tomorrow: any NEW nav that happened to sit first inside main > div
+     would silently vanish below 640px. D3 retirement, tranche 1. */
   nav[aria-label="Breadcrumb"],
-  nav[aria-label="breadcrumb"],
-  nav.breadcrumb,
-  main > div > nav:first-of-type,
-  [class*="breadcrumb" i] {
+  nav[aria-label="breadcrumb"] {
     display: none !important;
   }
 }
@@ -275,11 +278,8 @@ body {
 
 /* --- #3/#7 Calendar: ensure day headers and content are not cut off on left --- */
 @media (max-width: 767px) {
-  /* Calendar navigation bar */
-  .bg-white[class*="border-y"] .flex[class*="justify-between"] {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
+  /* (The old .bg-white calendar-nav rule is gone: no element has carried
+     .bg-white with border-y since the v2 palette cutover — it was inert.) */
 
   /* Dashboard calendar card: the grid can be wider than its container on very
      narrow screens, so clip rather than let it push the page sideways. The card
@@ -445,13 +445,12 @@ body {
      get cut off at 375px:
 
        • Settings.tsx  — border-b is on the WRAPPER, flex/overflow on the child
-       • AnalyticsDashboard.tsx — uses `border`, not `border-b`
 
-     Kept after rules 14/15 were removed: these two rows still need
-     flex:0 0 auto so their labels size to content rather than being squeezed
-     by the flex container. */
-  main .border-b > .flex.overflow-x-auto > button,
-  main .flex.overflow-x-auto.border > button {
+     Kept after rules 14/15 were removed: this row still needs
+     flex:0 0 auto so its labels size to content rather than being squeezed
+     by the flex container. (The AnalyticsDashboard selector is gone — that
+     tab row no longer uses overflow-x-auto, so it matched nothing.) */
+  main .border-b > .flex.overflow-x-auto > button {
     flex: 0 0 auto !important;
     min-width: auto !important;
   }
@@ -637,46 +636,15 @@ body {
   }
 }
 
-/* ── C. Team page — pending request card buttons stack on mobile ──────────────── */
-@media (max-width: 639px) {
-  /* Pending request cards: stack content vertically */
-  .divide-y.divide-warm-200 > div.flex.items-center {
-    flex-wrap: wrap !important;
-  }
+/* ── C. (removed) Team page pending-request rules ─────────────────────────────
+   Keyed on .divide-warm-200 / .divide-gray-100 — v1 ramps deleted in the v2
+   cutover, so no element has matched since. Team stacking now comes from the
+   component's own responsive classes. */
 
-  /* Action buttons group (Decline/Approve): full width below content */
-  .divide-y.divide-warm-200 > div.flex.items-center > .flex.items-center.gap-2.flex-shrink-0 {
-    width: 100% !important;
-    margin-top: 0.75rem !important;
-    padding-top: 0.75rem !important;
-    border-top: 1px solid #f3eeec !important;
-    justify-content: flex-end !important;
-  }
-
-  /* Team member remove button: always visible on mobile.
-     Scoped to controls, consistent with sections A and AB. */
-  .divide-y.divide-gray-100 > div button.opacity-0.group-hover\:opacity-100,
-  .divide-y.divide-gray-100 > div a.opacity-0.group-hover\:opacity-100 {
-    opacity: 0.7 !important;
-  }
-}
-
-/* ── D. TradeCareers stats grid — collapse to fit on mobile ──────────────────── */
-@media (max-width: 479px) {
-  /* 3-col stats grid → stack when screen is very narrow */
-  main .grid.grid-cols-3.gap-4 {
-    grid-template-columns: 1fr !important;
-    gap: 0.5rem !important;
-  }
-
-  /* Stat cards: horizontal layout (icon + text) on narrow screens */
-  main .grid.grid-cols-3.gap-4 > div .flex.flex-col.items-center.text-center {
-    flex-direction: row !important;
-    text-align: left !important;
-    align-items: center !important;
-    gap: 0.75rem !important;
-  }
-}
+/* ── D. (removed) TradeCareers stats-grid rules ───────────────────────────────
+   Keyed on unprefixed `grid-cols-3 gap-4`; the grid moved to `gap-3 sm:gap-4`
+   specifically to escape this rule (see the comment in TradeCareers.tsx), so
+   both selectors matched nothing. */
 
 /* ── E. TradeCareers role filter — scrollbar hide + touch targets ─────────────── */
 @media (max-width: 639px) {
@@ -744,14 +712,9 @@ body {
   }
 }
 
-/* ── H. Jobs page — toast position fix ────────────────────────────────────────── */
-@media (max-width: 639px) {
-  .fixed.bottom-4.right-4 {
-    left: 1rem !important;
-    right: 1rem !important;
-    max-width: calc(100vw - 2rem) !important;
-  }
-}
+/* ── H. (removed) Jobs toast position ─────────────────────────────────────────
+   Keyed on .fixed.bottom-4.right-4; the toast actually renders at
+   `fixed top-16 right-4` (DashboardLayout), so this matched nothing. */
 
 /* ── I. Jobs/Leads — action button rows wrap on mobile ────────────────────────── */
 @media (max-width: 639px) {
@@ -776,14 +739,10 @@ body {
   }
 }
 
-/* ── J. Leads quote comparison — reduce indent on mobile ──────────────────────── */
-@media (max-width: 639px) {
-  /* Quote comparison connector: reduce left indent */
-  main .ml-6.pl-6 {
-    margin-left: 0.5rem !important;
-    padding-left: 0.75rem !important;
-  }
-}
+/* ── J. (removed) Leads quote-comparison indent ───────────────────────────────
+   The connector moved to `ml-2 pl-3 sm:ml-6 sm:pl-6` in the markup, which is
+   the responsive treatment this rule tried to force — bare .ml-6.pl-6 no
+   longer exists anywhere. */
 
 /* ── K. Modal detail grids — single column on mobile ──────────────────────────── */
 @media (max-width: 479px) {
@@ -825,10 +784,14 @@ body {
      [class~="p-1"] matches the exact class token. The previous [class*="p-1"]
      was a substring match, so it also caught gap-1, p-10, p-12 and top-1 —
      roughly every icon button in the app rather than the dismiss buttons. */
+  /* No `display: inline-flex !important` here: Tailwind's `hidden` is not
+     !important, so forcing display made every `hidden sm:inline-flex` p-1
+     button render on mobile when it should not (live bug, audit #18). The
+     tap-size floor doesn't need to set display at all — align/justify apply
+     only when the button already declares its own flex classes. */
   button[class~="p-1"]:not(.rounded-full) {
     min-width: 44px !important;
     min-height: 44px !important;
-    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
   }
@@ -848,16 +811,9 @@ body {
   }
 }
 
-/* ── P. AnalyticsDashboard date pills — hide scrollbar ────────────────────────── */
-@media (max-width: 639px) {
-  .overflow-x-auto.max-w-full {
-    -ms-overflow-style: none !important;
-    scrollbar-width: none !important;
-  }
-  .overflow-x-auto.max-w-full::-webkit-scrollbar {
-    display: none !important;
-  }
-}
+/* ── P. (removed) Analytics date-pill scrollbar ───────────────────────────────
+   No element combines overflow-x-auto with max-w-full any more; the pills
+   were rebuilt without the scroller. Matched nothing. */
 
 /* ── Q. Earnings summary grid — proper sizing on mobile ───────────────────────── */
 @media (max-width: 639px) {
@@ -942,12 +898,8 @@ body {
 
 /* -- X. ClientServicesTab -- Recent Visits + supplies form ------------------- */
 @media (max-width: 639px) {
-  /* Make visit row fixed-width spans flexible on mobile */
-  main .divide-y > div > .flex.items-center.gap-1 > span[class*="w-["] {
-    min-width: 0 !important;
-    width: auto !important;
-    flex-shrink: 1 !important;
-  }
+  /* (The visit-row span rule is gone: the rows use `inline-flex items-center
+     gap-1` on the span itself, so `.flex... > span` never matched.) */
 
   /* Supplies form: stack on mobile. Scoped via [data-supplies-grid] — the old
      selector collapsed every unprefixed grid-cols-3 gap-2 in the app to one
@@ -965,11 +917,8 @@ body {
     max-height: 400px !important;
   }
 
-  /* Ensure search modals can scroll on short screens */
-  .fixed.inset-0.z-50 > .relative.bg-white {
-    max-height: 90vh !important;
-    overflow-y: auto !important;
-  }
+  /* (The modal-scroll rule is gone: it keyed on .relative.bg-white, and
+     bg-white left the app in the v2 cutover — it matched nothing.) */
 }
 
 /* -- Z. PostLead -- time slot grid on small phones --------------------------- */
@@ -980,13 +929,10 @@ body {
   }
 }
 
-/* -- AA. Lightbox close buttons -- safe area on notched phones --------------- */
-@media (max-width: 768px) {
-  /* Ensure lightbox/fullscreen close buttons stay below safe area */
-  .fixed.inset-0 button[aria-label*="lose"][class*="top-4"] {
-    top: max(1rem, env(safe-area-inset-top, 1rem)) !important;
-  }
-}
+/* -- AA. (removed) Lightbox close safe-area ----------------------------------
+   Keyed on aria-label*="lose", but the two lightbox close buttons
+   (JobDetailsCard, Leads) have no aria-label at all — the rule never matched,
+   and the missing labels are their own a11y finding (audit #25). */
 
 /* -- AB. Global -- hover-only buttons visible on touch devices --------------- */
 @media (pointer: coarse) {
@@ -1004,23 +950,10 @@ body {
   }
 }
 
-/* -- AC. PaymentHistory -- filter inputs full width on mobile ---------------- */
-@media (max-width: 639px) {
-  /* Scoped to the PaymentHistory filter panel (.bg-surface-50). Unscoped, this
-     matched EVERY `flex flex-wrap items-center gap-3` row in main and forced its
-     div children to 100% — which is what stretched the Schedule segmented
-     control ("Site Calendar | My Team") to full width despite its `w-fit`,
-     leaving a slab of empty grey beside the tabs. Same failure mode as section
-     I. The :not() guard keeps anything that sizes itself out of it. */
-  main .bg-surface-50 .flex.flex-wrap.items-center.gap-3 > div:not(.w-fit):not([class*="max-w-"]) {
-    width: 100% !important;
-  }
-
-  main .bg-surface-50 .flex.flex-wrap.items-center.gap-3 select,
-  main .bg-surface-50 .flex.flex-wrap.items-center.gap-3 input[type="date"] {
-    width: 100% !important;
-  }
-}
+/* -- AC. (removed) PaymentHistory filter widths ------------------------------
+   The .bg-surface-50 scope that was added to stop this rule stretching the
+   Schedule segmented control also killed it outright: bg-surface-50 is a v1
+   class that no longer exists, so all three selectors matched nothing. */
 
 /* -- AD. FAB button prominence -- ensure raised center button stands out ----- */
 @media (max-width: 1023px) {
@@ -1058,9 +991,9 @@ body {
    AE. Invoice page — force white background on mobile (override any green)
    ============================================================================= */
 @media (max-width: 639px) {
-  .invoice-page,
-  .invoice-page [class*="bg-primary"],
-  .invoice-page [class*="bg-warm"] {
+  /* Just .invoice-page: the bg-primary / bg-warm descendant selectors keyed
+     on v1 ramps that no longer exist anywhere. */
+  .invoice-page {
     background-color: white !important;
     color: black !important;
   }

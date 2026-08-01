@@ -333,9 +333,9 @@ export default function ClientDetail() {
       const amt = `$${Number(data?.total ?? 0).toLocaleString('en-AU')}`;
       const first = contact.full_name.split(' ')[0];
       if (data?.external) {
-        showToast(data?.emailed ? `Invoice for ${amt} emailed to ${first}.` : `Invoice for ${amt} recorded.`);
+        showToast(data?.emailed ? `Invoice sent to ${first} — ${amt}.` : `Invoice for ${amt} recorded.`);
       } else {
-        showToast(`Invoice for ${amt} emailed to ${first}.`);
+        showToast(`Invoice sent to ${first} — ${amt}.`);
       }
       await load();
     } catch {
@@ -365,6 +365,10 @@ export default function ClientDetail() {
           <div className="bg-ct-surface border border-ct-line-soft rounded-ct-lg shadow-sm px-6 py-16 text-center">
             <h3 className="text-lg font-semibold text-ct-paper">Client not found</h3>
             <p className="text-sm text-ct-mute-2 mt-1">This client may have been removed.</p>
+            <Link to="/clients" className="inline-flex items-center gap-1.5 mt-4 px-5 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+              Back to clients
+            </Link>
           </div>
         ) : (
           <>

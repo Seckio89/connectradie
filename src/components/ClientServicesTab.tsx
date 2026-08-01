@@ -1509,7 +1509,7 @@ export default function ClientServicesTab() {
   const handlePause = async (jobId: string) => {
     try {
       await pauseRecurringJob(jobId, 'client');
-      showToast('Service put on hold — you can resume anytime');
+      showToast('Service paused — you can resume anytime');
       setHoldTarget(null);
       setHoldReason('');
       fetchJobs();
@@ -1904,7 +1904,7 @@ export default function ClientServicesTab() {
                               className="w-full px-3 py-2 text-left text-sm text-ct-amber hover:bg-ct-amber/[0.13] flex items-center gap-2 transition-colors"
                             >
                               <Pause className="w-3.5 h-3.5" />
-                              Put on Hold
+                              Pause service
                             </button>
                             <button
                               onClick={() => { setMenuOpen(null); setHoldTarget(null); setCancelTarget(job.id); }}
@@ -2034,7 +2034,7 @@ export default function ClientServicesTab() {
                   </div>
                 ) : (
                   <div className="px-4 py-6 text-center">
-                    <p className="text-sm text-ct-mute">No upcoming sessions scheduled</p>
+                    <p className="text-sm text-ct-mute">When your tradie schedules the next visit, it appears here.</p>
                   </div>
                 )}
 
@@ -2419,7 +2419,7 @@ export default function ClientServicesTab() {
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs font-semibold text-ct-paper flex items-center gap-1.5">
                         <Pause className="w-3.5 h-3.5" />
-                        Why are you putting this on hold?
+                        Why are you pausing this service?
                       </p>
                       <button onClick={() => { setHoldTarget(null); setHoldReason(''); }} className="text-ct-amber hover:text-ct-amber">
                         <X className="w-3.5 h-3.5" />
@@ -2445,7 +2445,7 @@ export default function ClientServicesTab() {
                       disabled={!holdReason}
                       className="px-4 py-1.5 bg-ct-amber/[0.13] hover:bg-ct-amber hover:text-ct-ink disabled:bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-ct-sm transition-colors"
                     >
-                      Confirm Hold
+                      Pause service
                     </button>
                   </div>
                 )}

@@ -1537,7 +1537,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                       </div>
 
                       {jobCount === 0 ? (
-                        <p className="text-xs text-ct-mute mt-1">No jobs booked</p>
+                        <p className="text-xs text-ct-mute mt-1">Nothing booked for this day</p>
                       ) : (
                         <div className="mt-2 space-y-1.5">
                           {entries.map(({ job, assignments: jobAssignments, conflictWarning }) => {
@@ -1564,7 +1564,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                     <span className={`text-xs font-semibold truncate ${isUrgent ? 'text-ct-rose' : 'text-ct-mute-2'}`}>
                                       {category ? (title ? `${category} — ${title}` : category) : title}
                                     </span>
-                                    {job.is_emergency && <span className="text-[9px] font-bold text-ct-rose flex-shrink-0">URGENT</span>}
+                                    {job.is_emergency && <span className="text-[9px] font-bold text-ct-rose flex-shrink-0">Urgent</span>}
                                   </div>
                                   {(jobTime || job.location_address) && (
                                     <div className="flex items-center gap-2 mt-0.5 text-[11px] text-ct-mute min-w-0">
@@ -1777,13 +1777,13 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                               key={job.id}
                               onClick={() => setSelectedJob(job)}
                               className={`flex items-center gap-3 px-4 py-3 border-l-4 ${accentColor} cursor-pointer active:bg-ct-surface-2 transition-colors`}
-                              style={{ borderBottom: '0.5px solid #eee' }}
+                              style={{ borderBottom: '0.5px solid var(--line-soft)' }}
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 mb-0.5">
                                   {category && <span className="text-[10px] font-bold uppercase tracking-wide text-ct-mute">{category}</span>}
                                   {!category && <span className="text-sm font-medium text-ct-paper truncate">{title}</span>}
-                                  {job.is_emergency && <span className="text-[10px] font-semibold text-ct-rose">URGENT</span>}
+                                  {job.is_emergency && <span className="text-[10px] font-semibold text-ct-rose">Urgent</span>}
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-ct-mute">
                                   {(job.start_time || job.preferred_time_slot) && (
@@ -1823,7 +1823,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                     );
                   })}
                   {monthDays.filter((day): day is Date => day !== null && getJobsForDate(day).length > 0).length === 0 && (
-                    <div className="px-4 py-6 text-center text-xs text-ct-mute">No jobs scheduled this month</div>
+                    <div className="px-4 py-6 text-center text-xs text-ct-mute">No jobs scheduled this month — accepted jobs land here automatically.</div>
                   )}
                 </div>
               </div>
@@ -2520,7 +2520,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 {formatJobTime(nextEntry.start_time) ? ` · ${formatJobTime(nextEntry.start_time)}` : ''}
               </p>
             ) : (
-              <p className="text-sm font-semibold text-ct-paper">No upcoming visits scheduled</p>
+              <p className="text-sm font-semibold text-ct-paper">No upcoming visits — the next one appears here once scheduled</p>
             )}
           </div>
         </div>

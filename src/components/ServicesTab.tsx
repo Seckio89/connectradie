@@ -77,7 +77,7 @@ function ServiceControls({ jobId, jobLabel, isActive, isCancelled, onChanged }: 
     try {
       await cancelRecurringJob(jobId, 'tradie', payload);
       onChanged();
-      showToast('Ongoing service cancelled');
+      showToast('Service ended');
     } catch {
       showToast('Something went wrong', true);
     } finally {

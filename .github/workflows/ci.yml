@@ -193,6 +193,50 @@ jobs:
       # --allow-net: the npm: and jsr: specifiers resolve over the network.
       - run: npx --yes deno@2 test --allow-env --allow-net --allow-read --node-modules-dir=auto supabase/functions/
 
+  lint:
+    name: Lint (informational)
+    runs-on: ubuntu-latest
+    # continue-on-error: eslint has a 91-error backlog (2026-08-01 audit) that
+    # predates this job — mostly unused vars in edge functions and
+    # no-useless-escape. Until that backlog is cleared this job is
+    # informational: it surfaces the count on every PR without turning the
+    # whole pipeline red. Flip it to blocking when the backlog hits zero.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  drift:
+    name: Drift (schema + edge, informational)
+    runs-on: ubuntu-latest
+    # Both scripts compare the repo against the LIVE Supabase project, so they
+    # need SUPABASE_ACCESS_TOKEN. On forks and until the repo secret is set,
+    # the job skips rather than failing — but it must exist in CI at all:
+    # the 2026-07-28 rebuild-gap audit found 45 schema objects missing from
+    # migrations, and nothing here would have noticed.
+    if: ${{ github.event_name == 'push' }}
+    continue-on-error: true
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Schema drift
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
+        run: npm run check:drift
+      - name: Edge function drift
+        if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
+        run: npm run check:edge-drift
+
   build:
     name: Build
     needs: [type-check, test]

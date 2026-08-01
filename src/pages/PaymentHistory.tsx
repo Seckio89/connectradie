@@ -514,7 +514,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
   <div class="detail-item"><div class="dl">Invoice #</div><div class="dv">${escapeHtml(invoiceNum)}</div></div>
   <div class="detail-item"><div class="dl">Date & Time</div><div class="dv">${formatDateTime(payment.created_at)}</div></div>
   <div class="detail-item"><div class="dl">Payment Type</div><div class="dv" style="text-transform:capitalize">${payment.payment_type.replace(/_/g, ' ')}</div></div>
-  <div class="detail-item"><div class="dl">Status</div><div class="dv"><span class="badge ${payment.status}">${payment.status}</span></div></div>
+  <div class="detail-item"><div class="dl">Status</div><div class="dv"><span class="badge ${payment.status}" style="text-transform:capitalize">${escapeHtml(payment.status.replace(/_/g, ' '))}</span></div></div>
   <div class="detail-item"><div class="dl">Currency</div><div class="dv">${(payment.currency || 'AUD').toUpperCase()}</div></div>
 </div>
 <div class="footer">
@@ -1258,7 +1258,9 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
             <p className="text-sm font-medium text-ct-paper">{jobDesc}</p>
             {payment.job_id && (
               <div className="flex items-center gap-3 mt-2">
-                <Link to={`${isTradie ? '/jobs' : '/leads'}?job=${payment.job_id}`} className="inline-flex items-center gap-1 text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium transition-colors">
+                {/* /work, not /jobs: the /jobs redirect drops the query string,
+                    so the ?job deep-link never reached the Jobs tab. */}
+                <Link to={`${isTradie ? '/work' : '/leads'}?job=${payment.job_id}`} className="inline-flex items-center gap-1 text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium transition-colors">
                   View job <ExternalLink className="w-3 h-3" />
                 </Link>
                 {!payment.id.startsWith('inv_') && (
@@ -1388,7 +1390,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
               <button onClick={handleReleaseEscrow} disabled={actionLoading}
                 className="w-full px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:bg-ct-teal disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                Release now
+                Release payment
               </button>
             </div>
           )}

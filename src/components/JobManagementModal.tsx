@@ -615,7 +615,7 @@ export default function JobManagementModal({
                         {statusConfig.label}
                       </span>
                       {job.priority === 'high' && (
-                        <span className="px-3 py-1 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-full border border-ct-amber/[0.34]">HIGH PRIORITY</span>
+                        <span className="px-3 py-1 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-full border border-ct-amber/[0.34]">High priority</span>
                       )}
                       {job.is_emergency && (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-rose/[0.13] text-ct-rose rounded-full text-xs font-medium border border-ct-rose/[0.34]">
@@ -1259,7 +1259,9 @@ export default function JobManagementModal({
                       {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                       {/* Off-app clients pay by emailed link after completion, and
                           funded jobs already hold the money — no request either way. */}
-                      {(isOffApp || jobPaid) ? 'Mark Complete' : 'Mark Complete & Request Payout'}
+                      {/* "payment", not "payout": same action as JobDetailModal's
+                          button, and the user-facing noun everywhere else. */}
+                      {(isOffApp || jobPaid) ? 'Mark complete' : 'Mark complete & request payment'}
                     </button>
                     {isOffApp && (
                       <p className="mt-2 text-xs text-ct-mute text-center">You'll email {job.profiles?.full_name ? job.profiles.full_name.split(' ')[0] : 'the client'} a payment link once the job is marked complete.</p>
@@ -1451,7 +1453,7 @@ export default function JobManagementModal({
             </div>
           </>
         ) : (
-          <div className="p-6 text-center text-ct-mute">Job not found</div>
+          <div className="p-6 text-center text-ct-mute">This job could not be loaded — close this window and refresh the page.</div>
         )}
       </div>
 
