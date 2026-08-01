@@ -113,7 +113,7 @@ needs registering.
 
 ## Decided
 
-- **D1 — Branch protection on : APPROVED 2026-08-01.** Applied the
-  same day via the GitHub API: merges (and direct pushes) to  now
+- **D1 — Branch protection on `master`: APPROVED 2026-08-01.** Applied the
+  same day via the GitHub API: merges (and direct pushes) to `master` now
   require the Type Check, Tests, Build, DB Columns and Navigability CI
   checks to pass. CI now gates the Vercel deploy instead of racing it.
