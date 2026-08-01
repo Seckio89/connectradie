@@ -615,7 +615,7 @@ export default function JobManagementModal({
                         {statusConfig.label}
                       </span>
                       {job.priority === 'high' && (
-                        <span className="px-3 py-1 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-full border border-ct-amber/[0.34]">HIGH PRIORITY</span>
+                        <span className="px-3 py-1 bg-ct-amber/[0.13] text-ct-amber text-xs font-medium rounded-full border border-ct-amber/[0.34]">High priority</span>
                       )}
                       {job.is_emergency && (
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-rose/[0.13] text-ct-rose rounded-full text-xs font-medium border border-ct-rose/[0.34]">

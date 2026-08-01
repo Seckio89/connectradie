@@ -3335,6 +3335,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           />
           <button
             onClick={() => setPreviewPhoto(null)}
+            aria-label="Close photo viewer"
             className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-ct-ink rounded-full flex items-center justify-center transition-colors"
           >
             <X className="w-5 h-5" />
