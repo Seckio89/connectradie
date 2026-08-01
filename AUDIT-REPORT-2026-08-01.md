@@ -48,7 +48,7 @@ overbroad, 1 live bug). Deeper audit, lower score, same platform.
 | Rate limiting | 2× | ✅ | DB-backed (`edge_rate_limits` + RPC); inventory in docs/edge-function-rate-limits.md |
 | Webhook signature validation | 3× | ✅ | |
 | RLS enabled on all tables | 3× | ✅ | 4 tables RLS-enabled-with-no-policies (edge_rate_limits, service_decline_tokens, stripe_webhook_events, worker_credential_notifications) = deny-all, service-role only — intentional |
-| No permissive SELECT on sensitive tables | 3× | ❌ | carry-over #10: `tradie_details` / `platform_config` publicly readable; partially intentional (public profiles), needs the column-level review bundled with the profiles-RLS work |
+| No permissive SELECT on sensitive tables | 3× | ✅ | #10 CLOSED (D6, migration 20260801100807, PR #213): `platform_config` world-read dropped (all real readers are service-role edge fns); `tradie_details` was never anon-readable — dead grant revoked. Column-split for public browsing stays with the profiles-RLS project |
 | auth.uid() used correctly | 3× | ✅ | advisor SECURITY DEFINER RPC warnings reviewed — the definer functions are the deliberate 3-role-auth pattern; identity *guards* are INVOKER per the 20260718 lesson |
 
 ### Payments & Stripe (100% 🟢)

@@ -20,24 +20,20 @@ with the date.
 
 
 
-## D6 — Tighten two publicly readable tables (audit finding #10)
-
-**What:** `tradie_details` and `platform_config` are readable without login.
-Some of that is intentional (public tradie profiles need it); the question is
-whether every column in them should be public.
-**Pros:** Less data exposed to scrapers/competitors.
-**Cons:** Over-tightening breaks the public search/profile pages for
-logged-out visitors (already a known weak spot); needs a column-by-column
-review, not a blanket flip.
-**Risk if we don't:** Low — no secrets are in these tables today.
-**Effort:** Medium (column audit + migration).
-**Recommendation:** Defer until the profiles-RLS work (already planned as
-"NEXT UP" in project notes) — do them together, in the right order.
-**Owner decision:** [ ] approve · [ ] reject · [ ] ask me later
-
 ---
 
 ## Decided
+
+- **D6 — Tighten publicly readable tables: APPROVED 2026-08-01, applied to
+  production the same day** (migration 20260801100807, repo record in
+  PR #213). Investigation first: `tradie_details` was never anon-readable
+  (grant without policy = zero rows) — the dead grant is revoked so future
+  anon access must be a deliberate two-step. `platform_config` WAS
+  world-readable; verified no client code reads it and every edge-fn reader
+  uses the service role, then dropped the public policy + grants. Proven by
+  post-apply grant inspection and a live logged-in /search smoke. The
+  tradie_details column-split stays with the profiles-RLS project.
+  Finding #10 closed.
 
 - **D5 — Merge overlapping RLS policies: APPROVED 2026-08-01 — already
   resolved, no migration needed.** Verified against the LIVE database
