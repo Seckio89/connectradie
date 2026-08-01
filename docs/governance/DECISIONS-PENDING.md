@@ -17,24 +17,6 @@ with the date.
 
 ---
 
-## D2 — Static `/terms` and `/privacy` HTML pages: redirect them to the app
-
-**What:** The site has two copies of Terms and Privacy — the dark in-app pages
-and old light-themed standalone HTML files (`public/terms/index.html`,
-`public/privacy/index.html`). Replace the old ones with redirects to the app
-pages.
-**Why it matters:** Two copies of legal text will drift apart. If a lawyer
-updates one and not the other, users can be shown outdated terms.
-**Pros:** Kills the drift risk permanently; one source of truth; the old
-pages don't match the brand (light theme).
-**Cons:** Anyone who bookmarked the old URL gets a redirect hop (harmless);
-legal pages then require the app's JavaScript to view.
-**Risk if we don't:** Outdated legal text shown to users — a real liability
-for an escrow platform.
-**Effort:** Small (agent does it; one PR).
-**Recommendation:** Approve.
-**Owner decision:** [ ] approve · [ ] reject · [ ] ask me later
-
 ## D3 — Retire `mobile-responsive.css` page by page (after launch)
 
 **What:** A 1,080-line file of forced style overrides patches the mobile
@@ -112,6 +94,12 @@ needs registering.
 ---
 
 ## Decided
+
+- **D2 — One source of truth for Terms and Privacy: APPROVED 2026-08-01.**
+  PR #207 deletes the static HTML duplicates. The audit found they were
+  worse than a drift risk: on Vercel the static file wins before the SPA
+  rewrite, so direct visits to /terms and /privacy were already serving the
+  old light-themed copies. Once merged, both URLs render the React pages.
 
 - **D1 — Branch protection on `master`: APPROVED 2026-08-01.** Applied the
   same day via the GitHub API: merges (and direct pushes) to `master` now
