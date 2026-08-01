@@ -248,13 +248,16 @@ body {
    MOBILE LAYOUT FIXES — Issues #1-#9
    ============================================================================= */
 
-/* --- Hide breadcrumb on mobile — nuclear approach with multiple selectors --- */
+/* --- Hide breadcrumbs on mobile --- */
 @media (max-width: 639px) {
+  /* aria-label ONLY. Every breadcrumb in the app carries
+     aria-label="Breadcrumb" (Breadcrumbs.tsx + the four SEO hub pages), so
+     the old catch-alls — `main > div > nav:first-of-type` and
+     `[class*="breadcrumb" i]` — matched nothing extra today and were a trap
+     for tomorrow: any NEW nav that happened to sit first inside main > div
+     would silently vanish below 640px. D3 retirement, tranche 1. */
   nav[aria-label="Breadcrumb"],
-  nav[aria-label="breadcrumb"],
-  nav.breadcrumb,
-  main > div > nav:first-of-type,
-  [class*="breadcrumb" i] {
+  nav[aria-label="breadcrumb"] {
     display: none !important;
   }
 }
