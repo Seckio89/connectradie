@@ -576,7 +576,7 @@ export default function AdminDisputes() {
                           }`}
                         >
                           {getStatusIcon(dispute.status)}
-                          {(dispute.status && STATUS_LABELS[dispute.status]) || dispute.status}
+                          {(dispute.status && STATUS_LABELS[dispute.status]) || dispute.status?.replace(/_/g, ' ')}
                         </span>
                         <span className="text-sm font-medium text-ct-paper mr-1">{dispute.reason}</span>
                         {!isTerminal(dispute.status) && (

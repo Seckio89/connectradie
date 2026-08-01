@@ -1224,7 +1224,7 @@ export default function Payouts() {
                                         const jobTitle = p.jobs?.title || p.jobs?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job';
                                         const isInvoice = p.id.startsWith('inv_');
                                         const isReleased = isInvoice || !!(p.metadata?.transfer_id);
-                                        const statusLabel = isInvoice ? 'Completed' : isReleased ? 'Paid to Bank' : p.status === 'completed' ? 'In Escrow' : p.status;
+                                        const statusLabel = isInvoice ? 'Completed' : isReleased ? 'Paid to bank' : p.status === 'completed' ? 'Awaiting release' : p.status.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
                                         const statusClass = isInvoice ? 'bg-ct-teal/[0.14] text-ct-teal' : isReleased ? 'bg-ct-teal/[0.14] text-ct-teal' : p.status === 'completed' ? 'bg-ct-amber/[0.13] text-ct-amber' : 'bg-ct-surface-2 text-ct-mute-2';
                                         const isCancelled = p.jobStatus === 'cancelled' || p.jobStatus === 'declined';
                                         return (
@@ -1285,7 +1285,7 @@ export default function Payouts() {
                                     const jobTitle = p.jobs?.title || p.jobs?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job';
                                     const isInvoice = p.id.startsWith('inv_');
                                     const isReleased = isInvoice || !!(p.metadata?.transfer_id);
-                                    const statusLabel = isInvoice ? 'Completed' : isReleased ? 'Paid to Bank' : p.status === 'completed' ? 'In Escrow' : p.status;
+                                    const statusLabel = isInvoice ? 'Completed' : isReleased ? 'Paid to bank' : p.status === 'completed' ? 'Awaiting release' : p.status.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
                                     const statusClass = isInvoice ? 'bg-ct-teal/[0.14] text-ct-teal' : isReleased ? 'bg-ct-teal/[0.14] text-ct-teal' : p.status === 'completed' ? 'bg-ct-amber/[0.13] text-ct-amber' : 'bg-ct-surface-2 text-ct-mute-2';
                                     const isCancelled = p.jobStatus === 'cancelled' || p.jobStatus === 'declined';
                                     return (

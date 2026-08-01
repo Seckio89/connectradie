@@ -396,8 +396,8 @@ export default function AdminUsers() {
       expired: 'bg-ct-amber/[0.13] text-ct-amber',
     };
     return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${(status && map[status]) || 'bg-ct-surface-2 text-ct-mute-2'}`}>
-        {status}
+      <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${(status && map[status]) || 'bg-ct-surface-2 text-ct-mute-2'}`}>
+        {status?.replace(/_/g, ' ')}
       </span>
     );
   };
