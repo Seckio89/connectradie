@@ -18,19 +18,6 @@ with the date.
 ---
 
 
-## D4 — Move chart colours onto design tokens (audit finding #7)
-
-**What:** 8 files still carry hard-coded hex colours (mostly chart palettes).
-Bind them to the design tokens using the pattern already proven in
-`AdminFinancials.tsx` (`src/lib/themeTokens.ts`).
-**Pros:** Closes the last open MEDIUM audit finding; future palette changes
-propagate automatically.
-**Cons:** Charts need visual re-checking after the swap.
-**Risk if we don't:** Charts drift from the brand palette whenever tokens
-change.
-**Effort:** Small–medium (one PR).
-**Recommendation:** Approve.
-**Owner decision:** [ ] approve · [ ] reject · [ ] ask me later
 
 ## D5 — Merge overlapping database access policies (audit finding #8)
 
@@ -64,6 +51,14 @@ review, not a blanket flip.
 ---
 
 ## Decided
+
+- **D4 — Chart colours onto tokens: APPROVED 2026-08-01, and mostly already
+  done.** Investigation showed the '8 files with hex' were 7 files whose
+  comments merely mention old values (the palettes were tokenised in earlier
+  PRs) plus one live literal — SiteCalendar's `#eee` day-row divider, fixed
+  in PR #212 (`var(--line-soft)`). Finding #7 is closed. New backlog note
+  from the same rows: v1 ramp classes colour the job-status accents; mapping
+  them onto the v2 semantic colours is a future design decision.
 
 - **D3 — mobile-responsive.css phased retirement: APPROVED 2026-08-01.**
   Running as a 7-tranche track, one tranche per PR with 375px verification —

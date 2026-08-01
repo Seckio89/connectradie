@@ -89,7 +89,7 @@ runs in CI as informational.
 | v2 card/radius/token patterns | ✅ | `check:tokens`: every ct- utility resolves (211 files); `check:ink` clean |
 | Buttons per system | ✅ | |
 | Contrast (rendered) | ✅ | browser sweep: 0 AA failures, both viewports, modals opened |
-| Palette semantics / no stray colour | ❌ | #7 carry-over: residual hex in 8 files (chart palettes, `text-[#1D9E75]`) |
+| Palette semantics / no stray colour | ✅ | #7 CLOSED (PR #212): the '8 files' were 7 comment-only mentions + one live `#eee` divider in SiteCalendar, now `var(--line-soft)`. New note: v1 ramp classes on SiteCalendar's status accents — future design decision |
 | No custom CSS | ❌ | #18: `mobile-responsive.css` — 12 dead rule groups, 28 overbroad, and one **live bug**: section N forces `display:inline-flex !important` on `p-1` buttons, so a `hidden sm:inline-flex` button renders on mobile when it should not |
 | Copy rules (sentence case, empty states, error copy) | ❌ | #13–#17 below: ~700 violations |
 
