@@ -143,11 +143,10 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 // RouteTracker is the single source of truth for document.title.
 //
-// Nineteen pages also render <SEO>, which sets a title through react-helmet —
-// but helmet is not currently taking effect (verified in the browser: /pricing
-// keeps index.html's static title even though SEO.tsx asks for "Pricing"). So
-// leaving those routes alone does NOT hand them a good title, it hands them the
-// homepage's. Until helmet is fixed, every route gets its title from here.
+// Nineteen pages also render <SEO>, which — since react-helmet-async was
+// removed (it never committed a tag; audit #19) — writes meta/OG/canonical
+// tags directly into <head> and deliberately does NOT touch the title.
+// Every route gets its title from here, SEO pages included.
 const slugWords = (slug: string) =>
   slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
