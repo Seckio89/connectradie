@@ -102,7 +102,7 @@ export default function SearchableSelect({
       {open && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-ct-surface rounded-ct-md shadow-lg border border-ct-line z-50 max-h-80 overflow-y-auto">
           {filtered.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-ct-mute">No results found</div>
+            <div className="px-4 py-3 text-sm text-ct-mute">No matches — try a different spelling or fewer words.</div>
           ) : (
             filtered.map((option) => (
               <button

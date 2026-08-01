@@ -1537,7 +1537,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                       </div>
 
                       {jobCount === 0 ? (
-                        <p className="text-xs text-ct-mute mt-1">No jobs booked</p>
+                        <p className="text-xs text-ct-mute mt-1">Nothing booked for this day</p>
                       ) : (
                         <div className="mt-2 space-y-1.5">
                           {entries.map(({ job, assignments: jobAssignments, conflictWarning }) => {
@@ -1823,7 +1823,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                     );
                   })}
                   {monthDays.filter((day): day is Date => day !== null && getJobsForDate(day).length > 0).length === 0 && (
-                    <div className="px-4 py-6 text-center text-xs text-ct-mute">No jobs scheduled this month</div>
+                    <div className="px-4 py-6 text-center text-xs text-ct-mute">No jobs scheduled this month — accepted jobs land here automatically.</div>
                   )}
                 </div>
               </div>
@@ -2520,7 +2520,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                 {formatJobTime(nextEntry.start_time) ? ` · ${formatJobTime(nextEntry.start_time)}` : ''}
               </p>
             ) : (
-              <p className="text-sm font-semibold text-ct-paper">No upcoming visits scheduled</p>
+              <p className="text-sm font-semibold text-ct-paper">No upcoming visits — the next one appears here once scheduled</p>
             )}
           </div>
         </div>

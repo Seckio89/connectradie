@@ -72,7 +72,7 @@ export function LineChart({ data, height = 200, color = 'var(--teal)', formatVal
   const chartH = viewHeight - paddingY * 2;
 
   if (data.length === 0) {
-    return <div className="text-center text-ct-mute py-8 text-sm">No data</div>;
+    return <div className="text-center text-ct-mute py-8 text-sm">Nothing to chart yet — data builds here as jobs complete.</div>;
   }
 
   const coords = data.map((d, i) => {

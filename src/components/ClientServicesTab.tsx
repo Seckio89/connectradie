@@ -2034,7 +2034,7 @@ export default function ClientServicesTab() {
                   </div>
                 ) : (
                   <div className="px-4 py-6 text-center">
-                    <p className="text-sm text-ct-mute">No upcoming sessions scheduled</p>
+                    <p className="text-sm text-ct-mute">When your tradie schedules the next visit, it appears here.</p>
                   </div>
                 )}
 

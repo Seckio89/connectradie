@@ -1453,7 +1453,7 @@ export default function JobManagementModal({
             </div>
           </>
         ) : (
-          <div className="p-6 text-center text-ct-mute">Job not found</div>
+          <div className="p-6 text-center text-ct-mute">This job could not be loaded — close this window and refresh the page.</div>
         )}
       </div>
 
