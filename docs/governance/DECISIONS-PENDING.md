@@ -78,22 +78,14 @@ review, not a blanket flip.
 "NEXT UP" in project notes) — do them together, in the right order.
 **Owner decision:** [ ] approve · [ ] reject · [ ] ask me later
 
-## D7 — Nightly code-audit task: turn it on?
-
-**What:** A scheduled agent that runs the full checker suite every night and
-notifies you **only** when something newly regresses. Silent when green.
-**Pros:** Regressions caught within a day, not at the next audit; silent
-unless something's wrong.
-**Cons:** One more thing running; occasional false-alarm notification.
-**Risk if we don't:** Regressions accumulate between manual audits.
-**Effort:** Already written (`Scheduled/nightly-code-audit/SKILL.md`) — just
-needs registering.
-**Recommendation:** Approve.
-**Owner decision:** [ ] approve · [ ] reject · [ ] ask me later
-
 ---
 
 ## Decided
+
+- **D7 — Nightly code audit: APPROVED 2026-08-01.** Registered as a cloud
+  routine running 3:00am Sydney nightly. Detection only — it runs the
+  checker suite against the baselines and the newest audit report, sends a
+  push notification only for a NEW regression, and stays silent when green.
 
 - **D2 — One source of truth for Terms and Privacy: APPROVED 2026-08-01.**
   PR #207 deletes the static HTML duplicates. The audit found they were
