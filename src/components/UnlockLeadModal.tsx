@@ -110,7 +110,7 @@ export default function UnlockLeadModal({ isOpen, onClose, onUnlock, clientName,
               <>
                 <div className="flex items-center justify-center gap-2 mb-4">
                   <Crown className="w-6 h-6 text-ct-teal" />
-                  <span className="text-3xl font-bold text-ct-teal">FREE</span>
+                  <span className="text-3xl font-bold text-ct-teal">Free</span>
                 </div>
                 <p className="text-center text-sm text-ct-mute-2 font-medium">Included with Pro plan</p>
               </>

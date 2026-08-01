@@ -1564,7 +1564,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                     <span className={`text-xs font-semibold truncate ${isUrgent ? 'text-ct-rose' : 'text-ct-mute-2'}`}>
                                       {category ? (title ? `${category} — ${title}` : category) : title}
                                     </span>
-                                    {job.is_emergency && <span className="text-[9px] font-bold text-ct-rose flex-shrink-0">URGENT</span>}
+                                    {job.is_emergency && <span className="text-[9px] font-bold text-ct-rose flex-shrink-0">Urgent</span>}
                                   </div>
                                   {(jobTime || job.location_address) && (
                                     <div className="flex items-center gap-2 mt-0.5 text-[11px] text-ct-mute min-w-0">
@@ -1783,7 +1783,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                                 <div className="flex items-center gap-1.5 mb-0.5">
                                   {category && <span className="text-[10px] font-bold uppercase tracking-wide text-ct-mute">{category}</span>}
                                   {!category && <span className="text-sm font-medium text-ct-paper truncate">{title}</span>}
-                                  {job.is_emergency && <span className="text-[10px] font-semibold text-ct-rose">URGENT</span>}
+                                  {job.is_emergency && <span className="text-[10px] font-semibold text-ct-rose">Urgent</span>}
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-ct-mute">
                                   {(job.start_time || job.preferred_time_slot) && (
