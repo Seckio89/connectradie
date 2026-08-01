@@ -19,19 +19,6 @@ with the date.
 
 
 
-## D5 — Merge overlapping database access policies (audit finding #8)
-
-**What:** Two tables (`cancellation_policies`, `profile_private`) have
-overlapping permission rules. Merging them makes the database marginally
-faster and the security posture easier to reason about.
-**Pros:** Cleaner security model; small performance gain; closes a MEDIUM
-finding.
-**Cons:** Touching access rules always carries risk — needs the full
-migration verification ritual (staging first, RLS proof).
-**Risk if we don't:** None immediate; audit debt.
-**Effort:** Small, but high-care (money-adjacent tier).
-**Recommendation:** Approve, batched with the next migration.
-**Owner decision:** [ ] approve · [ ] reject · [ ] ask me later
 
 ## D6 — Tighten two publicly readable tables (audit finding #10)
 
@@ -51,6 +38,15 @@ review, not a blanket flip.
 ---
 
 ## Decided
+
+- **D5 — Merge overlapping RLS policies: APPROVED 2026-08-01 — already
+  resolved, no migration needed.** Verified against the LIVE database
+  (pg_policies): both `cancellation_policies` and `profile_private` now
+  carry exactly one permissive policy per action (admin-only writes;
+  single owner-or-admin rules; one public read), and the current Supabase
+  advisors raise no multiple-permissive-policies warning. The overlap was
+  fixed by an earlier migration; the audit finding had gone stale.
+  Finding #8 closed with zero risk taken.
 
 - **D4 — Chart colours onto tokens: APPROVED 2026-08-01, and mostly already
   done.** Investigation showed the '8 files with hex' were 7 files whose

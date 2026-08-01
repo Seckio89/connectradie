@@ -67,7 +67,7 @@ freeze decider): the code is correct, the checklist is stale.
 |---|---|---|---|
 | RLS on every table | 3× | ✅ | |
 | CRUD policies per table | 3× | ✅ | |
-| No overly-permissive write policies | 3× | ✅ | #8 (overlapping permissive SELECT policies on `cancellation_policies`, `profile_private`) is redundancy, not exposure — open as MEDIUM |
+| No overly-permissive write policies | 3× | ✅ | #8 CLOSED (D5 investigation, 2026-08-01): live pg_policies shows one permissive policy per action on both tables and current advisors raise no overlap warning — resolved by an earlier migration, the finding had gone stale |
 | FK columns indexed | 2× | ✅ | |
 | Composite/current indexes | 1× | ❌ | #11: ~55 unused indexes (advisors re-confirmed); revisit after real traffic |
 | No N+1 in edge functions | 2× | ✅ | |
