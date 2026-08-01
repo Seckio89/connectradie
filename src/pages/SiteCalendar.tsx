@@ -1777,7 +1777,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                               key={job.id}
                               onClick={() => setSelectedJob(job)}
                               className={`flex items-center gap-3 px-4 py-3 border-l-4 ${accentColor} cursor-pointer active:bg-ct-surface-2 transition-colors`}
-                              style={{ borderBottom: '0.5px solid #eee' }}
+                              style={{ borderBottom: '0.5px solid var(--line-soft)' }}
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 mb-0.5">
