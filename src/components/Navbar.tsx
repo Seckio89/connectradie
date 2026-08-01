@@ -18,8 +18,7 @@ export default function Navbar() {
   const navLinks = user
     ? isTradie
       ? [
-          {/* Sentence case from the copy batch + the /work target from the
-              link-fix PR — /jobs is only a query-string-dropping redirect. */}
+          // /work, not /jobs: that route is only a query-string-dropping redirect.
           { name: 'Find work', href: '/leads', isRoute: true },
           { name: 'My jobs', href: '/work', isRoute: true },
           { name: 'Messages', href: '/messages', isRoute: true },
