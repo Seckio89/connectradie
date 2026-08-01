@@ -62,7 +62,9 @@ const PREFIX = {
 // bug: Tailwind stops parsing and emits nothing.
 const UTILITY = /(?<![\w-])(bg|text|border|ring|from|via|to|divide|outline|fill|stroke|decoration|accent|caret|placeholder|shadow|rounded|font)-ct-([a-zA-Z0-9-]+)((?:\/(?:\[[0-9.]+\]|[0-9]+))*)/g;
 
-const files = execSync("git grep -l -- '-ct-' -- 'src/*'", { encoding: 'utf8' })
+// Double quotes, not single: execSync on Windows goes through cmd.exe, which
+// passes single quotes literally and turns this into a no-match crash.
+const files = execSync('git grep -l -- "-ct-" -- "src/*"', { encoding: 'utf8' })
   .trim().split('\n').filter(Boolean);
 
 const bad = [];

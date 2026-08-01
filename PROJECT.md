@@ -173,25 +173,26 @@ supabase/
 - Skeleton loaders, empty states, tooltips, error boundary
 - Lazy-loaded routes with Suspense
 
-## Priority Roadmap (What's Next)
+## Where the live backlog actually lives
 
-1. **Automated testing** — No tests exist. Add Vitest + React Testing Library for critical flows (auth, job posting, payments, messaging)
-2. **SEO improvements** — Add robots.txt, sitemap.xml, dynamic meta tags per page (react-helmet-async), schema.org structured data for tradie profiles
-3. **Error tracking** — Add Sentry or similar for crash reporting and error monitoring in production
-4. **Analytics integration** — Add Google Analytics or Mixpanel for user behavior tracking, funnel analysis, conversion metrics
-5. **Admin dashboard expansion** — Expand beyond verification center: platform analytics, user management, payment reporting, content moderation
-6. **Stripe Connect payout UI** — Onboarding edge function exists but no UI for viewing payout status, balance, or transfer history
-7. **Invoice PDF export** — Invoice creation modal exists but no PDF generation or download functionality
-8. **Job variations UI** — Database table exists (`job_variations`) but no visible UI for creating/managing change orders
-9. **Advanced email templates** — Send-email function has one generic template; add specific templates for leads, messages, job updates, reminders
-10. **Real-time license authority lookup** — Currently format-only validation; add live verification against state licensing databases
+The numbered roadmap that used to sit here went stale (it still said "no
+tests exist" and "no CI/CD pipeline" long after both shipped — see
+`.github/workflows/ci.yml` and the 25+ test files). The backlog is now
+maintained in three living documents instead of here:
 
-## Known Tech Debt
-- Some components are large and could be further decomposed
-- No CI/CD pipeline
-- Google Calendar sync is gated behind Pro but needs broader testing
-- Offline sync (`offlineSync.ts`) needs edge-case testing
-- `database.ts` types should be auto-generated from Supabase schema
+1. **`AUDIT-REPORT-<latest date>.md`** (repo root) — open audit findings,
+   severity-ranked. This is the defect backlog.
+2. **`docs/governance/DECISIONS-PENDING.md`** — every significant (Tier B)
+   change awaiting the owner's approval, with pros/cons. This is the
+   decision backlog. Its companion `docs/governance/CHANGE-POLICY.md`
+   defines what needs approval and what doesn't.
+3. **`docs/growth/RECOMMENDATIONS.md`** — improvement/feature ideas from the
+   weekly growth scan, ranked by expected impact. This is the feature
+   backlog (and the "feature-gap list" other docs refer to).
+
+Go-live sequencing lives in `docs/GO-LIVE-RUNBOOK.md`; the owner's personal
+steps in `docs/OWNER-TODO.md`; how any bug becomes a fix in
+`docs/governance/PATCH-RUNBOOK.md`.
 
 ## Key Files
 | File | Purpose |
