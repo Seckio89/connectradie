@@ -1258,7 +1258,9 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
             <p className="text-sm font-medium text-ct-paper">{jobDesc}</p>
             {payment.job_id && (
               <div className="flex items-center gap-3 mt-2">
-                <Link to={`${isTradie ? '/jobs' : '/leads'}?job=${payment.job_id}`} className="inline-flex items-center gap-1 text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium transition-colors">
+                {/* /work, not /jobs: the /jobs redirect drops the query string,
+                    so the ?job deep-link never reached the Jobs tab. */}
+                <Link to={`${isTradie ? '/work' : '/leads'}?job=${payment.job_id}`} className="inline-flex items-center gap-1 text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium transition-colors">
                   View job <ExternalLink className="w-3 h-3" />
                 </Link>
                 {!payment.id.startsWith('inv_') && (

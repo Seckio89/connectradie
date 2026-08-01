@@ -19,7 +19,7 @@ export default function Navbar() {
     ? isTradie
       ? [
           { name: 'Find Work', href: '/leads', isRoute: true },
-          { name: 'My Jobs', href: '/jobs', isRoute: true },
+          { name: 'My Jobs', href: '/work', isRoute: true },
           { name: 'Messages', href: '/messages', isRoute: true },
         ]
       : [
