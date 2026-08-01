@@ -17,22 +17,6 @@ with the date.
 
 ---
 
-## D1 — Turn on GitHub branch protection for `master`
-
-**What:** A 2-minute GitHub setting so nothing can merge to `master` (and
-therefore deploy to the live site) until the automated checks pass.
-**Why it matters:** Today Vercel deploys the moment anything lands on
-`master` — the checks run at the same time as the deploy instead of gating
-it. A broken change can go live before the red X appears.
-**Pros:** Biggest safety win available; free; makes every future PR safer;
-you already merge PRs by hand, so nothing about your routine changes.
-**Cons:** A genuinely urgent hotfix waits ~5–8 minutes for CI. That's the
-whole cost.
-**Risk if we don't:** A bad merge deploys instantly to real users.
-**Effort:** 2 minutes, owner-only (click-path in `docs/OWNER-TODO.md`).
-**Recommendation:** Approve.
-**Owner decision:** [ ] approve · [ ] reject · [ ] ask me later
-
 ## D2 — Static `/terms` and `/privacy` HTML pages: redirect them to the app
 
 **What:** The site has two copies of Terms and Privacy — the dark in-app pages
@@ -129,4 +113,7 @@ needs registering.
 
 ## Decided
 
-*(nothing yet — decided items move here with the date and outcome)*
+- **D1 — Branch protection on : APPROVED 2026-08-01.** Applied the
+  same day via the GitHub API: merges (and direct pushes) to  now
+  require the Type Check, Tests, Build, DB Columns and Navigability CI
+  checks to pass. CI now gates the Vercel deploy instead of racing it.

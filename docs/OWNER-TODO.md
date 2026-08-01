@@ -46,16 +46,11 @@ screens. In short:
 5. Tell Claude when done — it verifies the endpoints respond correctly
    without ever seeing the keys.
 
-## 3. GitHub — 2 minutes that protects the live site (decision D1)
+## 3. GitHub — branch protection ✅ DONE (D1 approved 2026-08-01)
 
-This stops anything reaching the live site before the automated checks pass.
-
-1. **github.com/Seckio89/connectradie** → **Settings** → **Branches**.
-2. **Add branch protection rule** → branch name pattern: `master`.
-3. Tick **Require status checks to pass before merging** → search and select
-   the CI checks (Type Check, Tests, Build, DB Columns, Navigability).
-4. **Save**. Done — from now on the merge button stays grey until checks are
-   green.
+Already set up for you: nothing can reach the live site until the automated
+checks (Type Check, Tests, Build, DB Columns, Navigability) pass — the merge
+button stays grey until they're green. Nothing left to do here.
 
 ## 4. Vercel — one env var now, one approval later
 
