@@ -10,20 +10,20 @@ import DashboardLayout from '../components/DashboardLayout';
 
 const REVIEW_TAGS = [
   { key: 'punctual', label: 'Punctual' },
-  { key: 'quality_work', label: 'Quality Work' },
-  { key: 'good_communication', label: 'Good Communication' },
-  { key: 'fair_pricing', label: 'Fair Pricing' },
-  { key: 'clean_worksite', label: 'Clean Worksite' },
+  { key: 'quality_work', label: 'Quality work' },
+  { key: 'good_communication', label: 'Good communication' },
+  { key: 'fair_pricing', label: 'Fair pricing' },
+  { key: 'clean_worksite', label: 'Clean worksite' },
   { key: 'professional', label: 'Professional' },
   { key: 'experienced', label: 'Experienced' },
   { key: 'reliable', label: 'Reliable' },
   { key: 'friendly', label: 'Friendly' },
-  { key: 'would_recommend', label: 'Would Recommend' },
+  { key: 'would_recommend', label: 'Would recommend' },
 ] as const;
 
 const RATING_LABELS: Record<number, string> = {
   1: 'Poor',
-  2: 'Below Average',
+  2: 'Below average',
   3: 'Average',
   4: 'Good',
   5: 'Excellent',
@@ -222,7 +222,7 @@ export default function LeaveReview() {
         <div className="max-w-lg mx-auto py-12 text-center">
           <p className="text-ct-mute-2 mb-4">{error}</p>
           <Link to="/payments" className="text-ct-mute-2 hover:text-ct-mute-2 font-medium text-sm">
-            Back to Payments
+            Back to payments
           </Link>
         </div>
       </DashboardLayout>
@@ -233,7 +233,7 @@ export default function LeaveReview() {
 
   const category = extractCategory(job.description);
   const desc = cleanDescription(job.description);
-  const tradieName = job.tradie?.full_name || 'Your Tradie';
+  const tradieName = job.tradie?.full_name || 'Your tradie';
   const tradieInitial = tradieName.charAt(0).toUpperCase();
   const displayRating = hoveredRating || rating;
 
@@ -246,7 +246,7 @@ export default function LeaveReview() {
             <div className="w-16 h-16 bg-ct-amber/[0.13] rounded-full flex items-center justify-center mx-auto mb-5">
               <CheckCircle2 className="w-8 h-8 text-ct-amber" />
             </div>
-            <h1 className="text-xl font-bold text-ct-paper mb-2">Review Submitted{paymentReleased ? ' & Payment Released' : ''}</h1>
+            <h1 className="text-xl font-bold text-ct-paper mb-2">Review submitted{paymentReleased ? ' & payment released' : ''}</h1>
             <p className="text-sm text-ct-mute-2 mb-1">
               Thank you for reviewing <span className="font-semibold">{tradieName}</span>.
             </p>
@@ -271,13 +271,13 @@ export default function LeaveReview() {
                 to="/payments"
                 className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors text-center"
               >
-                View Payments
+                View payments
               </Link>
               <Link
                 to="/dashboard"
                 className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 transition-colors text-center"
               >
-                Back to Dashboard
+                Back to dashboard
               </Link>
             </div>
           </div>
@@ -295,7 +295,7 @@ export default function LeaveReview() {
             <div className="w-16 h-16 bg-ct-surface-2 rounded-full flex items-center justify-center mx-auto mb-5">
               <CheckCircle2 className="w-8 h-8 text-ct-mute" />
             </div>
-            <h1 className="text-xl font-bold text-ct-paper mb-2">Already Reviewed</h1>
+            <h1 className="text-xl font-bold text-ct-paper mb-2">Already reviewed</h1>
             <p className="text-sm text-ct-mute-2 mb-6">
               You've already submitted a review for this job. Thank you for your feedback!
             </p>
@@ -303,7 +303,7 @@ export default function LeaveReview() {
               to="/payments"
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 transition-colors"
             >
-              Back to Payments
+              Back to payments
             </Link>
           </div>
         </div>
@@ -318,7 +318,7 @@ export default function LeaveReview() {
         <nav className="flex items-center gap-1.5 text-xs text-ct-mute mb-4">
           <Link to="/payments" className="hover:text-ct-mute-2 transition-colors">Payments</Link>
           <ChevronRight className="w-3 h-3" />
-          <span className="text-ct-paper font-medium">Leave a Review</span>
+          <span className="text-ct-paper font-medium">Leave a review</span>
         </nav>
 
         <button
@@ -332,7 +332,7 @@ export default function LeaveReview() {
         <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
           {/* Header */}
           <div className="px-6 pt-6 pb-4">
-            <h1 className="text-lg font-bold text-ct-paper mb-1">Rate Your Experience</h1>
+            <h1 className="text-lg font-bold text-ct-paper mb-1">Rate your experience</h1>
             <p className="text-sm text-ct-mute">Help other clients by sharing your experience.</p>
           </div>
 
@@ -469,7 +469,7 @@ export default function LeaveReview() {
                 onClick={() => navigate('/leads')}
                 className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors"
               >
-                Skip for Now
+                Skip for now
               </button>
               <button
                 type="submit"
@@ -477,7 +477,7 @@ export default function LeaveReview() {
                 className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {isSubmitting ? 'Submitting...' : alreadyReleased ? 'Submit Review' : 'Submit Review & Release Payment'}
+                {isSubmitting ? 'Submitting...' : alreadyReleased ? 'Submit review' : 'Submit review & release payment'}
               </button>
             </div>
           </form>

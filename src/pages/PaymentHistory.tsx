@@ -641,7 +641,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                 <Wallet className="w-5 h-5 text-ct-mute-2" />
               </div>
               <h1 className="text-2xl font-bold text-ct-paper">
-                {isTradie ? 'Earnings & Payouts' : 'Invoices & Payments'}
+                {isTradie ? 'Earnings & payouts' : 'Invoices & payments'}
               </h1>
             </div>
             <p className="text-sm text-ct-mute ml-12">
@@ -695,7 +695,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           <div>
             <div className="flex items-center gap-2 mb-3">
               <FileText className="w-4 h-4 text-ct-mute" />
-              <h2 className="text-sm font-semibold text-ct-paper">Service Invoices</h2>
+              <h2 className="text-sm font-semibold text-ct-paper">Service invoices</h2>
               {recurringInvoices.length > 0 && (
                 <span className="text-xs text-ct-mute font-medium">({recurringInvoices.length})</span>
               )}
@@ -739,7 +739,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-ct-line">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-ct-mute" />
-              <h2 className="text-sm font-semibold text-ct-paper">Transaction History</h2>
+              <h2 className="text-sm font-semibold text-ct-paper">Transaction history</h2>
               {totalCount > 0 && <span className="text-xs text-ct-mute font-medium">({totalCount})</span>}
             </div>
             <div className="flex items-center gap-2">
@@ -781,7 +781,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     onChange={e => { setStatusFilter(e.target.value as StatusFilter); setPage(0); }}
                     className="px-3 py-2 border border-ct-line rounded-ct-sm text-sm text-ct-paper bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                   >
-                    <option value="all">All Statuses</option>
+                    <option value="all">All statuses</option>
                     <option value="pending">Pending</option>
                     <option value="completed">Completed</option>
                     <option value="refunded">Refunded</option>
@@ -802,13 +802,13 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   <label className="block text-xs font-semibold text-ct-mute uppercase tracking-wider mb-1">Type</label>
                   <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(0); }}
                     className="px-3 py-2 border border-ct-line rounded-ct-sm text-sm text-ct-paper bg-ct-surface focus:ring-2 focus:ring-ct-teal focus:border-ct-teal">
-                    <option value="">All Types</option>
-                    <option value="job_payment">Job Payment</option>
-                    {!isTradie && <option value="service_invoice">Service Invoice</option>}
-                    <option value="bonus">Extra Payment</option>
+                    <option value="">All types</option>
+                    <option value="job_payment">Job payment</option>
+                    {!isTradie && <option value="service_invoice">Service invoice</option>}
+                    <option value="bonus">Extra payment</option>
                     <option value="subscription">Subscription</option>
-                    <option value="lead_unlock">Lead Unlock</option>
-                    <option value="job_access">Job Access</option>
+                    <option value="lead_unlock">Lead unlock</option>
+                    <option value="job_access">Job access</option>
                     <option value="refund">Refund</option>
                   </select>
                 </div>
@@ -961,7 +961,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                         {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null }) && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
                                           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-ct-amber/[0.13] text-ct-amber border border-ct-amber/[0.34] whitespace-nowrap">
                                             <span className="w-1.5 h-1.5 rounded-full bg-ct-amber" />
-                                            Awaiting Release
+                                            Awaiting release
                                           </span>
                                         ) : (
                                           getStatusBadge(p.status)
@@ -1031,7 +1031,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                                     {!isTradie && !isBonus && p.status === 'completed' && p.stripe_payment_intent_id && !isReleaseActioned({ status: p.status, metadata: p.metadata as Record<string, unknown> | null }) && !(p.metadata as Record<string, unknown> | null)?.pending_increase ? (
                                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-ct-amber/[0.13] text-ct-amber border border-ct-amber/[0.34]">
                                         <span className="w-1.5 h-1.5 rounded-full bg-ct-amber" />
-                                        Awaiting Release
+                                        Awaiting release
                                       </span>
                                     ) : (
                                       getStatusBadge(p.status)
@@ -1287,7 +1287,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
             <div className="border border-ct-line rounded-ct-sm overflow-hidden">
               <div className="divide-y divide-ct-line-soft">
                 <div className="flex items-center justify-between px-4 py-3">
-                  <span className="text-sm text-ct-mute-2">{gstAmount > 0 ? 'Subtotal (ex. GST)' : 'Job Amount'}</span>
+                  <span className="text-sm text-ct-mute-2">{gstAmount > 0 ? 'Subtotal (ex. GST)' : 'Job amount'}</span>
                   <span className="text-sm font-medium text-ct-paper tabular-nums">{formatCurrency(exGst)}</span>
                 </div>
                 {gstAmount > 0 && (
@@ -1328,7 +1328,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
             <button onClick={onExportPDF}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-medium hover:bg-ct-teal-deep transition-colors">
               <Receipt className="w-4 h-4" />
-              Print Invoice
+              Print invoice
             </button>
           </div>
 
@@ -1341,11 +1341,11 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
                 <CreditCard className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-ct-paper">
-                    {payment.stripe_checkout_session_id ? 'Payment Processing' : 'Payment Required'}
+                    {payment.stripe_checkout_session_id ? 'Payment processing' : 'Payment required'}
                   </p>
                   <p className="text-xs text-ct-amber mt-0.5">
                     {payment.stripe_checkout_session_id
-                      ? 'You may have already completed this payment. Click "Verify Payment" to check, or pay again if needed.'
+                      ? 'You may have already completed this payment. Click "Verify payment" to check, or pay again if needed.'
                       : 'Your tradie has completed the work and requested payment. Review the invoice above, then pay securely via Stripe.'}
                   </p>
                 </div>
@@ -1355,19 +1355,19 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
                   <button onClick={handleVerifyPayment} disabled={actionLoading}
                     className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                     {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                    Verify Payment
+                    Verify payment
                   </button>
                   <button onClick={handlePayNow} disabled={actionLoading}
                     className="flex-1 px-4 py-2.5 bg-ct-surface border border-ct-line text-ct-paper rounded-ct-sm text-sm font-semibold hover:bg-ct-surface-2 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                     <CreditCard className="w-4 h-4" />
-                    Pay Again
+                    Pay again
                   </button>
                 </div>
               ) : (
                 <button onClick={handlePayNow} disabled={actionLoading}
                   className="w-full px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                   {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                  Pay Now — {formatCurrency(subtotal)}
+                  Pay now — {formatCurrency(subtotal)}
                 </button>
               )}
             </div>
@@ -1379,7 +1379,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
               <div className="flex items-start gap-3 mb-3">
                 <ShieldCheck className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-ct-paper">Payment Secured with Stripe</p>
+                  <p className="text-sm font-semibold text-ct-paper">Payment secured with Stripe</p>
                   <p className="text-xs text-ct-amber mt-0.5">
                     Funds will be automatically released to your tradie within 5 hours. You can release early if you're happy with the work.
                   </p>
@@ -1388,7 +1388,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
               <button onClick={handleReleaseEscrow} disabled={actionLoading}
                 className="w-full px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:bg-ct-teal disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                Release Now
+                Release now
               </button>
             </div>
           )}
@@ -1409,7 +1409,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
               <div className="flex items-start gap-3">
                 <Clock className="w-5 h-5 text-ct-mute-2 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-ct-mute-2">Reduction Request Pending</p>
+                  <p className="text-sm font-semibold text-ct-mute-2">Reduction request pending</p>
                   <p className="text-xs text-ct-mute-2 mt-0.5">
                     You've asked to reduce this payment from ${((pendingReduction.original_amount_cents ?? 0) / 100).toFixed(2)} to ${((pendingReduction.proposed_amount_cents ?? 0) / 100).toFixed(2)}.
                     Waiting for the tradie to approve. You'll be refunded ${((pendingReduction.diff_cents ?? 0) / 100).toFixed(2)} once they do.
@@ -1432,7 +1432,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-ct-paper">Price Increase Pending</p>
+                    <p className="text-sm font-semibold text-ct-paper">Price increase pending</p>
                     <p className="text-xs text-ct-amber mt-0.5">
                       Your tradie has requested a price adjustment{diffLabel ? ` of ${diffLabel}` : ''}. Please pay the additional amount before the payment can be released.
                     </p>
@@ -1453,7 +1453,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
                   className="w-full px-4 py-2.5 bg-ct-amber text-ct-ink rounded-ct-sm text-sm font-semibold hover:bg-ct-amber disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
                 >
                   {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                  Pay Increase{diffLabel ? ` — ${diffLabel}` : ''}
+                  Pay increase{diffLabel ? ` — ${diffLabel}` : ''}
                 </button>
               </div>
             );
@@ -1474,7 +1474,7 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
                   className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 transition-colors"
                 >
                   <Star className="w-4 h-4" />
-                  Leave a Review
+                  Leave a review
                 </Link>
               )}
             </div>
@@ -1486,14 +1486,14 @@ function InvoiceModal({ payment, isTradie, formatCurrency, formatDate, formatDat
               <div className="flex items-start gap-3 mb-3">
                 <ShieldCheck className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-ct-paper">Ready to Release</p>
+                  <p className="text-sm font-semibold text-ct-paper">Ready to release</p>
                   <p className="text-xs text-ct-amber mt-0.5">Funds are secured. Release payment once you're happy with the work.</p>
                 </div>
               </div>
               <button onClick={handleReleaseEscrow} disabled={actionLoading}
                 className="w-full px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:bg-ct-teal disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
                 {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-                Release Payment
+                Release payment
               </button>
             </div>
           )}

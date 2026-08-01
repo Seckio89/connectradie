@@ -775,7 +775,7 @@ export default function Payouts() {
               onClick={fetchDetails}
               className="px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
             >
-              Try Again
+              Try again
             </button>
           </div>
         </div>
@@ -881,7 +881,7 @@ export default function Payouts() {
             <div className="w-16 h-16 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mx-auto mb-4">
               <Wallet className="w-8 h-8 text-ct-mute-2" />
             </div>
-            <h2 className="text-xl font-bold text-ct-paper mb-2">Set Up Payouts</h2>
+            <h2 className="text-xl font-bold text-ct-paper mb-2">Set up payouts</h2>
             <p className="text-ct-mute-2 mb-2 max-w-md mx-auto">
               Connect your bank account to receive payments directly from completed jobs.
             </p>
@@ -902,7 +902,7 @@ export default function Payouts() {
                   Connecting...
                 </>
               ) : (
-                'Set Up Payouts'
+                'Set up payouts'
               )}
             </button>
           </div>
@@ -917,7 +917,7 @@ export default function Payouts() {
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="w-6 h-6 text-ct-teal" />
                   <div>
-                    <p className="font-semibold text-ct-teal">Account Active</p>
+                    <p className="font-semibold text-ct-teal">Account active</p>
                     <p className="text-sm text-ct-teal">Your bank account is connected and ready to receive payouts.</p>
                   </div>
                 </div>
@@ -928,7 +928,7 @@ export default function Payouts() {
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-6 h-6 text-ct-amber flex-shrink-0" />
                     <div>
-                      <p className="font-semibold text-ct-paper">Setup Incomplete</p>
+                      <p className="font-semibold text-ct-paper">Setup incomplete</p>
                       <p className="text-sm text-ct-amber">
                         We need a few more details (e.g. bank account or identity info) before you can receive payouts.
                       </p>
@@ -939,7 +939,7 @@ export default function Payouts() {
                     disabled={connectLoading}
                     className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-ct-amber text-ct-ink font-semibold rounded-ct-md hover:bg-ct-amber disabled:opacity-60 transition-colors text-sm"
                   >
-                    {connectLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Complete Setup'}
+                    {connectLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Complete setup'}
                   </button>
                 </div>
               </div>
@@ -1009,7 +1009,7 @@ export default function Payouts() {
                 </p>
               ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'no_instant_method' && summary.transit.amount > 0 && payoutPref !== 'standard' ? (
                 <p className="mt-3 text-[11px] text-ct-mute">
-                  This payout account can’t receive instant payouts — add an instant-eligible debit card or bank in Bank Settings.
+                  This payout account can’t receive instant payouts — add an instant-eligible debit card or bank in Bank settings.
                 </p>
               ) : null}
 
@@ -1032,7 +1032,7 @@ export default function Payouts() {
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-6 h-6 text-ct-amber" />
                     <div>
-                      <p className="font-semibold text-ct-paper">Stripe Connect Setup Required</p>
+                      <p className="font-semibold text-ct-paper">Stripe Connect setup required</p>
                       <p className="text-sm text-ct-amber">
                         You must complete your Stripe Connect setup before you can manage payouts or access your payout dashboard. Please complete onboarding first.
                       </p>
@@ -1043,7 +1043,7 @@ export default function Payouts() {
                     disabled={connectLoading}
                     className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-ct-rose text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-60 transition-colors text-sm"
                   >
-                    {connectLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Complete Setup'}
+                    {connectLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Complete setup'}
                   </button>
                 </div>
               </div>
@@ -1058,7 +1058,7 @@ export default function Payouts() {
                     className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:bg-ct-teal-deep transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    Bank Settings
+                    Bank settings
                   </button>
                 ) : (
                   <a
@@ -1068,7 +1068,7 @@ export default function Payouts() {
                     className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-5 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:bg-ct-teal-deep transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    Bank Settings
+                    Bank settings
                   </a>
                 )}
                 <div className="flex flex-col gap-1">
@@ -1103,7 +1103,7 @@ export default function Payouts() {
                   {instantPreferenceBlocked && payoutPref === 'instant' && (
                     <p className="text-[11px] text-ct-mute max-w-sm">
                       {instantPreferenceBlocked === 'no_instant_method'
-                        ? 'Instant needs an instant-eligible debit card or bank account — add one in Bank Settings. Until then your payouts go out free on the standard schedule.'
+                        ? 'Instant needs an instant-eligible debit card or bank account — add one in Bank settings. Until then your payouts go out free on the standard schedule.'
                         : 'Instant payouts aren’t available right now. Your payouts go out free on the standard schedule until they are.'}
                     </p>
                   )}
@@ -1118,7 +1118,7 @@ export default function Payouts() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <Briefcase className="w-4 h-4 text-ct-mute flex-shrink-0" />
-                      <h2 className="text-sm font-semibold text-ct-paper whitespace-nowrap">Recent Payments</h2>
+                      <h2 className="text-sm font-semibold text-ct-paper whitespace-nowrap">Recent payments</h2>
                       <span className="text-xs text-ct-mute font-medium hidden sm:inline">(Last 5 days)</span>
                     </div>
                     <span className="text-[11px] text-ct-mute font-medium ml-6 sm:hidden">Last 5 days</span>
@@ -1147,8 +1147,8 @@ export default function Payouts() {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ct-mute-2 border border-ct-line rounded-ct-sm hover:bg-ct-surface-2 transition-colors whitespace-nowrap flex-shrink-0"
                       >
                         <FileText className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span className="sm:hidden">Upload Invoice</span>
-                        <span className="hidden sm:inline">Upload Invoice Template</span>
+                        <span className="sm:hidden">Upload invoice</span>
+                        <span className="hidden sm:inline">Upload invoice template</span>
                       </button>
                     )}
                   </div>
@@ -1224,7 +1224,7 @@ export default function Payouts() {
                                         const jobTitle = p.jobs?.title || p.jobs?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job';
                                         const isInvoice = p.id.startsWith('inv_');
                                         const isReleased = isInvoice || !!(p.metadata?.transfer_id);
-                                        const statusLabel = isInvoice ? 'Completed' : isReleased ? 'Paid to Bank' : p.status === 'completed' ? 'In Escrow' : p.status;
+                                        const statusLabel = isInvoice ? 'Completed' : isReleased ? 'Paid to bank' : p.status === 'completed' ? 'In escrow' : p.status;
                                         const statusClass = isInvoice ? 'bg-ct-teal/[0.14] text-ct-teal' : isReleased ? 'bg-ct-teal/[0.14] text-ct-teal' : p.status === 'completed' ? 'bg-ct-amber/[0.13] text-ct-amber' : 'bg-ct-surface-2 text-ct-mute-2';
                                         const isCancelled = p.jobStatus === 'cancelled' || p.jobStatus === 'declined';
                                         return (
@@ -1263,7 +1263,7 @@ export default function Payouts() {
                                                 onClick={(e) => { e.stopPropagation(); handleDownloadInvoice(p); }}
                                                 disabled={pdfLoadingId === p.id}
                                                 className="p-1.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors disabled:opacity-50"
-                                                title="Download Invoice"
+                                                title="Download invoice"
                                               >
                                                 {pdfLoadingId === p.id ? (
                                                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -1285,7 +1285,7 @@ export default function Payouts() {
                                     const jobTitle = p.jobs?.title || p.jobs?.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, ' ') || 'Job';
                                     const isInvoice = p.id.startsWith('inv_');
                                     const isReleased = isInvoice || !!(p.metadata?.transfer_id);
-                                    const statusLabel = isInvoice ? 'Completed' : isReleased ? 'Paid to Bank' : p.status === 'completed' ? 'In Escrow' : p.status;
+                                    const statusLabel = isInvoice ? 'Completed' : isReleased ? 'Paid to bank' : p.status === 'completed' ? 'In escrow' : p.status;
                                     const statusClass = isInvoice ? 'bg-ct-teal/[0.14] text-ct-teal' : isReleased ? 'bg-ct-teal/[0.14] text-ct-teal' : p.status === 'completed' ? 'bg-ct-amber/[0.13] text-ct-amber' : 'bg-ct-surface-2 text-ct-mute-2';
                                     const isCancelled = p.jobStatus === 'cancelled' || p.jobStatus === 'declined';
                                     return (
@@ -1327,7 +1327,7 @@ export default function Payouts() {
                                             onClick={(e) => { e.stopPropagation(); handleDownloadInvoice(p); }}
                                             disabled={pdfLoadingId === p.id}
                                             className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 disabled:opacity-50 min-h-[36px]"
-                                            title="Download Invoice"
+                                            title="Download invoice"
                                           >
                                             {pdfLoadingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
                                             Download invoice
@@ -1353,7 +1353,7 @@ export default function Payouts() {
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-ct-line">
                 <div className="flex items-center gap-2">
                   <Banknote className="w-4 h-4 text-ct-mute" />
-                  <h2 className="text-sm font-semibold text-ct-paper">Payout History</h2>
+                  <h2 className="text-sm font-semibold text-ct-paper">Payout history</h2>
                   {totalPayoutCount > 0 && (
                     <span className="text-xs text-ct-mute font-medium">({totalPayoutCount})</span>
                   )}
@@ -1410,7 +1410,7 @@ export default function Payouts() {
                                             }`} />
                                           </div>
                                           <div className="min-w-0">
-                                            <p className="text-sm font-medium text-ct-paper">Bank Transfer</p>
+                                            <p className="text-sm font-medium text-ct-paper">Bank transfer</p>
                                             <span className="text-xs text-ct-mute">
                                               Arrives {new Date(payout.arrival_date * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                                             </span>
@@ -1445,7 +1445,7 @@ export default function Payouts() {
                                     }`} />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-ct-paper">Bank Transfer</p>
+                                    <p className="text-sm font-medium text-ct-paper">Bank transfer</p>
                                     <div className="flex items-center gap-2 mt-0.5">
                                       <span className="text-xs text-ct-mute">
                                         {new Date(payout.created * 1000).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
@@ -1473,7 +1473,7 @@ export default function Payouts() {
                   <div className="w-16 h-16 bg-ct-surface-2 rounded-ct-lg flex items-center justify-center mx-auto mb-4">
                     <Wallet className="w-8 h-8 text-ct-mute" />
                   </div>
-                  <h3 className="text-lg font-semibold text-ct-paper mb-1">No Payouts Yet</h3>
+                  <h3 className="text-lg font-semibold text-ct-paper mb-1">No payouts yet</h3>
                   <p className="text-sm text-ct-mute max-w-sm mx-auto">
                     When clients release funds for completed jobs, your payouts will appear here. Payments typically arrive in your bank within 2-3 business days.
                   </p>

@@ -248,7 +248,7 @@ export default function Login() {
                         Sending...
                       </>
                     ) : (
-                      'Send Reset Link'
+                      'Send reset link'
                     )}
                   </button>
                 </form>
@@ -301,14 +301,14 @@ export default function Login() {
                       <div className="p-3 bg-ct-surface-2 rounded-full">
                         <UserX className="w-6 h-6 text-ct-mute-2" />
                       </div>
-                      <h3 className="text-lg font-semibold text-ct-paper">Account Deleted</h3>
+                      <h3 className="text-lg font-semibold text-ct-paper">Account deleted</h3>
                     </>
                   ) : (
                     <>
                       <div className="p-3 bg-ct-rose/[0.13] rounded-full">
                         <ShieldX className="w-6 h-6 text-ct-rose" />
                       </div>
-                      <h3 className="text-lg font-semibold text-ct-paper">Account Removed</h3>
+                      <h3 className="text-lg font-semibold text-ct-paper">Account removed</h3>
                     </>
                   )}
                 </div>
@@ -370,7 +370,7 @@ export default function Login() {
                   to="/register"
                   className="flex-1 px-4 py-3 bg-ct-teal text-ct-ink rounded-ct-md font-medium hover:brightness-110 transition-colors text-center"
                 >
-                  Create New Account
+                  Create new account
                 </Link>
               )}
               <button

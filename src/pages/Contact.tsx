@@ -68,7 +68,7 @@ export default function Contact() {
       </header>
 
       <main id="main-content" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <h1 className="text-3xl font-bold text-ct-paper mb-2">Contact Us</h1>
+        <h1 className="text-3xl font-bold text-ct-paper mb-2">Contact us</h1>
         <p className="text-ct-mute-2 mb-10">
           Have a question or need help? We'd love to hear from you.
         </p>
@@ -80,7 +80,7 @@ export default function Contact() {
                 <div className="w-16 h-16 bg-ct-teal/[0.14] rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="w-8 h-8 text-ct-teal" />
                 </div>
-                <h2 className="text-xl font-bold text-ct-paper mb-2">Message Sent</h2>
+                <h2 className="text-xl font-bold text-ct-paper mb-2">Message sent</h2>
                 <p className="text-ct-mute-2 mb-6">
                   Thanks for reaching out. We'll get back to you within 1-2 business days.
                 </p>
@@ -148,7 +148,7 @@ export default function Contact() {
                   ) : (
                     <>
                       <Send className="w-5 h-5" />
-                      Send Message
+                      Send message
                     </>
                   )}
                 </button>
@@ -158,7 +158,7 @@ export default function Contact() {
 
           <div className="md:col-span-2 space-y-6">
             <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6">
-              <h3 className="font-semibold text-ct-paper mb-4">Get in Touch</h3>
+              <h3 className="font-semibold text-ct-paper mb-4">Get in touch</h3>
               <div className="space-y-4">
                 <a href="mailto:admin@connectradie.com" className="flex items-center gap-3 text-ct-mute-2 hover:text-ct-mute-2 transition-colors">
                   <Mail className="w-5 h-5 text-ct-mute" />
@@ -172,7 +172,7 @@ export default function Contact() {
             </div>
 
             <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6">
-              <h3 className="font-semibold text-ct-paper mb-2">Response Times</h3>
+              <h3 className="font-semibold text-ct-paper mb-2">Response times</h3>
               <p className="text-sm text-ct-mute-2">
                 We aim to respond to all enquiries within 1-2 business days.
               </p>
