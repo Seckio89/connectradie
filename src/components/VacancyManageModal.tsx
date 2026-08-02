@@ -116,7 +116,7 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
         >
           {toggling ? (
             <Loader2 className="w-4 h-4 animate-spin" />
-          ) : vacancy.status === 'open' ? 'Close Listing' : vacancy.status === 'draft' ? 'Publish Listing' : 'Reopen Listing'}
+          ) : vacancy.status === 'open' ? 'Close listing' : vacancy.status === 'draft' ? 'Publish listing' : 'Reopen listing'}
         </button>
         {vacancy.status === 'closed' && (
           <button
@@ -255,7 +255,7 @@ export default function VacancyManageModal({ isOpen, onClose, vacancy, onToggleS
 
                       {app.cover_letter && (
                         <div className="bg-ct-surface-2 rounded-ct-sm p-3">
-                          <p className="text-xs font-medium text-ct-mute mb-1">Cover Letter</p>
+                          <p className="text-xs font-medium text-ct-mute mb-1">Cover letter</p>
                           <p className="text-sm text-ct-mute-2 leading-relaxed whitespace-pre-wrap">{app.cover_letter}</p>
                         </div>
                       )}

@@ -31,7 +31,7 @@ interface EditDetailsModalProps {
 }
 
 const TEAM_SIZE_OPTIONS = ['Solo', 'Small Team (2-5)', 'Large Team (6+)'];
-const CONTRACTOR_TYPES = ['Solo', 'Company', 'Labour Hire'];
+const CONTRACTOR_TYPES = ['Solo', 'Company', 'Labour hire'];
 
 export default function EditDetailsModal({ isOpen, onClose, currentValues, onSave }: EditDetailsModalProps) {
   const [businessName, setBusinessName] = useState(currentValues.businessName || '');
@@ -83,7 +83,7 @@ export default function EditDetailsModal({ isOpen, onClose, currentValues, onSav
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-ct-line-soft flex-shrink-0">
-          <h3 className="text-lg font-semibold text-ct-paper">Edit Details</h3>
+          <h3 className="text-lg font-semibold text-ct-paper">Edit details</h3>
           <button
             onClick={onClose}
             className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
@@ -94,7 +94,7 @@ export default function EditDetailsModal({ isOpen, onClose, currentValues, onSav
 
         <div className="p-6 space-y-5 overflow-y-auto flex-1">
           <div>
-            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Business Name</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Business name</label>
             <input
               type="text"
               value={businessName}
@@ -118,7 +118,7 @@ export default function EditDetailsModal({ isOpen, onClose, currentValues, onSav
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Business Type</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Business type</label>
             <select
               value={contractorType}
               onChange={(e) => setContractorType(e.target.value)}
@@ -131,7 +131,7 @@ export default function EditDetailsModal({ isOpen, onClose, currentValues, onSav
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Team Size</label>
+            <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Team size</label>
             <select
               value={teamSize}
               onChange={(e) => setTeamSize(e.target.value)}

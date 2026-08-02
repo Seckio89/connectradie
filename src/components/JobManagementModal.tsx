@@ -107,7 +107,7 @@ function parseJobInfo(job: JobData) {
   const categoryMatch = job.description.match(/^\[([^\]]+)\]/);
   const category = categoryMatch?.[1]?.replace(/_/g, ' ') || null;
   const cleanDescription = job.description.replace(/^\[[^\]]+\]\s*/, '');
-  const displayTitle = job.title || category || 'Untitled Job';
+  const displayTitle = job.title || category || 'Untitled job';
   return { category, cleanDescription, displayTitle };
 }
 
@@ -116,7 +116,7 @@ function getStatusConfig(status: string) {
     case 'pending': return { label: 'Pending', color: 'bg-ct-amber/[0.13] text-ct-paper border-ct-amber/[0.34]', dot: 'bg-ct-amber/[0.13]' };
     case 'accepted': return { label: 'Accepted', color: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line', dot: 'bg-ct-surface-2' };
     case 'funded': return { label: 'Funded', color: 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30', dot: 'bg-ct-teal/[0.14]' };
-    case 'in_progress': return { label: 'In Progress', color: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line', dot: 'bg-ct-surface-2' };
+    case 'in_progress': return { label: 'In progress', color: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line', dot: 'bg-ct-surface-2' };
     case 'completed': return { label: 'Completed', color: 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30', dot: 'bg-ct-teal/[0.14]' };
     case 'cancelled': return { label: 'Cancelled', color: 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose/[0.34]', dot: 'bg-ct-rose/[0.13]' };
     case 'declined': return { label: 'Declined', color: 'bg-ct-rose/[0.13] text-ct-rose border-ct-rose/[0.34]', dot: 'bg-ct-rose/[0.13]' };
@@ -128,7 +128,7 @@ const STATUS_STEPS = ['pending', 'accepted', 'in_progress', 'completed'] as cons
 const STEP_LABELS: Record<string, string> = {
   pending: 'Quoted',
   accepted: 'Accepted',
-  in_progress: 'Paid & Active',
+  in_progress: 'Paid & active',
   completed: 'Completed',
 };
 
@@ -682,14 +682,14 @@ export default function JobManagementModal({
                       className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 bg-ct-teal text-ct-ink rounded-ct-md text-sm font-semibold hover:bg-ct-teal-deep transition-colors shadow-sm"
                     >
                       <Send className="w-4 h-4" />
-                      Quote Now
+                      Quote now
                     </button>
                   )}
                   {job.status === 'pending' && quote && (
                     <div className="flex items-center gap-3 px-4 py-3 rounded-ct-md bg-ct-surface-2 text-ct-mute-2">
                       <Clock className="w-4 h-4 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold">Waiting for Client</p>
+                        <p className="text-sm font-semibold">Waiting for client</p>
                         <p className="text-xs opacity-80">Client is reviewing your quote</p>
                       </div>
                     </div>
@@ -717,7 +717,7 @@ export default function JobManagementModal({
                       >
                         {payLinkState === 'sending' ? (<><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>)
                           : payLinkState === 'sent' ? (<><CheckCircle2 className="w-4 h-4" /> Payment link sent — resend</>)
-                          : (<><Send className="w-4 h-4" /> Email Payment Link</>)}
+                          : (<><Send className="w-4 h-4" /> Email payment link</>)}
                       </button>
                       {payLinkState === 'sent' && (
                         <p className="text-xs text-ct-teal">You'll be notified as soon as they pay — the job then starts automatically.</p>
@@ -730,7 +730,7 @@ export default function JobManagementModal({
                     <div className="flex items-center gap-3 px-4 py-3 rounded-ct-md bg-ct-amber/[0.13] text-ct-amber">
                       <Clock className="w-4 h-4 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold">Awaiting Payment</p>
+                        <p className="text-sm font-semibold">Awaiting payment</p>
                         <p className="text-xs opacity-80">Client accepted — waiting for Stripe payment</p>
                       </div>
                     </div>
@@ -739,7 +739,7 @@ export default function JobManagementModal({
                     <div className="flex items-center gap-3 px-4 py-3 rounded-ct-md bg-ct-teal/[0.14] text-ct-teal">
                       <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold">Payment Secured — Job Active</p>
+                        <p className="text-sm font-semibold">Payment secured — job active</p>
                         <p className="text-xs opacity-80">You can start work. Mark complete when finished.</p>
                       </div>
                     </div>
@@ -748,7 +748,7 @@ export default function JobManagementModal({
                     <div className="flex items-center gap-3 px-4 py-3 rounded-ct-md bg-ct-surface-2 text-ct-mute-2">
                       <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                       <div>
-                        <p className="text-sm font-semibold">Job Complete</p>
+                        <p className="text-sm font-semibold">Job complete</p>
                         <p className="text-xs opacity-80">Awaiting client approval and payout release</p>
                       </div>
                     </div>
@@ -878,7 +878,7 @@ export default function JobManagementModal({
                           <DollarSign className="w-4 h-4 text-ct-mute-2" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-semibold text-ct-paper">Client Requested a Price Reduction</p>
+                          <p className="text-sm font-semibold text-ct-paper">Client requested a price reduction</p>
                           <p className="text-xs text-ct-mute-2 mt-0.5">
                             The client wants to reduce the payment from <span className="font-semibold">${originalDollars.toFixed(2)}</span> to <span className="font-semibold">${proposedDollars.toFixed(2)}</span>.
                             If you approve, ${refundDollars.toFixed(2)} will be refunded to their card and your payout drops accordingly.
@@ -943,8 +943,8 @@ export default function JobManagementModal({
                   const isSiteInspect = !!quote.requires_site_inspection;
                   const inputVisible = quote.final_price == null && isSiteInspect;
                   const title = quote.final_price != null
-                    ? (isSiteInspect ? 'Final Price Set' : 'Variation Submitted')
-                    : 'Set Final Price After Site Visit';
+                    ? (isSiteInspect ? 'Final price set' : 'Variation submitted')
+                    : 'Set final price after site visit';
                   const helper = quote.final_price != null
                     ? (() => {
                         const finalDollars = quote.final_price as number;
@@ -1049,7 +1049,7 @@ export default function JobManagementModal({
                 {/* ── Your Quote (only when no payment record yet — avoids duplicate price display) ── */}
                 {quote && !payment && (
                   <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md px-4 py-3">
-                    <p className="text-xs text-ct-mute mb-0.5">Your Quote</p>
+                    <p className="text-xs text-ct-mute mb-0.5">Your quote</p>
                     <p className="text-sm font-semibold text-ct-mute-2">
                       {quote.firm_price
                         ? `$${quote.firm_price.toLocaleString()}`
@@ -1062,7 +1062,7 @@ export default function JobManagementModal({
                 {/* ── Quote message (when payment exists, show message without duplicate price) ── */}
                 {quote?.message && payment && (
                   <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md px-4 py-3">
-                    <p className="text-xs font-medium text-ct-mute-2 mb-1">Your Quote Message</p>
+                    <p className="text-xs font-medium text-ct-mute-2 mb-1">Your quote message</p>
                     <p className="text-sm text-ct-mute-2 leading-relaxed">{quote.message}</p>
                   </div>
                 )}
@@ -1082,7 +1082,7 @@ export default function JobManagementModal({
                     </div>
                     {job.tradie_id ? (
                       <div className="rounded-ct-md px-3 py-2.5 bg-ct-surface-2 border border-ct-line">
-                        <p className="text-xs text-ct-mute mb-0.5">Sent To You</p>
+                        <p className="text-xs text-ct-mute mb-0.5">Sent to you</p>
                         <p className="text-sm font-semibold text-ct-mute-2 flex items-center gap-1">
                           <User className="w-3.5 h-3.5" /> Private request
                         </p>
@@ -1114,7 +1114,7 @@ export default function JobManagementModal({
                   )}
                   {job.preferred_time_slot && (
                     <div className="border border-ct-line rounded-ct-md px-3 py-2.5">
-                      <p className="text-xs text-ct-mute mb-0.5">Preferred Time</p>
+                      <p className="text-xs text-ct-mute mb-0.5">Preferred time</p>
                       <p className="text-sm text-ct-paper flex items-center gap-1.5 capitalize">
                         <Clock className="w-3.5 h-3.5 text-ct-mute" /> {job.preferred_time_slot}
                       </p>
@@ -1131,7 +1131,7 @@ export default function JobManagementModal({
                   )}
                   {job.estimated_duration && (
                     <div className="border border-ct-line rounded-ct-md px-3 py-2.5">
-                      <p className="text-xs text-ct-mute mb-0.5">Est. Duration</p>
+                      <p className="text-xs text-ct-mute mb-0.5">Est. duration</p>
                       <p className="text-sm text-ct-paper flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5 text-ct-mute" /> {job.estimated_duration}
                       </p>
@@ -1176,7 +1176,7 @@ export default function JobManagementModal({
                   <div className="border-2 border-ct-teal/30 rounded-ct-md p-4 bg-ct-teal/[0.14]">
                     <h3 className="text-sm font-bold text-ct-paper flex items-center gap-2 mb-3">
                       <Camera className="w-4 h-4 text-ct-teal" />
-                      Complete This Job
+                      Complete this job
                     </h3>
 
                     {/* Completion prompts */}
@@ -1227,7 +1227,7 @@ export default function JobManagementModal({
                         onClick={() => fileInputRef.current?.click()}
                         className="flex items-center gap-1.5 px-3 py-1.5 border border-ct-line rounded-ct-sm text-xs font-medium text-ct-mute-2 hover:bg-ct-surface-2"
                       >
-                        <Plus className="w-3 h-3" /> Add Photos ({completionPhotos.length}/15)
+                        <Plus className="w-3 h-3" /> Add photos ({completionPhotos.length}/15)
                       </button>
                     </div>
 
@@ -1274,7 +1274,7 @@ export default function JobManagementModal({
                   <div className="border border-ct-teal/30 rounded-ct-md p-4 bg-ct-teal/[0.14]">
                     <h3 className="text-sm font-bold text-ct-paper flex items-center gap-2 mb-2">
                       <CheckCircle2 className="w-4 h-4 text-ct-teal" />
-                      Completion Notes
+                      Completion notes
                     </h3>
                     <p className="text-sm text-ct-mute-2 whitespace-pre-wrap">{job.completion_notes}</p>
                     {job.completion_photo_url && (
@@ -1308,7 +1308,7 @@ export default function JobManagementModal({
                     >
                       {payLinkState === 'sending' ? (<><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>)
                         : payLinkState === 'sent' ? (<><CheckCircle2 className="w-4 h-4" /> Invoice sent — resend</>)
-                        : (<><Send className="w-4 h-4" /> Send Invoice by Email</>)}
+                        : (<><Send className="w-4 h-4" /> Send invoice by email</>)}
                     </button>
                     {payLinkState === 'error' && payLinkError && (
                       <p className="mt-2 text-xs text-ct-rose">{payLinkError}</p>
@@ -1376,7 +1376,7 @@ export default function JobManagementModal({
                   onClick={() => setShowAdvanced(!showAdvanced)}
                   className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-ct-mute hover:text-ct-mute-2 transition-colors"
                 >
-                  Your Preferences
+                  Your preferences
                   {showAdvanced ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 </button>
 
@@ -1435,7 +1435,7 @@ export default function JobManagementModal({
                     isArchived ? 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line hover:bg-ct-surface-2' : 'bg-ct-surface text-ct-mute-2 border border-ct-line hover:bg-ct-surface-2'
                   }`}
                 >
-                  {isArchived ? <><ArchiveRestore className="w-4 h-4" /> Unarchive</> : <><Archive className="w-4 h-4" /> Archive Job</>}
+                  {isArchived ? <><ArchiveRestore className="w-4 h-4" /> Unarchive</> : <><Archive className="w-4 h-4" /> Archive job</>}
                 </button>
               )}
               <div className="flex gap-3">
@@ -1447,7 +1447,7 @@ export default function JobManagementModal({
                   disabled={saving || isLicenseExpired}
                   className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-md text-sm font-medium hover:bg-ct-teal-deep transition-colors disabled:opacity-50"
                 >
-                  {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save Notes'}
+                  {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : 'Save notes'}
                 </button>
               </div>
             </div>

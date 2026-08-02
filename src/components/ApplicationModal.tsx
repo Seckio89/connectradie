@@ -6,8 +6,8 @@ import type { TradeVacancyWithEmployer } from '../types/database';
 
 const ROLE_LABELS: Record<string, string> = {
   apprentice: 'Apprenticeship',
-  qualified: 'Qualified Trade',
-  senior_advisory: 'Senior / Advisory',
+  qualified: 'Qualified trade',
+  senior_advisory: 'Senior / advisory',
 };
 
 const ROLE_ICONS: Record<string, typeof GraduationCap> = {
@@ -54,7 +54,7 @@ export default function ApplicationModal({ isOpen, onClose, vacancy, onSubmit }:
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="lg">
       <div className="flex items-center justify-between p-6 border-b border-ct-line-soft">
         <div>
-          <h2 className="text-xl font-bold text-ct-paper">Apply for Position</h2>
+          <h2 className="text-xl font-bold text-ct-paper">Apply for position</h2>
           <p className="text-sm text-ct-mute mt-0.5">Send your application to {businessName}</p>
         </div>
         <button onClick={onClose} className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2">
@@ -96,7 +96,7 @@ export default function ApplicationModal({ isOpen, onClose, vacancy, onSubmit }:
 
         <div>
           <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
-            Cover Letter / Message *
+            Cover letter / message *
           </label>
           <textarea {...proseInputProps}
             value={coverLetter}
@@ -128,7 +128,7 @@ export default function ApplicationModal({ isOpen, onClose, vacancy, onSubmit }:
             ) : (
               <Send className="w-4 h-4" />
             )}
-            Submit Application
+            Submit application
           </button>
         </div>
       </form>

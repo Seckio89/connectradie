@@ -591,11 +591,11 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
 
   const clientNavItems: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'My Jobs', href: '/leads', icon: Briefcase },
-    { name: 'Saved Tradies', href: '/my-trades', icon: Wrench },
+    { name: 'My jobs', href: '/leads', icon: Briefcase },
+    { name: 'Saved tradies', href: '/my-trades', icon: Wrench },
     { name: 'Projects', href: '/projects', icon: Package },
     { name: 'Schedule', href: '/schedule', icon: CalendarDays },
-    { name: 'Invoices & Payments', href: '/payments', icon: DollarSign },
+    { name: 'Invoices & payments', href: '/payments', icon: DollarSign },
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Messages', href: '/messages', icon: MessageCircle },
     { name: 'Settings', href: '/settings', icon: Settings },
@@ -603,17 +603,17 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
 
   const tradieNavItems: NavItem[] = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'My Profile', href: '/my-profile', icon: UserCircle },
-    { name: 'Work Hub', href: '/work', icon: ClipboardList },
+    { name: 'My profile', href: '/my-profile', icon: UserCircle },
+    { name: 'Work hub', href: '/work', icon: ClipboardList },
     { name: 'Clients', href: '/clients', icon: Users },
-    { name: 'Teams & Schedule', href: '/schedule', icon: CalendarDays },
+    { name: 'Teams & schedule', href: '/schedule', icon: CalendarDays },
     // Sits next to Teams & Schedule deliberately — that page is the roster and
     // timesheets, this one is the same crew's tickets, licences and expiries.
     { name: 'Workforce', href: '/workforce', icon: HardHat },
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Messages', href: '/messages', icon: MessageCircle },
     { name: 'Insights', href: '/analytics', icon: BarChart3, children: [
-      { name: 'My Stats', href: '/analytics', icon: BarChart3 },
+      { name: 'My stats', href: '/analytics', icon: BarChart3 },
       { name: 'Performance', href: '/performance', icon: TrendingUp },
     ] },
     { name: 'Payouts', href: '/payouts', icon: Wallet },
@@ -704,7 +704,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                 onClick={() => setSidebarOpen(false)}
               >
                 <Zap className="w-5 h-5" />
-                Post a Job
+                Post a job
               </Link>
             )}
             {navItems.map((item) => {
@@ -808,7 +808,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
             {isTradie && isPro(tradieDetails?.subscription_tier, profile?.is_premium) && (
               <div className="flex items-center gap-2 px-3 py-1.5 mb-2 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-xs">
                 <BadgeCheck className="w-4 h-4 text-ct-teal" />
-                <span className="text-xs font-medium text-ct-teal">Pro Member</span>
+                <span className="text-xs font-medium text-ct-teal">Pro member</span>
               </div>
             )}
 
@@ -827,7 +827,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
               <button
                 onClick={handleSignOut}
                 className="p-2 text-ct-rose hover:bg-ct-rose/10 rounded-ct-sm transition-colors flex-shrink-0"
-                title="Sign Out"
+                title="Sign out"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -990,7 +990,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                             className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <UserCircle className="w-4 h-4" />
-                            My Profile
+                            My profile
                           </Link>
                           <Link
                             to="/work"
@@ -998,7 +998,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                             className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <ClipboardList className="w-4 h-4" />
-                            Work Hub
+                            Work hub
                           </Link>
                           <Link
                             to="/schedule"
@@ -1014,7 +1014,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                             className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <BarChart3 className="w-4 h-4" />
-                            My Stats
+                            My stats
                           </Link>
                           <Link
                             to="/performance"
@@ -1057,7 +1057,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                             className="flex items-center gap-3 px-4 py-2 text-ct-mute-2 hover:bg-ct-surface-2 hover:text-ct-paper transition-colors"
                           >
                             <Briefcase className="w-4 h-4" />
-                            My Jobs
+                            My jobs
                           </Link>
                           <Link
                             to="/messages"
@@ -1085,7 +1085,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                         className="w-full flex items-center gap-3 px-4 py-2 text-ct-rose hover:bg-ct-rose/10 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
-                        Sign Out
+                        Sign out
                       </button>
                     </div>
                   </div>
@@ -1127,7 +1127,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     }`}
                   >
                     <Briefcase className="w-5 h-5" />
-                    <span className="text-[10px]">Work Hub</span>
+                    <span className="text-[10px]">Work hub</span>
                   </Link>
                   <Link
                     to="/schedule"
@@ -1173,7 +1173,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     }`}
                   >
                     <Briefcase className="w-5 h-5" />
-                    <span className="text-[10px]">My Jobs</span>
+                    <span className="text-[10px]">My jobs</span>
                   </Link>
                   <Link
                     to="/post-lead"
@@ -1182,7 +1182,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     <div className="bg-ct-teal text-ct-ink rounded-full w-14 h-14 flex items-center justify-center -mt-6 shadow-xl ring-4 ring-ct-ink-2">
                       <Plus className="w-7 h-7" strokeWidth={2.5} />
                     </div>
-                    <span className="text-[10px] font-semibold text-ct-teal -mt-1">Post Job</span>
+                    <span className="text-[10px] font-semibold text-ct-teal -mt-1">Post job</span>
                   </Link>
                   <Link
                     to="/messages"

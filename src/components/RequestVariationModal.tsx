@@ -6,10 +6,10 @@ import { sendNotification } from '../lib/notificationService';
 import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 
 const REASON_CATEGORIES = [
-  { key: 'materials', label: 'Materials Cost Increase' },
-  { key: 'scope_change', label: 'Scope Change' },
-  { key: 'unforeseen', label: 'Unforeseen Issue' },
-  { key: 'additional_labour', label: 'Additional Labour' },
+  { key: 'materials', label: 'Materials cost increase' },
+  { key: 'scope_change', label: 'Scope change' },
+  { key: 'unforeseen', label: 'Unforeseen issue' },
+  { key: 'additional_labour', label: 'Additional labour' },
   { key: 'other', label: 'Other' },
 ] as const;
 
@@ -120,7 +120,7 @@ export default function RequestVariationModal({
         await sendNotification({
           type: NOTIFICATION_TYPES.VARIATION_REQUEST,
           userId: jobData.client_id,
-          title: 'Additional Cost Requested',
+          title: 'Additional cost requested',
           message: `${reasonLabel} - $${amountNum.toFixed(2)} requested${description.trim() ? `: ${description.trim()}` : ''}. Please review and approve.`,
           jobId: jobId,
           metadata: {
@@ -159,7 +159,7 @@ export default function RequestVariationModal({
               <FileText className="w-5 h-5 text-ct-mute-2" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-ct-paper">Additional Cost</h2>
+              <h2 className="text-lg font-bold text-ct-paper">Additional cost</h2>
               {jobBudget != null && jobBudget > 0 && (
                 <p className="text-xs text-ct-mute">Original quote: ${jobBudget.toLocaleString('en-AU', { minimumFractionDigits: 0 })}</p>
               )}
@@ -325,7 +325,7 @@ export default function RequestVariationModal({
               className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-md hover:brightness-110 disabled:opacity-50 text-sm font-medium transition-colors"
               disabled={loading || !reasonCategory}
             >
-              {loading ? 'Sending...' : 'Send Request'}
+              {loading ? 'Sending...' : 'Send request'}
             </button>
           </div>
         </form>

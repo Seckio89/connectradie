@@ -426,7 +426,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
         const preview = (sentContent || '').slice(0, 80);
         await supabase.rpc('create_notification', {
           p_user_id: tradie.id,
-          p_title: 'New Message',
+          p_title: 'New message',
           p_message: preview,
           p_type: 'new_message',
           p_channel: 'in_app',
@@ -533,7 +533,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                     {message.is_booking_request && (
                       <div className={`flex items-center gap-1 text-xs mb-1 ${isOwn ? 'text-ct-teal' : 'text-ct-amber'}`}>
                         <Calendar className="w-3 h-3" />
-                        Booking Request
+                        Booking request
                       </div>
                     )}
                     <p className="text-sm whitespace-pre-wrap">
@@ -605,7 +605,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
             <Calendar className="w-4 h-4" />
             {selectedTime
               ? `Booking for ${new Date(selectedTime).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })} ✓`
-              : 'Select Time & Request Booking'}
+              : 'Select time & request booking'}
           </button>
         </div>
       </div>
@@ -614,7 +614,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-ct-surface rounded-ct-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-ct-line flex items-center justify-between">
-              <h3 className="text-lg font-bold text-ct-paper">Select Available Time</h3>
+              <h3 className="text-lg font-bold text-ct-paper">Select available time</h3>
               <button
                 onClick={() => setShowSlotPicker(false)}
                 className="p-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -703,7 +703,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                     <div>
                       <h4 className="text-sm font-medium text-ct-mute-2 mb-3 flex items-center gap-2">
                         <Clock className="w-4 h-4" />
-                        {selectedSlotId ? 'Select Your Preferred Time' : `Available Windows for ${selectedDate}`}
+                        {selectedSlotId ? 'Select your preferred time' : `Available windows for ${selectedDate}`}
                       </h4>
 
                       {!selectedSlotId ? (
@@ -794,12 +794,12 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                 <div className="bg-ct-surface-2 rounded-ct-md p-4 space-y-4">
                   <h4 className="text-sm font-semibold text-ct-paper flex items-center gap-2">
                     <User className="w-4 h-4 text-ct-amber" />
-                    Contact & Location
+                    Contact & location
                   </h4>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-medium text-ct-mute-2 mb-1">
-                        Contact Name
+                        Contact name
                         <span className="text-ct-rose ml-1">*</span>
                       </label>
                       <input
@@ -815,7 +815,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-ct-mute-2 mb-1">
-                        Phone Number
+                        Phone number
                         <span className="text-ct-rose ml-1">*</span>
                       </label>
                       <input
@@ -833,7 +833,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                   <div>
                     <label className="text-xs font-medium text-ct-mute-2 mb-1 flex items-center gap-1">
                       <MapPin className="w-3 h-3" />
-                      Job Location Address
+                      Job location address
                       <span className="text-ct-rose ml-1">*</span>
                     </label>
                     <AddressAutocomplete
@@ -851,7 +851,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                   <div>
                     <label className="text-xs font-medium text-ct-mute-2 mb-1 flex items-center gap-1">
                       <Key className="w-3 h-3" />
-                      Access Instructions (Optional)
+                      Access instructions (optional)
                     </label>
                     <input
                       type="text"
@@ -872,10 +872,10 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                 <div className="bg-ct-surface-2 rounded-ct-md p-4 space-y-4">
                   <h4 className="text-sm font-semibold text-ct-paper flex items-center gap-2">
                     <FileText className="w-4 h-4 text-ct-amber" />
-                    Job Details
+                    Job details
                   </h4>
                   <div>
-                    <label className="block text-xs font-medium text-ct-mute-2 mb-1">Job Complexity</label>
+                    <label className="block text-xs font-medium text-ct-mute-2 mb-1">Job complexity</label>
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         type="button"
@@ -921,7 +921,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                   <div>
                     <label className="text-xs font-medium text-ct-mute-2 mb-1 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      Estimated Duration
+                      Estimated duration
                     </label>
                     <select
                       value={estimatedDuration}
@@ -929,19 +929,19 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                       className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                     >
                       <option value="">Select duration...</option>
-                      <option value="1 hour">1 Hour</option>
-                      <option value="2 hours">2 Hours</option>
-                      <option value="3 hours">3 Hours</option>
-                      <option value="4 hours">4 Hours</option>
-                      <option value="Half Day">Half Day (4-6 hours)</option>
-                      <option value="Full Day">Full Day (8+ hours)</option>
-                      <option value="Multiple Days">Multiple Days</option>
+                      <option value="1 hour">1 hour</option>
+                      <option value="2 hours">2 hours</option>
+                      <option value="3 hours">3 hours</option>
+                      <option value="4 hours">4 hours</option>
+                      <option value="Half Day">Half day (4-6 hours)</option>
+                      <option value="Full Day">Full day (8+ hours)</option>
+                      <option value="Multiple Days">Multiple days</option>
                     </select>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-ct-mute-2 mb-1 flex items-center gap-1">
                       <ImageIcon className="w-3 h-3" />
-                      Photos (Optional)
+                      Photos (optional)
                     </label>
                     <input
                       ref={fileInputRef}
@@ -965,7 +965,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                       ) : (
                         <>
                           <ImageIcon className="w-4 h-4" />
-                          Add Photos
+                          Add photos
                         </>
                       )}
                     </button>
@@ -990,7 +990,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                 <div className="bg-ct-surface-2 rounded-ct-md p-4 space-y-4">
                   <h4 className="text-sm font-semibold text-ct-paper flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-ct-amber" />
-                    Budget Preference
+                    Budget preference
                   </h4>
                   <div className="space-y-3">
                     <label className="flex items-center gap-3 p-3 bg-ct-surface rounded-ct-sm border border-ct-line cursor-pointer hover:border-ct-teal/30 transition-colors">
@@ -1002,7 +1002,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                         className="w-4 h-4 text-ct-amber border-ct-line focus:ring-ct-teal"
                       />
                       <div>
-                        <span className="text-sm font-medium text-ct-paper">Request a Quote</span>
+                        <span className="text-sm font-medium text-ct-paper">Request a quote</span>
                         <p className="text-xs text-ct-mute-2">Let the tradie provide pricing</p>
                       </div>
                     </label>
@@ -1015,7 +1015,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                         className="w-4 h-4 text-ct-amber border-ct-line focus:ring-ct-teal"
                       />
                       <div className="flex-1">
-                        <span className="text-sm font-medium text-ct-paper">I Have a Budget</span>
+                        <span className="text-sm font-medium text-ct-paper">I have a budget</span>
                         <p className="text-xs text-ct-mute-2">Set a fixed price for the job</p>
                       </div>
                     </label>
@@ -1028,14 +1028,14 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                         className="w-4 h-4 text-ct-amber border-ct-line focus:ring-ct-teal"
                       />
                       <div>
-                        <span className="text-sm font-medium text-ct-paper">Hourly Rate</span>
+                        <span className="text-sm font-medium text-ct-paper">Hourly rate</span>
                         <p className="text-xs text-ct-mute-2">Pay by the hour</p>
                       </div>
                     </label>
                     {budgetType !== 'request_quote' && (
                       <div className="mt-3">
                         <label className="block text-xs font-medium text-ct-mute-2 mb-1">
-                          {budgetType === 'fixed_budget' ? 'Your Budget Amount' : 'Max Hourly Rate'}
+                          {budgetType === 'fixed_budget' ? 'Your budget amount' : 'Max hourly rate'}
                         </label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute">$</span>
@@ -1095,7 +1095,7 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    Send Booking Request
+                    Send booking request
                   </>
                 )}
               </button>

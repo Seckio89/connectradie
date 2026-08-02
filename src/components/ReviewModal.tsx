@@ -5,18 +5,18 @@ import { proseInputProps } from '../lib/proseInput';
 
 const REVIEW_TAGS = [
   { key: 'punctual', label: 'Punctual' },
-  { key: 'quality_work', label: 'Quality Work' },
-  { key: 'good_communication', label: 'Good Communication' },
-  { key: 'fair_pricing', label: 'Fair Pricing' },
-  { key: 'clean_worksite', label: 'Clean Worksite' },
+  { key: 'quality_work', label: 'Quality work' },
+  { key: 'good_communication', label: 'Good communication' },
+  { key: 'fair_pricing', label: 'Fair pricing' },
+  { key: 'clean_worksite', label: 'Clean worksite' },
   { key: 'professional', label: 'Professional' },
   { key: 'reliable', label: 'Reliable' },
-  { key: 'would_recommend', label: 'Would Recommend' },
+  { key: 'would_recommend', label: 'Would recommend' },
 ] as const;
 
 const RATING_LABELS: Record<number, string> = {
   1: 'Poor',
-  2: 'Below Average',
+  2: 'Below average',
   3: 'Average',
   4: 'Good',
   5: 'Excellent',
@@ -119,7 +119,7 @@ export default function ReviewModal({
       <div className="bg-ct-surface rounded-t-2xl sm:rounded-ct-md max-w-md w-full max-h-[90vh] overflow-y-auto modal-sheet pb-[env(safe-area-inset-bottom)] sm:pb-0">
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-3">
-          <h2 className="text-lg font-bold text-ct-paper">Rate Your Experience</h2>
+          <h2 className="text-lg font-bold text-ct-paper">Rate your experience</h2>
           <button
             onClick={onClose}
             className="p-1.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
@@ -230,7 +230,7 @@ export default function ReviewModal({
               className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {isSubmitting ? 'Submitting...' : 'Submit Review'}
+              {isSubmitting ? 'Submitting...' : 'Submit review'}
             </button>
           </div>
         </form>

@@ -36,7 +36,7 @@ export default function VerificationGateModal({ isOpen, onClose, reason = 'unver
           </div>
 
           <h3 className="text-xl font-bold text-ct-paper mb-2">
-            {isExpired ? 'License Expired' : 'Verification Required'}
+            {isExpired ? 'License expired' : 'Verification required'}
           </h3>
           <p className="text-ct-mute-2 mb-6">
             {isExpired
@@ -80,7 +80,7 @@ export default function VerificationGateModal({ isOpen, onClose, reason = 'unver
                 isExpired ? 'bg-ct-rose hover:brightness-110' : 'bg-ct-teal hover:brightness-110'
               }`}
             >
-              {isExpired ? 'Upload License' : 'Go to Settings'}
+              {isExpired ? 'Upload license' : 'Go to settings'}
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

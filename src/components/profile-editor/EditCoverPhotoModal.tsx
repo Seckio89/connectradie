@@ -75,7 +75,7 @@ export default function EditCoverPhotoModal({ isOpen, onClose, currentUrl, userI
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 ">
       <div className="bg-ct-surface rounded-ct-lg shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-ct-line-soft">
-          <h3 className="text-lg font-semibold text-ct-paper">Cover Photo</h3>
+          <h3 className="text-lg font-semibold text-ct-paper">Cover photo</h3>
           <button
             onClick={onClose}
             className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
@@ -119,7 +119,7 @@ export default function EditCoverPhotoModal({ isOpen, onClose, currentUrl, userI
               ) : (
                 <Upload className="w-4 h-4" />
               )}
-              {uploading ? 'Uploading...' : previewUrl ? 'Replace Photo' : 'Upload Photo'}
+              {uploading ? 'Uploading...' : previewUrl ? 'Replace photo' : 'Upload photo'}
             </button>
 
             {previewUrl && (

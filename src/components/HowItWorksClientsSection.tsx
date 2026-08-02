@@ -3,19 +3,19 @@ import { Shield, Lock, DollarSign, MessageSquare, Gavel, ArrowRight, CheckCircle
 
 const comparisons = [
   {
-    feature: 'Payment Protection',
+    feature: 'Payment protection',
     us: 'Stripe-secured — tradie gets paid only when you approve',
     others: 'Pay upfront and hope for the best',
     icon: Lock,
   },
   {
-    feature: 'Tradie Verification',
+    feature: 'Tradie verification',
     us: 'ABN + license checked before they can quote',
     others: 'Self-reported credentials, no verification',
     icon: Shield,
   },
   {
-    feature: 'Pricing Model',
+    feature: 'Pricing model',
     us: '$0 to post. $0 for tradies to quote.',
     others: 'Tradies pay just to read your job — and price it into your quote',
     icon: DollarSign,
@@ -40,10 +40,10 @@ export default function HowItWorksClientsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-ct-surface text-ct-mute rounded-full text-sm font-semibold mb-5 border border-ct-line">
-            Why Switch to ConnecTradie
+            Why switch to ConnecTradie
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-ct-paper tracking-[-0.02em]">
-            Built Different. <span className="text-ct-teal">Here's the Proof.</span>
+            Built different. <span className="text-ct-teal">Here's the proof.</span>
           </h2>
           <p className="mt-4 text-lg text-ct-mute">
             We didn't copy the old model. We replaced it.
@@ -87,7 +87,7 @@ export default function HowItWorksClientsSection() {
             to="/register"
             className="inline-flex items-center gap-2 px-8 py-4 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-all shadow-lg shadow-warm-500/25 hover:shadow-xl hover:shadow-warm-500/30 hover:-translate-y-0.5"
           >
-            Post a Job Free
+            Post a job free
             <ArrowRight className="w-5 h-5" />
           </Link>
           <p className="mt-3 text-sm text-ct-mute">No cost to post. Payment protection included on every job.</p>

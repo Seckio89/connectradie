@@ -42,7 +42,7 @@ export default function ActivityFeed() {
           activities.push({
             id: `booking-${job.id}`,
             type: 'booking',
-            title: 'New Booking',
+            title: 'New booking',
             description: `${job.profiles?.full_name || 'A tradie'} just accepted a job`,
             timestamp: timeAgo,
             icon: <Zap className="w-4 h-4 text-ct-teal" />,
@@ -77,7 +77,7 @@ export default function ActivityFeed() {
     <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-6">
       <h3 className="font-semibold text-ct-paper mb-4 flex items-center gap-2">
         <Zap className="w-5 h-5 text-ct-amber" />
-        Platform Activity
+        Platform activity
       </h3>
 
       {activities.length === 0 ? (

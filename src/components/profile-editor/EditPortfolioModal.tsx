@@ -141,7 +141,7 @@ export default function EditPortfolioModal({ isOpen, onClose, images, tradieId, 
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-ct-line-soft flex-shrink-0">
           <div>
-            <h3 className="text-lg font-semibold text-ct-paper">Edit Portfolio</h3>
+            <h3 className="text-lg font-semibold text-ct-paper">Edit portfolio</h3>
             <p className="text-sm text-ct-mute mt-0.5">{localImages.length} photo{localImages.length !== 1 ? 's' : ''}</p>
           </div>
           <button
@@ -247,7 +247,7 @@ export default function EditPortfolioModal({ isOpen, onClose, images, tradieId, 
             ) : (
               <Plus className="w-4 h-4" />
             )}
-            {uploading ? 'Uploading...' : 'Add Photos'}
+            {uploading ? 'Uploading...' : 'Add photos'}
           </button>
 
           <button

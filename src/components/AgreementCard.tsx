@@ -79,7 +79,7 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
                           onClick={() => setConfirmEnd(true)}
                           className="w-full px-3 py-2 text-left text-sm text-ct-rose hover:bg-ct-rose/[0.13] flex items-center gap-2"
                         >
-                          End Agreement
+                          End agreement
                         </button>
                       ) : (
                         <div className="px-3 py-2 space-y-2">
@@ -151,13 +151,13 @@ export default function AgreementCard({ agreement, userRole, onRefresh, onGenera
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-ct-teal/30 text-ct-teal text-xs font-medium rounded-ct-sm hover:bg-ct-teal/[0.14] transition-colors"
               >
                 <Plus className="w-3 h-3" />
-                Log Extra Visit
+                Log extra visit
               </button>
               {onGenerateInvoice && (
                 <button
                   onClick={() => onGenerateInvoice(agreement)}
                   className="px-3 py-2 border border-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
-                  title="Generate Invoice"
+                  title="Generate invoice"
                 >
                   <FileText className="w-4 h-4" />
                 </button>

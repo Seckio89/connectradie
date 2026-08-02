@@ -3,42 +3,42 @@ import { Shield, Lock, MessageSquare, Eye, Star, FileText } from 'lucide-react';
 const features = [
   {
     icon: Lock,
-    title: 'Payment Protection on Every Job',
+    title: 'Payment protection on every job',
     description: 'Your payment is held securely by Stripe until you approve the completed work. No risk to you.',
     color: 'text-ct-amber',
     bg: 'bg-ct-teal/10 border-ct-teal/20',
   },
   {
     icon: Shield,
-    title: 'Pre-Vetted Tradies Only',
+    title: 'Pre-vetted tradies only',
     description: 'Every tradie is ABN-verified and license-checked before they appear. No self-reported credentials.',
     color: 'text-ct-teal',
     bg: 'bg-ct-teal/10 border-ct-teal/20',
   },
   {
     icon: MessageSquare,
-    title: 'Direct Chat. No Middleman.',
+    title: 'Direct chat. No middleman.',
     description: 'Message your tradie, share photos, and get updates in one thread. Everything stays on record.',
     color: 'text-ct-mute',
     bg: 'bg-ct-surface-2/10 border-ct-teal/20',
   },
   {
     icon: Eye,
-    title: 'Real-Time Job Tracking',
+    title: 'Real-time job tracking',
     description: 'See where your project stands — milestones, photos, and status updates as work happens.',
     color: 'text-ct-mute-2',
     bg: 'bg-ct-surface-2/10 border-ct-line/20',
   },
   {
     icon: Star,
-    title: 'Verified Reviews Only',
+    title: 'Verified reviews only',
     description: 'Every review is tied to a completed, paid job. No fake ratings, no inflated scores.',
     color: 'text-ct-amber',
     bg: 'bg-ct-amber/10 border-ct-amber/[0.34]',
   },
   {
     icon: FileText,
-    title: 'GST Invoicing Built In',
+    title: 'GST invoicing built in',
     description: 'GST-compliant invoices with full line-item breakdowns and payment tracking. No surprises.',
     color: 'text-ct-teal',
     bg: 'bg-ct-teal/10 border-ct-teal/20',
@@ -51,10 +51,10 @@ export default function FeaturesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-ct-surface text-ct-mute border border-ct-line rounded-full text-sm font-semibold mb-5">
-            Built for Trust
+            Built for trust
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-ct-paper tracking-[-0.02em]">
-            Everything You Need to Hire <span className="text-ct-teal">Without the Risk.</span>
+            Everything you need to hire <span className="text-ct-teal">without the risk.</span>
           </h2>
           <p className="mt-4 text-lg text-ct-mute">
             Secure payments, verified tradies, direct communication, and full transparency — all in one platform.

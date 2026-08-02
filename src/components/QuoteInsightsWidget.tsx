@@ -93,7 +93,7 @@ export default function QuoteInsightsWidget() {
           <div className="w-10 h-10 bg-ct-surface-2 rounded-ct-md flex items-center justify-center">
             <FileText className="w-5 h-5 text-ct-mute-2" />
           </div>
-          <h3 className="font-semibold text-ct-paper">Quote Activity</h3>
+          <h3 className="font-semibold text-ct-paper">Quote activity</h3>
         </div>
         <p className="text-sm text-ct-mute-2 mb-4">
           Start quoting on leads to see your performance insights here.
@@ -102,7 +102,7 @@ export default function QuoteInsightsWidget() {
           to="/leads"
           className="inline-flex items-center gap-2 text-sm font-medium text-ct-mute-2 hover:text-ct-mute-2"
         >
-          Browse Leads <ArrowRight className="w-4 h-4" />
+          Browse leads <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     );
@@ -115,13 +115,13 @@ export default function QuoteInsightsWidget() {
           <div className="w-8 h-8 bg-ct-surface-2 rounded-ct-sm flex items-center justify-center">
             <BarChart3 className="w-4 h-4 text-ct-mute-2" />
           </div>
-          <h3 className="text-base font-semibold text-ct-paper">Quote Insights</h3>
+          <h3 className="text-base font-semibold text-ct-paper">Quote insights</h3>
         </div>
         <Link
           to="/leads?filter=quoted"
           className="text-sm text-ct-mute-2 hover:text-ct-mute-2 font-medium"
         >
-          View All
+          View all
         </Link>
       </div>
 
@@ -130,14 +130,14 @@ export default function QuoteInsightsWidget() {
         <div className="p-3 bg-ct-surface-2 rounded-ct-md border border-ct-line">
           <div className="flex items-center gap-1.5 mb-1">
             <Target className="w-4 h-4 text-ct-mute-2" />
-            <span className="text-xs text-ct-mute-2 font-medium">Win Rate</span>
+            <span className="text-xs text-ct-mute-2 font-medium">Win rate</span>
           </div>
           <p className="text-2xl font-bold text-ct-mute-2 tabular-nums">{stats.winRate}%</p>
         </div>
         <div className="p-3 bg-ct-teal/[0.14] rounded-ct-md border border-ct-teal/30">
           <div className="flex items-center gap-1.5 mb-1">
             <DollarSign className="w-4 h-4 text-ct-teal" />
-            <span className="text-xs text-ct-teal font-medium">Quoted Earnings</span>
+            <span className="text-xs text-ct-teal font-medium">Quoted earnings</span>
           </div>
           <p className="text-2xl font-bold text-ct-teal tabular-nums">${stats.totalEarned.toLocaleString()}</p>
         </div>
@@ -164,7 +164,7 @@ export default function QuoteInsightsWidget() {
           <span className="flex items-center gap-2 text-ct-mute-2">
             <span className="w-2 h-2 rounded-full bg-ct-rose sm:hidden" />
             <XCircle className="w-4 h-4 text-ct-rose hidden sm:block" />
-            Not Selected
+            Not selected
           </span>
           <span className="font-semibold text-ct-mute-2">{stats.declinedQuotes}</span>
         </div>
@@ -172,14 +172,14 @@ export default function QuoteInsightsWidget() {
 
       <div className="mt-4 pt-3 border-t border-ct-line-soft">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-ct-mute">This Month</span>
+          <span className="text-ct-mute">This month</span>
           <span className="font-semibold text-ct-paper">
             {stats.thisMonthQuotes} quoted, {stats.thisMonthWon} won
           </span>
         </div>
         {stats.avgQuoteAmount > 0 && (
           <div className="flex items-center justify-between text-sm mt-1">
-            <span className="text-ct-mute">Avg. Quote</span>
+            <span className="text-ct-mute">Avg. quote</span>
             <span className="font-semibold text-ct-paper">${stats.avgQuoteAmount.toLocaleString()}</span>
           </div>
         )}

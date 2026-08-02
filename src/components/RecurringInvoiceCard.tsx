@@ -71,8 +71,8 @@ const STATUS_STYLES: Record<string, string> = {
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft',
-  pending_approval: 'Awaiting Your Approval',
-  sent: 'Awaiting Payment',
+  pending_approval: 'Awaiting your approval',
+  sent: 'Awaiting payment',
   paid: 'Paid',
   overdue: 'Overdue',
   cancelled: 'Cancelled',
@@ -166,9 +166,9 @@ export default function RecurringInvoiceCard({ invoice, userRole, paymentMethod 
               }`}
             >
               {invoice.status === 'pending_approval' && userRole === 'tradie'
-                ? (isScheduledAutoDebit ? 'Scheduled for Direct Debit' : 'Awaiting Client Approval')
+                ? (isScheduledAutoDebit ? 'Scheduled for direct debit' : 'Awaiting client approval')
                 : isScheduledAutoDebit
-                ? 'Auto-Debit Scheduled'
+                ? 'Auto-debit scheduled'
                 : STATUS_LABELS[invoice.status] ?? invoice.status}
             </span>
           </div>
@@ -252,7 +252,7 @@ export default function RecurringInvoiceCard({ invoice, userRole, paymentMethod 
               <div className="flex items-start gap-2">
                 <AlertTriangle className="w-4 h-4 text-ct-rose flex-shrink-0 mt-0.5" />
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-ct-paper">Dispute Reason</p>
+                  <p className="text-xs font-semibold text-ct-paper">Dispute reason</p>
                   <p className="text-xs text-ct-rose mt-0.5">{invoice.dispute_reason}</p>
                   {invoice.disputed_at && (
                     <p className="text-[10px] text-ct-rose mt-1">
@@ -269,7 +269,7 @@ export default function RecurringInvoiceCard({ invoice, userRole, paymentMethod 
                 <div className="flex items-start gap-2">
                   <MessageSquare className="w-4 h-4 text-ct-mute-2 flex-shrink-0 mt-0.5" />
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-ct-mute-2">Tradie Response</p>
+                    <p className="text-xs font-semibold text-ct-mute-2">Tradie response</p>
                     <p className="text-xs text-ct-mute-2 mt-0.5">{invoice.tradie_response}</p>
                     {invoice.tradie_responded_at && (
                       <p className="text-[10px] text-ct-mute mt-1">

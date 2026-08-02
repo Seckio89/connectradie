@@ -107,7 +107,7 @@ function BecsFormInner({ clientSecret, name, email, onSuccess, onCancel }: BecsF
           ) : (
             <>
               <Building2 className="w-4 h-4" />
-              Authorise Direct Debit
+              Authorise direct debit
             </>
           )}
         </button>

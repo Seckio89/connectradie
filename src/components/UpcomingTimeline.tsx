@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 /*
-  UpcomingTimeline — replaces the old global "Platform Activity" feed.
+  UpcomingTimeline — replaces the old global "Platform activity" feed.
   Shows the next 7 days of personal events for the client: upcoming recurring
   visits, upcoming auto-invoice generation dates, and scheduled one-off jobs.
   Distinct from the bell icon (past events) and the Invoices/Spending widgets.

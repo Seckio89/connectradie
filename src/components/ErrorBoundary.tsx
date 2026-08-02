@@ -101,7 +101,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               className="inline-flex items-center gap-2 px-6 py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 transition-colors"
             >
               <RefreshCw className="w-5 h-5" />
-              Reload Page
+              Reload page
             </button>
           </div>
         </div>

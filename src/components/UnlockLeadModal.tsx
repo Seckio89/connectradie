@@ -55,7 +55,7 @@ export default function UnlockLeadModal({ isOpen, onClose, onUnlock, clientName,
     <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 modal-sheet-overlay">
       <div className="bg-ct-surface rounded-t-2xl sm:rounded-ct-lg max-w-md w-full shadow-2xl transform transition-all modal-sheet pb-[env(safe-area-inset-bottom)] sm:pb-0">
         <div className="p-6 border-b border-ct-line flex items-center justify-between">
-          <h3 className="text-xl font-bold text-ct-paper">Unlock Lead Details</h3>
+          <h3 className="text-xl font-bold text-ct-paper">Unlock lead details</h3>
           <button
             onClick={onClose}
             className="p-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
@@ -136,21 +136,21 @@ export default function UnlockLeadModal({ isOpen, onClose, onUnlock, clientName,
             <div className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-ct-paper">View Full Contact Details</p>
+                <p className="font-medium text-ct-paper">View full contact details</p>
                 <p className="text-sm text-ct-mute-2">Access phone number and email address</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-ct-paper">Unlimited Messaging</p>
+                <p className="font-medium text-ct-paper">Unlimited messaging</p>
                 <p className="text-sm text-ct-mute-2">Chat without restrictions</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-ct-teal flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-ct-paper">View Job Details</p>
+                <p className="font-medium text-ct-paper">View job details</p>
                 <p className="text-sm text-ct-mute-2">See full booking request and requirements</p>
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function UnlockLeadModal({ isOpen, onClose, onUnlock, clientName,
                   Unlocked!
                 </>
               ) : isProUser ? (
-                'Unlock Details'
+                'Unlock details'
               ) : (
                 <>
                   <CreditCard className="w-4 h-4" />

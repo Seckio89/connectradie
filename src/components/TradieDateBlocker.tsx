@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { CalendarOff, CheckCircle2, Loader2 } from 'lucide-react';
 import { blockTimeSlot } from '../lib/availability';
 
-const REASONS = ['Personal', 'Leave', 'Another Job', 'Other'] as const;
+const REASONS = ['Personal', 'Leave', 'Another job', 'Other'] as const;
 
 interface TradieDateBlockerProps {
   tradieId: string;
@@ -64,7 +64,7 @@ export default function TradieDateBlocker({ tradieId, onBlocked }: TradieDateBlo
     <div className="max-w-sm bg-ct-surface rounded-ct-md shadow-sm p-4">
       <div className="flex items-center gap-2 mb-3">
         <CalendarOff className="w-4 h-4 text-ct-mute" />
-        <h3 className="text-sm font-semibold text-ct-paper">Mark Unavailable</h3>
+        <h3 className="text-sm font-semibold text-ct-paper">Mark unavailable</h3>
       </div>
 
       <div className="space-y-3">
@@ -162,7 +162,7 @@ export default function TradieDateBlocker({ tradieId, onBlocked }: TradieDateBlo
               Blocking...
             </>
           ) : (
-            'Block Dates'
+            'Block dates'
           )}
         </button>
       </div>

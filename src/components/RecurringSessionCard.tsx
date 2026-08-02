@@ -16,13 +16,13 @@ import { supabase } from '../lib/supabase';
 import { getBlockedDates, checkClash } from '../lib/availability';
 
 const STATUS_STYLES: Record<RecurringSessionStatus, { bg: string; text: string; label: string }> = {
-  pending_confirmation: { bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', text: 'text-ct-amber', label: 'Awaiting Confirmation' },
+  pending_confirmation: { bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', text: 'text-ct-amber', label: 'Awaiting confirmation' },
   scheduled: { bg: 'bg-ct-surface-2 border-ct-line', text: 'text-ct-mute-2', label: 'Scheduled' },
-  awaiting_completion: { bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', text: 'text-ct-amber', label: 'Confirm Completion' },
+  awaiting_completion: { bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', text: 'text-ct-amber', label: 'Confirm completion' },
   completed: { bg: 'bg-ct-teal/[0.14] border-ct-teal/30', text: 'text-ct-teal', label: 'Completed' },
   rescheduled: { bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', text: 'text-ct-amber', label: 'Rescheduled' },
   skipped: { bg: 'bg-ct-surface-2 border-ct-line', text: 'text-ct-mute', label: 'Skipped' },
-  extra: { bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', text: 'text-ct-amber', label: 'Extra Session' },
+  extra: { bg: 'bg-ct-amber/[0.13] border-ct-amber/[0.34]', text: 'text-ct-amber', label: 'Extra session' },
 };
 
 const DEFAULT_SESSION_DURATION_HOURS = 2;
@@ -193,7 +193,7 @@ export default function RecurringSessionCard({
   }, [isOverdue, session.id, session.scheduled_date, today, onUpdate]);
 
   const style = isOverdue
-    ? { bg: 'bg-ct-rose/[0.13] border-ct-rose/40', text: 'text-ct-rose', label: 'Not Completed' }
+    ? { bg: 'bg-ct-rose/[0.13] border-ct-rose/40', text: 'text-ct-rose', label: 'Not completed' }
     : STATUS_STYLES[session.status];
   const displayDate = session.actual_date || session.scheduled_date;
   const formattedDate = new Date(displayDate + 'T00:00:00').toLocaleDateString('en-AU', {
@@ -823,14 +823,14 @@ export default function RecurringSessionCard({
               className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-xs font-medium disabled:opacity-50 transition-colors"
             >
               <CheckCircle2 className="w-3 h-3" />
-              {loading ? 'Confirming...' : 'Mark Complete'}
+              {loading ? 'Confirming...' : 'Mark complete'}
             </button>
             <button
               onClick={() => { resetForms(); setShowSkip(true); }}
               className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               <SkipForward className="w-3 h-3" />
-              Didn't Happen
+              Didn't happen
             </button>
           </div>
         </div>
@@ -893,14 +893,14 @@ export default function RecurringSessionCard({
               className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-xs font-medium disabled:opacity-50 transition-colors"
             >
               <CheckCircle2 className="w-3 h-3" />
-              {loading ? 'Accepting...' : 'Accept New Date'}
+              {loading ? 'Accepting...' : 'Accept new date'}
             </button>
             <button
               onClick={() => { resetForms(); setShowCounterPropose(true); }}
               className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               <Clock className="w-3 h-3" />
-              Propose Different Date
+              Propose different date
             </button>
           </div>
         </div>
@@ -923,7 +923,7 @@ export default function RecurringSessionCard({
               className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-xs font-medium disabled:opacity-50 transition-colors"
             >
               <CheckCircle2 className="w-3 h-3" />
-              {loading ? 'Accepting...' : 'Accept Time'}
+              {loading ? 'Accepting...' : 'Accept time'}
             </button>
             <button
               onClick={handleDeclineTimeProposal}
@@ -1022,14 +1022,14 @@ export default function RecurringSessionCard({
               className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-4 py-2 rounded-ct-sm text-xs font-medium disabled:opacity-50 transition-colors"
             >
               <CheckCircle2 className="w-3 h-3" />
-              {loading ? 'Confirming...' : 'Job Completed'}
+              {loading ? 'Confirming...' : 'Job completed'}
             </button>
             <button
               onClick={() => { resetForms(); setShowSkip(true); }}
               className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               <SkipForward className="w-3 h-3" />
-              Skip / Not Done
+              Skip / not done
             </button>
           </div>
         </div>
@@ -1056,7 +1056,7 @@ export default function RecurringSessionCard({
               className="inline-flex items-center gap-1.5 border border-ct-line text-ct-mute-2 px-4 py-2 rounded-ct-sm text-xs font-medium hover:bg-ct-surface-2 transition-colors"
             >
               <SkipForward className="w-3 h-3" />
-              Not Done
+              Not done
             </button>
           </div>
         </div>
@@ -1073,7 +1073,7 @@ export default function RecurringSessionCard({
                 className="inline-flex items-center gap-1.5 bg-ct-teal hover:brightness-110 text-ct-ink px-3 py-1.5 rounded-ct-sm text-xs font-medium disabled:opacity-50 transition-colors"
               >
                 <CheckCircle2 className="w-3 h-3" />
-                Mark Complete
+                Mark complete
               </button>
               {/* Actions dropdown */}
               <div className="relative" ref={actionsMenuRef}>
@@ -1090,21 +1090,21 @@ export default function RecurringSessionCard({
                       className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                     >
                       <SkipForward className="w-3.5 h-3.5 text-ct-mute" />
-                      Skip This Visit
+                      Skip this visit
                     </button>
                     <button
                       onClick={() => { setShowActionsMenu(false); resetForms(); setShowReschedule(true); }}
                       className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                     >
                       <Calendar className="w-3.5 h-3.5 text-ct-mute" />
-                      Change Date
+                      Change date
                     </button>
                     <button
                       onClick={() => { setShowActionsMenu(false); resetForms(); setShowChangeTime(true); }}
                       className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                     >
                       <Clock className="w-3.5 h-3.5 text-ct-mute" />
-                      {session.start_time ? 'Edit Time' : 'Set Time'}
+                      {session.start_time ? 'Edit time' : 'Set time'}
                     </button>
                     {session.status !== 'extra' && (
                       <button
@@ -1112,7 +1112,7 @@ export default function RecurringSessionCard({
                         className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                       >
                         <Plus className="w-3.5 h-3.5 text-ct-mute" />
-                        Add Extra Session
+                        Add extra session
                       </button>
                     )}
                     {session.status === 'extra' && (
@@ -1122,7 +1122,7 @@ export default function RecurringSessionCard({
                         className="w-full px-3 py-2 text-left text-xs text-ct-rose hover:bg-ct-rose/[0.13] flex items-center gap-2 transition-colors disabled:opacity-50"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        Cancel Extra
+                        Cancel extra
                       </button>
                     )}
                   </div>
@@ -1147,21 +1147,21 @@ export default function RecurringSessionCard({
                       className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                     >
                       <Calendar className="w-3.5 h-3.5 text-ct-mute" />
-                      Change Date
+                      Change date
                     </button>
                     <button
                       onClick={() => { setShowActionsMenu(false); resetForms(); setShowChangeTime(true); }}
                       className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                     >
                       <Clock className="w-3.5 h-3.5 text-ct-mute" />
-                      {session.start_time ? 'Edit Time' : 'Change Time'}
+                      {session.start_time ? 'Edit time' : 'Change time'}
                     </button>
                     <button
                       onClick={() => { setShowActionsMenu(false); resetForms(); setShowSkip(true); }}
                       className="w-full px-3 py-2 text-left text-xs text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-2 transition-colors"
                     >
                       <SkipForward className="w-3.5 h-3.5 text-ct-mute" />
-                      Skip This Visit
+                      Skip this visit
                     </button>
                     {session.status !== 'extra' && (
                       <button

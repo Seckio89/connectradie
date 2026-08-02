@@ -124,21 +124,21 @@ describe('TradieCard', () => {
 
   it('shows availability status', () => {
     renderCard();
-    expect(screen.getByText('Available This Week')).toBeInTheDocument();
+    expect(screen.getByText('Available this week')).toBeInTheDocument();
   });
 
   it('shows limited availability when hours are low', () => {
     renderCard({
       tradie: { ...mockTradie, availability_hours: 5 },
     });
-    expect(screen.getByText('Limited Availability')).toBeInTheDocument();
+    expect(screen.getByText('Limited availability')).toBeInTheDocument();
   });
 
   it('shows fully booked when no hours available', () => {
     renderCard({
       tradie: { ...mockTradie, availability_hours: 0 },
     });
-    expect(screen.getByText('Busy This Week')).toBeInTheDocument();
+    expect(screen.getByText('Busy this week')).toBeInTheDocument();
   });
 
   it('shows hourly rate', () => {
@@ -167,7 +167,7 @@ describe('TradieCard', () => {
     const onViewCalendar = vi.fn();
     renderCard({ onViewCalendar });
 
-    await user.click(screen.getByTitle('Check Calendar'));
+    await user.click(screen.getByTitle('Check calendar'));
     expect(onViewCalendar).toHaveBeenCalledWith(mockTradie);
   });
 

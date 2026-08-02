@@ -49,7 +49,7 @@ const STEPS = [
   { key: 'pending', label: 'Quoted', description: 'Quote sent to client' },
   { key: 'accepted', label: 'Accepted', description: 'Client accepted your quote' },
   { key: 'funded', label: 'Funded', description: 'Client payment secured via Stripe' },
-  { key: 'in_progress', label: 'In Progress', description: 'Work has started' },
+  { key: 'in_progress', label: 'In progress', description: 'Work has started' },
   { key: 'completed', label: 'Completed', description: 'Job finished' },
 ] as const;
 
@@ -448,7 +448,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                 {localStatus.replace(/_/g, ' ')}
               </span>
             </div>
-            <h2 className="text-lg font-bold text-ct-paper truncate">{description || 'Job Details'}</h2>
+            <h2 className="text-lg font-bold text-ct-paper truncate">{description || 'Job details'}</h2>
             <p className="text-xs text-ct-mute mt-0.5">
               Posted {formatDate(job.created_at)}
               {job.scheduled_date && (
@@ -539,8 +539,8 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
               <div className="flex-1">
                 <p className="text-sm font-semibold text-ct-paper">
                   {acceptedQuote.final_price != null
-                    ? 'Final Price Set'
-                    : 'Set Final Price After Site Visit'}
+                    ? 'Final price set'
+                    : 'Set final price after site visit'}
                 </p>
                 <p className="text-xs text-ct-amber mt-0.5">
                   {acceptedQuote.final_price != null
@@ -921,8 +921,8 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
           >
             <ClipboardList className="w-4 h-4" />
             {selectedAvailDate
-              ? `Quote Now — Available ${new Date(selectedAvailDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
-              : 'Quote Now'}
+              ? `Quote now — available ${new Date(selectedAvailDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
+              : 'Quote now'}
           </button>
         )}
 
@@ -949,13 +949,13 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
               ) : payLinkState === 'sent' ? (
                 <><CheckCircle2 className="w-4 h-4" /> Payment link sent</>
               ) : (
-                <><Send className="w-4 h-4" /> Email Payment Link</>
+                <><Send className="w-4 h-4" /> Email payment link</>
               )}
             </button>
           ) : (
             <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-ct-amber/[0.13] text-ct-amber font-medium rounded-ct-md border border-ct-amber/[0.34]">
               <Clock className="w-4 h-4" />
-              Awaiting Client Payment
+              Awaiting client payment
             </div>
           )
         )}
@@ -1014,14 +1014,14 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending…</>
               : payLinkState === 'sent'
                 ? <><CheckCircle2 className="w-4 h-4" /> Invoice sent — resend</>
-                : <><Send className="w-4 h-4" /> Send Invoice by Email</>}
+                : <><Send className="w-4 h-4" /> Send invoice by email</>}
           </button>
         )}
 
         {isTradie && localStatus === 'completed' && !(isOffApp && !jobPaid) && (
           <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 bg-ct-teal/[0.14] text-ct-teal font-semibold rounded-ct-md border border-ct-teal/30">
             <CheckCircle2 className="w-4 h-4" />
-            Job Complete
+            Job complete
           </div>
         )}
       </div>
@@ -1030,7 +1030,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
       {confirmDialog && (
         <div className="absolute inset-0 bg-black/40 rounded-ct-lg flex items-center justify-center z-50 p-6">
           <div className="bg-ct-surface rounded-ct-md shadow-lg p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold text-ct-paper mb-2">Confirm Price</h3>
+            <h3 className="text-lg font-semibold text-ct-paper mb-2">Confirm price</h3>
             <p className="text-sm text-ct-mute-2 mb-5">{confirmDialog.message}</p>
             <div className="flex items-center gap-3 justify-end">
               <button

@@ -310,7 +310,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
               className="inline-flex items-center gap-1 px-3 py-1.5 bg-ct-teal hover:brightness-110 text-ct-ink text-xs font-medium rounded-ct-sm disabled:opacity-50 transition-colors"
             >
               <Plus className="w-3 h-3" />
-              Add Item
+              Add item
             </button>
           </div>
 
@@ -322,7 +322,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-teal hover:brightness-110 text-ct-ink text-xs font-medium rounded-ct-sm disabled:opacity-50 transition-colors"
             >
               {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-              Save Supplies
+              Save supplies
             </button>
             <button onClick={() => { setEditing(false); setItems(supplies); }} className="text-xs text-ct-mute hover:text-ct-mute-2 font-medium">
               Cancel
@@ -696,7 +696,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
     return (
       <div className="bg-ct-surface rounded-ct-md border border-ct-teal/30 p-6 text-center">
         <CheckCircle2 className="w-10 h-10 text-ct-teal mx-auto mb-3" />
-        <h3 className="text-lg font-semibold text-ct-paper capitalize">{tradeLabel} Scheduled</h3>
+        <h3 className="text-lg font-semibold text-ct-paper capitalize">{tradeLabel} scheduled</h3>
         <p className="text-sm text-ct-mute mt-1">
           {selectedTradie
             ? `Your ongoing service has been set up and assigned to ${selectedTradie.full_name}.`
@@ -710,7 +710,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
               )}`}
               className="inline-flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 transition-colors"
             >
-              Find a Tradie
+              Find a tradie
             </Link>
           )}
           <button
@@ -735,7 +735,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
           <RefreshCw className="w-5 h-5 text-ct-mute-2" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-ct-paper">Schedule a Service</h1>
+          <h1 className="text-2xl font-bold text-ct-paper">Schedule a service</h1>
           <p className="text-ct-mute-2">Set up a recurring service and we'll match you with the right tradie</p>
         </div>
       </div>
@@ -759,7 +759,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Service Type</label>
+              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Service type</label>
               {hasSubcategories ? (
                 <select
                   value={serviceSubtype}
@@ -901,7 +901,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                 { value: -2, label: 'Fortnightly' },
                 { value: 1, label: 'Monthly' },
                 { value: 3, label: 'Quarterly' },
-                { value: 6, label: '6 Monthly' },
+                { value: 6, label: '6 monthly' },
                 { value: 12, label: 'Annually' },
               ] as const).map(opt => (
                 <button
@@ -961,7 +961,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                       : 'border-ct-line text-ct-mute-2 hover:border-ct-line'
                   }`}
                 >
-                  Open to Quotes
+                  Open to quotes
                 </button>
                 <button
                   type="button"
@@ -972,7 +972,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                       : 'border-ct-line text-ct-mute-2 hover:border-ct-line'
                   }`}
                 >
-                  Set a Budget
+                  Set a budget
                 </button>
               </div>
               <p className="text-xs text-ct-mute mt-1">
@@ -1026,7 +1026,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
               return (
                 <div>
                   <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
-                    Preferred Tradie
+                    Preferred tradie
                     {matchingTradies.length > 0 && (
                       <span className="text-ct-amber ml-1 text-xs">({matchingTradies.length} matching)</span>
                     )}
@@ -1196,12 +1196,12 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
             {saving ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Scheduling Service...
+                Scheduling service...
               </>
             ) : (
               <>
                 <RefreshCw className="w-5 h-5" />
-                Schedule Recurring Service
+                Schedule recurring service
               </>
             )}
           </button>
@@ -1568,7 +1568,7 @@ export default function ClientServicesTab() {
         ) : (
           <div className="text-center py-16">
             <RefreshCw className="w-10 h-10 text-ct-mute mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-ct-paper">No Ongoing Services</h3>
+            <h3 className="text-lg font-semibold text-ct-paper">No ongoing services</h3>
             <p className="text-sm text-ct-mute mt-1 max-w-sm mx-auto">
               Schedule regular cleaning, lawn mowing, pool maintenance and more — all managed in one place.
             </p>
@@ -1577,7 +1577,7 @@ export default function ClientServicesTab() {
               className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Schedule a Service
+              Schedule a service
             </button>
           </div>
         )}
@@ -1594,7 +1594,7 @@ export default function ClientServicesTab() {
           className="inline-flex items-center gap-1.5 px-4 py-2 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 transition-colors"
         >
           {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          {showForm ? 'Cancel' : 'Schedule a Service'}
+          {showForm ? 'Cancel' : 'Schedule a service'}
         </button>
       </div>
 
@@ -1699,7 +1699,7 @@ export default function ClientServicesTab() {
                         {savedMethods.has(job.id) && savedMethods.get(job.id)!.mandate_status === 'active' && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-medium text-ct-mute-2 bg-ct-surface-2 border border-ct-line px-1.5 py-0.5 rounded-ct-xs">
                             <Building2 className="w-2.5 h-2.5" />
-                            Direct Debit
+                            Direct debit
                           </span>
                         )}
                       </div>
@@ -1756,7 +1756,7 @@ export default function ClientServicesTab() {
                             ) : (
                               <Send className="w-3.5 h-3.5" />
                             )}
-                            {requestingQuoteId === job.id ? 'Sending...' : 'Request a Quote'}
+                            {requestingQuoteId === job.id ? 'Sending...' : 'Request a quote'}
                           </button>
                         </div>
                       )}
@@ -1775,8 +1775,8 @@ export default function ClientServicesTab() {
                             <FileTextIcon className="w-4 h-4 text-ct-mute-2 flex-shrink-0" />
                             <p className="text-xs font-semibold text-ct-mute-2">
                               {qInfo.count === 1
-                                ? `1 Quote received — $${qInfo.topPrice.toFixed(0)} from ${qInfo.topTradie}`
-                                : `${qInfo.count} Quotes received — from $${qInfo.topPrice.toFixed(0)}`}
+                                ? `1 quote received — $${qInfo.topPrice.toFixed(0)} from ${qInfo.topTradie}`
+                                : `${qInfo.count} quotes received — from $${qInfo.topPrice.toFixed(0)}`}
                             </p>
                           </div>
                           <button
@@ -1784,7 +1784,7 @@ export default function ClientServicesTab() {
                             className="inline-flex items-center gap-1.5 bg-ct-teal hover:bg-ct-teal-deep text-ct-ink px-3 py-1.5 rounded-ct-sm text-xs font-semibold transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
-                            {isExpanded ? 'Hide' : 'View'} {qInfo.count === 1 ? 'Quote' : 'Quotes'}
+                            {isExpanded ? 'Hide' : 'View'} {qInfo.count === 1 ? 'quote' : 'quotes'}
                           </button>
                         </div>
 
@@ -1911,7 +1911,7 @@ export default function ClientServicesTab() {
                               className="w-full px-3 py-2 text-left text-sm text-ct-rose hover:bg-ct-rose/[0.13] flex items-center gap-2 transition-colors"
                             >
                               <X className="w-3.5 h-3.5" />
-                              End Service
+                              End service
                             </button>
                           </div>
                         </>
@@ -2069,7 +2069,7 @@ export default function ClientServicesTab() {
                         inv.status === 'paid' && inv.billing_period_start && inv.billing_period_end &&
                         sessionDate >= inv.billing_period_start && sessionDate <= inv.billing_period_end
                       );
-                      const method = paidInv?.payment_method === 'au_becs_debit' ? 'Direct Debit' : 'Stripe';
+                      const method = paidInv?.payment_method === 'au_becs_debit' ? 'Direct debit' : 'Stripe';
                       return { label: 'Paid', style: 'bg-ct-teal/[0.14] text-ct-teal', method };
                     }
                     // Check non-paid invoices (sent, processing, etc.)
@@ -2085,11 +2085,11 @@ export default function ClientServicesTab() {
                           return spanA !== spanB ? spanA - spanB : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                         })[0]
                       : null;
-                    if (!matchingInvoice) return { label: 'Awaiting Payment', style: 'bg-ct-amber/[0.13] text-ct-amber' };
+                    if (!matchingInvoice) return { label: 'Awaiting payment', style: 'bg-ct-amber/[0.13] text-ct-amber' };
                     switch (matchingInvoice.status) {
-                      case 'processing': return { label: 'Processing', style: 'bg-ct-surface-2 text-ct-mute-2', method: matchingInvoice.payment_method === 'au_becs_debit' ? 'Direct Debit' : 'Stripe' };
-                      case 'pending_approval': return { label: 'Awaiting Approval', style: 'bg-ct-amber/[0.13] text-ct-amber' };
-                      case 'sent': return { label: 'Invoice Sent', style: 'bg-ct-amber/[0.13] text-ct-amber' };
+                      case 'processing': return { label: 'Processing', style: 'bg-ct-surface-2 text-ct-mute-2', method: matchingInvoice.payment_method === 'au_becs_debit' ? 'Direct debit' : 'Stripe' };
+                      case 'pending_approval': return { label: 'Awaiting approval', style: 'bg-ct-amber/[0.13] text-ct-amber' };
+                      case 'sent': return { label: 'Invoice sent', style: 'bg-ct-amber/[0.13] text-ct-amber' };
                       case 'overdue': return { label: 'Overdue', style: 'bg-ct-rose/[0.13] text-ct-rose' };
                       default: return { label: 'Invoiced', style: 'bg-ct-surface-2 text-ct-mute-2' };
                     }
@@ -2151,12 +2151,12 @@ export default function ClientServicesTab() {
                                     <span className={`sm:w-[78px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
                                       isOverdue ? 'bg-ct-rose/[0.13] text-ct-rose' : isCompleted ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface-2 text-ct-mute'
                                     }`}>
-                                      {isOverdue ? 'Not Completed' : isCompleted ? 'Completed' : 'Skipped'}
+                                      {isOverdue ? 'Not completed' : isCompleted ? 'Completed' : 'Skipped'}
                                     </span>
                                     <span className={`sm:w-[88px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
                                       isOverdue ? 'bg-ct-rose/[0.13] text-ct-rose' : isCompleted && paymentStatus ? paymentStatus.style : 'bg-transparent text-transparent'
                                     }`}>
-                                      {isOverdue ? 'Awaiting Action' : isCompleted && paymentStatus ? paymentStatus.label : '-'}
+                                      {isOverdue ? 'Awaiting action' : isCompleted && paymentStatus ? paymentStatus.label : '-'}
                                     </span>
                                     <span className={`sm:w-[72px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
                                       isCompleted && paymentStatus?.method ? 'bg-ct-surface-2 text-ct-mute' : 'bg-transparent text-transparent'
@@ -2181,7 +2181,7 @@ export default function ClientServicesTab() {
                                     )}
                                     <div className="flex items-center justify-between gap-3">
                                       <span className="text-ct-mute">Status</span>
-                                      <span className="text-ct-mute-2">{isOverdue ? 'Not Completed' : isCompleted ? 'Completed' : 'Skipped'}</span>
+                                      <span className="text-ct-mute-2">{isOverdue ? 'Not completed' : isCompleted ? 'Completed' : 'Skipped'}</span>
                                     </div>
                                     {isCompleted && paymentStatus && (
                                       <div className="flex items-center justify-between gap-3">
@@ -2261,8 +2261,8 @@ export default function ClientServicesTab() {
                               <CreditCard className="w-4 h-4 text-ct-mute" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-ct-mute">Pay by Card</p>
-                              <p className="text-xs text-ct-mute">Switch from Direct Debit to use card payments</p>
+                              <p className="text-sm font-medium text-ct-mute">Pay by card</p>
+                              <p className="text-xs text-ct-mute">Switch from direct debit to use card payments</p>
                             </div>
                             <span className="px-3 py-1 bg-ct-surface-2 text-ct-mute text-xs font-medium rounded-full flex-shrink-0">Inactive</span>
                           </div>
@@ -2275,7 +2275,7 @@ export default function ClientServicesTab() {
                               <CreditCard className="w-4 h-4 text-ct-teal" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-ct-paper">Manual Payments</p>
+                              <p className="text-sm font-medium text-ct-paper">Manual payments</p>
                               <p className="text-xs text-ct-mute">Invoices will be sent with a secure Stripe payment link</p>
                             </div>
                             <span className="px-3 py-1 bg-ct-teal/[0.14] text-ct-teal text-xs font-medium rounded-full flex-shrink-0">Active</span>
@@ -2295,7 +2295,7 @@ export default function ClientServicesTab() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-ct-paper">
-                                {becsLoading === job.id ? 'Setting up Direct Debit...' : 'Direct Debit'}
+                                {becsLoading === job.id ? 'Setting up direct debit...' : 'Direct debit'}
                               </p>
                               <p className="text-xs text-ct-mute">
                                 {becsLoading === job.id ? 'Please wait while we prepare the form' : 'Auto-pay invoices from your bank account · Lower fees'}
@@ -2391,7 +2391,7 @@ export default function ClientServicesTab() {
                           const paidDate = inv.paid_at
                             ? new Date(inv.paid_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
                             : '—';
-                          const method = inv.payment_method === 'au_becs_debit' ? 'Direct Debit' : 'Card';
+                          const method = inv.payment_method === 'au_becs_debit' ? 'Direct debit' : 'Card';
                           return (
                             <div key={inv.id} className="flex items-center justify-between py-1.5 px-3 bg-ct-surface-2 rounded-ct-sm">
                               <div className="flex items-center gap-2 min-w-0">
@@ -2464,13 +2464,13 @@ export default function ClientServicesTab() {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Briefcase className="w-4 h-4 text-ct-mute" />
-            <h3 className="text-sm font-semibold text-ct-paper">Active Jobs</h3>
+            <h3 className="text-sm font-semibold text-ct-paper">Active jobs</h3>
             <span className="text-xs text-ct-mute">{oneOffJobs.length}</span>
           </div>
           <div className="space-y-2">
             {oneOffJobs.map((job) => {
               const tradieName = job.tradie?.full_name || 'Tradie';
-              const statusLabel = job.status === 'funded' ? 'Funded' : 'In Progress';
+              const statusLabel = job.status === 'funded' ? 'Funded' : 'In progress';
               const statusClasses = job.status === 'funded'
                 ? 'bg-ct-surface-2 text-ct-mute-2'
                 : 'bg-ct-teal/[0.14] text-ct-teal';
@@ -2599,7 +2599,7 @@ export default function ClientServicesTab() {
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-ct-teal bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm hover:bg-ct-teal/[0.14] transition-colors"
                           >
                             <RotateCcw className="w-3 h-3" />
-                            Schedule Again
+                            Schedule again
                           </button>
                         </div>
                       </div>
@@ -2617,7 +2617,7 @@ export default function ClientServicesTab() {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Handshake className="w-4 h-4 text-ct-mute" />
-            <h3 className="text-sm font-semibold text-ct-paper">Service Agreements</h3>
+            <h3 className="text-sm font-semibold text-ct-paper">Service agreements</h3>
             <span className="text-xs text-ct-mute">{agreements.length}</span>
           </div>
           <div className="space-y-2">

@@ -261,7 +261,7 @@ export default function PaymentSettings() {
         <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-4 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-ct-amber flex-shrink-0 mt-0.5" />
           <p className="text-sm text-ct-paper">
-            Stripe needs more information before payouts can run. Use <strong>Update Bank Details</strong> below to finish.
+            Stripe needs more information before payouts can run. Use <strong>Update bank details</strong> below to finish.
           </p>
         </div>
       )}

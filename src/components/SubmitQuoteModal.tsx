@@ -475,7 +475,7 @@ export default function SubmitQuoteModal({
             <div className="w-20 h-20 bg-ct-teal/[0.14] rounded-full flex items-center justify-center mb-6">
               <CheckCircle2 className="w-10 h-10 text-ct-teal" />
             </div>
-            <h2 className="text-2xl font-bold text-ct-paper mb-2">Quote Submitted</h2>
+            <h2 className="text-2xl font-bold text-ct-paper mb-2">Quote submitted</h2>
             {job.tradie_id ? (
               <>
                 <p className="text-ct-mute-2 mb-4 max-w-sm">
@@ -500,7 +500,7 @@ export default function SubmitQuoteModal({
                   <ul className="text-xs text-ct-mute-2 space-y-2">
                     <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>1</span>The client reviews all incoming quotes</li>
                     <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>2</span>You'll get a notification when they respond</li>
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>3</span>Track your quote status in the "My Quotes" tab</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>3</span>Track your quote status in the "My quotes" tab</li>
                   </ul>
                 </div>
               </>
@@ -559,7 +559,7 @@ export default function SubmitQuoteModal({
                   <FileText className="w-5 h-5 text-ct-mute-2" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-ct-paper">Submit Quote</h2>
+                  <h2 className="text-xl font-bold text-ct-paper">Submit quote</h2>
                   <p className="text-sm text-ct-mute">Blind quoting -- other tradies can't see your price</p>
                 </div>
               </div>
@@ -633,7 +633,7 @@ export default function SubmitQuoteModal({
                 <div className="flex items-center gap-2.5 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md p-3">
                   <Calendar className="w-4 h-4 text-ct-teal flex-shrink-0" />
                   <div>
-                    <p className="text-xs font-medium text-ct-teal">Earliest Available Date</p>
+                    <p className="text-xs font-medium text-ct-teal">Earliest available date</p>
                     <p className="text-sm font-semibold text-ct-teal">
                       {new Date(effectiveStartDate + 'T00:00:00').toLocaleDateString('en-AU', {
                         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -740,7 +740,7 @@ export default function SubmitQuoteModal({
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <label className="text-sm font-medium text-ct-mute-2">
-                    {durationTBD ? 'Estimated Range' : 'Your Price'}
+                    {durationTBD ? 'Estimated range' : 'Your price'}
                     {profile?.is_gst_registered && (
                       <span className="ml-1.5 text-xs font-normal text-ct-mute">(ex. GST)</span>
                     )}
@@ -892,7 +892,7 @@ export default function SubmitQuoteModal({
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium text-ct-mute-2">Message to Client</label>
+                  <label className="text-sm font-medium text-ct-mute-2">Message to client</label>
                   {templates.length > 0 && (
                     <button
                       type="button"

@@ -550,7 +550,7 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
             className="w-full flex items-center justify-center gap-2 py-3 text-sm font-medium text-ct-mute-2 hover:bg-ct-surface-2 transition-colors"
           >
             <Plus className="w-4 h-4" />
-            Add Milestone
+            Add milestone
           </button>
         )}
       </div>
@@ -584,7 +584,7 @@ export default function MilestoneEditor({ jobId, milestones, onUpdate, readOnly 
           ) : (
             <>
               <Save className="w-4 h-4" />
-              Save Milestones
+              Save milestones
             </>
           )}
         </button>
