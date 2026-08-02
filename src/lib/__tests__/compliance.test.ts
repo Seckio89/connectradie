@@ -247,15 +247,16 @@ describe('presentation maps', () => {
     }
   });
 
-  // BUG: the amber and rose status dots carry a trailing "0" left over from a
-  // find-and-replace during the v2 token migration ("bg-ct-amber/[0.13]0").
-  // Tailwind cannot parse that opacity modifier, so no class is generated and
-  // the dot renders with no colour at all — on precisely the two states that
-  // are supposed to draw the eye. Compare `compliant`, which is a clean solid
-  // token. Asserting current behaviour; not fixing it here.
-  it('BUG: the expiring and expired dot classes are malformed', () => {
+  // Regression: these two dots shipped colourless. A trailing "0" left by the
+  // v2 token find-and-replace ("bg-ct-amber/[0.13]0") made Tailwind emit no
+  // rule at all, on precisely the two states meant to draw the eye. Every dot
+  // is now a clean solid token, like `compliant` always was.
+  it('renders every status dot as a solid semantic token', () => {
     expect(COMPLIANCE_META.compliant.dotClass).toBe('bg-ct-teal');
-    expect(COMPLIANCE_META.expiring_soon.dotClass).toBe('bg-ct-amber/[0.13]0');
-    expect(COMPLIANCE_META.expired.dotClass).toBe('bg-ct-rose/[0.13]0');
+    expect(COMPLIANCE_META.expiring_soon.dotClass).toBe('bg-ct-amber');
+    expect(COMPLIANCE_META.expired.dotClass).toBe('bg-ct-rose');
+    for (const meta of Object.values(COMPLIANCE_META)) {
+      expect(meta.dotClass).not.toMatch(/\]\d/);
+    }
   });
 });

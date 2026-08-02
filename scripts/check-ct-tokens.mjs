@@ -67,15 +67,41 @@ const UTILITY = /(?<![\w-])(bg|text|border|ring|from|via|to|divide|outline|fill|
 const files = execSync('git grep -l -- "-ct-" -- "src/*"', { encoding: 'utf8' })
   .trim().split('\n').filter(Boolean);
 
+// Comments quote broken classes on purpose — a regression test explaining the
+// bug it locks down, or a note saying "this used to be X". Those are prose, not
+// markup Tailwind will ever read, and flagging them would fail CI on
+// documentation. Strip line comments before matching; `://` is left alone so a
+// URL in a string is never mistaken for one.
+const stripComment = (line) => {
+  const t = line.trimStart();
+  if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) return '';
+  const at = line.search(/(?<!:)\/\//);
+  return at === -1 ? line : line.slice(0, at);
+};
+
 const bad = [];
 for (const file of files) {
-  readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+  readFileSync(file, 'utf8').split('\n').forEach((rawLine, i) => {
+    const line = stripComment(rawLine);
     for (const m of line.matchAll(UTILITY)) {
       const [full, prefix, token, mods] = m;
       const scale = PREFIX[prefix];
       if (!scale || !scale.size) continue;
       const modCount = (mods.match(/\//g) || []).length;
-      if (modCount > 1) {
+      // Trailing garbage after a well-formed utility. The regex above stops at
+      // the end of the opacity modifier, so `bg-ct-amber/[0.13]0` matched
+      // cleanly as `bg-ct-amber/[0.13]` and the stray `0` was never examined —
+      // this checker's exact blind spot, found by a compliance.ts unit test in
+      // 2026-08-02 rather than by the checker built to catch it. Tailwind reads
+      // the WHOLE class token, sees `bg-ct-amber/[0.13]0`, and emits nothing:
+      // two status dots shipped colourless on the states meant to draw the eye.
+      const nextChar = line[m.index + full.length] ?? '';
+      if (/[\w[./]/.test(nextChar)) {
+        bad.push({
+          file, line: i + 1, cls: `${full}${nextChar}…`,
+          why: `trailing "${nextChar}" — Tailwind reads the whole token and emits nothing`,
+        });
+      } else if (modCount > 1) {
         bad.push({ file, line: i + 1, cls: full, why: `${modCount} opacity modifiers — Tailwind emits nothing` });
       } else if (!scale.has(token)) {
         bad.push({ file, line: i + 1, cls: full, why: `no \`${token}\` in the ${prefix === 'rounded' ? 'radius' : prefix === 'font' ? 'font' : 'token'} scale` });

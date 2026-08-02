@@ -122,12 +122,12 @@ export const COMPLIANCE_META: Record<
   expiring_soon: {
     label: 'Expiring soon',
     badgeClass: 'bg-ct-amber/[0.13] text-ct-amber',
-    dotClass: 'bg-ct-amber/[0.13]0',
+    dotClass: 'bg-ct-amber',
   },
   expired: {
     label: 'Expired',
     badgeClass: 'bg-ct-rose/[0.13] text-ct-rose',
-    dotClass: 'bg-ct-rose/[0.13]0',
+    dotClass: 'bg-ct-rose',
   },
   not_recorded: {
     label: 'Not recorded',
