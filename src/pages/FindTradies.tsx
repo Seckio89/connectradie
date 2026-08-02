@@ -227,7 +227,7 @@ export default function FindTradies() {
     <div className="min-h-screen bg-ct-surface-2">
       <SEO
         title={`${tradeLabelPlural} in ${suburb.name} ${suburb.state} ${suburb.postcode}`}
-        description={`Find verified, licensed ${tradeLabel.toLowerCase()}s in ${suburb.name} ${suburb.state}. ABN-checked, ${tradeLabel.toLowerCase()} licence-verified, paid through Stripe-held escrow — funds release only when you approve the work.`}
+        description={`Find verified, licensed ${tradeLabel.toLowerCase()}s in ${suburb.name} ${suburb.state}. ABN-checked, ${tradeLabel.toLowerCase()} licence-verified, paid safely through Stripe — funds release only when you approve the work.`}
         canonical={findUrl(trade, suburb.slug)}
         noindex={!isIndexable}
         jsonLd={jsonLd}
@@ -358,7 +358,7 @@ export default function FindTradies() {
                 Top {tradeLabelPlural} in {suburb.name}
               </h2>
               <p className="text-sm text-ct-mute-2 mb-5">
-                Every listing below is ABN-verified and (where required for the trade) {suburb.state} licence-checked. Funds sit in Stripe-held escrow until you approve the work.
+                Every listing below is ABN-verified and (where required for the trade) {suburb.state} licence-checked. Funds are held safely by Stripe until you approve the work.
               </p>
 
               {loading ? (
@@ -517,7 +517,7 @@ export default function FindTradies() {
             Post your {suburb.name} {tradeLabel.toLowerCase()} job free
           </h2>
           <p className="mt-3 text-base text-ct-mute max-w-xl mx-auto">
-            ABN-verified, licence-checked {tradeLabel.toLowerCase()}s in the {suburb.city} area will be notified and can quote within hours. No lead fees, no chasing, escrow-protected payment.
+            ABN-verified, licence-checked {tradeLabel.toLowerCase()}s in the {suburb.city} area will be notified and can quote within hours. No lead fees, no chasing, payment protection.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link

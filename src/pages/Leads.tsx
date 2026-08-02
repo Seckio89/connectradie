@@ -2123,7 +2123,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           {/* Cancel, for a job someone has actually committed to.
               ClientDashboard has its own trash-can action, but that one is
               gated to pending jobs with no tradie and just deletes the posting.
-              Once a tradie is on the job there may be money in escrow and
+              Once a tradie is on the job there may be money held by Stripe and
               someone is expecting to work, so it goes through the refund path
               and shows the terms both sides agreed to. Completed jobs are
               excluded: reversing those is a dispute, not a cancellation. */}

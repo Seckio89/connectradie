@@ -91,7 +91,7 @@ export default function LandingPage() {
             "name": "ConnecTradie",
             "url": "https://connectradie.com",
             "logo": "https://connectradie.com/icons/icon-192x192.svg",
-            "description": "All-in-one business app for Australian tradies — jobs, site calendar, team scheduling, GST invoicing and Stripe-secured escrow payments.",
+            "description": "All-in-one business app for Australian tradies — jobs, site calendar, team scheduling, GST invoicing and Stripe-secured payments.",
             "contactPoint": {
               "@type": "ContactPoint",
               "contactType": "customer service",

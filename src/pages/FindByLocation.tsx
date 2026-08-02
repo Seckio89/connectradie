@@ -44,7 +44,7 @@ export default function FindByLocation() {
     <div className="min-h-screen bg-ct-surface-2">
       <SEO
         title={`Tradies in ${suburb.name} ${suburb.state} ${suburb.postcode} — Verified, Insured, Stripe-Secured`}
-        description={`Find verified, licensed tradies in ${suburb.name} ${suburb.state}. Plumbers, electricians, builders, painters, cleaners and more — every tradie ABN-checked and escrow-paid through Stripe.`}
+        description={`Find verified, licensed tradies in ${suburb.name} ${suburb.state}. Plumbers, electricians, builders, painters, cleaners and more — every tradie ABN-checked and paid safely through Stripe.`}
         canonical={suburbHubUrl(suburb.slug)}
         jsonLd={jsonLd}
       />
@@ -93,7 +93,7 @@ export default function FindByLocation() {
           <p className="mt-2 text-sm text-ct-mute">{suburb.name} {suburb.state} {suburb.postcode}</p>
 
           <p className="mt-6 text-base text-ct-mute-2 leading-relaxed max-w-3xl">
-            Find verified plumbers, electricians, builders, painters, cleaners and every other trade in {suburb.name} {suburb.state}. Every tradie is ABN-verified and (where their trade legally requires it) state licence-checked before they can quote. Your payment sits in Stripe-held escrow until you approve the work — no upfront deposits, no lead fees, no auctions.
+            Find verified plumbers, electricians, builders, painters, cleaners and every other trade in {suburb.name} {suburb.state}. Every tradie is ABN-verified and (where their trade legally requires it) state licence-checked before they can quote. Your payment is held safely by Stripe until you approve the work — no upfront deposits, no lead fees, no auctions.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3">
@@ -189,7 +189,7 @@ export default function FindByLocation() {
             Post your {suburb.name} job free
           </h2>
           <p className="mt-3 text-base text-ct-mute max-w-xl mx-auto">
-            Verified tradies in {suburb.name} get notified and can quote within hours. No lead fees, no auctions, escrow-protected payment.
+            Verified tradies in {suburb.name} get notified and can quote within hours. No lead fees, no auctions, payment protection.
           </p>
           <div className="mt-6">
             <Link

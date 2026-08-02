@@ -18,7 +18,7 @@ const footerLinks: Record<string, FooterLink[]> = {
   homeowners: [
     { name: 'Hire a tradie', href: '/hire' },
     { name: 'Post a job', href: '/register?type=client' },
-    { name: 'How escrow works', href: '/hire#protected' },
+    { name: 'How payment protection works', href: '/hire#protected' },
   ],
   support: [
     { name: 'Contact us', href: '/contact' },

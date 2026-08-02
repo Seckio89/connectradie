@@ -60,7 +60,7 @@ export default function FindByTrade() {
     <div className="min-h-screen bg-ct-surface-2">
       <SEO
         title={`${plural} in Australia — Verified, Licensed, Stripe-Secured`}
-        description={`Find verified ${label.toLowerCase()}s across Australia. ABN-checked, licence-verified, paid through Stripe-held escrow. Browse ${plural.toLowerCase()} by suburb across every major Australian city.`}
+        description={`Find verified ${label.toLowerCase()}s across Australia. ABN-checked, licence-verified, paid safely through Stripe. Browse ${plural.toLowerCase()} by suburb across every major Australian city.`}
         canonical={`/find/${trade}`}
         jsonLd={jsonLd}
       />
@@ -106,7 +106,7 @@ export default function FindByTrade() {
           </h1>
 
           <p className="mt-6 text-base text-ct-mute-2 leading-relaxed max-w-3xl">
-            Find verified {label.toLowerCase()}s in every major Australian city. Every tradie on ConnecTradie is ABN-verified and (where the law requires it) state licence-checked before they can quote on your job. Your payment sits in Stripe-held escrow until you approve the work — funds release only when you sign off, with a 5-hour auto-release so the tradie isn&apos;t left chasing.
+            Find verified {label.toLowerCase()}s in every major Australian city. Every tradie on ConnecTradie is ABN-verified and (where the law requires it) state licence-checked before they can quote on your job. Your payment is held safely by Stripe until you approve the work — funds release only when you sign off, with a 5-hour auto-release so the tradie isn&apos;t left chasing.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3">
@@ -136,7 +136,7 @@ export default function FindByTrade() {
           <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <Wallet className="w-6 h-6 text-ct-teal mb-3" />
             <h3 className="text-sm font-semibold text-ct-paper mb-1">Stripe-secured</h3>
-            <p className="text-xs text-ct-mute-2">Your money sits in Stripe-held escrow until the work is approved. We never hold your funds.</p>
+            <p className="text-xs text-ct-mute-2">Your money is held safely by Stripe until the work is approved. We never hold your funds.</p>
           </div>
           <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-5">
             <BadgeCheck className="w-6 h-6 text-ct-teal mb-3" />
@@ -194,7 +194,7 @@ export default function FindByTrade() {
             Post your {label.toLowerCase()} job free
           </h2>
           <p className="mt-3 text-base text-ct-mute max-w-xl mx-auto">
-            Verified {label.toLowerCase()}s in your area get notified and quote within hours. No lead fees, no auctions, escrow-protected payment.
+            Verified {label.toLowerCase()}s in your area get notified and quote within hours. No lead fees, no auctions, payment protection.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link

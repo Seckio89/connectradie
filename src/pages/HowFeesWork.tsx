@@ -89,9 +89,9 @@ export default function HowFeesWork() {
             <li className="flex gap-3">
               <span className="flex-shrink-0 w-6 h-6 rounded-full bg-ct-surface-2 text-ct-mute-2 text-xs font-semibold flex items-center justify-center">1</span>
               <p className="text-sm text-ct-mute-2 leading-relaxed">
-                <span className="font-medium text-ct-paper">Sarah accepts and pays {money(HOT_WATER.total)} into escrow.</span>{' '}
+                <span className="font-medium text-ct-paper">Sarah accepts and pays {money(HOT_WATER.total)}, held by Stripe.</span>{' '}
                 She pays the quote price. Nothing added, no platform fee, no surcharge — clients never pay us
-                anything. Her money sits in escrow, which means Dave is guaranteed to get paid the moment the
+                anything. Her money is held by Stripe, which means Dave is guaranteed to get paid the moment the
                 job's done. No invoicing, no chasing, no "cheque's in the mail".
               </p>
             </li>

@@ -432,7 +432,7 @@ export default function PublicQuote() {
                       <ShieldCheck className="w-10 h-10 text-ct-teal mx-auto mb-2" />
                       <h3 className="font-semibold text-ct-paper">Secure the job with {businessName}</h3>
                       <p className="text-sm text-ct-mute-2 mt-1">
-                        Pay securely into escrow to lock it in. Your money is held safely by Stripe and only
+                        Pay securely to lock it in. Your money is held safely by Stripe and only
                         released to {businessName} once the work is done.
                       </p>
                     </div>
@@ -486,7 +486,7 @@ export default function PublicQuote() {
                 </button>
                 <p className="text-center text-xs text-ct-mute">
                   {depositPayable
-                    ? `Your payment is held safely in Stripe escrow and only released to ${businessName} once the work is done.`
+                    ? `Your payment is held safely by Stripe and only released to ${businessName} once the work is done.`
                     : `No payment is taken now — accepting just lets ${businessName} know you’d like to go ahead.`}
                 </p>
 
@@ -540,7 +540,7 @@ export default function PublicQuote() {
                   <p className="text-sm font-semibold text-ct-paper">Track &amp; pay securely — optional</p>
                   <p className="text-xs text-ct-mute mt-0.5 leading-relaxed">
                     Create a free account to message {businessName}, follow the job, and pay through
-                    protected Stripe escrow. No cost, no obligation.
+                    protected Stripe payments. No cost, no obligation.
                   </p>
                   <Link to="/register" className="inline-flex items-center gap-1 mt-2.5 text-sm font-semibold text-ct-teal hover:text-ct-teal">
                     Create a free account <span aria-hidden="true">→</span>
