@@ -346,22 +346,26 @@ describe('buildScoringFactors — profile completeness', () => {
     expect(f.profileCompleteness).toBeCloseTo(3 / 7, 10);
   });
 
-  // BUG: the completeness check rejects null/undefined/''/false, but 0 passes
-  // all four. An EMPTY qualifications array yields length 0, which counts as a
-  // completed field — so a tradie who has listed no qualifications scores the
-  // same as one who listed three. A $0 hourly_rate counts the same way.
-  // Asserting current behaviour; not fixing it here.
-  it('BUG: an empty qualifications array counts as a completed field', () => {
+  // Regression: the completeness check rejected null/undefined/''/false, but 0
+  // passed all four. An EMPTY qualifications array has length 0, so a tradie
+  // who listed none scored the same as one who listed three — and outranked
+  // tradies who had actually filled theirs in. 0 now counts as empty.
+  it('counts an empty qualifications array as a missing field', () => {
     const empty = buildScoringFactors({ ...full, tradie_details: { ...full.tradie_details, qualifications: [] } });
-    expect(empty.profileCompleteness).toBe(1);
-    // Null, by contrast, is correctly counted as missing.
+    expect(empty.profileCompleteness).toBeCloseTo(6 / 7, 10);
+    // An empty list and a null list mean the same thing: none listed.
     const nulled = buildScoringFactors({ ...full, tradie_details: { ...full.tradie_details, qualifications: null } });
-    expect(nulled.profileCompleteness).toBeCloseTo(6 / 7, 10);
+    expect(empty.profileCompleteness).toBe(nulled.profileCompleteness);
   });
 
-  it('BUG: a zero hourly rate counts as a completed field', () => {
+  it('counts a zero hourly rate as a missing field', () => {
     expect(buildScoringFactors({ ...full, tradie_details: { ...full.tradie_details, hourly_rate: 0 } })
-      .profileCompleteness).toBe(1);
+      .profileCompleteness).toBeCloseTo(6 / 7, 10);
+  });
+
+  it('still scores a fully populated profile as complete', () => {
+    // The guard must reject empty values without punishing real ones.
+    expect(buildScoringFactors(full).profileCompleteness).toBe(1);
   });
 
   // The `bio` field on the top-level tradie object is accepted by the signature

@@ -1,5 +1,19 @@
-export const formatDate = (dateString: string): string => {
+// An unparseable or empty date string yields an Invalid Date, whose getters all
+// return NaN — and `${NaN}/${NaN}/${NaN}` reached the screen verbatim as
+// "NaN/NaN/NaN". Degrade to the em dash the app already uses for a missing
+// value (prices, totals) so a bad timestamp reads as "nothing here" rather than
+// as a crash. Callers pass straight through from the DB, so this is the only
+// place to catch it.
+const NO_VALUE = '—';
+
+const parsed = (dateString: string): Date | null => {
   const date = new Date(dateString);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+export const formatDate = (dateString: string): string => {
+  const date = parsed(dateString);
+  if (!date) return NO_VALUE;
   const day = date.getDate().toString().padStart(2, '0');
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const year = date.getFullYear();
@@ -7,17 +21,21 @@ export const formatDate = (dateString: string): string => {
 };
 
 export const formatDateTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  const formattedDate = formatDate(dateString);
+  const date = parsed(dateString);
+  // Guarded here too, not just delegated: toLocaleTimeString on an Invalid Date
+  // prints the literal "Invalid Date", so the old code would have rendered
+  // "— Invalid Date" once formatDate started degrading.
+  if (!date) return NO_VALUE;
   const time = date.toLocaleTimeString('en-AU', {
     hour: '2-digit',
     minute: '2-digit',
   });
-  return `${formattedDate} ${time}`;
+  return `${formatDate(dateString)} ${time}`;
 };
 
 export const formatTime = (dateString: string): string => {
-  const date = new Date(dateString);
+  const date = parsed(dateString);
+  if (!date) return NO_VALUE;
   return date.toLocaleTimeString('en-AU', {
     hour: '2-digit',
     minute: '2-digit',
@@ -63,7 +81,10 @@ export function checkLicenseExpired(
 }
 
 export const getProfileCompletionTasks = (profile: ProfileData | null): string[] => {
-  if (!profile) return ['Add email', 'Add full name', 'Add phone', 'Add address', 'Add postcode'];
+  // 'Add phone number', not 'Add phone': the per-field branch below uses the
+  // longer wording, and the two branches render the same checklist. With them
+  // out of step the item silently reworded itself as the profile row loaded.
+  if (!profile) return ['Add email', 'Add full name', 'Add phone number', 'Add address', 'Add postcode'];
 
   const tasks: string[] = [];
   if (!profile.email) tasks.push('Add email');

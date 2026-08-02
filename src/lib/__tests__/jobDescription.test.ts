@@ -172,17 +172,29 @@ describe('formatDescription — routing to site notes', () => {
       .toEqual(['Park in the driveway']);
   });
 
-  // BUG: on a SINGLE-line description the delimiter pass runs first and " - "
-  // looks like a dash bullet, so the marker is severed from its text before
-  // NOTE_MARKER ever sees it. The note becomes a scope item and the bare word
-  // "Notes" is rendered as a duty. Only the spaced-hyphen form on a one-line
-  // description is affected — colons and newlines are fine. Asserting current
-  // behaviour; not fixing it here.
-  it('BUG: a spaced hyphen marker on a one-line description is split as a bullet', () => {
+  // Regression: on a SINGLE-line description the delimiter pass ran first, so
+  // " - " looked like a dash bullet and severed the marker from its text before
+  // NOTE_MARKER saw it. The access note became two SCOPE items — work the
+  // tradie appeared to be quoted for. splitRaw now returns a marker-led one-
+  // liner whole.
+  it('keeps a spaced-hyphen marker on a one-line description as one note', () => {
     expect(formatDescription('Notes - park in the driveway')).toEqual({
-      scope: ['Notes', 'Park in the driveway'],
-      notes: [],
+      scope: [],
+      notes: ['Park in the driveway'],
     });
+  });
+
+  it('routes every marker separator and shape to notes, never to scope', () => {
+    for (const raw of [
+      'Notes - park in the driveway',
+      'Notes: park in the driveway',
+      'Site notes - park in the driveway',
+      'Access - via the side gate',
+    ]) {
+      const { scope, notes } = formatDescription(raw);
+      expect(scope).toEqual([]);
+      expect(notes).toHaveLength(1);
+    }
   });
 
   it('does not treat a marker word as a marker without a separator', () => {

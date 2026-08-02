@@ -147,7 +147,12 @@ export function buildScoringFactors(tradie: {
   let totalFields = 0;
   const check = (val: unknown) => {
     totalFields++;
-    if (val !== null && val !== undefined && val !== '' && val !== false) completeness++;
+    // 0 counts as EMPTY here, not as a filled-in field. Both numeric callers
+    // below make that the only sensible reading: `qualifications?.length` of 0
+    // means none listed, and an hourly_rate of 0 means no rate set. Without
+    // this, a tradie with an empty qualifications array scored a complete
+    // profile and ranked above tradies who had actually filled theirs in.
+    if (val !== null && val !== undefined && val !== '' && val !== false && val !== 0) completeness++;
   };
   check(tradie.avatar_url);
   check(tradie.has_phone);
