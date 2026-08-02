@@ -337,6 +337,19 @@ const BY_DESIGN = {
     'in Schedule.tsx until the Google Calendar import issue is fixed, and when it ' +
     'resumes it belongs in Settings rather than back on Schedule. Do not add a ' +
     'menu entry to satisfy this checker',
+
+  // ── Added 2026-08-02, closing audit finding #9. These are DETAIL pages: each
+  // is the child of a listed parent that is in a menu, and is only meaningful
+  // with an id in hand. A sidebar entry would be wrong (which record would it
+  // open?), not missing. Every one was checked to have live in-page entry
+  // points — the inbound-link counts come from this scanner's own report.
+  '/tradie/:id': 'profile detail — opened from search results, quote cards and messages (23 inbound links)',
+  '/careers/:id': 'vacancy detail — opened from the /careers list',
+  '/invoice/:paymentId': 'receipt detail — opened from PaymentHistory rows',
+  '/clients/:id': 'client detail — opened from the /clients address book',
+  '/workforce/invite': 'flow entry — launched by the button on /workforce',
+  '/workforce/:workerId': 'worker detail — opened from the /workforce list (10 inbound links)',
+  '/review/:jobId': 'review prompt — reached from completed-job cards and notification links (20 inbound links)',
 };
 
 // N3 — link points at nothing.
