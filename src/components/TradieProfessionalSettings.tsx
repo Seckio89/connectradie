@@ -302,7 +302,7 @@ export default function TradieProfessionalSettings() {
               <ShieldCheck className="w-5 h-5 text-ct-mute-2" />
             </div>
             <div>
-              <h3 className="font-semibold text-ct-paper">Business Details</h3>
+              <h3 className="font-semibold text-ct-paper">Business details</h3>
               <p className="text-xs text-ct-mute">Builds trust with potential clients</p>
             </div>
           </div>
@@ -411,7 +411,7 @@ export default function TradieProfessionalSettings() {
             <div className="flex items-start gap-2.5 p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm">
               <CheckCircle2 className="w-4 h-4 mt-0.5 text-ct-teal flex-shrink-0" />
               <p className="text-sm text-ct-teal">
-                Your verified <strong>ABN</strong> is sufficient for {normalizeTradeName(primaryTrade) || 'your trade'} in {licenseState}. We recommend also adding <strong>Public Liability Insurance</strong> to boost your trust score.
+                Your verified <strong>ABN</strong> is sufficient for {normalizeTradeName(primaryTrade) || 'your trade'} in {licenseState}. We recommend also adding <strong>Public liability insurance</strong> to boost your trust score.
               </p>
             </div>
           )}
@@ -549,7 +549,7 @@ export default function TradieProfessionalSettings() {
               <Radar className="w-5 h-5 text-ct-mute-2" />
             </div>
             <div>
-              <h3 className="font-semibold text-ct-paper">Operational Settings</h3>
+              <h3 className="font-semibold text-ct-paper">Operational settings</h3>
               <p className="text-xs text-ct-mute">Controls which leads you receive</p>
             </div>
           </div>
@@ -668,7 +668,7 @@ export default function TradieProfessionalSettings() {
               <PenLine className="w-5 h-5 text-ct-mute-2" />
             </div>
             <div>
-              <h3 className="font-semibold text-ct-paper">About the Business</h3>
+              <h3 className="font-semibold text-ct-paper">About the business</h3>
               <p className="text-xs text-ct-mute">Help clients understand your services</p>
             </div>
           </div>
@@ -746,7 +746,7 @@ export default function TradieProfessionalSettings() {
             Saving...
           </>
         ) : (
-          'Save Professional Settings'
+          'Save professional settings'
         )}
       </button>
     </form>

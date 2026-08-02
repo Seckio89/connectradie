@@ -31,7 +31,7 @@ export default function ProfileTab({
   return (
     <form onSubmit={onSubmit} className="space-y-6 p-6 md:p-8" aria-label="ConnecTradie Profile Settings">
       <div>
-        <label className="block text-sm font-medium text-ct-mute-2 mb-2">Email Address</label>
+        <label className="block text-sm font-medium text-ct-mute-2 mb-2">Email address</label>
         <div className="relative">
           <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
           <input type="email" value={email} disabled className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md bg-ct-surface-2 text-ct-mute cursor-not-allowed" />
@@ -40,7 +40,7 @@ export default function ProfileTab({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ct-mute-2 mb-2">Full Name</label>
+        <label className="block text-sm font-medium text-ct-mute-2 mb-2">Full name</label>
         <div className="relative">
           <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
           <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Enter your full name" className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" />
@@ -49,7 +49,7 @@ export default function ProfileTab({
 
       {isTradie && setBusinessName && (
         <div>
-          <label className="block text-sm font-medium text-ct-mute-2 mb-2">Business Name</label>
+          <label className="block text-sm font-medium text-ct-mute-2 mb-2">Business name</label>
           <div className="relative">
             <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
             <input type="text" value={businessName || ''} onChange={(e) => setBusinessName(e.target.value)} placeholder="Enter your business name" className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" />
@@ -59,7 +59,7 @@ export default function ProfileTab({
       )}
 
       <div>
-        <label className="block text-sm font-medium text-ct-mute-2 mb-2">Phone Number</label>
+        <label className="block text-sm font-medium text-ct-mute-2 mb-2">Phone number</label>
         <div className="relative">
           <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
           <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter your phone number" className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" />
@@ -97,7 +97,7 @@ export default function ProfileTab({
       )}
 
       <button type="submit" disabled={loading} className="w-full py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 min-h-[44px]">
-        {loading ? (<><Loader2 className="w-5 h-5 animate-spin" />Saving...</>) : 'Save Changes'}
+        {loading ? (<><Loader2 className="w-5 h-5 animate-spin" />Saving...</>) : 'Save changes'}
       </button>
     </form>
   );

@@ -6,7 +6,7 @@ const categories = [
     icon: Droplets,
     title: 'Plumbing',
     value: 'plumber',
-    subtitle: 'Emergency & Maintenance',
+    subtitle: 'Emergency & maintenance',
     color: 'sky',
     jobs: 'Licensed & insured',
   },
@@ -20,17 +20,17 @@ const categories = [
   },
   {
     icon: Hammer,
-    title: 'Carpentry & Renovations',
+    title: 'Carpentry & renovations',
     value: 'carpenter',
-    subtitle: 'Build & Repair',
+    subtitle: 'Build & repair',
     color: 'orange',
     jobs: 'Quoted directly',
   },
   {
     icon: Sparkles,
-    title: 'End of Lease Cleaning',
+    title: 'End of lease cleaning',
     value: 'cleaner',
-    subtitle: 'Bond Back Guarantee',
+    subtitle: 'Bond back guarantee',
     color: 'teal',
     jobs: 'Reviewed by tenants',
   },
@@ -38,7 +38,7 @@ const categories = [
     icon: Home,
     title: 'Roofing',
     value: 'roofer',
-    subtitle: 'Repairs & Restoration',
+    subtitle: 'Repairs & restoration',
     color: 'emerald',
     jobs: 'Licensed professionals',
   },
@@ -46,7 +46,7 @@ const categories = [
     icon: TreePine,
     title: 'Landscaping',
     value: 'landscaper',
-    subtitle: 'Design & Maintenance',
+    subtitle: 'Design & maintenance',
     color: 'rose',
     jobs: 'Book this week',
   },
@@ -97,7 +97,7 @@ export default function CategoriesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl sm:text-4xl font-extrabold text-ct-paper tracking-[-0.02em]">
-            What Do You <span className="text-ct-teal">Need Done?</span>
+            What do you <span className="text-ct-teal">need done?</span>
           </h2>
           <p className="mt-4 text-lg text-ct-mute">
             Pick a trade. Every result is a verified, licensed professional.
@@ -141,7 +141,7 @@ export default function CategoriesSection() {
             to="/explore"
             className="inline-flex items-center gap-2 text-ct-amber font-semibold hover:text-ct-teal transition-colors"
           >
-            View All Categories
+            View all categories
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>

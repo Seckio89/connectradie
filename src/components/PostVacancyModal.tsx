@@ -35,7 +35,7 @@ interface PostVacancyModalProps {
 
 const ROLE_OPTIONS: { value: VacancyRoleType; label: string; hint: string }[] = [
   { value: 'apprentice', label: 'Apprentice', hint: 'Entry-level training position' },
-  { value: 'qualified', label: 'Qualified Tradesperson', hint: 'Licensed / experienced worker' },
+  { value: 'qualified', label: 'Qualified tradesperson', hint: 'Licensed / experienced worker' },
   { value: 'senior_advisory', label: 'Senior / Advisory', hint: 'Leadership or mentoring role' },
   { value: 'non_trade', label: 'Office / Support', hint: 'Admin, accounts, operations' },
 ];
@@ -146,7 +146,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
       <div className="flex items-center justify-between p-6 border-b border-ct-line-soft">
         <div>
           <h2 className="text-xl font-bold text-ct-paper">
-            {editVacancy ? 'Edit Vacancy' : duplicateFrom ? 'Repost Vacancy' : 'Post a Vacancy'}
+            {editVacancy ? 'Edit vacancy' : duplicateFrom ? 'Repost vacancy' : 'Post a vacancy'}
           </h2>
           <p className="text-sm text-ct-mute mt-0.5">
             {editVacancy
@@ -170,7 +170,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
         )}
 
         <div>
-          <label className={labelCls}>Position Title *</label>
+          <label className={labelCls}>Position title *</label>
           <input
             type="text"
             value={form.title}
@@ -181,7 +181,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-ct-mute-2 mb-2">Role Type *</label>
+          <label className="block text-sm font-medium text-ct-mute-2 mb-2">Role type *</label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {ROLE_OPTIONS.map(opt => (
               <button
@@ -205,7 +205,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Trade Category *</label>
+            <label className={labelCls}>Trade category *</label>
             <select value={form.trade_category} onChange={e => set('trade_category', e.target.value)} className={inputCls}>
               <option value="">Select a trade…</option>
               {VACANCY_TRADE_OPTIONS.map(c => (
@@ -229,7 +229,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Employment Type</label>
+            <label className={labelCls}>Employment type</label>
             <select
               value={form.employment_type}
               onChange={e => set('employment_type', e.target.value as EmploymentType)}
@@ -298,7 +298,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
         </div>
 
         <div>
-          <label className={labelCls}>Required Tickets &amp; Licences</label>
+          <label className={labelCls}>Required tickets &amp; licences</label>
           <div className="flex flex-wrap gap-2">
             {COMMON_TICKETS.map(t => {
               const on = tickets.includes(t);
@@ -336,11 +336,11 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
             />
           </div>
           <div>
-            <label className={labelCls}>Start Date</label>
+            <label className={labelCls}>Start date</label>
             <input type="date" value={form.start_date} onChange={e => set('start_date', e.target.value)} className={inputCls} />
           </div>
           <div>
-            <label className={labelCls}>Applications Close</label>
+            <label className={labelCls}>Applications close</label>
             <input type="date" value={form.closing_date} onChange={e => set('closing_date', e.target.value)} className={inputCls} />
           </div>
         </div>
@@ -387,7 +387,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
               ) : (
                 <FileText className="w-4 h-4" />
               )}
-              Save Draft
+              Save draft
             </button>
           )}
           <button
@@ -400,7 +400,7 @@ export default function PostVacancyModal({ isOpen, onClose, onSave, editVacancy,
             ) : (
               <Check className="w-4 h-4" />
             )}
-            {isEdit ? (editVacancy?.status === 'draft' ? 'Publish' : 'Save Changes') : 'Post Vacancy'}
+            {isEdit ? (editVacancy?.status === 'draft' ? 'Publish' : 'Save changes') : 'Post vacancy'}
           </button>
         </div>
       </form>

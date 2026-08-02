@@ -257,7 +257,7 @@ export default function ConversationSettingsModal({
       <div className="bg-ct-surface rounded-ct-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         <div className="p-5 border-b border-ct-line">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-ct-paper">Conversation Settings</h2>
+            <h2 className="text-xl font-bold text-ct-paper">Conversation settings</h2>
             <button
               onClick={onClose}
               className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2"
@@ -293,7 +293,7 @@ export default function ConversationSettingsModal({
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-ct-mute-2 mb-2">
-                  Conversation Name
+                  Conversation name
                 </label>
                 <div className="flex items-center gap-2">
                   {editingTitle ? (
@@ -347,7 +347,7 @@ export default function ConversationSettingsModal({
               </div>
 
               <div className="border-t border-ct-line pt-6">
-                <h3 className="text-sm font-medium text-ct-paper mb-3">Delete Conversation</h3>
+                <h3 className="text-sm font-medium text-ct-paper mb-3">Delete conversation</h3>
                 {showDeleteConfirm ? (
                   <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-4">
                     <p className="text-sm text-ct-rose mb-4">
@@ -370,7 +370,7 @@ export default function ConversationSettingsModal({
                         ) : (
                           <Trash2 className="w-4 h-4" />
                         )}
-                        Delete Forever
+                        Delete forever
                       </button>
                     </div>
                   </div>
@@ -380,7 +380,7 @@ export default function ConversationSettingsModal({
                     className="flex items-center gap-2 px-4 py-2 text-ct-rose border border-ct-rose/[0.34] rounded-ct-sm hover:bg-ct-rose/[0.13] transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete Conversation
+                    Delete conversation
                   </button>
                 )}
               </div>
@@ -392,7 +392,7 @@ export default function ConversationSettingsModal({
               {isAdmin && (
                 <div>
                   <label className="block text-sm font-medium text-ct-mute-2 mb-2">
-                    Add Participant
+                    Add participant
                   </label>
                   <div className="relative">
                     <input
@@ -431,7 +431,7 @@ export default function ConversationSettingsModal({
               )}
 
               <div>
-                <h3 className="text-sm font-bold text-ct-paper mb-3">Current Participants</h3>
+                <h3 className="text-sm font-bold text-ct-paper mb-3">Current participants</h3>
                 {loading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-8 h-8 text-ct-mute-2 animate-spin" />
@@ -597,7 +597,7 @@ export default function ConversationSettingsModal({
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm font-medium hover:brightness-110 transition-colors"
             >
               <UserPlus className="w-4 h-4" />
-              Add Participant
+              Add participant
             </button>
           )}
           <div className="flex gap-2.5">
@@ -608,7 +608,7 @@ export default function ConversationSettingsModal({
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border border-ct-rose/[0.34] text-ct-rose rounded-ct-sm font-medium hover:bg-ct-rose/[0.13] transition-colors disabled:opacity-50"
               >
                 {leaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-                Leave Group
+                Leave group
               </button>
             )}
             {isArchived ? (

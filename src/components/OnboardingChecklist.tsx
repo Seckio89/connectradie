@@ -317,9 +317,9 @@ export default function OnboardingChecklist() {
     <div className="bg-ct-surface rounded-ct-lg border border-ct-line overflow-hidden">
       <div className="p-5 pb-4">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="font-semibold text-ct-paper text-sm">Get Started</h3>
+          <h3 className="font-semibold text-ct-paper text-sm">Get started</h3>
           <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-ct-mute-2">{percentage}% Setup</span>
+            <span className="text-xs font-bold text-ct-mute-2">{percentage}% setup</span>
             <button
               onClick={() => percentage < 100 ? setShowDismissWarning(true) : handleDismiss()}
               className="p-2.5 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"

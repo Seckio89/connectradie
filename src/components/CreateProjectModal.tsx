@@ -59,7 +59,7 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-ct-surface rounded-ct-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-ct-surface border-b border-ct-line px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-ct-paper">Create New Job Group</h2>
+          <h2 className="text-xl font-bold text-ct-paper">Create new job group</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors"
@@ -77,7 +77,7 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
 
           <div>
             <label className="block text-sm font-medium text-ct-mute-2 mb-2">
-              Job Group Name <span className="text-ct-rose">*</span>
+              Job group name <span className="text-ct-rose">*</span>
             </label>
             <div className="relative">
               <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
@@ -108,7 +108,7 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-ct-mute-2 mb-2">
-                Start Date
+                Start date
               </label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
@@ -123,7 +123,7 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
 
             <div>
               <label className="block text-sm font-medium text-ct-mute-2 mb-2">
-                Est. End Date
+                Est. end date
               </label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
@@ -157,7 +157,7 @@ export default function CreateProjectModal({ onClose, onCreated }: CreateProject
               disabled={loading}
               className="flex-1 px-6 py-3 bg-ct-teal text-ct-ink rounded-ct-md hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating...' : 'Create Job Group'}
+              {loading ? 'Creating...' : 'Create job group'}
             </button>
           </div>
         </form>

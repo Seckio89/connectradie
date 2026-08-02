@@ -197,12 +197,12 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
     <div>
       <form onSubmit={handlePasswordChange} className="space-y-6 p-6 md:p-8" aria-label="Change ConnecTradie Password">
         <div>
-          <h3 className="text-lg font-semibold text-ct-paper mb-4">Change Password</h3>
+          <h3 className="text-lg font-semibold text-ct-paper mb-4">Change password</h3>
           <p className="text-sm text-ct-mute-2 mb-6">Enter a new password for your account. Must be at least 8 characters with uppercase, lowercase, and a number.</p>
         </div>
 
         <div>
-          <label htmlFor="new-password" className="block text-sm font-medium text-ct-mute-2 mb-2">New Password</label>
+          <label htmlFor="new-password" className="block text-sm font-medium text-ct-mute-2 mb-2">New password</label>
           <div className="relative">
             <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
             <input id="new-password" type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Enter new password" className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" aria-label="New password for ConnecTradie account" />
@@ -210,7 +210,7 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
         </div>
 
         <div>
-          <label htmlFor="confirm-password" className="block text-sm font-medium text-ct-mute-2 mb-2">Confirm Password</label>
+          <label htmlFor="confirm-password" className="block text-sm font-medium text-ct-mute-2 mb-2">Confirm password</label>
           <div className="relative">
             <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-ct-mute" />
             <input id="confirm-password" type="password" autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" className="w-full pl-12 pr-4 py-3 border border-ct-line rounded-ct-md focus:outline-none focus:ring-2 focus:ring-ct-teal" aria-label="Confirm new password for ConnecTradie account" />
@@ -228,7 +228,7 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
         )}
 
         <button type="submit" disabled={passwordLoading || !newPassword || !confirmPassword} className="w-full py-3 bg-ct-teal text-ct-ink font-semibold rounded-ct-md hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 min-h-[44px]">
-          {passwordLoading ? (<><Loader2 className="w-5 h-5 animate-spin" />Updating Password...</>) : (<><Lock className="w-5 h-5" />Update Password</>)}
+          {passwordLoading ? (<><Loader2 className="w-5 h-5 animate-spin" />Updating Password...</>) : (<><Lock className="w-5 h-5" />Update password</>)}
         </button>
       </form>
 
@@ -378,7 +378,7 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
             <Download className="w-5 h-5 text-ct-mute-2" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-ct-paper">Export My Data</h3>
+            <h3 className="text-lg font-semibold text-ct-paper">Export my data</h3>
             <p className="text-sm text-ct-mute">Download all your personal data as a JSON file</p>
           </div>
         </div>
@@ -403,7 +403,7 @@ export default function SecurityTab({ isTradie, onDeleteAccount }: SecurityTabPr
       </div>
 
       <div className="border-t border-ct-line p-6 md:p-8">
-        <h3 className="text-lg font-semibold text-ct-rose mb-2">Delete Account</h3>
+        <h3 className="text-lg font-semibold text-ct-rose mb-2">Delete account</h3>
         <p className="text-sm text-ct-mute-2 mb-4">Permanently delete your account and all associated data. This action cannot be undone.</p>
 
         {!showDeleteConfirm ? (

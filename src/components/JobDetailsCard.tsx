@@ -514,11 +514,11 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
 
   const formatBudget = () => {
     if (!job.budget_type) return null;
-    if (job.budget_type === 'request_quote') return { label: 'Quote Required', value: 'Awaiting quote from tradie', type: 'quote' };
+    if (job.budget_type === 'request_quote') return { label: 'Quote required', value: 'Awaiting quote from tradie', type: 'quote' };
     if (job.budget_amount) {
       const formattedAmount = new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', minimumFractionDigits: 0 }).format(job.budget_amount);
-      if (job.budget_type === 'fixed_budget') return { label: 'Fixed Budget', value: formattedAmount, type: 'fixed' };
-      return { label: 'Hourly Rate', value: `${formattedAmount}/hr`, type: 'hourly' };
+      if (job.budget_type === 'fixed_budget') return { label: 'Fixed budget', value: formattedAmount, type: 'fixed' };
+      return { label: 'Hourly rate', value: `${formattedAmount}/hr`, type: 'hourly' };
     }
     return null;
   };
@@ -636,7 +636,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <ImageIcon className="w-4 h-4 text-ct-mute" />
-                <p className="text-xs font-medium text-ct-mute">Attached Photos</p>
+                <p className="text-xs font-medium text-ct-mute">Attached photos</p>
               </div>
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {job.images_url.map((_, index) => {
@@ -664,7 +664,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
 
           {showClientDetails && (
             <div className="border-t border-ct-line-soft pt-4">
-              <p className="text-xs font-medium text-ct-mute mb-2">Contact Details</p>
+              <p className="text-xs font-medium text-ct-mute mb-2">Contact details</p>
               {canSeeContactDetails ? (
                 <div className="flex flex-wrap gap-x-5 gap-y-2">
                   <div className="flex items-center gap-2 text-sm">
@@ -710,7 +710,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <h4 className="font-ct-display font-semibold text-ct-paper text-sm">Job Group Timeline</h4>
+                  <h4 className="font-ct-display font-semibold text-ct-paper text-sm">Job group timeline</h4>
                   <span className="text-xs bg-ct-surface-2 text-ct-mute-2 px-2 py-0.5 rounded-ct-xs">{project.title}</span>
                 </div>
                 <div className="space-y-1.5">
@@ -812,12 +812,12 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-ct-mute-2" />
-                <h4 className="font-ct-display font-semibold tracking-tight text-ct-paper">Payment Schedule</h4>
+                <h4 className="font-ct-display font-semibold tracking-tight text-ct-paper">Payment schedule</h4>
               </div>
               {showClientDetails && isProUser && (
                 <button onClick={() => setShowAddMilestone(!showAddMilestone)}
                   className="px-3 py-1.5 bg-ct-teal text-ct-ink font-ct-display text-sm font-semibold rounded-ct-sm hover:brightness-110 flex items-center gap-1.5">
-                  <Plus className="w-4 h-4" />Add Progress Payment
+                  <Plus className="w-4 h-4" />Add progress payment
                 </button>
               )}
               {showClientDetails && !isProUser && (
@@ -832,7 +832,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
             {paymentProgress && milestones.length > 0 && (
               <div className="mb-4 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-md p-3">
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium text-ct-teal">Payment Progress</span>
+                  <span className="text-xs font-medium text-ct-teal">Payment progress</span>
                   <span className="font-ct-mono text-xs font-semibold text-ct-teal">
                     ${paymentProgress.totalPaid.toFixed(2)} / ${paymentProgress.totalBudget.toFixed(2)}
                   </span>
@@ -911,7 +911,7 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
               className="w-full px-4 py-3 border border-dashed border-ct-line text-ct-mute-2 rounded-ct-md hover:border-ct-teal hover:text-ct-teal flex items-center justify-center gap-2 font-medium transition-colors"
             >
               <Plus className="w-5 h-5" />
-              Additional Cost
+              Additional cost
             </button>
           </div>
         )}
@@ -1031,7 +1031,7 @@ function PaymentTimelineItem({
 
   const iconColor = isPaid ? 'text-ct-teal' : isApproved ? 'text-ct-mute-2' : 'text-ct-mute';
   const lineColor = isPaid ? 'bg-ct-teal/40' : 'bg-ct-line';
-  const statusLabel = isPaid ? 'Paid' : isApproved ? 'Awaiting Payment' : 'Awaiting Approval';
+  const statusLabel = isPaid ? 'Paid' : isApproved ? 'Awaiting payment' : 'Awaiting approval';
   const statusStyle = isPaid ? 'text-ct-teal bg-ct-teal/[0.14]' : isApproved ? 'text-ct-mute-2 bg-ct-surface-2' : 'text-ct-amber bg-ct-amber/[0.13]';
 
   return (
@@ -1079,7 +1079,7 @@ function PaymentTimelineItem({
               {milestone.status === 'approved' && (
                 <button onClick={onMarkPaid} disabled={loading}
                   className="px-3 py-1.5 bg-ct-teal text-ct-ink text-xs rounded-ct-sm hover:brightness-110 disabled:opacity-50 flex items-center gap-1.5 font-medium whitespace-nowrap">
-                  Mark as Paid
+                  Mark as paid
                 </button>
               )}
             </div>
@@ -1121,7 +1121,7 @@ function PaymentTimelineItem({
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-ct-mute flex items-center gap-1.5">
                 <ImageIcon className="w-3.5 h-3.5" />
-                Proof of Work {milestone.proof_images?.length > 0 && `(${milestone.proof_images.length})`}
+                Proof of work {milestone.proof_images?.length > 0 && `(${milestone.proof_images.length})`}
               </span>
               {showClientDetails && milestone.status !== 'paid' && (
                 <label className={`cursor-pointer ${uploadingProof === milestone.id ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -1130,7 +1130,7 @@ function PaymentTimelineItem({
                     disabled={uploadingProof === milestone.id} className="hidden" />
                   <div className="flex items-center gap-1 px-2.5 py-1 bg-ct-surface-2 hover:bg-ct-line rounded-ct-sm text-xs font-medium text-ct-mute-2 transition-colors">
                     <Upload className="w-3 h-3" />
-                    {uploadingProof === milestone.id ? 'Uploading...' : 'Add Photos'}
+                    {uploadingProof === milestone.id ? 'Uploading...' : 'Add photos'}
                   </div>
                 </label>
               )}
@@ -1213,7 +1213,7 @@ function AddPaymentForm({
             <label className="block text-sm font-medium text-ct-mute-2">Subcontractors</label>
             <button type="button" onClick={() => setSubcontractors([...subcontractors, { business_name: '', invoice_number: '', amount: '', gst: '' }])}
               className="text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 flex items-center gap-1">
-              <Plus className="w-3 h-3" />Add Another
+              <Plus className="w-3 h-3" />Add another
             </button>
           </div>
           {subcontractors.map((sub, idx) => (
@@ -1223,7 +1223,7 @@ function AddPaymentForm({
                 <div className="flex items-center gap-1">
                   {sub.invoice_id && (
                     <button type="button" onClick={() => setViewingInvoiceId(sub.invoice_id!)}
-                      className="p-1 text-ct-mute-2 hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-xs transition-colors" title="View Invoice">
+                      className="p-1 text-ct-mute-2 hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-xs transition-colors" title="View invoice">
                       <Eye className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -1236,7 +1236,7 @@ function AddPaymentForm({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <span className="text-xs font-medium text-ct-mute">Attach Invoice</span>
+                <span className="text-xs font-medium text-ct-mute">Attach invoice</span>
                 <div className="grid grid-cols-[1fr_auto_1fr] gap-0 items-center">
                   <div
                     className={`relative border-2 border-dashed rounded-ct-sm p-3 text-center cursor-pointer transition-colors ${
@@ -1357,18 +1357,18 @@ function AddPaymentForm({
       )}
 
       <div>
-        <label className="block text-sm font-medium text-ct-mute-2 mb-1">Due Date (Optional)</label>
+        <label className="block text-sm font-medium text-ct-mute-2 mb-1">Due date (optional)</label>
         <input type="date" value={milestoneDueDate} onChange={(e) => setMilestoneDueDate(e.target.value)}
           className="w-full px-3 py-2 border border-ct-line rounded-ct-sm focus:ring-2 focus:ring-ct-teal focus:border-transparent text-sm" />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ct-mute-2 mb-1">Payment Type</label>
+        <label className="block text-sm font-medium text-ct-mute-2 mb-1">Payment type</label>
         <div className="flex gap-2">
           <button type="button" onClick={() => setMilestonePaymentType('direct')}
             className={`flex-1 px-3 py-2 rounded-ct-sm text-sm font-medium border-2 transition-colors ${
               milestonePaymentType === 'direct' ? 'border-ct-teal bg-ct-teal/[0.14] text-ct-teal' : 'border-ct-line bg-ct-surface text-ct-mute-2 hover:border-ct-line'
-            }`}>Direct Payment</button>
+            }`}>Direct payment</button>
           <button type="button" onClick={() => setMilestonePaymentType('subcontractor')}
             className={`flex-1 px-3 py-2 rounded-ct-sm text-sm font-medium border-2 transition-colors ${
               milestonePaymentType === 'subcontractor' ? 'border-ct-teal bg-ct-amber/[0.13] text-ct-amber' : 'border-ct-line bg-ct-surface text-ct-mute-2 hover:border-ct-line'
@@ -1379,7 +1379,7 @@ function AddPaymentForm({
       <div className="flex gap-2 pt-1">
         <button onClick={handleAddMilestone} disabled={loading}
           className="flex-1 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm hover:brightness-110 disabled:opacity-50 font-medium text-sm">
-          Add Progress Payment
+          Add progress payment
         </button>
         <button onClick={onCancel}
           className="px-4 py-2 bg-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-line font-medium text-sm">Cancel</button>
@@ -1446,7 +1446,7 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
       <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="w-4 h-4 text-ct-mute-2" />
-          <h4 className="font-ct-display font-semibold tracking-tight text-ct-paper text-sm">Variations History</h4>
+          <h4 className="font-ct-display font-semibold tracking-tight text-ct-paper text-sm">Variations history</h4>
           <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-full">
             {resolved.length}
           </span>

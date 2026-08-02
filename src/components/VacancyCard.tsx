@@ -4,7 +4,7 @@ import { formatPay, employmentLabel, vacancyTradeLabel } from '../lib/vacancyOpt
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: typeof GraduationCap }> = {
   apprentice: { label: 'Apprenticeship', color: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line', icon: GraduationCap },
-  qualified: { label: 'Qualified Trade', color: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line', icon: Briefcase },
+  qualified: { label: 'Qualified trade', color: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line', icon: Briefcase },
   senior_advisory: { label: 'Senior / Advisory', color: 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]', icon: Award },
   non_trade: { label: 'Office / Support', color: 'bg-ct-surface-2 text-ct-mute-2 border-ct-line', icon: Laptop },
 };
@@ -21,7 +21,7 @@ export default function VacancyCard({ vacancy, onApply, hasApplied, isOwner, onM
   const role = ROLE_CONFIG[vacancy.role_type] || ROLE_CONFIG.qualified;
   const RoleIcon = role.icon;
   const isVerified = vacancy.employer?.verification_status === 'verified';
-  const businessName = vacancy.employer_details?.business_name || vacancy.employer?.full_name || 'Unknown Business';
+  const businessName = vacancy.employer_details?.business_name || vacancy.employer?.full_name || 'Unknown business';
   const daysAgo = Math.floor((Date.now() - new Date(vacancy.created_at).getTime()) / (1000 * 60 * 60 * 24));
   const timeLabel = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1 day ago' : `${daysAgo} days ago`;
 

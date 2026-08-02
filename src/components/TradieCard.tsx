@@ -43,14 +43,14 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
 
   const getAvailabilityStatus = () => {
     if (!hasSetAvailability) {
-      return { text: 'Request Availability', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', dot: 'bg-ct-teal', border: 'border-ct-teal/30' };
+      return { text: 'Request availability', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', dot: 'bg-ct-teal', border: 'border-ct-teal/30' };
     }
     if (availabilityHours >= 10) {
-      return { text: 'Available This Week', color: 'text-ct-teal', bg: 'bg-ct-teal/[0.14]', dot: 'bg-ct-teal/[0.14]', border: 'border-ct-teal/30' };
+      return { text: 'Available this week', color: 'text-ct-teal', bg: 'bg-ct-teal/[0.14]', dot: 'bg-ct-teal/[0.14]', border: 'border-ct-teal/30' };
     } else if (availabilityHours > 0) {
-      return { text: 'Limited Availability', color: 'text-ct-amber', bg: 'bg-ct-amber/[0.13]', dot: 'bg-ct-teal', border: 'border-ct-teal/30' };
+      return { text: 'Limited availability', color: 'text-ct-amber', bg: 'bg-ct-amber/[0.13]', dot: 'bg-ct-teal', border: 'border-ct-teal/30' };
     } else {
-      return { text: 'Busy This Week', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', dot: 'bg-ct-surface-2', border: 'border-ct-line' };
+      return { text: 'Busy this week', color: 'text-ct-mute-2', bg: 'bg-ct-surface-2', dot: 'bg-ct-surface-2', border: 'border-ct-line' };
     }
   };
 
@@ -94,7 +94,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
               {isPro && <ProBadge size="sm" variant={isVerifiedPro ? 'verified' : 'pro'} />}
             </div>
             <p className="text-xs text-ct-mute capitalize mt-0.5">
-              {details?.trade_category || 'Trade Professional'}
+              {details?.trade_category || 'Trade professional'}
             </p>
             <div className="mt-1.5">
               <UserTradeBadges
@@ -172,7 +172,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
               <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-ct-surface text-ct-paper text-xs rounded-ct-sm whitespace-nowrap opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all duration-200 pointer-events-none z-50 shadow-xl">
                 <div className="flex items-center gap-1.5 font-medium">
                   <Shield className="w-3.5 h-3.5" />
-                  <span>Insurance Verified</span>
+                  <span>Insurance verified</span>
                 </div>
                 <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
               </div>
@@ -197,7 +197,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
                       ))}
                     </ul>
                   ) : (
-                    <div className="text-ct-mute">Licensed Professional</div>
+                    <div className="text-ct-mute">Licensed professional</div>
                   )}
                 </div>
                 <div className="absolute top-full left-4 -mt-1 border-4 border-transparent border-t-gray-900"></div>
@@ -259,14 +259,14 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
             <button
               onClick={() => onViewCalendar(tradie)}
               className="p-2.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              title="Check Calendar"
+              title="Check calendar"
             >
               <Calendar className="w-4 h-4" />
             </button>
             <Link
               to={`/tradie/${tradie.id}`}
               className="p-2.5 text-ct-teal hover:text-ct-teal hover:bg-ct-teal/[0.14] rounded-ct-sm transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              title="View Full Profile"
+              title="View full profile"
             >
               <ExternalLink className="w-4 h-4" />
             </Link>

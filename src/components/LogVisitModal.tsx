@@ -47,7 +47,7 @@ export default function LogVisitModal({ isOpen, agreement, onClose, onSuccess }:
       <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-ct-surface rounded-ct-lg shadow-2xl z-50 w-full max-w-md p-6 max-h-[85vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-ct-paper">Log Extra Visit</h2>
+          <h2 className="text-lg font-semibold text-ct-paper">Log extra visit</h2>
           <button onClick={onClose} className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -181,7 +181,7 @@ export default function LogVisitModal({ isOpen, agreement, onClose, onSuccess }:
             className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm hover:brightness-110 disabled:opacity-50 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
           >
             <Check className="w-4 h-4" />
-            {isSubmitting ? 'Logging...' : 'Log Extra Visit'}
+            {isSubmitting ? 'Logging...' : 'Log extra visit'}
           </button>
         </div>
       </div>

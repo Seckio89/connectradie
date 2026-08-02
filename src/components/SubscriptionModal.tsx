@@ -283,7 +283,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             <div className="w-20 h-20 bg-ct-surface-2 rounded-full flex items-center justify-center mb-6">
               <Check className="w-10 h-10 text-ct-mute-2" />
             </div>
-            <h2 className="text-2xl font-bold text-ct-paper mb-2">Subscription Cancelled</h2>
+            <h2 className="text-2xl font-bold text-ct-paper mb-2">Subscription cancelled</h2>
             <p className="text-ct-mute-2 mb-4 max-w-sm">
               Your membership has been cancelled. You'll revert to the free plan at the end of your billing period.
             </p>
@@ -367,12 +367,12 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                 <Crown className="w-4 h-4" />
                 {currentTier !== 'free'
                   ? `Your ${tierLabel(currentTier)} Plan`
-                  : 'Choose Your Plan'}
+                  : 'Choose your plan'}
               </div>
               <h2 className="text-2xl font-bold text-ct-paper mb-2">
                 {currentTier !== 'free'
                   ? `You're on the ${tierLabel(currentTier)} Plan`
-                  : 'Grow Your Business'}
+                  : 'Grow your business'}
               </h2>
               <p className="text-ct-mute max-w-lg mx-auto text-sm">
                 {currentTier !== 'free'
@@ -461,7 +461,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                   disabled
                   className="w-full mt-6 py-2.5 border-2 border-ct-line text-ct-mute text-sm font-semibold rounded-ct-md cursor-not-allowed"
                 >
-                  {currentTier === 'free' ? 'Current Plan' : 'Free Plan'}
+                  {currentTier === 'free' ? 'Current plan' : 'Free plan'}
                 </button>
               </div>
 
@@ -472,7 +472,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                   : 'border-ct-teal/30 bg-gradient-to-b from-ct-teal/[0.14] to-ct-surface shadow-sm'
               }`}>
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-ct-teal to-ct-teal text-ct-ink text-xs font-bold rounded-full uppercase tracking-wide">
-                  {currentTier === 'pro' ? 'Current Plan' : 'Most Popular'}
+                  {currentTier === 'pro' ? 'Current plan' : 'Most popular'}
                 </div>
 
                 <div className="mb-5">

@@ -450,9 +450,9 @@ export default function QuoteComparisonView({
             className="text-sm border border-ct-line rounded-ct-sm px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-ct-teal"
           >
             <option value="recommended">Recommended</option>
-            <option value="price_low">Price: Low to High</option>
-            <option value="price_high">Price: High to Low</option>
-            <option value="rating">Highest Rated</option>
+            <option value="price_low">Price: low to high</option>
+            <option value="price_high">Price: high to low</option>
+            <option value="rating">Highest rated</option>
           </select>
         </div>
       )}
@@ -1079,22 +1079,22 @@ function getQuoteTags(
   const tags: { label: string; color: 'teal' | 'amber' | 'blue' | 'green' }[] = [];
 
   if (index === 0 && allQuotes.length > 1) {
-    tags.push({ label: 'Best Match', color: 'teal' });
+    tags.push({ label: 'Best match', color: 'teal' });
   }
 
   const avgPrice = allQuotes.reduce((sum, q) => sum + (q.firm_price || (q.price_min + q.price_max) / 2), 0) / allQuotes.length;
   const thisPrice = quote.firm_price || (quote.price_min + quote.price_max) / 2;
   if (allQuotes.length > 1 && thisPrice <= avgPrice * 0.85) {
-    tags.push({ label: 'Great Value', color: 'green' });
+    tags.push({ label: 'Great value', color: 'green' });
   }
 
   if ((quote.review_stats?.avg_rating || 0) >= 4.5 && (quote.review_stats?.total_reviews || 0) >= 3) {
-    tags.push({ label: 'Top Rated', color: 'amber' });
+    tags.push({ label: 'Top rated', color: 'amber' });
   }
 
   const hoursSinceQuote = (Date.now() - new Date(quote.created_at).getTime()) / 3600000;
   if (hoursSinceQuote < 2) {
-    tags.push({ label: 'Quick Responder', color: 'blue' });
+    tags.push({ label: 'Quick responder', color: 'blue' });
   }
 
   return tags;

@@ -18,7 +18,7 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
   return (
     <div className="space-y-6 p-6 md:p-8">
       <div>
-        <h3 className="text-lg font-semibold text-ct-paper mb-1">Notification Preferences</h3>
+        <h3 className="text-lg font-semibold text-ct-paper mb-1">Notification preferences</h3>
         <p className="text-sm text-ct-mute-2 mb-6">
           {isClient
             ? 'Control how you receive alerts about quotes, job updates, and scheduled services.'
@@ -33,7 +33,7 @@ export default function NotificationsTab({ pushEnabled, pushPermission, notifSav
               <BellRing className="w-5 h-5 text-ct-mute-2" />
             </div>
             <div>
-              <p className="font-medium text-ct-paper">Web Push Alerts</p>
+              <p className="font-medium text-ct-paper">Web push alerts</p>
               <p className="text-sm text-ct-mute-2">
                 {isClient
                   ? 'Receive browser notifications for quotes and job updates'

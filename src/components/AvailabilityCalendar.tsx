@@ -241,7 +241,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
         await sendNotification({
           type: NOTIFICATION_TYPES.JOB_BOOKING_CONFIRMED,
           userId: tradie.id,
-          title: 'New Booking Request',
+          title: 'New booking request',
           message: `${profile?.full_name || 'A client'} has requested a booking for ${scheduledTime.toLocaleDateString('en-AU', {
             weekday: 'long',
             day: 'numeric',
@@ -339,7 +339,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
         <div className="flex items-center justify-between px-6 py-4 border-b border-ct-line-soft">
           <div>
             <h3 className="font-semibold text-ct-paper">
-              {tradieDisplayName}'s Calendar
+              {tradieDisplayName}'s calendar
             </h3>
             <p className="text-sm text-ct-mute-2">Select a date to view available time slots</p>
           </div>
@@ -506,7 +506,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                 <div className="w-16 h-16 bg-ct-surface-2 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CalendarIcon className="w-8 h-8 text-ct-mute-2" />
                 </div>
-                <h3 className="text-xl font-semibold text-ct-paper mb-2">Booking Requested!</h3>
+                <h3 className="text-xl font-semibold text-ct-paper mb-2">Booking requested!</h3>
                 <p className="text-ct-mute-2">
                   Your booking request has been sent to {tradieDisplayName}
                 </p>
@@ -514,7 +514,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
             ) : (
               <>
                 <div className="flex items-center justify-between p-6 pb-4 border-b border-ct-line-soft">
-                  <h3 className="text-lg font-semibold text-ct-paper">Request Booking</h3>
+                  <h3 className="text-lg font-semibold text-ct-paper">Request booking</h3>
                   <button
                     onClick={() => setSelectedSlot(null)}
                     className="p-2 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -527,7 +527,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                   <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md p-4">
                     <div className="flex items-center gap-3 mb-2">
                       <Clock className="w-5 h-5 text-ct-mute-2" />
-                      <h4 className="font-semibold text-ct-paper">Choose Your Time</h4>
+                      <h4 className="font-semibold text-ct-paper">Choose your time</h4>
                     </div>
                     <p className="text-sm text-ct-mute-2 mb-3">
                       {new Date(selectedSlot.start_time).toLocaleDateString('en-AU', {
@@ -542,7 +542,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                     </p>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-ct-mute-2 mb-1">Start Time</label>
+                        <label className="block text-xs font-medium text-ct-mute-2 mb-1">Start time</label>
                         <input
                           type="time"
                           step="300"
@@ -554,7 +554,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-ct-mute-2 mb-1">End Time</label>
+                        <label className="block text-xs font-medium text-ct-mute-2 mb-1">End time</label>
                         <input
                           type="time"
                           step="300"
@@ -626,12 +626,12 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                   <div className="bg-ct-surface-2 rounded-ct-md p-4 space-y-4">
                     <h4 className="text-sm font-semibold text-ct-paper flex items-center gap-2">
                       <User className="w-4 h-4 text-ct-mute-2" />
-                      Contact & Location
+                      Contact & location
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-medium text-ct-mute-2 mb-1">
-                          Contact Name
+                          Contact name
                           <span className="text-ct-rose ml-1">*</span>
                         </label>
                         <input
@@ -647,7 +647,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-ct-mute-2 mb-1">
-                          Phone Number
+                          Phone number
                           <span className="text-ct-rose ml-1">*</span>
                         </label>
                         <input
@@ -665,7 +665,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                     <div>
                       <label className="text-xs font-medium text-ct-mute-2 mb-1 flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
-                        Job Location Address
+                        Job location address
                         <span className="text-ct-rose ml-1">*</span>
                       </label>
                       <AddressAutocomplete
@@ -683,7 +683,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                     <div>
                       <label className="text-xs font-medium text-ct-mute-2 mb-1 flex items-center gap-1">
                         <Key className="w-3 h-3" />
-                        Access Instructions (Optional)
+                        Access instructions (optional)
                       </label>
                       <input
                         type="text"
@@ -703,7 +703,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
 
                   <div>
                     <label className="block text-sm font-medium text-ct-mute-2 mb-2">
-                      Upload Pictures (Optional)
+                      Upload pictures (optional)
                     </label>
                     <input
                       ref={fileInputRef}
@@ -779,12 +779,12 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                     {bookingLoading ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        Sending Request...
+                        Sending request...
                       </>
                     ) : (
                       <>
                         <CalendarIcon className="w-5 h-5" />
-                        Request Booking
+                        Request booking
                       </>
                     )}
                   </button>

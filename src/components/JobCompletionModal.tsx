@@ -483,7 +483,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
         try {
           await supabase.rpc('create_notification', {
             p_user_id: job.client_id,
-            p_title: alreadyPaid ? 'Job Completed' : 'Payment Requested',
+            p_title: alreadyPaid ? 'Job completed' : 'Payment requested',
             p_message: alreadyPaid
               ? 'Your tradie has marked the job complete. Review the work and release the secured payment when you are happy with it.'
               : `Your tradie has completed the job and requested payment.${paymentAmountDisplay} Please review and release payment.`,
@@ -728,7 +728,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                 <RefreshCw className="w-5 h-5 text-ct-teal" />
               </div>
               <div>
-                <h2 className="text-base font-bold text-ct-paper">Offer Ongoing Service?</h2>
+                <h2 className="text-base font-bold text-ct-paper">Offer ongoing service?</h2>
                 <p className="text-xs text-ct-mute">Set up a recurring schedule with {clientName}</p>
               </div>
             </div>
@@ -831,7 +831,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
               ) : (
                 <>
                   <RefreshCw className="w-4 h-4" />
-                  Set Up Ongoing Service
+                  Set up ongoing service
                 </>
               )}
             </button>
@@ -847,7 +847,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-bold text-ct-paper">{noPaymentRequest ? 'Complete Job' : 'Request Payment'}</h2>
+            <h2 className="text-base font-bold text-ct-paper">{noPaymentRequest ? 'Complete job' : 'Request payment'}</h2>
             <p className="text-xs text-ct-mute mt-0.5">
               {jobCategory && <span className="text-ct-mute-2 font-medium">{jobCategory}</span>}
               {jobCategory && ' — '}{jobDesc}
@@ -1011,9 +1011,9 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
                   Submitting...
                 </>
               ) : noPaymentRequest ? (
-                'Complete Job'
+                'Complete job'
               ) : (
-                'Request Payment'
+                'Request payment'
               )}
             </button>
           </div>

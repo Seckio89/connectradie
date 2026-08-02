@@ -253,7 +253,7 @@ export default function CreateInvoiceModal({
               <FileText className="w-5 h-5 text-ct-mute-2" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-ct-paper">Create Invoice</h2>
+              <h2 className="text-xl font-bold text-ct-paper">Create invoice</h2>
               <p className="text-sm text-ct-mute-2">Fill in the details below</p>
             </div>
           </div>
@@ -273,7 +273,7 @@ export default function CreateInvoiceModal({
               </h3>
               <div>
                 <label className="block text-sm font-medium text-ct-mute-2 mb-1">
-                  Business Name *
+                  Business name *
                 </label>
                 <input
                   type="text"
@@ -357,7 +357,7 @@ export default function CreateInvoiceModal({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-sm font-medium text-ct-mute-2 mb-1">
-                  Invoice Number *
+                  Invoice number *
                 </label>
                 <input
                   type="text"
@@ -369,7 +369,7 @@ export default function CreateInvoiceModal({
               </div>
               <div>
                 <label className="block text-sm font-medium text-ct-mute-2 mb-1">
-                  Invoice Date
+                  Invoice date
                 </label>
                 <input
                   type="date"
@@ -380,7 +380,7 @@ export default function CreateInvoiceModal({
               </div>
               <div>
                 <label className="block text-sm font-medium text-ct-mute-2 mb-1">
-                  Due Date
+                  Due date
                 </label>
                 <input
                   type="date"
@@ -403,7 +403,7 @@ export default function CreateInvoiceModal({
                 className="text-xs font-medium text-ct-mute-2 hover:text-ct-mute-2 flex items-center gap-1"
               >
                 <Plus className="w-3 h-3" />
-                Add Item
+                Add item
               </button>
             </div>
 
@@ -527,7 +527,7 @@ export default function CreateInvoiceModal({
               className="flex-1 px-4 py-3 bg-ct-teal text-ct-ink rounded-ct-md hover:bg-ct-teal-deep disabled:opacity-50 font-semibold flex items-center justify-center gap-2 transition-colors"
             >
               <Calculator className="w-4 h-4" />
-              {saving ? 'Creating...' : 'Create Invoice'}
+              {saving ? 'Creating...' : 'Create invoice'}
             </button>
             <button
               onClick={() => { resetForm(); onClose(); }}

@@ -26,7 +26,7 @@ const TIME_PRESETS: TimeSlotPreset[] = [
   { id: 'morning', name: 'Morning', startTime: '06:30', endTime: '12:00', icon: '🌅' },
   { id: 'afternoon', name: 'Afternoon', startTime: '12:30', endTime: '17:30', icon: '☀️' },
   { id: 'evening', name: 'Evening', startTime: '17:30', endTime: '21:30', icon: '🌆' },
-  { id: 'fullday', name: 'Full Day', startTime: '07:00', endTime: '17:00', icon: '📅' },
+  { id: 'fullday', name: 'Full day', startTime: '07:00', endTime: '17:00', icon: '📅' },
   { id: 'custom', name: 'Custom', startTime: '09:00', endTime: '17:00', icon: '⚙️' },
 ];
 
@@ -202,7 +202,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
       <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 bg-ct-surface rounded-t-2xl sm:rounded-ct-lg shadow-2xl z-[60] w-full sm:max-w-4xl max-h-[85vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-ct-line">
           <div>
-            <h3 className="text-xl font-semibold text-ct-paper">Add Availability Slots</h3>
+            <h3 className="text-xl font-semibold text-ct-paper">Add availability slots</h3>
             <p className="text-sm text-ct-mute mt-1">Select multiple dates and set your working hours</p>
           </div>
           <button
@@ -217,7 +217,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-ct-paper">Select Dates</h4>
+                <h4 className="font-semibold text-ct-paper">Select dates</h4>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1))}
@@ -281,7 +281,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                   onClick={() => selectDateRange('weekdays')}
                   className="text-xs px-3 py-1.5 bg-ct-surface border border-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                 >
-                  All Weekdays
+                  All weekdays
                 </button>
                 <button
                   onClick={() => selectDateRange('weekend')}
@@ -293,13 +293,13 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                   onClick={() => selectDateRange('all')}
                   className="text-xs px-3 py-1.5 bg-ct-surface border border-ct-line text-ct-mute-2 rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
                 >
-                  Entire Month
+                  Entire month
                 </button>
                 <button
                   onClick={clearAllDates}
                   className="text-xs px-3 py-1.5 bg-ct-surface border border-ct-line text-ct-rose rounded-ct-sm hover:bg-ct-rose/[0.13] transition-colors"
                 >
-                  Clear All
+                  Clear all
                 </button>
               </div>
 
@@ -307,7 +307,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Repeat className="w-4 h-4 text-ct-mute-2" />
-                    <span className="text-sm font-semibold text-ct-paper">Recurring Pattern</span>
+                    <span className="text-sm font-semibold text-ct-paper">Recurring pattern</span>
                   </div>
                   <button
                     onClick={() => setRecurringPattern({ ...recurringPattern, enabled: !recurringPattern.enabled })}
@@ -361,7 +361,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
             </div>
 
             <div>
-              <h4 className="font-semibold text-ct-paper mb-4">Time Slot Template</h4>
+              <h4 className="font-semibold text-ct-paper mb-4">Time slot template</h4>
 
               <div className="grid grid-cols-2 gap-3 mb-6">
                 {TIME_PRESETS.map((preset) => (
@@ -385,10 +385,10 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
 
               {selectedPreset === 'custom' && (
                 <div className="bg-ct-surface-2 rounded-ct-md p-4 mb-6">
-                  <label className="block text-sm font-medium text-ct-mute-2 mb-3">Custom Time Range</label>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-3">Custom time range</label>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-ct-mute mb-1">Start Time</label>
+                      <label className="block text-xs text-ct-mute mb-1">Start time</label>
                       <input
                         type="time"
                         step="300"
@@ -398,7 +398,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-ct-mute mb-1">End Time</label>
+                      <label className="block text-xs text-ct-mute mb-1">End time</label>
                       <input
                         type="time"
                         step="300"
@@ -470,7 +470,7 @@ export default function BulkAvailabilityModal({ isOpen, onClose, onSave, current
             ) : (
               <>
                 <Plus className="w-4 h-4" />
-                Add {totalSlots} Slot{totalSlots !== 1 ? 's' : ''}
+                Add {totalSlots} slot{totalSlots !== 1 ? 's' : ''}
               </>
             )}
           </button>

@@ -456,7 +456,7 @@ export default function ProjectDetailsModal({
       )}
       {jobToRemove && (
         <ConfirmModal
-          title="Remove Job from Group"
+          title="Remove job from group"
           message="Are you sure you want to remove this job from the group? This action can be undone by adding the job back later."
           confirmText="Remove"
           cancelText="Cancel"
@@ -498,7 +498,7 @@ export default function ProjectDetailsModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <h3 className="text-sm font-medium text-ct-mute-2 mb-2">Start Date</h3>
+              <h3 className="text-sm font-medium text-ct-mute-2 mb-2">Start date</h3>
               {isClient ? (
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-ct-mute" />
@@ -526,14 +526,14 @@ export default function ProjectDetailsModal({
                     }}
                     className="ml-auto text-xs font-medium text-ct-mute-2 hover:text-ct-teal transition-colors"
                   >
-                    Request Change
+                    Request change
                   </button>
                 </div>
               )}
             </div>
 
             <div>
-              <h3 className="text-sm font-medium text-ct-mute-2 mb-2">Est. End Date</h3>
+              <h3 className="text-sm font-medium text-ct-mute-2 mb-2">Est. end date</h3>
               {isOngoing ? (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between px-4 py-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm">
@@ -546,7 +546,7 @@ export default function ProjectDetailsModal({
                         onClick={() => setShowEndOngoingModal(true)}
                         className="text-xs font-medium text-ct-mute-2 hover:text-ct-teal underline underline-offset-2 transition-colors"
                       >
-                        End Job Group
+                        End job group
                       </button>
                     )}
                   </div>
@@ -569,7 +569,7 @@ export default function ProjectDetailsModal({
                     onClick={handleToggleOngoing}
                     className="w-full px-3 py-1.5 text-sm font-medium rounded-ct-sm border border-ct-line text-ct-mute-2 bg-ct-surface hover:bg-ct-surface-2 transition-colors"
                   >
-                    Set as Ongoing
+                    Set as ongoing
                   </button>
                 </div>
               ) : (
@@ -586,7 +586,7 @@ export default function ProjectDetailsModal({
                     }}
                     className="ml-auto text-xs font-medium text-ct-mute-2 hover:text-ct-teal transition-colors"
                   >
-                    Request Change
+                    Request change
                   </button>
                 </div>
               )}
@@ -595,7 +595,7 @@ export default function ProjectDetailsModal({
 
           {isClient && dateChangeRequests.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-ct-mute-2">Pending Date Change Requests</h3>
+              <h3 className="text-sm font-medium text-ct-mute-2">Pending date change requests</h3>
               {dateChangeRequests.map((req) => (
                 <div key={req.id} className="p-4 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md">
                   <div className="flex items-start justify-between">
@@ -808,14 +808,14 @@ export default function ProjectDetailsModal({
           <div className="bg-ct-surface rounded-ct-lg max-w-md w-full shadow-xl">
             <div className="p-6 space-y-5">
               <div>
-                <h3 className="text-lg font-semibold text-ct-paper">End Ongoing Job Group</h3>
+                <h3 className="text-lg font-semibold text-ct-paper">End ongoing job group</h3>
                 <p className="text-sm text-ct-mute mt-1">
                   Please select a final status and provide a reason for ending this job group.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Final Status</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Final status</label>
                 <select
                   value={endOngoingStatus}
                   onChange={(e) => setEndOngoingStatus(e.target.value as 'completed' | 'cancelled' | 'end_date')}
@@ -823,13 +823,13 @@ export default function ProjectDetailsModal({
                 >
                   <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
-                  <option value="end_date">End Date</option>
+                  <option value="end_date">End date</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">
-                  End Date {endOngoingStatus === 'end_date' ? '' : '(Optional)'}
+                  End date {endOngoingStatus === 'end_date' ? '' : '(optional)'}
                 </label>
                 <input
                   type="date"
@@ -877,7 +877,7 @@ export default function ProjectDetailsModal({
                       : 'bg-ct-rose hover:brightness-110'
                   }`}
                 >
-                  {loading ? 'Saving...' : endOngoingStatus === 'completed' ? 'Mark Completed' : endOngoingStatus === 'end_date' ? 'Set End Date' : 'Mark Cancelled'}
+                  {loading ? 'Saving...' : endOngoingStatus === 'completed' ? 'Mark completed' : endOngoingStatus === 'end_date' ? 'Set end date' : 'Mark cancelled'}
                 </button>
               </div>
             </div>
@@ -890,13 +890,13 @@ export default function ProjectDetailsModal({
           <div className="fixed inset-0 bg-black/40" />
           <div className="bg-ct-surface rounded-ct-lg max-w-md w-full shadow-xl relative z-10" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 space-y-4">
-              <h3 className="text-lg font-semibold text-ct-paper">Request Date Change</h3>
+              <h3 className="text-lg font-semibold text-ct-paper">Request date change</h3>
               <p className="text-sm text-ct-mute-2">
                 Submit a request to change the <strong>{requestedField === 'start_date' ? 'start date' : 'end date'}</strong>. The client will review and approve or decline.
               </p>
 
               <div>
-                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">New Date</label>
+                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">New date</label>
                 <input
                   type="date"
                   value={requestedDate}
@@ -932,7 +932,7 @@ export default function ProjectDetailsModal({
                   disabled={!requestedDate || !requestReason.trim() || loading}
                   className="flex-1 px-4 py-2.5 text-sm font-medium text-ct-ink bg-ct-teal rounded-ct-sm hover:brightness-110 transition-colors disabled:opacity-50"
                 >
-                  {loading ? 'Sending...' : 'Send Request'}
+                  {loading ? 'Sending...' : 'Send request'}
                 </button>
               </div>
             </div>

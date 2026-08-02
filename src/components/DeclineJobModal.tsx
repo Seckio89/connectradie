@@ -71,7 +71,7 @@ export default function DeclineJobModal({ isOpen, onClose, onDecline, jobDescrip
               <XCircle className="w-5 h-5 text-ct-rose" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-ct-paper">Decline Job</h3>
+              <h3 className="text-lg font-semibold text-ct-paper">Decline job</h3>
               <p className="text-sm text-ct-mute capitalize">{summary}</p>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default function DeclineJobModal({ isOpen, onClose, onDecline, jobDescrip
                   Declining...
                 </>
               ) : (
-                'Decline Job'
+                'Decline job'
               )}
             </button>
           </div>

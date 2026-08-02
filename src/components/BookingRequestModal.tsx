@@ -204,7 +204,7 @@ export default function BookingRequestModal({
               <Calendar className="w-5 h-5 text-ct-ink" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-ct-paper">Booking Request</h2>
+              <h2 className="text-xl font-bold text-ct-paper">Booking request</h2>
               {client && (
                 <p className="text-sm text-ct-mute-2">
                   From {client.full_name} {message?.created_at && `• ${new Date(message.created_at).toLocaleDateString('en-AU')}`}
@@ -269,7 +269,7 @@ export default function BookingRequestModal({
                         <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm p-4">
                           <div className="flex items-center gap-2">
                             <AlertCircle className="w-5 h-5 text-ct-rose" />
-                            <p className="text-sm font-medium text-ct-paper">Emergency Job - Immediate Attention Required</p>
+                            <p className="text-sm font-medium text-ct-paper">Emergency job - immediate attention required</p>
                           </div>
                         </div>
                       )}
@@ -277,7 +277,7 @@ export default function BookingRequestModal({
                   )}
 
                   <div className="border-t border-ct-line pt-6">
-                    <h3 className="text-sm font-medium text-ct-mute-2 mb-3">Send a Message</h3>
+                    <h3 className="text-sm font-medium text-ct-mute-2 mb-3">Send a message</h3>
                     <textarea {...proseInputProps}
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
@@ -384,7 +384,7 @@ export default function BookingRequestModal({
                     <div className="bg-ct-surface-2 rounded-ct-sm p-4 border border-ct-line">
                       <h4 className="text-sm font-medium text-ct-mute-2 mb-3 flex items-center gap-2">
                         <Clock className="w-4 h-4" />
-                        Available Times for {selectedDate}
+                        Available times for {selectedDate}
                       </h4>
                       <div className="space-y-2">
                         {selectedDateSlots.map((slot) => {
@@ -432,13 +432,13 @@ export default function BookingRequestModal({
                       {availabilitySlots.length > 0 && (
                         <div className="bg-ct-surface-2 rounded-ct-sm p-4 border border-ct-line">
                           <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-sm font-medium text-ct-mute-2">All Available Slots</h4>
+                            <h4 className="text-sm font-medium text-ct-mute-2">All available slots</h4>
                             {availabilitySlots.length > 10 && (
                               <button
                                 onClick={() => setShowAllSlots(!showAllSlots)}
                                 className="text-xs text-ct-mute-2 hover:text-ct-mute-2 font-medium"
                               >
-                                {showAllSlots ? 'Show Less' : `Show All (${availabilitySlots.length})`}
+                                {showAllSlots ? 'Show less' : `Show all (${availabilitySlots.length})`}
                               </button>
                             )}
                           </div>
@@ -498,7 +498,7 @@ export default function BookingRequestModal({
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    Send Reply
+                    Send reply
                   </>
                 )}
               </button>

@@ -93,7 +93,7 @@ function ServiceControls({ jobId, jobLabel, isActive, isCancelled, onChanged }: 
   }
 
   // The cancel modal is rendered alongside every interactive branch so the
-  // "Cancel permanently" link on paused services and the "End Service" link
+  // "Cancel permanently" link on paused services and the "End service" link
   // on active services both open the same flow.
   const cancelModal = (
     <CancelServiceModal
@@ -114,7 +114,7 @@ function ServiceControls({ jobId, jobLabel, isActive, isCancelled, onChanged }: 
             disabled={loading}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-50 transition-colors"
           >
-            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Resume Service'}
+            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Resume service'}
           </button>
           <button
             onClick={() => setConfirming('stop')}
@@ -491,14 +491,14 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal hover:brightness-110 text-ct-ink text-xs font-medium rounded-ct-sm disabled:opacity-50 transition-colors"
         >
           <FileText className="w-3 h-3" />
-          {loadingPreview ? 'Loading...' : 'Send Invoice'}
+          {loadingPreview ? 'Loading...' : 'Send invoice'}
         </button>
         <button
           onClick={() => { setShowSettings(!showSettings); setShowInvoicePreview(false); }}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-ct-line text-ct-mute-2 text-xs font-medium rounded-ct-sm hover:bg-ct-surface-2 transition-colors"
         >
           <Clock className="w-3 h-3" />
-          {showSettings ? 'Hide Settings' : 'Invoice Settings'}
+          {showSettings ? 'Hide settings' : 'Invoice settings'}
         </button>
         {autoInvoice && !showSettings && !showInvoicePreview && (
           <span className="px-3 py-1 bg-ct-teal/[0.14] text-ct-teal text-xs font-medium rounded-full">
@@ -528,12 +528,12 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
       {showInvoicePreview && !showSettings && (
         <div className="p-3 bg-ct-surface border border-ct-line rounded-ct-sm space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-ct-paper">Invoice Preview</p>
+            <p className="text-xs font-semibold text-ct-paper">Invoice preview</p>
             <button onClick={() => setShowInvoicePreview(false)} className="text-xs text-ct-mute hover:text-ct-mute-2">Close</button>
           </div>
 
           <div className="p-2.5 bg-ct-surface-2 rounded-ct-sm">
-            <p className="text-xs font-medium text-ct-mute-2 mb-1">Billing Period</p>
+            <p className="text-xs font-medium text-ct-mute-2 mb-1">Billing period</p>
             <p className="text-sm font-semibold text-ct-paper">{periodStartLabel} — {periodEndLabel}</p>
             <p className="text-xs text-ct-mute mt-0.5">{cycleLabel} billing cycle</p>
           </div>
@@ -554,7 +554,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
                       const badge = ({
                         overdue: { label: 'Overdue', cls: 'bg-ct-rose/[0.13] text-ct-rose' },
                         disputed: { label: 'Disputed', cls: 'bg-ct-rose/[0.13] text-ct-rose' },
-                        pending_approval: { label: 'Awaiting Client Approval', cls: 'bg-ct-amber/[0.13] text-ct-amber' },
+                        pending_approval: { label: 'Awaiting client approval', cls: 'bg-ct-amber/[0.13] text-ct-amber' },
                         processing: { label: 'Processing', cls: 'bg-ct-surface-2 text-ct-mute-2' },
                         sent: { label: 'Invoiced', cls: 'bg-ct-amber/[0.13] text-ct-amber' },
                       } as Record<string, { label: string; cls: string }>)[s.invoiceStatus ?? 'sent']
@@ -689,11 +689,11 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
       {/* Settings panel */}
       {showSettings && (
         <div className="p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm space-y-3">
-          <p className="text-xs font-semibold text-ct-paper">Invoice Schedule</p>
+          <p className="text-xs font-semibold text-ct-paper">Invoice schedule</p>
 
           {/* Billing cycle */}
           <div>
-            <label className="block text-xs font-medium text-ct-mute-2 mb-1.5">Billing Cycle</label>
+            <label className="block text-xs font-medium text-ct-mute-2 mb-1.5">Billing cycle</label>
             <div className="flex gap-2">
               {(['weekly', 'fortnightly', 'monthly'] as const).map((opt) => (
                 <button
@@ -727,7 +727,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-ct-mute-2 mb-1">
-                  {cycle === 'monthly' ? 'Day of Month' : 'Send Every'}
+                  {cycle === 'monthly' ? 'Day of month' : 'Send every'}
                 </label>
                 {cycle === 'monthly' ? (
                   <select
@@ -785,7 +785,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
               disabled={saving}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal hover:brightness-110 text-ct-ink text-xs font-medium rounded-ct-sm disabled:opacity-50 transition-colors"
             >
-              {saving ? 'Saving...' : 'Save Settings'}
+              {saving ? 'Saving...' : 'Save settings'}
             </button>
             <button
               onClick={() => setShowSettings(false)}
@@ -1026,7 +1026,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
 
       await supabase.rpc('create_notification', {
         p_user_id: clientId,
-        p_title: 'Supply Restock Needed',
+        p_title: 'Supply restock needed',
         p_message: `${item.name} is running low (${item.stock_level ?? 0} ${item.unit || 'remaining'}). Please arrange a restock.`,
         p_type: 'supply_restock_needed',
         p_channel: 'in_app',
@@ -1169,7 +1169,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
       {/* Add supply form */}
       {showAddForm && (
         <div className="rounded-ct-sm border border-ct-teal/30 bg-ct-teal/[0.14] p-4 space-y-3">
-          <p className="text-xs font-semibold text-ct-paper">New Supply Item</p>
+          <p className="text-xs font-semibold text-ct-paper">New supply item</p>
 
           {/* Item selector */}
           <div>
@@ -1526,7 +1526,7 @@ function JobCard({
       {/* ─── Your Visits (assigned worker — read-only) ─── */}
       {!isOwner && (upcomingSessions.length > 0 || futureSessionsList.length > 0) && (
         <div className="border-t border-ct-line-soft px-5 py-3">
-          <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">Your Upcoming Visits</p>
+          <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">Your upcoming visits</p>
           <div className="space-y-1.5">
             {[...upcomingSessions, ...futureSessionsList].slice(0, 8).map((s) => {
               const d = new Date((s.actual_date || s.scheduled_date) + 'T00:00:00');
@@ -1550,7 +1550,7 @@ function JobCard({
         <div className="border-t border-ct-line-soft">
           <div className="px-5 pt-3 pb-1">
             <p className="text-xs font-semibold text-ct-mute uppercase tracking-wide">
-              {upcomingSessions.length === 1 ? 'Next Visit' : `Next ${upcomingSessions.length} Visits`}
+              {upcomingSessions.length === 1 ? 'Next visit' : `Next ${upcomingSessions.length} Visits`}
             </p>
           </div>
           <div className="px-5 pb-4 space-y-2">
@@ -1808,7 +1808,7 @@ export default function ServicesTab() {
 
     const tradeCategory = jobInfo?.trade_category || fallbackJob?.trade_category || '';
     const serviceSubtype = jobInfo?.service_subtype || fallbackJob?.service_subtype || null;
-    const jobLabel = serviceSubtype || tradeCategory.replace(/_/g, ' ') || 'Ongoing Service';
+    const jobLabel = serviceSubtype || tradeCategory.replace(/_/g, ' ') || 'Ongoing service';
     const isAutoAccept = !!(jobInfo?.auto_accept ?? fallbackJob?.auto_accept);
     const clientName = jobInfo?.client?.full_name || fallbackClient?.full_name || 'Client';
     const freq = jobInfo?.frequency_months ?? fallbackJob?.frequency_months;
@@ -1928,7 +1928,7 @@ export default function ServicesTab() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <RefreshCw className="w-4 h-4 text-ct-teal" />
-                <h3 className="text-sm font-semibold text-ct-paper">Ongoing Services</h3>
+                <h3 className="text-sm font-semibold text-ct-paper">Ongoing services</h3>
                 <span className="px-3 py-1 rounded-full text-xs font-medium bg-ct-surface-2 text-ct-mute">{jobRows.length}</span>
               </div>
             </div>
@@ -2059,7 +2059,7 @@ export default function ServicesTab() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <FileText className="w-4 h-4 text-ct-mute" />
-              <h3 className="text-sm font-semibold text-ct-paper">Outstanding Invoices</h3>
+              <h3 className="text-sm font-semibold text-ct-paper">Outstanding invoices</h3>
               <span className="text-xs text-ct-mute">{tradieInvoices.length}</span>
             </div>
             <div className="space-y-3">

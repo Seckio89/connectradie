@@ -18,7 +18,7 @@ interface TourStep {
 const clientTour: TourStep[] = [
   {
     selector: '[data-tour="sidebar-nav"]',
-    title: 'Your Navigation Menu',
+    title: 'Your navigation menu',
     description: 'Everything you need is in the sidebar. Here\'s what each section does:',
     hints: [
       { icon: Home, text: 'Dashboard — your home base with saved tradies' },
@@ -45,7 +45,7 @@ const clientTour: TourStep[] = [
   },
   {
     selector: '[data-tour="notifications"]',
-    title: 'Stay Updated',
+    title: 'Stay updated',
     description: 'The notification bell keeps you informed in real time. You\'ll get alerts when:',
     hints: [
       { icon: FileText, text: 'A tradie sends you a quote for your job' },
@@ -57,7 +57,7 @@ const clientTour: TourStep[] = [
   },
   {
     selector: '[data-tour="find-tradie"]',
-    title: 'Browse Tradies Directly',
+    title: 'Browse tradies directly',
     description: 'Prefer to choose a tradie yourself? Use this to search and contact them directly — no need to post a job first:',
     hints: [
       { icon: Search, text: 'Search by trade — electricians, plumbers, painters and more' },
@@ -68,7 +68,7 @@ const clientTour: TourStep[] = [
   },
   {
     selector: '[data-tour="saved-tradies"]',
-    title: 'Your Saved Tradies',
+    title: 'Your saved tradies',
     description: 'When you find a tradie you like, save them with the heart icon. They\'ll appear right here on your dashboard so you can:',
     hints: [
       { icon: CalendarDays, text: 'Check their real-time availability and calendar' },
@@ -79,7 +79,7 @@ const clientTour: TourStep[] = [
   },
   {
     selector: '[data-tour="recommended-tradies"]',
-    title: 'Discover New Tradies',
+    title: 'Discover new tradies',
     description: 'We recommend tradies based on your location and past searches. This section helps you:',
     hints: [
       { icon: MapPin, text: 'See highly-rated professionals near your postcode' },
@@ -90,7 +90,7 @@ const clientTour: TourStep[] = [
   },
   {
     selector: '[data-tour="onboarding-checklist"]',
-    title: 'Getting Started Checklist',
+    title: 'Getting started checklist',
     description: 'This checklist tracks your setup progress. Complete each step to unlock the full ConnecTradie experience:',
     hints: [
       { icon: UserCircle, text: 'Add your name and phone number' },
@@ -104,7 +104,7 @@ const clientTour: TourStep[] = [
 const tradieTour: TourStep[] = [
   {
     selector: '[data-tour="sidebar-nav"]',
-    title: 'Your Navigation Menu',
+    title: 'Your navigation menu',
     description: 'Run your business from the sidebar. Here\'s what each section does:',
     hints: [
       { icon: Home, text: 'Dashboard — your daily overview with jobs and calendar' },
@@ -120,7 +120,7 @@ const tradieTour: TourStep[] = [
   },
   {
     selector: '[data-tour="notifications"]',
-    title: 'Never Miss a Lead',
+    title: 'Never miss a lead',
     description: 'The notification bell is your lifeline for new business. You\'ll be alerted when:',
     hints: [
       { icon: Zap, text: 'A new job is posted in your area that matches your trade' },
@@ -132,7 +132,7 @@ const tradieTour: TourStep[] = [
   },
   {
     selector: '[data-tour="onboarding-checklist"]',
-    title: 'Your Setup Checklist',
+    title: 'Your setup checklist',
     description: 'Complete these steps to get verified and start appearing in client searches:',
     hints: [
       { icon: UserCircle, text: 'Add a profile photo — tradies with photos get 3x more enquiries' },
@@ -145,7 +145,7 @@ const tradieTour: TourStep[] = [
   },
   {
     selector: '[data-tour="jobs-tab"]',
-    title: 'Jobs & Messages',
+    title: 'Jobs & messages',
     description: 'This is your command centre for client work. Switch between tabs to:',
     hints: [
       { icon: Briefcase, text: 'Jobs — see all enquiries, active jobs and their status' },
@@ -155,7 +155,7 @@ const tradieTour: TourStep[] = [
   },
   {
     selector: '[data-tour="calendar"]',
-    title: 'Your Availability Calendar',
+    title: 'Your availability calendar',
     description: 'This is the most important part of your dashboard. Clients can only book you when they see open slots.',
     hints: [
       { icon: CalendarDays, text: 'Click any date to add available time slots' },
@@ -166,7 +166,7 @@ const tradieTour: TourStep[] = [
   },
   {
     selector: '[data-tour="quick-stats"]',
-    title: 'Track Your Performance',
+    title: 'Track your performance',
     description: 'Your key business metrics at a glance. Monitor these numbers to grow your workload:',
     hints: [
       { icon: Clock, text: 'Available Hours — how much time you\'ve opened up this week' },
@@ -178,7 +178,7 @@ const tradieTour: TourStep[] = [
   },
   {
     selector: '[data-tour="quote-insights"]',
-    title: 'Business Insights',
+    title: 'Business insights',
     description: 'Understand how your business is performing with real data and tips:',
     hints: [
       { icon: BarChart3, text: 'Quote win rate — see how many quotes convert to jobs' },
