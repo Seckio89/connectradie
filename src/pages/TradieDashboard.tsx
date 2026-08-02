@@ -1932,17 +1932,17 @@ export default function TradieDashboard() {
 
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 w-full overflow-visible">
                   {isProUser ? (
-                    <button onClick={() => setShowAddSlot(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-teal transition-colors min-h-[36px] sm:min-h-[44px]">
+                    <button onClick={() => setShowAddSlot(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-teal transition-colors min-h-[44px]">
                       <Plus className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk add</span><span className="sm:hidden">Add</span> slots
                     </button>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[10px] sm:text-sm font-medium rounded-ct-md hover:brightness-110 transition-all min-h-[36px] sm:min-h-[44px]">
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[10px] sm:text-sm font-medium rounded-ct-md hover:brightness-110 transition-all min-h-[44px]">
                       <Crown className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk add</span><span className="sm:hidden">Add</span> slots<span className="text-xs font-bold bg-ct-surface/20 px-1.5 py-0.5 rounded-ct-xs ml-1">PRO</span>
                     </button>
                   )}
                   {isProUser ? (
                     <>
-                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[32px] sm:min-h-[44px]">
+                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
                       {/* Three states, not two. Offering "Connect" while the lookup
                           is unresolved told an already-connected tradie they were
                           disconnected, and sent them to Google consent instead of
@@ -1961,7 +1961,7 @@ export default function TradieDashboard() {
                     </button>
                     {/* Only offered once connected — nothing to strip out otherwise. */}
                     {calendarIntegration && (
-                      <button onClick={() => setShowUnsyncConfirm(true)} disabled={unsyncLoading || syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[32px] sm:min-h-[44px]">
+                      <button onClick={() => setShowUnsyncConfirm(true)} disabled={unsyncLoading || syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
                         {unsyncLoading ? (
                           <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">Unsyncing...</span><span className="sm:hidden">Unsync</span></>
                         ) : (
@@ -1971,7 +1971,7 @@ export default function TradieDashboard() {
                     )}
                     </>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-teal/30 text-ct-amber text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-amber/[0.13] transition-colors min-h-[32px] sm:min-h-[44px]">
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-teal/30 text-ct-amber text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-amber/[0.13] transition-colors min-h-[44px]">
                       <Calendar className="w-4 h-4" /><span className="hidden sm:inline">Google Calendar</span><span className="sm:hidden">Calendar</span><span className="text-xs font-bold bg-ct-amber/[0.13] text-ct-amber px-1.5 py-0.5 rounded-ct-xs">PRO</span>
                     </button>
                   )}
@@ -2233,10 +2233,10 @@ export default function TradieDashboard() {
                       </div>
                       {slot.status === 'available' && (
                         <div className="flex items-center gap-1 flex-shrink-0">
-                          <button onClick={() => startEditingSlot(slot)} className="p-1.5 sm:p-2.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors min-w-[36px] sm:min-w-[44px] min-h-[36px] sm:min-h-[44px] flex items-center justify-center" title="Edit time" aria-label="Edit time slot">
+                          <button onClick={() => startEditingSlot(slot)} className="p-1.5 sm:p-2.5 text-ct-mute hover:text-ct-mute-2 hover:bg-ct-surface-2 rounded-ct-sm transition-colors min-w-[36px] sm:min-w-[44px] min-h-[44px] flex items-center justify-center" title="Edit time" aria-label="Edit time slot">
                             <Pencil className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDeleteSlot(slot.id)} className="p-1.5 sm:p-2.5 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors min-w-[36px] sm:min-w-[44px] min-h-[36px] sm:min-h-[44px] flex items-center justify-center" title="Delete slot" aria-label="Delete time slot">
+                          <button onClick={() => handleDeleteSlot(slot.id)} className="p-1.5 sm:p-2.5 text-ct-mute hover:text-ct-rose hover:bg-ct-rose/[0.13] rounded-ct-sm transition-colors min-w-[36px] sm:min-w-[44px] min-h-[44px] flex items-center justify-center" title="Delete slot" aria-label="Delete time slot">
                             <X className="w-4 h-4" />
                           </button>
                         </div>
