@@ -536,7 +536,7 @@ export default function Payouts() {
     const date = new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
     const isInvoice = p.id.startsWith('inv_');
     const isReleased = isInvoice || !!(p.metadata?.transfer_id);
-    const statusText = isInvoice ? 'Completed' : isReleased ? 'Paid' : 'In Escrow';
+    const statusText = isInvoice ? 'Completed' : isReleased ? 'Paid' : 'Awaiting release';
     const statusColor = isReleased ? '#16a34a' : '#d97706';
 
     const html = `
