@@ -45,7 +45,7 @@ export default function UnlockLeadModal({ isOpen, onClose, onUnlock, clientName,
         await createPaymentSession('lead_unlock', jobId);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError(err instanceof Error ? err.message : 'Couldn\'t unlock this lead — try again in a moment.');
       setLoading(false);
       setSuccess(false);
     }

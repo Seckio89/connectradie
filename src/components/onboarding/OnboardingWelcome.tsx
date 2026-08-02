@@ -57,7 +57,7 @@ export default function OnboardingWelcome() {
     }
 
     if (err) {
-      setError('Something went wrong. Please try again.');
+      setError('Couldn\'t save your details — check your connection and try again.');
       setSaving(false);
     }
     // On success the auth profile refreshes and the dashboard gate advances us.

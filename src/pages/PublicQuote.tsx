@@ -125,7 +125,7 @@ export default function PublicQuote() {
           else if (view.payment?.approved) setApprovedPending(true);
         }
       } catch {
-        if (!cancelled) setError('Something went wrong loading this quote.');
+        if (!cancelled) setError('Couldn\'t load this quote — refresh the page to try again.');
       } finally {
         if (!cancelled) setLoading(false);
       }

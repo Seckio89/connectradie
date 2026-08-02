@@ -305,9 +305,9 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
             <div className="w-20 h-20 bg-ct-rose/[0.13] rounded-full flex items-center justify-center mb-6">
               <AlertCircle className="w-10 h-10 text-ct-rose" />
             </div>
-            <h2 className="text-2xl font-bold text-ct-paper mb-2">Something Went Wrong</h2>
+            <h2 className="text-2xl font-bold text-ct-paper mb-2">Couldn't update your subscription</h2>
             <p className="text-ct-mute-2 mb-8 max-w-sm">
-              {errorMessage || 'An error occurred. Please try again.'}
+              {errorMessage || 'The subscription change didn\'t go through — try again in a moment.'}
             </p>
             <button
               onClick={() => setModalState('pricing')}

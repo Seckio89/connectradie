@@ -179,7 +179,7 @@ export default function MyTrades() {
         {error ? (
           <div className="bg-ct-surface rounded-ct-lg border border-ct-rose/[0.34] p-6 sm:p-12 text-center">
             <AlertCircle className="w-12 h-12 text-ct-rose mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-ct-paper mb-2">Something went wrong</h3>
+            <h3 className="text-lg font-medium text-ct-paper mb-2">Couldn't load your saved tradies</h3>
             <p className="text-ct-mute-2 mb-4">{error}</p>
             <button onClick={fetchSavedTradies} className="inline-flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm hover:brightness-110 transition-colors">
               <RefreshCw className="w-4 h-4" />

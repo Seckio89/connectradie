@@ -1970,7 +1970,7 @@ export default function ClientDashboard() {
                             }
                           } catch (err) {
                             console.error('Approve invoice error:', err);
-                            showToast(err instanceof Error ? err.message : 'Something went wrong — please try again', true);
+                            showToast(err instanceof Error ? err.message : 'Couldn\'t approve this invoice — try again in a moment.', true);
                           }
                         }}
                         onDecline={async (invoiceId, reason) => {

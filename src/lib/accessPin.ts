@@ -29,7 +29,7 @@ async function call<T = unknown>(action: string, body: Record<string, unknown> =
       try { payload = (await (error as { context?: Response }).context?.json()) ?? {}; } catch { /* opaque */ }
       return {
         ok: false,
-        error: (payload.error as string) || 'Something went wrong. Please try again.',
+        error: (payload.error as string) || 'That PIN request didn\'t go through — try again in a moment.',
         status: (error as { context?: Response }).context?.status,
         attemptsLeft: payload.attemptsLeft as number | undefined,
         locked: payload.locked as boolean | undefined,

@@ -52,7 +52,7 @@ function ServiceControls({ jobId, jobLabel, isActive, isCancelled, onChanged }: 
       onChanged();
       showToast('Service paused — you can resume anytime');
     } catch {
-      showToast('Something went wrong', true);
+      showToast('Couldn\'t pause this service — try again in a moment.', true);
     } finally {
       setLoading(false);
       setConfirming(null);
@@ -66,7 +66,7 @@ function ServiceControls({ jobId, jobLabel, isActive, isCancelled, onChanged }: 
       onChanged();
       showToast('Service resumed');
     } catch {
-      showToast('Something went wrong', true);
+      showToast('Couldn\'t resume this service — try again in a moment.', true);
     } finally {
       setLoading(false);
     }
@@ -79,7 +79,7 @@ function ServiceControls({ jobId, jobLabel, isActive, isCancelled, onChanged }: 
       onChanged();
       showToast('Service ended');
     } catch {
-      showToast('Something went wrong', true);
+      showToast('Couldn\'t end this service — try again in a moment.', true);
     } finally {
       setLoading(false);
       setConfirming(null);
@@ -209,7 +209,7 @@ function AcceptModeToggle({ jobId, currentAutoAccept, onToggled }: { jobId: stri
       }
       onToggled();
     } catch {
-      showToast('Something went wrong', true);
+      showToast('Couldn\'t update auto-confirm — try again in a moment.', true);
     } finally {
       setToggling(false);
     }
@@ -461,7 +461,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
       setUninvoicedCount(0);
       onSent();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Something went wrong';
+      const msg = err instanceof Error ? err.message : 'Couldn\'t send this invoice — try again in a moment.';
       showToast(msg.includes('No billable') ? 'No completed sessions to invoice yet' : msg, true);
     } finally {
       setSending(false);

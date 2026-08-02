@@ -2373,7 +2373,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           <div className="mb-4 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-md p-4">
             <div className="flex items-center gap-3 mb-1">
               <AlertCircle className="w-5 h-5 text-ct-rose flex-shrink-0" />
-              <p className="text-sm font-bold text-ct-paper">Something went wrong</p>
+              <p className="text-sm font-bold text-ct-paper">Couldn't accept this quote</p>
             </div>
             <p className="text-xs text-ct-rose ml-8">Failed to process the quote acceptance. Please try again.</p>
           </div>
@@ -2499,7 +2499,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           ) : fetchError ? (
             <div className="bg-ct-surface rounded-ct-lg border border-ct-rose/[0.34] p-12 text-center">
               <AlertCircle className="w-12 h-12 text-ct-rose mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-ct-paper mb-2">Something went wrong</h3>
+              <h3 className="text-lg font-medium text-ct-paper mb-2">Couldn't load jobs</h3>
               <p className="text-ct-mute-2 mb-4">{fetchError}</p>
               <button onClick={fetchLeads} className="inline-flex items-center gap-2 px-4 py-2 bg-ct-teal text-ct-ink rounded-ct-sm hover:brightness-110 transition-colors">
                 <RefreshCw className="w-4 h-4" />Try Again

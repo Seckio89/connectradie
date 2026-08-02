@@ -86,7 +86,7 @@ export function friendlyError(error: string | { message?: string; code?: string 
       ? (error as { message: string }).message
       : '';
 
-  if (!msg) return fallback || 'Something went wrong. Please try again.';
+  if (!msg) return fallback || 'That didn\'t go through — check your connection and try again.';
 
   // Errors flagged by callEdgeFunction as user-facing (a 4xx whose body our own
   // edge function wrote) are already plain English and already say what to do
@@ -167,7 +167,7 @@ export function friendlyError(error: string | { message?: string; code?: string 
 
   // Server errors
   if (raw.includes('500') || raw.includes('internal server')) {
-    return 'Something went wrong on our end. Please try again shortly.';
+    return 'The server couldn\'t process that — try again shortly.';
   }
 
   // File / upload errors
@@ -184,5 +184,5 @@ export function friendlyError(error: string | { message?: string; code?: string 
   }
 
   // Fallback for any unrecognized technical error
-  return fallback || 'Something went wrong. Please try again or contact support.';
+  return fallback || 'That didn\'t go through — try again, or contact support if it keeps happening.';
 }

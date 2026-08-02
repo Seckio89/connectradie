@@ -650,7 +650,7 @@ export default function JobCompletionModal({ isOpen, onClose, job, userId, onCom
       onCompleted();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      setError(err instanceof Error ? err.message : 'Couldn\'t mark this job complete — try again in a moment.');
     } finally {
       setSubmitting(false);
     }

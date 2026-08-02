@@ -769,7 +769,7 @@ export default function Payouts() {
           <PaymentRequestsSection />
           <div className="flex flex-col items-center justify-center py-24">
             <AlertTriangle className="w-12 h-12 text-ct-rose mb-4" />
-            <p className="text-ct-paper font-semibold mb-2">Something went wrong</p>
+            <p className="text-ct-paper font-semibold mb-2">Couldn't load your payout details</p>
             <p className="text-ct-mute text-sm mb-6">{error}</p>
             <button
               onClick={fetchDetails}
