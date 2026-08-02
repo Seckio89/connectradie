@@ -957,7 +957,7 @@ export default function JobManagementModal({
                           return `Final price: $${finalDollars.toFixed(2)} ${isGstRegistered ? '(ex. GST)' : ''} · paid so far $${paidDollars.toFixed(2)} · awaiting client to pay $${pendingDollars.toFixed(2)}${isGstRegistered ? ' + GST' : ''}.`;
                         }
                         if (Math.abs(finalDollars - paidDollars) < 0.01) {
-                          return `Final price: $${finalDollars.toFixed(2)} ${isGstRegistered ? '(ex. GST)' : ''} · matches the amount in escrow.`;
+                          return `Final price: $${finalDollars.toFixed(2)} ${isGstRegistered ? '(ex. GST)' : ''} · matches the amount Stripe is holding.`;
                         }
                         return `Final price: $${finalDollars.toFixed(2)} ${isGstRegistered ? '(ex. GST)' : ''} · originally paid $${paidDollars.toFixed(2)} (refund issued for the difference).`;
                       })()

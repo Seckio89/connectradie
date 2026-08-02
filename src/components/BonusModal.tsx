@@ -244,7 +244,7 @@ export default function BonusModal({ isOpen, onClose, jobId, tradieName, jobLabe
 
               <div className="flex items-start gap-2 text-xs text-ct-mute">
                 <Shield className="w-3.5 h-3.5 text-ct-mute flex-shrink-0 mt-0.5" />
-                <span>Funds are sent directly to your tradie via Stripe — no escrow hold.</span>
+                <span>Funds are sent directly to your tradie via Stripe — nothing is held first.</span>
               </div>
 
               {submitError && (

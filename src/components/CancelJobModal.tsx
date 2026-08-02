@@ -73,7 +73,7 @@ export default function CancelJobModal({
               </h3>
               <p className="text-ct-mute-2 leading-relaxed text-sm">
                 {isFunded
-                  ? 'The tradie will be told, and money held in escrow will be returned to you in full. Payments already released for finished stages stay released.'
+                  ? 'The tradie will be told, and the money Stripe is holding will be returned to you in full. Payments already released for finished stages stay released.'
                   : 'The tradie will be told this job is no longer going ahead. No money has been taken, so there is nothing to refund.'}
               </p>
             </div>

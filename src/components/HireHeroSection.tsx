@@ -49,7 +49,7 @@ export default function HireHeroSection() {
             <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-3 text-sm text-ct-mute">
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-ct-amber" />
-                <span>Held in escrow, not by us</span>
+                <span>Held by Stripe, not by us</span>
               </div>
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-ct-mute-2" />

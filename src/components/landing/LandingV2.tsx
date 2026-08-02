@@ -64,7 +64,7 @@ const VIEWS: Record<Audience, AudienceView> = {
     cta: 'Post a job — free',
     ctaHref: '/register?type=client',
     pill: 'In progress',
-    totalLabel: 'Total held in escrow',
+    totalLabel: 'Held safely until jobs complete',
     varBody: {
       pre: 'Rot found in the subfloor during strip-out. Replace bearer and re-sheet before waterproofing — ',
       amountCents: 120000,

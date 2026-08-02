@@ -98,7 +98,7 @@ export default function BetaModal() {
             <div className="flex-1">
               <p className="text-sm font-semibold text-ct-paper">Payments are live &amp; protected</p>
               <p className="text-xs text-ct-mute-2 mt-0.5 leading-relaxed">
-                Real payments run through secure Stripe escrow — funds are held safely and only
+                Real payments run through Stripe — funds are held safely and only
                 released to the tradie once the work is approved.
               </p>
             </div>

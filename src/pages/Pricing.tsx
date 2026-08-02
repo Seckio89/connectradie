@@ -65,7 +65,7 @@ const TIER_FEATURES: Record<string, string[]> = {
     'Nothing charged on materials, ever',
     '5% on repeat clients — forever',
     'Full job, team & schedule tools',
-    'Escrow payment protection',
+    'Payment protection',
     'Fee capped at $500 per job',
   ],
   pro: [
@@ -82,7 +82,7 @@ const TIER_FEATURES: Record<string, string[]> = {
     'Everything in Pro',
     '3% of your labour — repeat clients too',
     'Fee capped at $270 per job',
-    'Direct payment allowed (no escrow requirement)',
+    'Direct payment allowed (no payment hold required)',
     'Volume reporting',
   ],
 };
@@ -190,7 +190,7 @@ export default function Pricing() {
           </p>
         </div>
         <p className="text-center text-sm text-ct-mute mb-12">
-          Every fee is capped, deducted only when a job completes, and protected by escrow.
+          Every fee is capped, deducted only when a job completes, and backed by payment protection.
         </p>
 
         {/* Tier cards */}
@@ -420,7 +420,7 @@ export default function Pricing() {
           </div>
           <div className="bg-ct-surface-2 rounded-ct-md border border-ct-line p-5 text-center">
             <Shield className="w-6 h-6 text-ct-teal mx-auto mb-2" />
-            <h3 className="font-semibold text-ct-paper mb-1 text-sm">Escrow protected</h3>
+            <h3 className="font-semibold text-ct-paper mb-1 text-sm">Payment protection</h3>
             <p className="text-xs text-ct-mute-2">Funds held securely until the work is approved.</p>
           </div>
           <div className="bg-ct-surface-2 rounded-ct-md border border-ct-line p-5 text-center">
