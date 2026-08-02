@@ -37,14 +37,14 @@ describe('useTradeCategories when the fetch fails', () => {
     ]);
   });
 
-  it('never retries after a failed fetch, even once the DB is reachable again', async () => {
-    // BUG (reported, not fixed): loadCategories() only populates
-    // `cachedCategories` on success, but `fetchPromise` is assigned regardless
-    // and is never cleared. The `if (!fetchPromise)` guard therefore blocks
-    // every later fetch, so one failed load pins the whole session to the
-    // hard-coded fallback list — a tradie whose category was added to the DB
-    // stays unselectable until the tab is reloaded. Asserted against current
-    // behaviour.
+  it('retries on the next mount once the DB is reachable again', async () => {
+    // Regression: loadCategories() only populates `cachedCategories` on
+    // success, but `fetchPromise` used to be assigned regardless and never
+    // cleared — so the `if (!fetchPromise)` guard blocked every later fetch.
+    // One failed load pinned the whole session to the hard-coded fallback
+    // list, and a tradie whose category had just been added to the DB stayed
+    // unselectable until the tab was reloaded. The settled promise is now
+    // dropped when it did not cache, so the next mount tries again.
     fromMock.mockClear();
     orderMock.mockResolvedValue({
       data: [{ id: '1', name: 'Solar Installer' }],
@@ -55,8 +55,21 @@ describe('useTradeCategories when the fetch fails', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
+    expect(fromMock).toHaveBeenCalled();
+    await waitFor(() =>
+      expect(result.current.categories.map((c) => c.label)).toContain('Solar Installer'),
+    );
+  });
+
+  it('caches the successful result, so a third mount does not re-fetch', async () => {
+    // The retry must not become a fetch on every mount — that would hammer the
+    // DB from every component that reads the category list.
+    fromMock.mockClear();
+
+    const { result } = renderHook(() => useTradeCategories());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
     expect(fromMock).not.toHaveBeenCalled();
-    expect(result.current.categories.map((c) => c.label)).not.toContain('Solar Installer');
-    expect(result.current.categories.map((c) => c.label)).toContain('Plumber');
+    expect(result.current.categories.map((c) => c.label)).toContain('Solar Installer');
   });
 });

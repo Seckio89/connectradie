@@ -36,12 +36,19 @@ describe('formatDate', () => {
     expect(formatDate('2024-02-29T12:00:00')).toBe('29/02/2024');
   });
 
-  // BUG: an unparseable date produces the literal string "NaN/NaN/NaN" rather
-  // than an empty string or a dash, and that goes straight onto the screen.
-  // Asserting current behaviour — not fixing it here.
-  it('BUG: emits NaN/NaN/NaN for an unparseable date instead of degrading', () => {
-    expect(formatDate('not-a-date')).toBe('NaN/NaN/NaN');
-    expect(formatDate('')).toBe('NaN/NaN/NaN');
+  // Regression: an Invalid Date's getters all return NaN, and the template
+  // literal put "NaN/NaN/NaN" straight onto the screen. It degrades to the em
+  // dash the app already uses for a missing value.
+  it('degrades to an em dash for an unparseable or empty date', () => {
+    expect(formatDate('not-a-date')).toBe('—');
+    expect(formatDate('')).toBe('—');
+    expect(formatDate('2026-13-45')).toBe('—');
+  });
+
+  it('never emits NaN for any input', () => {
+    for (const input of ['not-a-date', '', '   ', 'undefined', '2026-13-45']) {
+      expect(formatDate(input)).not.toContain('NaN');
+    }
   });
 });
 
@@ -130,13 +137,13 @@ describe('getProfileCompletionTasks', () => {
     ]);
   });
 
-  // BUG (copy): the null branch says "Add phone" while the per-field branch says
-  // "Add phone number" for the same task, so the wording changes depending on
-  // whether the profile row has loaded yet.
-  it('BUG: the phone task is worded differently in the null branch', () => {
-    expect(getProfileCompletionTasks(null)).toContain('Add phone');
+  // Regression: the null branch said "Add phone" while the per-field branch said
+  // "Add phone number", so the checklist item reworded itself as the profile
+  // row loaded. Both branches render the same list and must agree.
+  it('words the phone task identically whether or not the profile has loaded', () => {
+    expect(getProfileCompletionTasks(null)).toContain('Add phone number');
     expect(getProfileCompletionTasks({})).toContain('Add phone number');
-    expect(getProfileCompletionTasks({})).not.toContain('Add phone');
+    expect(getProfileCompletionTasks(null)).toEqual(getProfileCompletionTasks({}));
   });
 
   it('agrees with calculateProfileCompletion on how much is outstanding', () => {

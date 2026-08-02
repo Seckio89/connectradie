@@ -36,6 +36,13 @@ function splitRaw(raw: string): string[] {
   if (!text) return [];
   // Prefer explicit line breaks.
   if (/\n/.test(text)) return text.split(/\n+/);
+  // A one-line description that OPENS with a note marker is one note, whole.
+  // NOTE_MARKER accepts a dash separator ("Notes - park in the driveway"), and
+  // the bullet split below would eat exactly that dash — turning an access note
+  // into two SCOPE items ("Notes", "Park in the driveway"), i.e. work the tradie
+  // appears to be quoted for. formatDescription only tests the marker after
+  // splitting, so it has to be caught here.
+  if (NOTE_MARKER.test(text)) return [text];
   // Then bullet characters.
   if (/[••]/.test(text) || /(^|\s)[-*]\s/.test(text)) {
     return text.split(/\s*[••]\s*|(?:^|\s)[-*]\s+/);

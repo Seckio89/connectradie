@@ -61,7 +61,16 @@ export function useTradeCategories(): { categories: TradeCategoryOption[]; loadi
     }
 
     if (!fetchPromise) {
-      fetchPromise = loadCategories();
+      // Memoise the in-flight fetch so simultaneous mounts share one request —
+      // but only KEEP it if it populated the cache. loadCategories() returns
+      // FALLBACK_CATEGORIES on failure without caching, so a settled failed
+      // promise left here made the `!fetchPromise` guard permanently false:
+      // one bad load pinned the whole session to the hard-coded trade list
+      // until the tab was reloaded. Clearing it lets the next mount retry —
+      // one attempt per mount, so a persistently failing DB is not hammered.
+      fetchPromise = loadCategories().finally(() => {
+        if (!cachedCategories) fetchPromise = null;
+      });
     }
 
     fetchPromise.then((result) => {
