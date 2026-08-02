@@ -732,11 +732,15 @@ body {
     flex-wrap: wrap !important;
   }
 
-  /* Ensure main action buttons meet touch targets */
-  main .flex.items-center.gap-2 > button,
-  main .flex.items-center.gap-3 > button {
-    min-height: 44px !important;
-  }
+  /* (Tranche 2, D3: the `> button { min-height:44px !important }` rule that
+     lived here is gone. It was the file's top silent-breaker — an unguarded
+     match on the app's most common layout idiom (~130 files). On touch
+     devices the global `pointer: coarse` 44px floor at the top of this file
+     already covers every button; the only markup that relied on THIS rule
+     beating its own explicit smaller min-h was five TradieDashboard buttons,
+     which now declare min-h-[44px] themselves. A narrow desktop window is
+     not a touch device and needs no floor — see the long comment on the
+     global rule. */
 }
 
 /* ── J. (removed) Leads quote-comparison indent ───────────────────────────────
