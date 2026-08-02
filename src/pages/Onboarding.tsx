@@ -169,7 +169,7 @@ export default function Onboarding() {
       resetWelcomeFlags();
       navigate('/dashboard?joined=requested');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError(err instanceof Error ? err.message : 'Couldn\'t send your join request — try again in a moment.');
     } finally {
       setLoading(false);
     }
@@ -214,7 +214,7 @@ export default function Onboarding() {
       resetWelcomeFlags();
       navigate(selectedRole === 'tradie' ? '/dashboard?onboarded=tradie' : '/dashboard?onboarded=client');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      setError(err instanceof Error ? err.message : 'Couldn\'t finish setting up your account — try again in a moment.');
     } finally {
       setLoading(false);
     }

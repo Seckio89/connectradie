@@ -523,7 +523,7 @@ export default function PostLead() {
 
     if (insertError || !insertedJob) {
       console.error('Job insert failed:', insertError);
-      setError(insertError?.message || 'Something went wrong. Please try again.');
+      setError(insertError?.message || 'Couldn\'t post your job — check your connection and try again.');
       setSubmitting(false);
       return;
     }

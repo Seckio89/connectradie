@@ -1514,7 +1514,7 @@ export default function ClientServicesTab() {
       setHoldReason('');
       fetchJobs();
     } catch {
-      showToast('Something went wrong', true);
+      showToast('Couldn\'t pause this service — try again in a moment.', true);
     }
   };
 
@@ -1528,7 +1528,7 @@ export default function ClientServicesTab() {
       setCancelTarget(null);
       fetchJobs();
     } catch {
-      showToast('Something went wrong', true);
+      showToast('Couldn\'t end this service — try again in a moment.', true);
     }
   };
 
@@ -2338,7 +2338,7 @@ export default function ClientServicesTab() {
                                 }
                               } catch (err) {
                                 console.error('Approve invoice error:', err);
-                                showToast(err instanceof Error ? err.message : 'Something went wrong — please try again', true);
+                                showToast(err instanceof Error ? err.message : 'Couldn\'t approve this invoice — try again in a moment.', true);
                               }
                             }}
                             onDecline={async (invoiceId, reason) => {

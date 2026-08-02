@@ -406,7 +406,7 @@ export default function JobManagementModal({
       onJobUpdated();
       setJob(prev => prev ? { ...prev, status: 'completed' } : prev);
     } catch (err) {
-      setCompletionError(err instanceof Error ? err.message : 'Something went wrong.');
+      setCompletionError(err instanceof Error ? err.message : 'Couldn\'t mark this job complete — try again in a moment.');
     }
     setSaving(false);
   };
