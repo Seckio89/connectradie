@@ -341,6 +341,35 @@ const budgetOf = async (jobId) => {
     ok("client cannot raise jobs.budget_amount (refused, budget unmoved)");
   }
 
+  // ASSERTION 8 — and the freeze must NOT break the legitimate edit.
+  // The first version of the trigger was status-agnostic and silently broke the
+  // client's own "edit job" modal (Leads.tsx), which sets budget_amount while
+  // the deal is still open. A guard that blocks the real flow is not a fix.
+  const { data: openJob } = await admin
+    .from("jobs")
+    .insert({
+      client_id: (await admin.from("jobs").select("client_id").eq("id", jobId).single()).data.client_id,
+      description: "E2E: open job, budget must stay editable",
+      status: "pending",
+      budget_amount: 100,
+      budget_type: "fixed_budget",
+    })
+    .select("id").single();
+
+  if (openJob) {
+    const { error: openEditErr } = await asTheClient
+      .from("jobs").update({ budget_amount: 250 }).eq("id", openJob.id).select("id");
+    const { data: openAfter } = await admin
+      .from("jobs").select("budget_amount").eq("id", openJob.id).single();
+
+    if (openEditErr || Number(openAfter.budget_amount) !== 250) {
+      fail(`REGRESSION: the client cannot edit the budget on their own unassigned, pending job (${openEditErr?.message || "value unchanged"}) — the edit modal is broken`);
+    } else {
+      ok("client can still edit the budget while the deal is open (no tradie, pending)");
+    }
+    await admin.from("jobs").delete().eq("id", openJob.id);
+  }
+
   // 4. Client pays the top-up.
   const pay = await callFn("pay-price-increase", jwt, {
     paymentId: approve.json.paymentId,

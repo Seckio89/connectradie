@@ -2,9 +2,9 @@
 --
 -- Applied to production 2026-08-03 via MCP apply_migration (this file is the
 -- repo record; the live ledger already carries version 20260803035934). The
--- SECURITY INVOKER correction below landed as a separate ledger entry,
--- 20260803040207, and is folded in here so a rebuild from this file alone
--- reproduces production.
+-- SECURITY INVOKER correction landed as a separate ledger entry,
+-- 20260803040207, and the deal-state narrowing as 20260803041642. Both are
+-- folded in here so a rebuild from this file alone reproduces production.
 --
 -- The companion migration (20260803035919) stopped a client marking a variation
 -- 'approved' without paying. This closes the other half of the same hole:
@@ -36,15 +36,35 @@
 --  • INSERT. A budget on a 'pending' job is an advertised figure with no money
 --    attached. All three legitimate browser writers insert at that status:
 --    ClientServicesTab.tsx, ChatDrawer.tsx, recurringJobs.ts.
+--  • UPDATE while the deal is still open — no tradie assigned and the job not
+--    yet accepted. See the scope note below.
 --  • Every server-side raise: applyPriceAdjustment on a settled variation,
 --    adjust-quote-price, and the rest of the edge functions.
 --
--- Scope note: this is UPDATE-only and status-agnostic. A search of src/ for
--- `.update({ … budget_amount … })` returns no matches at any status, so
--- narrowing to funded/in_progress/completed would add a condition that never
--- changes an outcome while leaving 'pending'→'accepted' open. Admins are not
--- exempted either — no admin screen edits this column, so an exemption would
--- widen the hole for nothing. If one is ever needed, it belongs in an edge
+-- SCOPE, AND THE MISTAKE THAT SET IT
+--
+-- The first version of this was status-agnostic, on the finding that no browser
+-- code updates budget_amount at all. That finding was wrong, and it shipped:
+-- Leads.tsx:1446 updates it in the client's own "edit job" modal, and the
+-- caller swallows the error, so the edit failed silently in production until
+-- this was narrowed. The original search missed it twice over — the results
+-- were truncated with `head`, and the regex only matched inline object
+-- literals, not the `updateData.budget_amount = …` assignment style actually
+-- used.
+--
+-- The modal already applies the right rule itself: it sends budget_amount only
+-- when `dealLocked` is false, i.e. no tradie is assigned. Before a tradie is on
+-- the job the budget is an advertised figure with nothing agreed and no money
+-- behind it — the same reasoning as the INSERT carve-out. This trigger now
+-- agrees with that rule instead of overriding it.
+--
+-- What stays blocked is what matters: once a tradie is assigned, or the job
+-- reaches accepted/funded/in_progress/completed, the client cannot move the
+-- number. That covers every state where escrow exists, which is the hole this
+-- exists to close — a client raising budget_amount to skip the variation flow.
+--
+-- Admins are not exempted: no admin screen edits this column, so an exemption
+-- would widen the hole for nothing. If one is ever needed it belongs in an edge
 -- function on the service role.
 
 -- SECURITY INVOKER, and that is load-bearing.
@@ -70,7 +90,16 @@ SECURITY INVOKER
 SET search_path TO 'public'
 AS $$
 BEGIN
-  IF current_user IN ('authenticated', 'anon') THEN
+  IF current_user IN ('authenticated', 'anon')
+     AND (
+       -- A tradie is on the job: the price is agreed. Mirrors the UI's own
+       -- dealLocked rule in Leads.tsx.
+       OLD.tradie_id IS NOT NULL
+       -- Belt and braces: any state where money is or has been attached, even
+       -- if tradie_id were somehow cleared.
+       OR OLD.status IN ('accepted', 'funded', 'in_progress', 'completed')
+     )
+  THEN
     -- 42501 = insufficient_privilege. PostgREST maps it to 403; without an
     -- explicit ERRCODE this surfaces as an opaque 500.
     RAISE EXCEPTION
