@@ -256,14 +256,18 @@ Deno.test("the instant attempt and its fallback can never collide on one key", a
   await release(stripe, fakeSupabase({ rows: INSTANT }));
 
   const [instantKey, fallbackKey] = stripe.calls.map((c) => c.opts.idempotencyKey);
-  assertEquals(instantKey, `${BASE_KEY}:instant`);
-  assertEquals(fallbackKey, BASE_KEY);
+
+  // The inequality goes FIRST on purpose. assertEquals from node:assert is an
+  // assertion signature, so pinning each key to a literal first would narrow
+  // both and make this comparison a type error rather than a runtime check.
   assert(
     instantKey !== fallbackKey,
     "Stripe rejects an idempotent replay whose parameters differ. Reusing one " +
       "key for a $985 instant attempt and a $1000 standard fallback would make " +
       "the fallback fail and strand the release",
   );
+  assertEquals(instantKey, `${BASE_KEY}:instant`);
+  assertEquals(fallbackKey, BASE_KEY);
 });
 
 Deno.test("a platform-scope failure is recorded so nothing offers instant again", async () => {
