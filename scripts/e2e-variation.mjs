@@ -326,6 +326,21 @@ const budgetOf = async (jobId) => {
     ok("client cannot write job_variations directly (self-approval refused)");
   }
 
+  // ASSERTION 7 — the client cannot raise the job's budget either.
+  // The other half of the same hole: locking down job_variations is pointless
+  // if the client can simply write jobs.budget_amount and skip the variation.
+  const inflatedBudget = budgetBefore + 5000;
+  const { error: budgetHackErr } = await asTheClient
+    .from("jobs").update({ budget_amount: inflatedBudget }).eq("id", jobId).select("id");
+  const budgetNow = await budgetOf(jobId);
+  if (Math.abs(budgetNow - budgetBefore) > 0.005) {
+    fail(`FREE MONEY: the client raised their own job budget from ${budgetBefore} to ${budgetNow} — the job is now worth more than is funded`);
+  } else if (!budgetHackErr) {
+    fail("client UPDATE on jobs.budget_amount reported success — the trigger is not refusing the write");
+  } else {
+    ok("client cannot raise jobs.budget_amount (refused, budget unmoved)");
+  }
+
   // 4. Client pays the top-up.
   const pay = await callFn("pay-price-increase", jwt, {
     paymentId: approve.json.paymentId,

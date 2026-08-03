@@ -1,5 +1,10 @@
 -- Make every job_variations state change server-only.
 --
+-- Applied to production 2026-08-03 via MCP apply_migration (this file is the
+-- repo record; the live ledger already carries version 20260803035919). The
+-- anon REVOKE below landed as a separate ledger entry, 20260803040013, and is
+-- folded in here so a rebuild from this file alone reproduces production.
+--
 -- approve-variation's header has claimed since it was written that approving a
 -- variation from the browser "used to be" possible and is now server-only. That
 -- was never true at the database level: "Clients can update variations for
@@ -49,8 +54,12 @@ ALTER TABLE public.job_variations
 -- Postgres enforces that against the statement's SET list, which is exactly the
 -- check RLS cannot perform. A BEFORE UPDATE trigger would only ever be policing
 -- service_role, the one role that must be allowed through.
+-- anon is included deliberately. RLS is enabled and there is no anon policy, so
+-- anon writes were already denied — but a table-level grant with no policy
+-- behind it is the exact trap 20260801100807 called out on tradie_details: dead
+-- weight today, an instant hole the moment someone adds a permissive policy.
 DROP POLICY IF EXISTS "Clients can update variations for their jobs" ON public.job_variations;
-REVOKE UPDATE ON public.job_variations FROM authenticated;
+REVOKE UPDATE ON public.job_variations FROM authenticated, anon;
 
 -- 3. Raising a variation is only legal mid-job.
 --

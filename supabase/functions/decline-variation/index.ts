@@ -1,7 +1,7 @@
 // Decline a job variation.
 //
 // This used to be a raw client-side UPDATE from JobDetailsCard, which was both
-// the security hole (see 20260803114500_lock_down_job_variations_writes.sql)
+// the security hole (see 20260803035919_lock_down_job_variations_writes.sql)
 // and a permanent deadlock: approving stamps a pending_increase onto the job's
 // funding payment BEFORE the client reaches Stripe, and nothing but settlement
 // or escrow release ever cleared that slot. Approve → close the Stripe tab →
