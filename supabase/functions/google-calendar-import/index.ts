@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import type { Insert } from "../_shared/dbTypes.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import { parseGoogleTokenError } from "../_shared/googleTokenError.ts";
 
 /*
   google-calendar-import — one-time Google Calendar → ConnecTradie import.
@@ -90,7 +91,13 @@ Deno.serve(async (req: Request) => {
           refresh_token: integration.refresh_token, grant_type: "refresh_token",
         }),
       });
-      if (!res.ok) return json({ error: "Reconnect Google Calendar — token refresh failed." }, 401);
+      if (!res.ok) {
+        // Response body only — the request above carries client_secret and
+        // refresh_token and must never be logged.
+        const { code, message, detail } = parseGoogleTokenError(await res.text());
+        console.error("Google token refresh failed", res.status, code, detail);
+        return json({ error: message, code, detail }, 401);
+      }
       const t = await res.json();
       accessToken = t.access_token;
       await supabase.from("calendar_integrations").update({

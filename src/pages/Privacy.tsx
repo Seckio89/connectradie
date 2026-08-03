@@ -213,11 +213,11 @@ export default function Privacy() {
                       </li>
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
-                        <span><strong className="text-ct-paper">Google Calendar sync:</strong> if you connect Google Calendar from Settings, you grant ConnecTradie access to your calendar so we can create and update events for your ConnecTradie bookings and site visits, and read your existing events to help you avoid double-booking. We access only the signed-in user&rsquo;s own calendar, and only to provide this scheduling feature.</span>
+                        <span><strong className="text-ct-paper">Google Calendar sync:</strong> if you connect Google Calendar from your dashboard, you grant ConnecTradie access to your calendar so we can create and update events for your ConnecTradie bookings and site visits, and read your existing events to help you avoid double-booking. We access only the signed-in user&rsquo;s own calendar, and only to provide this scheduling feature.</span>
                       </li>
                       <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
-                        <span><strong className="text-ct-paper">Disconnecting:</strong> you can revoke access at any time from Settings &rarr; Integrations, or via your Google Account permissions at <span className="font-medium">myaccount.google.com/permissions</span>. When you disconnect, we stop accessing your calendar and delete the Google access tokens we hold for you.</span>
+                        <span><strong className="text-ct-paper">Disconnecting:</strong> you can revoke access at any time from your dashboard &mdash; open the menu beside the calendar buttons and choose Disconnect Google Calendar &mdash; or via your Google Account permissions at <span className="font-medium">myaccount.google.com/permissions</span>. When you disconnect, we revoke the access with Google and delete the Google tokens we hold for you.</span>
                       </li>
                     </ul>
                     <div className="mt-4 flex items-start gap-3 bg-ct-surface-2/70 border border-ct-line rounded-ct-md p-4">
