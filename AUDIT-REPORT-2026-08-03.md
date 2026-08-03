@@ -2,9 +2,10 @@
 
 Nightly audit on master at `8498a2e`, after the twelve PRs (#214–#226) that
 landed since the 08-02 re-audit. Same instruments as the last two cycles, with
-three caveats recorded under *Instrument coverage* below: this environment
-cannot reach `jsr.io`/`deno.land`, and has no Supabase access token, so the
-Deno edge typecheck and the two drift checkers could not run.
+the caveats recorded under *Instrument coverage* below: this environment cannot
+reach `jsr.io`/`deno.land`, and has no Supabase access token. The Deno edge
+typecheck could not run *here* but CI ran it green on this commit; only the two
+drift checkers went genuinely unverified.
 
 ## Summary
 
@@ -40,9 +41,13 @@ be reporting less than it appears to.
 
 | Instrument | Status | Reason |
 |---|---|---|
-| `typecheck:edge` | **not run** | `jsr.io` and `deno.land` both return 403 from the egress proxy. Deno cannot resolve `jsr:@supabase/functions-js`, so 73/74 functions fail to *load*, not to typecheck. Reported as unverified, not as 73 failures. |
+| `typecheck:edge` | **not run locally · green in CI** | `jsr.io` and `deno.land` both return 403 from the egress proxy, so Deno cannot resolve `jsr:@supabase/functions-js` and 73/74 functions fail to *load*, not to typecheck. Purely an artefact of the blocked egress: CI's *Edge Functions (Deno ratchet)* job ran `scripts/typecheck-edge.mjs` to success on this same commit. Verified — just not from here. |
 | `check:drift` | **not run** | needs `SUPABASE_ACCESS_TOKEN`; arbitrary SQL has no other route. |
 | `check:edge-drift` | **not run** | needs Supabase CLI auth; 28 money-path functions unverified against deployed. |
+
+Only the two drift checkers are a real coverage gap — CI skips them too
+(*Drift (schema + edge, informational)* was skipped), so nothing verified them
+this cycle.
 
 The edge-drift gap is materially covered this cycle by other means: `git log`
 confirms **no file under `supabase/functions/` changed since 08-02**, so the
@@ -131,7 +136,7 @@ variation, cancel, bootstrap) as separate seed-driven scripts.
 | 28 | LOW | Navigation | `src/App.tsx` | 19 pages render `<SEO>` while RouteTracker also titles them | Pick one owner for document.title |
 | 29 | LOW | UI/copy | `src/pages/Pricing.tsx` | "escrow" survives in 1 heading — remnant of the #16 sweep | Apply the #220 wording ("held safely by Stripe") |
 | 30 | LOW | UI/copy | `src/components/UnlockLeadModal.tsx` | "lead" appears in 8 headings/buttons | Rename to what the user recognises |
-| 31 | INFO | Tooling | audit suite | 3 instruments unrunnable without egress/credentials (see above) | Provision `SUPABASE_ACCESS_TOKEN` and allow `jsr.io`/`deno.land` for nightly runs |
+| 31 | INFO | Tooling | audit suite | The two drift checkers ran nowhere this cycle — not locally (no `SUPABASE_ACCESS_TOKEN`) and not in CI (job skipped) | Provision `SUPABASE_ACCESS_TOKEN` for the audit runner. Allowing `jsr.io`/`deno.land` is worth doing too, but it is local-run convenience only — CI already type-checks the edge functions |
 | 32 | INFO | Tooling | `scripts/check-contrast.mjs` | Passes and fails simultaneously with no `.env`; blank routes read as a pass line | Fail fast when `VITE_SUPABASE_URL` is unset |
 
 Closed and re-verified this cycle: **#9** (orphans, #216) · **#26**
@@ -145,9 +150,10 @@ escrow wording (#220) · **#13 batch 2** (#219).
    left: 2.9 of 10 points sit in one check. `_shared/` already has the pattern
    (5 test files); extending it to the money-path functions is both the score
    move and the best pre-launch insurance.
-2. **Provision the audit instruments.** Three checks did not run tonight. A
-   nightly audit that cannot typecheck edge functions or verify deploy drift is
-   measuring less than it reports.
+2. **Provision the drift checkers.** Three checks did not run here, but CI
+   covered the edge typecheck. The two drift checkers ran nowhere — a scheduled
+   audit that cannot verify deploy drift is measuring less than it reports, and
+   that is the gap worth closing with a `SUPABASE_ACCESS_TOKEN`.
 
 ### Medium — next sprint
 3. Page tests: 0 of 65. Start with the money-facing pages (Payouts, Payments,
@@ -171,7 +177,7 @@ owner-side (`docs/OWNER-TODO.md`).
 | 2026-07-30 | 95.4% 🟢 | pre-copy/CSS measurement — not comparable |
 | 2026-08-01 | 89.7% 🟡 | deeper instruments, ~700 new copy findings |
 | 2026-08-02 | 93.3% 🟢 | 13 fix PRs + 2 prod DB hardenings |
-| **2026-08-03** | **94.3%** 🟢 | 12 PRs; Navigation #9 closed; 3 instruments unrunnable |
+| **2026-08-03** | **94.3%** 🟢 | 12 PRs; Navigation #9 closed; 2 drift checkers unverified |
 
 ## Next recommended action
 

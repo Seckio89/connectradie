@@ -1,10 +1,14 @@
 ---
 name: nightly-code-audit
-description: Nightly checker-suite run; notifies only when something newly regresses versus the baselines. Silent when green.
+description: Weekly checker-suite run; notifies only when something newly regresses versus the baselines. Silent when green.
 ---
 
-You are running the nightly code audit for ConnecTradie. Detection only —
+You are running the weekly code audit for ConnecTradie. Detection only —
 you never fix anything, never commit, never open PRs.
+
+The directory name still says `nightly-code-audit`: the Routine's prompt
+references this path literally, so it stays. The cadence lives in the Routine,
+not here.
 
 ## Steps
 
