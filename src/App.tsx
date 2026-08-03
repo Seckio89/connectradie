@@ -47,7 +47,6 @@ const AdminUpdates = lazy(() => import('./pages/AdminUpdates'));
 const AdminFinancials = lazy(() => import('./pages/AdminFinancials'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const CalendarImport = lazy(() => import('./pages/CalendarImport'));
-const CalendarConnected = lazy(() => import('./pages/CalendarConnected'));
 const Clients = lazy(() => import('./pages/Clients'));
 const ClientDetail = lazy(() => import('./pages/ClientDetail'));
 const PublicQuote = lazy(() => import('./pages/PublicQuote'));
@@ -200,7 +199,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/payouts': 'Payouts | ConnecTradie',
   '/schedule': 'Schedule | ConnecTradie',
   '/calendar-import': 'Import from Google Calendar | ConnecTradie',
-  '/calendar-connected': 'Google Calendar | ConnecTradie',
   '/work': 'Work Hub | ConnecTradie',
   '/workforce': 'Workforce | ConnecTradie',
   '/workforce/invite': 'Add a worker | ConnecTradie',
@@ -322,11 +320,6 @@ function AppRoutes() {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/how-fees-work" element={<HowFeesWork />} />
       <Route path="/payment-success" element={<PaymentSuccess />} />
-      {/* Where the Google Calendar OAuth popup lands. Public on purpose: this
-          renders inside a popup straight off an external redirect, and gating it
-          behind ProtectedRoute would bounce the tradie to /login while auth
-          rehydrates — losing the status the page exists to report. */}
-      <Route path="/calendar-connected" element={<CalendarConnected />} />
       <Route path="/payment-cancelled" element={<PaymentCancelled />} />
       <Route path="/invoice/:paymentId" element={<Invoice />} />
       {/* ConnecTradie → tradie tax invoice for platform commission (§7A).

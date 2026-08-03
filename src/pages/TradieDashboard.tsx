@@ -2100,7 +2100,7 @@ export default function TradieDashboard() {
                               </div>
                               <div className="flex-1 flex gap-1 p-1">
                                 {slotsInHour.map(s => (
-                                  <div key={s.id} className={`flex-1 rounded-ct-xs px-2 py-1 text-xs font-medium ${s.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30' : s.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34]' : 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line'}`}>
+                                  <div key={s.id} className={`flex-1 rounded-ct-xs px-2 py-1 text-xs font-medium ${s.status === 'available' ? 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line' : s.status === 'booked' ? 'bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30' : 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line'}`}>
                                     {s.status === 'available' ? 'Available' : s.status === 'booked' ? 'Booked' : s.status}
                                   </div>
                                 ))}
@@ -2110,8 +2110,8 @@ export default function TradieDashboard() {
                         })}
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-surface-2 border-2 border-ct-line rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
                       </div>
                     </div>
                   );
@@ -2168,7 +2168,7 @@ export default function TradieDashboard() {
                                     return (
                                       <div key={d.toISOString()} className="border-r border-ct-line-soft last:border-r-0 p-0.5 min-h-[32px]">
                                         {slotsInHour.map(s => (
-                                          <div key={s.id} className={`rounded-ct-xs px-1 py-0.5 text-xs font-medium truncate ${s.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal' : s.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
+                                          <div key={s.id} className={`rounded-ct-xs px-1 py-0.5 text-xs font-medium truncate ${s.status === 'available' ? 'bg-ct-surface-2 text-ct-mute-2' : s.status === 'booked' ? 'bg-ct-teal/[0.14] text-ct-teal' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
                                             {s.status === 'available' ? 'Avail' : 'Bkd'}
                                           </div>
                                         ))}
@@ -2184,8 +2184,8 @@ export default function TradieDashboard() {
                       <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-ct-surface to-transparent sm:hidden" />
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-surface-2 border-2 border-ct-line rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
                       </div>
                     </div>
                   );
@@ -2226,9 +2226,9 @@ export default function TradieDashboard() {
                           className={`aspect-square rounded-ct-sm p-0 sm:p-1 text-xs sm:text-sm transition-all min-w-0 ${
                             isSelected ? 'bg-ct-teal text-ct-ink ring-2 ring-ct-teal ring-offset-2'
                             : isPast ? 'opacity-50 hover:opacity-75'
-                            : hasAvailable && hasBooked ? 'bg-gradient-to-br from-ct-teal to-ct-rose hover:from-ct-teal hover:to-ct-rose'
-                            : hasAvailable ? 'bg-ct-teal/[0.14] hover:bg-ct-teal/[0.14]'
-                            : hasBooked ? 'bg-ct-rose/[0.13] hover:bg-ct-rose/[0.13]'
+                            : hasAvailable && hasBooked ? 'bg-gradient-to-br from-ct-surface-2 to-ct-teal/[0.14] ring-1 ring-ct-line'
+                            : hasBooked ? 'bg-ct-teal/[0.14] hover:bg-ct-teal/[0.14]'
+                            : hasAvailable ? 'bg-ct-surface-2 ring-1 ring-ct-line hover:bg-ct-surface-2'
                             : isToday ? 'ring-2 ring-ct-teal hover:bg-ct-surface-2'
                             : 'hover:bg-ct-surface-2'
                           }`}
@@ -2238,17 +2238,26 @@ export default function TradieDashboard() {
                                 The two ran in a different order, so a day could
                                 take its fill from one condition and its text
                                 colour from another — which is how mute-2 ended
-                                up on the solid teal→rose fill at 1.03:1. */}
+                                up on the solid teal→rose fill at 1.03:1.
+                                Every fill is now a dim tint or a neutral
+                                surface, so mute-2 is correct throughout — but
+                                keep the branches aligned if either changes. */}
                             <span className={`text-xs sm:text-sm font-medium ${
                               isSelected ? 'text-ct-ink'
                               : isPast ? 'text-ct-mute'
-                              : hasAvailable && hasBooked ? 'text-ct-ink'
                               : isToday ? 'text-ct-mute-2 font-bold'
                               : 'text-ct-mute-2'
                             }`}>{day}</span>
+                            {/* Solid dots on a dim or neutral fill. These were
+                                previously the SAME dim tint as the cell behind
+                                them — a 14% teal dot on a 14% teal fill — so
+                                they were effectively invisible, which is what
+                                made every day look alike. CLAUDE.md: inside a
+                                container that already carries a tint, use the
+                                solid fill, not a second dim layer. */}
                             <div className="flex gap-0.5 mt-0.5">
-                              {hasAvailable && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-teal/[0.14]' : 'bg-ct-teal/[0.14]'}`} />}
-                              {hasBooked && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-rose/[0.13]' : 'bg-ct-rose/[0.13]'}`} />}
+                              {hasAvailable && <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-ct-mute" />}
+                              {hasBooked && <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-ct-teal" />}
                             </div>
                           </div>
                         </button>
@@ -2257,8 +2266,8 @@ export default function TradieDashboard() {
                   </div>
 
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-surface-2 border-2 border-ct-line rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
                   </div>
                 </>
               )}
@@ -2287,7 +2296,7 @@ export default function TradieDashboard() {
 
               <div className="space-y-3 max-h-80 overflow-y-auto">
                 {(selectedDay ? getSlotsForDate(selectedDay) : slots.filter((s) => new Date(s.start_time) > new Date()).slice(0, 10)).map((slot) => (
-                  <div key={slot.id} className={`p-3 rounded-ct-md border ${slot.status === 'available' ? 'bg-ct-teal/[0.14] border-ct-teal/30' : slot.status === 'booked' ? 'bg-ct-rose/[0.13] border-ct-rose/[0.34]' : 'bg-ct-surface-2 border-ct-line'}`}>
+                  <div key={slot.id} className={`p-3 rounded-ct-md border ${slot.status === 'available' ? 'bg-ct-surface-2 border-ct-line' : slot.status === 'booked' ? 'bg-ct-teal/[0.14] border-ct-teal/30' : 'bg-ct-surface-2 border-ct-line'}`}>
                     <div className="flex items-start justify-between">
                       <div>
                         {!selectedDay && (
@@ -2310,7 +2319,7 @@ export default function TradieDashboard() {
                         </div>
                       )}
                     </div>
-                    <span className={`mt-2 inline-block text-xs px-3 py-1 rounded-full font-medium ${slot.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal' : slot.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
+                    <span className={`mt-2 inline-block text-xs px-3 py-1 rounded-full font-medium ${slot.status === 'available' ? 'bg-ct-surface-2 text-ct-mute-2' : slot.status === 'booked' ? 'bg-ct-teal/[0.14] text-ct-teal' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
                       {slot.status}
                     </span>
                   </div>

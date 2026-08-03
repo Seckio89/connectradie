@@ -307,7 +307,6 @@ const navItems = [
 const BY_DESIGN = {
   '/payment-success': 'Stripe redirects here after checkout',
   '/payment-cancelled': 'Stripe redirects here when checkout is abandoned',
-  '/calendar-connected': 'the google-calendar-oauth callback redirects the consent popup here (resultRedirect, supabase/functions/google-calendar-oauth/index.ts:24) — nothing in-app links to it, and a menu entry would be wrong',
   '/quote/:token': 'tokenised link emailed to the client',
   '/workforce/claim': 'tokenised invite link emailed/SMSed to the worker by worker-invite',
   '/onboarding': 'ProtectedRoute redirects here until onboarding completes',
