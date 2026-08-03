@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, Link } from 'react-router-dom';
 import { HelpCircle, X, PlayCircle, LifeBuoy, ChevronDown, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -38,8 +39,20 @@ export default function HelpButton() {
         <HelpCircle className="w-5 h-5" />
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
+      {/* Portalled to <body>, and it has to be. This button lives in the app
+          header, which carries `backdrop-blur-sm` — a non-none backdrop-filter
+          makes an element the containing block for `position: fixed`
+          descendants AND opens a new stacking context. Rendered in place, the
+          drawer's `inset-0` resolved against the HEADER: it measured 80px tall
+          against an 81px header instead of the 844px viewport, and its z-50 was
+          trapped inside a z-30 header, so page content painted over it. A
+          portal is the fix, not a bigger z-index — no z-index can escape a
+          containing block. See JobDetailsCard.tsx for the same pattern.
+
+          z-[60] rather than z-50 so it covers the mobile bottom nav, which is
+          z-50 and would otherwise paint on top of a full-screen drawer. */}
+      {open && createPortal(
+        <div className="fixed inset-0 z-[60] flex justify-end" role="dialog" aria-modal="true">
           {/* Overlay */}
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
 
@@ -152,7 +165,8 @@ export default function HelpButton() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
