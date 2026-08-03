@@ -768,19 +768,34 @@ body {
   }
 }
 
-/* ── M. Payouts incomplete-setup banner — flex-wrap for narrow screens ─────────── */
-@media (max-width: 639px) {
-  /* Banner flex rows with buttons: allow wrapping */
-  main .flex.items-center.justify-between.gap-3,
-  main .flex.items-center.justify-between.gap-4 {
-    flex-wrap: wrap !important;
-  }
+/* ── M and O (removed) — the `justify-between gap-*` row rules ────────────────
+   D3 retirement, tranche 3. Both keyed on
+   `main .flex.items-center.justify-between.gap-3/.gap-4` — the app's single
+   most common row idiom — and between them they contradicted each other on
+   `.gap-4`: M said `flex-wrap: wrap`, O said `flex-direction: column`. O won on
+   source order, so M was dead on its own shared selector.
 
-  main .flex.items-center.justify-between.gap-3 > .flex-shrink-0,
-  main .flex.items-center.justify-between.gap-4 > .flex-shrink-0 {
-    flex-shrink: 1 !important;
-  }
-}
+   Neither named target still needed them:
+
+     • M named the Payouts incomplete-setup banner. That banner moved to
+       `flex-col sm:flex-row items-start sm:items-center` in the markup, so it
+       carries no bare `items-center` token and has not matched M since.
+     • O named the push-notification banner (TradieDashboard). That one was
+       real, and its stacking now lives in its own markup.
+
+   What they actually hit was everything else with that shape. O forced a full
+   column stack — overriding `items-center` — on two banners that declare
+   `flex-wrap` in their own markup (TradieDashboard invoices-ready,
+   SiteCalendar collapsed view), so their declared intent to wrap was silently
+   replaced with something else. Worse, both rules matched FAQ ACCORDION
+   BUTTONS, whose shape is exactly `flex items-center justify-between gap-*`
+   (question on the left, chevron on the right): LocalFAQ on the SEO hub pages,
+   the ServicesTab accordion, and — the tell — the help drawer's own question
+   rows. Under O the chevron dropped onto its own line beneath the question at
+   every one of them.
+
+   Banners that genuinely need to stack now say so in their markup, where the
+   rule is visible next to the thing it governs. */
 
 /* ── N. OnboardingChecklist dismiss buttons — adequate touch targets ───────────── */
 @media (pointer: coarse) {
@@ -798,20 +813,6 @@ body {
     min-height: 44px !important;
     align-items: center !important;
     justify-content: center !important;
-  }
-}
-
-/* ── O. Push notification banner — stack on mobile ────────────────────────────── */
-@media (max-width: 639px) {
-  /* Push/Payout banners: stack icon+text and buttons */
-  main .flex.items-center.justify-between.gap-4 {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-  }
-
-  main .flex.items-center.justify-between.gap-4 > .flex.items-center.gap-2.flex-shrink-0 {
-    align-self: flex-end !important;
-    margin-top: 0.75rem !important;
   }
 }
 
