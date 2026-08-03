@@ -2401,7 +2401,10 @@ export default function TradieDashboard() {
         {/* Push Notification Banner — dismissible */}
         {showPushBanner && pushStatus !== 'granted' && pushStatus !== 'unsupported' && (
           <div className="bg-ct-teal/[0.14] rounded-ct-lg border border-ct-teal/30 p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-4">
+            {/* Stacks on mobile in the markup, not from mobile-responsive.css:
+                section O used to do this globally and stacked every row of this
+                shape in the app (D3 tranche 3). */}
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-ct-surface-2 rounded-ct-md flex items-center justify-center flex-shrink-0">
                   <BellRing className="w-6 h-6 text-ct-mute-2" />
@@ -2411,7 +2414,7 @@ export default function TradieDashboard() {
                   <p className="text-sm text-ct-mute-2 mt-0.5">Get instant desktop alerts when high-priority jobs are posted in your area.</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto">
                 <button
                   onClick={handleEnablePush}
                   disabled={pushEnabling || pushStatus === 'denied'}

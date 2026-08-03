@@ -80,8 +80,10 @@ interface UpgradeBannerProps {
 }
 
 export function UpgradeBanner({ message, remainingCount, totalCount, onUpgrade }: UpgradeBannerProps) {
+  // Stacks on mobile here rather than from mobile-responsive.css section O,
+  // which stacked every row of this shape in the app (D3 tranche 3).
   return (
-    <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-4 flex items-center justify-between gap-4">
+    <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-md p-4 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-ct-amber/[0.13] rounded-ct-sm flex items-center justify-center flex-shrink-0">
           <Crown className="w-5 h-5 text-ct-amber" />
