@@ -74,7 +74,7 @@ export default function ClientDashboard() {
   const [cancelJobTarget, setCancelJobTarget] = useState<Job | null>(null);
   const [bonusTarget, setBonusTarget] = useState<{ jobId: string; tradieName?: string | null; jobLabel?: string | null } | null>(null);
   const [releasingJobId, setReleasingJobId] = useState<string | null>(null);
-  const [pendingIncreases, setPendingIncreases] = useState<Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number }>>({});
+  const [pendingIncreases, setPendingIncreases] = useState<Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number; variationId: string | null }>>({});
   const [payingIncreaseJobId, setPayingIncreaseJobId] = useState<string | null>(null);
   const [cancelRecurringTarget, setCancelRecurringTarget] = useState<RecurringJob | null>(null);
   const [invoices, setInvoices] = useState<RecurringInvoice[]>([]);
@@ -291,7 +291,7 @@ export default function ClientDashboard() {
         const activeJobIds = jobs
           .filter(j => j.status !== null && ['funded', 'in_progress', 'completed'].includes(j.status))
           .map(j => j.id);
-        const increases: Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number }> = {};
+        const increases: Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number; variationId: string | null }> = {};
         if (activeJobIds.length > 0) {
           const { data: activePayments } = await supabase
             .from('payments')
@@ -313,6 +313,10 @@ export default function ClientDashboard() {
               amount: diffCents / 100,
               originalAmount: originalCents / 100,
               finalAmount: (originalCents + diffCents) / 100,
+              // Set only when the increase came from a variation the tradie
+              // raised mid-job, rather than a post-site-visit quote adjustment.
+              // The two need different headings.
+              variationId: typeof inc.variation_id === 'string' ? inc.variation_id : null,
             };
           }
         }
@@ -1329,7 +1333,11 @@ export default function ClientDashboard() {
                               <div className="px-5 py-3 border-t border-ct-amber/[0.34] bg-ct-amber/[0.13]">
                                 <div className="flex items-center gap-2 text-sm font-medium text-ct-paper mb-2">
                                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                                  <span>Price adjusted after site visit</span>
+                                  <span>
+                                    {pendingIncreases[job.id].variationId
+                                      ? 'Additional cost approved — pay to continue'
+                                      : 'Price adjusted after site visit'}
+                                  </span>
                                 </div>
                                 <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-ct-amber mb-3 ml-6">
                                   <span>Original: <span className="font-semibold">${pendingIncreases[job.id].originalAmount.toFixed(2)}</span></span>
@@ -1361,7 +1369,7 @@ export default function ClientDashboard() {
                                     ) : (
                                       <CreditCard className="w-3.5 h-3.5" />
                                     )}
-                                    Pay Difference — ${pendingIncreases[job.id].amount.toFixed(2)}
+                                    Pay additional cost — ${pendingIncreases[job.id].amount.toFixed(2)}
                                   </button>
                                 </div>
                               </div>

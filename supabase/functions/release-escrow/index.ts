@@ -4,6 +4,7 @@ import Stripe from "npm:stripe@14.21.0";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
 import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
 import { createReleasePayout } from "../_shared/instantPayout.ts";
+import { expirePendingVariations } from "../_shared/expireVariations.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -336,6 +337,18 @@ export const handler = async (req: Request): Promise<Response> => {
         );
       }
 
+      // Stripping pending_increase above removes the CTA but left the variation
+      // itself 'pending' forever, with no route left to fund it. Only lapse them
+      // once the money has genuinely gone — on a failed payout the row stays
+      // 'completed' and the cron will retry, so the variation is still fundable.
+      if (newStatus === "released") {
+        try {
+          await expirePendingVariations(supabase, payment.job_id);
+        } catch (expireErr) {
+          console.error("Failed to expire variations after release:", expireErr);
+        }
+      }
+
       // §7A: record the commission for tax-invoicing. Best-effort by design —
       // recordFeeCharge never throws, so this cannot fail a payout that has
       // already moved money.
@@ -501,6 +514,15 @@ export const handler = async (req: Request): Promise<Response> => {
         paymentId,
         metaUpdateError
       );
+    }
+
+    // Same reasoning as the destination path: the CTA is gone, so the variation
+    // must not stay 'pending' with nothing able to fund it. This path always
+    // ends 'released'.
+    try {
+      await expirePendingVariations(supabase, payment.job_id);
+    } catch (expireErr) {
+      console.error("Failed to expire variations after release:", expireErr);
     }
 
     // §7A: same commission ledger write as the destination path. Best-effort.

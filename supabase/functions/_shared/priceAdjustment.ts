@@ -16,6 +16,11 @@
 // drift. Everything here is idempotent: Stripe fires both events for every
 // hosted checkout and retries each of them, and the reconciler runs on a timer
 // over the same rows.
+//
+// A variation arriving here may be 'expired' rather than 'pending': escrow
+// release lapses outstanding variations (see expireVariations.ts), and that can
+// happen while the client is still on the Stripe page. Settled money outranks
+// the clock, so both states are accepted and approved.
 
 // Matches the alias in feeContext.ts. Edge functions construct their client
 // untyped, and `npm run typecheck` does not cover this directory.
@@ -78,11 +83,18 @@ export async function applyPriceAdjustment(
 
     // The status filter is the idempotency guard: approving twice would raise
     // the budget twice for one payment.
+    //
+    // 'expired' is in the list because escrow release can lapse a variation
+    // while the client is still on the Stripe page. Accepting only 'pending'
+    // would mean that client's card is charged, the money reaches the tradie's
+    // Connect balance, and the budget silently never moves. Money that landed
+    // always wins over a clock that ran out. Idempotency survives: after this
+    // update the row is 'approved', which matches neither value.
     const { data: flipped, error: varErr } = await supabase
       .from("job_variations")
       .update({ status: "approved" })
       .eq("id", variationId)
-      .eq("status", "pending")
+      .in("status", ["pending", "expired"])
       .select("id");
 
     if (varErr) {
@@ -96,7 +108,7 @@ export async function applyPriceAdjustment(
 
     const { data: jobRow } = await supabase
       .from("jobs")
-      .select("budget_amount")
+      .select("budget_amount, tradie_id, title")
       .eq("id", jobId)
       .maybeSingle();
 
@@ -117,6 +129,32 @@ export async function applyPriceAdjustment(
       return;
     }
     console.info(`Approved variation ${variationId}; job ${jobId} budget now ${newBudget}`);
+
+    // The tradie raised this and then heard nothing either way. try/catch is
+    // not politeness here: an unhandled throw after the budget has already
+    // moved would surface as a webhook failure and have Stripe retry a settled
+    // path.
+    if (jobRow?.tradie_id) {
+      try {
+        await supabase.from("notifications").insert({
+          user_id: jobRow.tradie_id,
+          type: "variation_approved",
+          title: "Additional cost approved and paid",
+          message: `The homeowner approved and paid your $${
+            Number(variation.additional_amount).toFixed(2)
+          } additional cost on ${jobRow.title || "this job"}. It's held safely by Stripe with the rest of the job.`,
+          job_id: jobId,
+          metadata: {
+            variation_id: variationId,
+            additional_amount: Number(variation.additional_amount),
+            new_budget: newBudget,
+          },
+          read: false,
+        });
+      } catch {
+        // Non-critical
+      }
+    }
     return;
   }
 

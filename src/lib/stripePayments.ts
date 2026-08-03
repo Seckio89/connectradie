@@ -230,6 +230,30 @@ export async function approveVariation(
 }
 
 /**
+ * Decline a job variation.
+ *
+ * Server-side for the same reason approving is: the client's browser must not
+ * write this table. It also expires the Stripe checkout session and frees the
+ * job's pending-increase slot, which the old client-side update left set —
+ * wedging every later variation on the job behind a 409.
+ */
+export async function declineVariation(
+  variationId: string,
+): Promise<{
+  variationId: string;
+  jobId: string;
+  status: string;
+  slotCleared: boolean;
+}> {
+  return callEdgeFunction<{
+    variationId: string;
+    jobId: string;
+    status: string;
+    slotCleared: boolean;
+  }>('decline-variation', { variationId });
+}
+
+/**
  * Pay the additional amount for a price increase after site inspection.
  * Creates a Stripe Checkout session for the difference.
  */

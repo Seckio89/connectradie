@@ -237,6 +237,37 @@ jobs:
         if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
         run: npm run check:edge-drift
 
+  variation-e2e:
+    name: Variation money path (Stripe test mode, informational)
+    runs-on: ubuntu-latest
+    # Drives real Stripe test-mode charges against the live project, so it needs
+    # secrets a fork will never have and a quote seeded by `npm run e2e:quote`.
+    # Same shape as `drift`: skip rather than fail when the secrets are absent,
+    # because making it blocking would red-line every fork PR.
+    #
+    # It is here at all because this path proves things nothing else can: that
+    # the budget does not move until the money does, that a client cannot
+    # self-approve a variation, and that declining does not wedge the job.
+    if: ${{ github.event_name == 'push' }}
+    continue-on-error: true
+    env:
+      E2E_STRIPE_SECRET_KEY: ${{ secrets.E2E_STRIPE_SECRET_KEY }}
+      E2E_SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL }}
+      E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+      E2E_SUPABASE_SERVICE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_KEY }}
+      E2E_FUNCTIONS_BASE: ${{ secrets.E2E_FUNCTIONS_BASE }}
+      E2E_QUOTE_ID: ${{ secrets.E2E_QUOTE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Variation funding end to end
+        if: ${{ env.E2E_STRIPE_SECRET_KEY != '' && env.E2E_QUOTE_ID != '' }}
+        run: npm run e2e:variation
+
   build:
     name: Build
     needs: [type-check, test]

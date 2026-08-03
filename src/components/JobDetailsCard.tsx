@@ -12,7 +12,7 @@ import { extractSuburb } from '../lib/contactGating';
 import { redactContactInfo } from '../lib/redaction';
 import { useSignedUrls } from '../hooks/useSignedUrl';
 import { getSignedUrl } from '../lib/storage';
-import { approveVariation, payPriceIncrease, humanizePaymentError } from '../lib/stripePayments';
+import { approveVariation, declineVariation, payPriceIncrease, humanizePaymentError } from '../lib/stripePayments';
 import { Pill, VariationBlock, VariationAction, VariationAmount, formatAud } from './ui';
 import type { PillTone } from './ui';
 
@@ -26,7 +26,7 @@ interface JobVariation {
   job_id: string;
   description: string;
   additional_amount: number;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'expired';
   reason_category: string | null;
   photo_urls: string[];
   created_at: string;
@@ -130,7 +130,9 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
   const photoSignedUrls = useSignedUrls('job-attachments', job?.images_url || []);
   const [variations, setVariations] = useState<JobVariation[]>([]);
   const [showVariationModal, setShowVariationModal] = useState(false);
-  const [variationError, setVariationError] = useState('');
+  // Keyed by variation id. A single string rendered the same failure under
+  // every pending block at once.
+  const [variationError, setVariationError] = useState<{ id: string; message: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [milestones, setMilestones] = useState<JobMilestone[]>([]);
   const [showAddMilestone, setShowAddMilestone] = useState(false);
@@ -272,22 +274,32 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
       // humanizePaymentError passes server messages through, so the specific
       // reasons approve-variation returns ("This job hasn't been funded yet…")
       // reach the client rather than a generic failure.
-      setVariationError(humanizePaymentError(err instanceof Error ? err.message : null));
+      setVariationError({
+        id: variationId,
+        message: humanizePaymentError(err instanceof Error ? err.message : null),
+      });
       setLoading(false);
     }
   };
 
+  /**
+   * Declining goes through the server too.
+   *
+   * This used to be a direct update from the browser, which both required an
+   * RLS policy wide enough to self-approve and left the job's pending-increase
+   * slot set — wedging every later variation behind a 409 with no way to clear
+   * it. decline-variation expires the Stripe session and frees the slot.
+   */
   const handleRejectVariation = async (variationId: string) => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('job_variations')
-        .update({ status: 'rejected' })
-        .eq('id', variationId);
-      if (error) throw error;
+      await declineVariation(variationId);
       await fetchVariations();
-    } catch {
-      alert('Failed to reject. Please try again.');
+    } catch (err) {
+      setVariationError({
+        id: variationId,
+        message: humanizePaymentError(err instanceof Error ? err.message : null),
+      });
     } finally {
       setLoading(false);
     }
@@ -791,8 +803,8 @@ export default function JobDetailsCard({ job, client, isUnlocked = false, showCl
 
             {/* Rose, not amber: amber is "waiting on a person", and a failed
                 approval is a different state needing a different response. */}
-            {!showClientDetails && variationError && (
-              <p className="mt-2 text-sm text-ct-rose">{variationError}</p>
+            {!showClientDetails && variationError?.id === variation.id && (
+              <p className="mt-2 text-sm text-ct-rose">{variationError.message}</p>
             )}
             {showClientDetails && (
               <Pill tone="amber" className="mt-3">Awaiting client approval</Pill>
@@ -1406,6 +1418,8 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
   const pending = variations.filter(v => v.status === 'pending');
   const approved = variations.filter(v => v.status === 'approved');
   const rejected = variations.filter(v => v.status === 'rejected');
+  // Lapsed on escrow release — nobody declined these, the window closed.
+  const expired = variations.filter(v => v.status === 'expired');
 
   if (resolved.length === 0) return null;
 
@@ -1413,7 +1427,7 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
     <div className="space-y-3">
       {/* Summary Banner */}
       <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
           <div>
             <p className="text-xs text-ct-mute mb-0.5">Approved</p>
             <p className="text-sm font-bold text-ct-teal">
@@ -1430,6 +1444,11 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
             <p className="text-xs text-ct-mute mb-0.5">Declined</p>
             <p className="text-sm font-bold text-ct-rose">{rejected.length}</p>
             <p className="text-xs text-ct-mute">variation{rejected.length !== 1 ? 's' : ''}</p>
+          </div>
+          <div>
+            <p className="text-xs text-ct-mute mb-0.5">Lapsed</p>
+            <p className="text-sm font-bold text-ct-mute-2">{expired.length}</p>
+            <p className="text-xs text-ct-mute">payment released</p>
           </div>
         </div>
         {jobBudget != null && jobBudget > 0 && approvedVariationsTotal > 0 && (
@@ -1457,6 +1476,11 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
             .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
             .map((variation, idx) => {
               const isApproved = variation.status === 'approved';
+              // Neither teal nor rose: the design system reserves rose for
+              // "failed or declined" and amber for "blocked on a person". A
+              // lapsed variation is neither — nobody chose it and nobody is
+              // waiting on anyone — so it reads as neutral.
+              const isExpired = variation.status === 'expired';
               const isLast = idx === resolved.length - 1;
 
               return (
@@ -1465,10 +1489,16 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
                   <div className="flex flex-col items-center pt-1">
                     {isApproved ? (
                       <CheckCircle className="w-5 h-5 text-ct-teal flex-shrink-0" />
+                    ) : isExpired ? (
+                      <Circle className="w-5 h-5 text-ct-mute flex-shrink-0" />
                     ) : (
                       <XCircle className="w-5 h-5 text-ct-rose flex-shrink-0" />
                     )}
-                    {!isLast && <div className={`w-0.5 flex-1 mt-1 min-h-[16px] ${isApproved ? 'bg-ct-teal/30' : 'bg-ct-rose/30'}`} />}
+                    {!isLast && (
+                      <div className={`w-0.5 flex-1 mt-1 min-h-[16px] ${
+                        isApproved ? 'bg-ct-teal/30' : isExpired ? 'bg-ct-line' : 'bg-ct-rose/30'
+                      }`} />
+                    )}
                   </div>
 
                   {/* Content */}
@@ -1480,17 +1510,29 @@ function VariationsHistory({ variations, approvedVariationsTotal, jobBudget }: V
                         </span>
                       )}
                       <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                        isApproved ? 'bg-ct-teal/[0.14] text-ct-teal' : 'bg-ct-rose/[0.13] text-ct-rose'
+                        isApproved
+                          ? 'bg-ct-teal/[0.14] text-ct-teal'
+                          : isExpired
+                            ? 'bg-ct-surface-2 text-ct-mute-2'
+                            : 'bg-ct-rose/[0.13] text-ct-rose'
                       }`}>
-                        {isApproved ? 'Approved' : 'Declined'}
+                        {isApproved ? 'Approved' : isExpired ? 'Lapsed' : 'Declined'}
                       </span>
                     </div>
                     <p className="text-sm text-ct-mute-2 mt-1">{variation.description}</p>
+                    {/* No strike-through on a lapsed amount — that reads as
+                        "we refused this", which is the opposite of what
+                        happened. */}
                     <p className={`text-lg font-bold mt-1 ${
-                      isApproved ? 'text-ct-teal' : 'text-ct-rose line-through'
+                      isApproved ? 'text-ct-teal' : isExpired ? 'text-ct-mute-2' : 'text-ct-rose line-through'
                     }`}>
                       +${Number(variation.additional_amount).toFixed(2)}
                     </p>
+                    {isExpired && (
+                      <p className="text-xs text-ct-mute mt-0.5">
+                        The job's payment was released before this was approved. Invoice the homeowner directly for this work.
+                      </p>
+                    )}
                     <p className="text-xs text-ct-mute mt-0.5 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {new Date(variation.updated_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
