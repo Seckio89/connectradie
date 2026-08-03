@@ -1,7 +1,38 @@
 ---
 name: security-scanner
-description: [MERGED into nightly-code-audit on 2026-07-01 — disabled] Daily security scan, now part of the nightly audit.
+description: [RETIRED — superseded by check:secrets, check:sinks, check:deps and Supabase advisors. Kept as history; do not rely on it.]
 ---
+
+> **This skill does not run, and the 2026-07-01 note that said it had been
+> "merged into nightly-code-audit" was wrong.** None of its five scan steps
+> made it across. The nightly audit ran the checker suite, advisors and edge
+> logs, and nothing here. The gap was real: a Google OAuth client secret sat in
+> `.claude/settings.json` in a public repo for roughly two months while the
+> monthly reports below kept saying "no exposed secrets" — see
+> `audit-findings/security/*.md`, every one of which asserts that.
+>
+> It would not have caught it even had it run. Its patterns were `sk_live_`,
+> `sk_test_`, `eyJ` and `SUPABASE_SERVICE_ROLE`, none of which match Google's
+> `GOCSPX-` prefix; and it scanned `src/`, `supabase/`, config files and
+> `.env*`, never `.claude/`.
+>
+> Where each step actually lives now, as of 2026-08-03:
+>
+> | Step below | Now |
+> |---|---|
+> | 2. Exposed secrets | `npm run check:secrets` — blocking CI, scans **all** tracked files, plus `check:secrets:history` |
+> | 3. Dependency vulnerabilities | `npm run check:deps` — ratchet on `.audit-baseline.json`; criticals cannot be baselined |
+> | 4. Config / `.gitignore` hygiene | folded into `check:secrets` |
+> | 4. Unsafe eval / innerHTML / SQL | `npm run check:sinks` — ratchet on `.sinks-baseline.json` |
+> | 5. RLS, auth, routes | Supabase `get_advisors`, in `Scheduled/nightly-code-audit/SKILL.md` step 2 |
+>
+> The lesson worth keeping: this was prose handed to a model on a schedule.
+> The replacements are executable checkers wired into CI, so they fail on the
+> pull request rather than up to a day later — and so that switching one off
+> takes a visible diff.
+
+---
+**Historical content follows. Retained to show what the coverage used to be.**
 
 You are a security scanner for the ConnecTradie codebase (Seckio89/connectradie).
 

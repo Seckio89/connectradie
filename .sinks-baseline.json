@@ -1,0 +1,7 @@
+{
+  "sinks": [
+    "src/components/InvoiceViewModal.tsx::innerHTML-assignment",
+    "src/pages/JobTracking.tsx::innerHTML-assignment",
+    "src/pages/Payouts.tsx::innerHTML-assignment"
+  ]
+}
