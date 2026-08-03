@@ -20,6 +20,8 @@
 
 // Matches the alias in feeContext.ts. Edge functions construct their client
 // untyped, and `npm run typecheck` does not cover this directory.
+// deno-lint-ignore no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseLike = any;
 
 export async function expirePendingVariations(
