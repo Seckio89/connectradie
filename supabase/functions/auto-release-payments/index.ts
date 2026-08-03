@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
 import { createReleasePayout } from "../_shared/instantPayout.ts";
+import { expirePendingVariations } from "../_shared/expireVariations.ts";
 
 const formatAud = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
@@ -328,6 +329,14 @@ Deno.serve(async (req: Request) => {
             })
             .eq("id", payment.id);
 
+          // Dropping pending_increase kills the CTA; without this the variation
+          // itself stays 'pending' forever with nothing able to fund it.
+          try {
+            await expirePendingVariations(supabase, payment.job_id);
+          } catch (expireErr) {
+            console.error("Failed to expire variations after auto-release:", expireErr);
+          }
+
           // Mark child destination-charge payments as released too
           for (const child of (childPayments || [])) {
             const childMeta = (child.metadata || {}) as Record<string, unknown>;
@@ -593,6 +602,14 @@ Deno.serve(async (req: Request) => {
             },
           })
           .eq("id", payment.id);
+
+        // Same as the destination path: the CTA is gone, so the variation must
+        // not linger as actionable with no way left to fund it.
+        try {
+          await expirePendingVariations(supabase, payment.job_id);
+        } catch (expireErr) {
+          console.error("Failed to expire variations after auto-release:", expireErr);
+        }
 
         // Mark child payments as transferred too
         for (const child of (childPayments || [])) {

@@ -337,7 +337,10 @@ export type JobVariation = {
   job_id: string;
   description: string;
   additional_amount: number;
-  status: 'pending' | 'approved' | 'rejected';
+  // 'expired' is set by the escrow release paths when a variation was never
+  // actioned before the job's money went out. It is not a client decision —
+  // see _shared/expireVariations.ts.
+  status: 'pending' | 'approved' | 'rejected' | 'expired';
   created_at: string;
   updated_at: string;
 }

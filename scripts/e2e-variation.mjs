@@ -27,7 +27,16 @@
  *  4. A second variation while one is awaiting payment is REJECTED.
  *     pending_increase is a single slot on the payment; two in flight would
  *     silently overwrite each other and the client would pay one while the
- *     other waited forever.
+ *     other waited forever. Re-approving the SAME one resumes it instead.
+ *  5. THE CLIENT CANNOT APPROVE BY WRITING THE ROW. The UPDATE policy on
+ *     job_variations used to let the job's client set any column to any value,
+ *     so status='approved' skipped Stripe entirely. Driven with an anon-key
+ *     session, because service-role proves nothing about RLS.
+ *  6. Declining frees the slot and kills the Stripe session, and a later
+ *     variation on the same job is still fundable afterwards. Both of those
+ *     used to wedge the job permanently.
+ *  7. A variation lapsed by escrow release still settles if the money lands
+ *     (the reconciler section rewinds to 'expired', not 'pending').
  *
  * Consumes a fresh quote:
  *   npm run e2e:quote     # then put the printed id in .env.e2e
@@ -99,6 +108,15 @@ async function signInClient() {
   const { data, error } = await anon.auth.signInWithPassword({ email: CFG.CLIENT_EMAIL, password: CFG.CLIENT_PASSWORD });
   if (error || !data.session) throw new Error("Client sign-in failed: " + (error?.message || "no session"));
   return data.session.access_token;
+}
+
+// An anon-key client carrying the client's JWT. `admin` is service-role and
+// bypasses RLS, so it can never prove a policy refuses anything.
+function asClient(jwt) {
+  return createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: `Bearer ${jwt}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }
 
 async function callFn(path, bearer, body) {
@@ -274,6 +292,40 @@ const budgetOf = async (jobId) => {
   }
   await admin.from("job_variations").delete().eq("id", second.id);
 
+  // ASSERTION 5 — the SAME variation resumes rather than dead-ending.
+  // This used to 409 too, which left declining as the only way forward for a
+  // client who simply closed the Stripe tab.
+  const resume = await callFn("approve-variation", jwt, { variationId: variation.id });
+  if (resume.status !== 200) {
+    fail(`re-approving the in-flight variation returned ${resume.status}, expected 200 — a client who closed the checkout has no way back`);
+  } else if (resume.json.paymentId !== approve.json.paymentId) {
+    fail(`resume returned payment ${resume.json.paymentId}, expected the already-stamped ${approve.json.paymentId}`);
+  } else if (resume.json.totalCents !== approve.json.totalCents) {
+    fail(`resume quoted ${money(resume.json.totalCents)} but the stored slot says ${money(approve.json.totalCents)} — Stripe bills the stored figure, so these must match`);
+  } else {
+    ok("re-approving the same variation resumes it (200, same paymentId and total)");
+  }
+
+  // ASSERTION 6 — the client cannot approve a variation by writing the row.
+  // This is the hole approve-variation's header claimed was closed for months:
+  // the UPDATE policy allowed the job's client to set any column to any value,
+  // so status='approved' skipped Stripe entirely.
+  const asTheClient = asClient(jwt);
+  const { data: hacked, error: hackErr } = await asTheClient
+    .from("job_variations")
+    .update({ status: "approved" })
+    .eq("id", variation.id)
+    .select("id");
+  const { data: afterHack } = await admin
+    .from("job_variations").select("status").eq("id", variation.id).single();
+  if (afterHack.status !== "pending") {
+    fail(`FREE MONEY: the client self-approved a variation from the browser — status is now '${afterHack.status}'`);
+  } else if (!hackErr && hacked?.length) {
+    fail("client UPDATE on job_variations reported success — the write is not being refused");
+  } else {
+    ok("client cannot write job_variations directly (self-approval refused)");
+  }
+
   // 4. Client pays the top-up.
   const pay = await callFn("pay-price-increase", jwt, {
     paymentId: approve.json.paymentId,
@@ -342,7 +394,12 @@ const budgetOf = async (jobId) => {
   await admin.from("payments")
     .update({ status: "pending", completed_at: null, stripe_payment_intent_id: null })
     .eq("id", topUpPaymentId);
-  await admin.from("job_variations").update({ status: "pending" }).eq("id", variation.id);
+  // 'expired', not 'pending'. Escrow release lapses outstanding variations, and
+  // that can land while the client is still on the Stripe page. If the
+  // settlement guard accepted only 'pending', the card would be charged, the
+  // money would reach the tradie's Connect balance, and the budget would
+  // silently never move. This is the regression test for that guard.
+  await admin.from("job_variations").update({ status: "expired" }).eq("id", variation.id);
   await admin.from("jobs").update({ budget_amount: budgetBefore }).eq("id", jobId);
   const { data: parentNow } = await admin.from("payments").select("metadata").eq("id", approve.json.paymentId).single();
   const rewound = { ...(parentNow.metadata || {}) };
@@ -378,6 +435,84 @@ const budgetOf = async (jobId) => {
       fail("reconciler did not clear pending_increase — future increases would still 409");
     } else {
       ok("reconciler recovered a stranded adjustment: payment completed, variation approved, budget raised, slot released");
+    }
+  }
+
+  // 8. Declining releases the slot.
+  //
+  // The deadlock this replaces: approve → close the Stripe tab → decline left
+  // pending_increase set forever, so every later variation on the job 409'd
+  // against an error telling the user to cancel something with no cancel
+  // button anywhere in the product.
+  const { data: third } = await admin
+    .from("job_variations")
+    .insert({ job_id: jobId, description: "E2E: third variation, to be declined", additional_amount: 175, status: "pending" })
+    .select("id").single();
+
+  const thirdApprove = await callFn("approve-variation", jwt, { variationId: third.id });
+  if (thirdApprove.status !== 200) {
+    fail(`approve-variation on a later variation returned ${thirdApprove.status}: ${JSON.stringify(thirdApprove.json)} — a job must support more than one variation in its life`);
+  } else {
+    // Open a real checkout so the decline has a live Stripe session to expire.
+    const thirdPay = await callFn("pay-price-increase", jwt, {
+      paymentId: thirdApprove.json.paymentId,
+      successUrl: CFG.SUCCESS_URL,
+      cancelUrl: CFG.CANCEL_URL,
+      idempotencyKey: "e2e_var_decline_" + third.id,
+    });
+    if (thirdPay.status !== 200) {
+      fail(`pay-price-increase on a second variation returned ${thirdPay.status}: ${JSON.stringify(thirdPay.json)} — an earlier completed adjustment must not block a new one`);
+    } else {
+      ok("a later variation on the same job opens its own checkout");
+    }
+
+    const decline = await callFn("decline-variation", jwt, { variationId: third.id });
+    if (decline.status !== 200) {
+      fail(`decline-variation ${decline.status}: ${JSON.stringify(decline.json)}`);
+    } else {
+      const { data: declined } = await admin.from("job_variations").select("status").eq("id", third.id).single();
+      const { data: afterDecline } = await admin.from("payments").select("metadata").eq("id", thirdApprove.json.paymentId).single();
+      const budgetAfterDecline = await budgetOf(jobId);
+
+      if (declined.status !== "rejected") {
+        fail(`declined variation is '${declined.status}', expected 'rejected'`);
+      } else if (afterDecline?.metadata?.pending_increase) {
+        fail("decline left pending_increase set — every later variation on this job would 409 forever");
+      } else if (Math.abs(budgetAfterDecline - expectedBudget) > 0.005) {
+        fail(`decline moved the budget to ${budgetAfterDecline}; it must stay at ${expectedBudget}`);
+      } else {
+        ok("decline freed the slot, left the budget alone, and cancelled the checkout");
+      }
+
+      if (thirdPay.status === 200 && thirdPay.json.paymentId) {
+        const { data: cancelledChild } = await admin
+          .from("payments").select("status").eq("id", thirdPay.json.paymentId).maybeSingle();
+        if (cancelledChild && cancelledChild.status !== "failed") {
+          fail(`declined top-up payment is '${cancelledChild.status}', expected 'failed' — a payable row must not survive the decline`);
+        } else {
+          ok("the declined top-up row is marked failed, not left payable");
+        }
+      }
+
+      // The deadlock itself: a later variation must still be fundable.
+      const { data: fourth } = await admin
+        .from("job_variations")
+        .insert({ job_id: jobId, description: "E2E: fourth variation, raised after a decline", additional_amount: 90, status: "pending" })
+        .select("id").single();
+      const afterWedge = await callFn("approve-variation", jwt, { variationId: fourth.id });
+      if (afterWedge.status !== 200) {
+        fail(`a variation raised after a decline returned ${afterWedge.status} — the job is still wedged`);
+      } else {
+        ok("a new variation is approvable after a decline (deadlock gone)");
+      }
+
+      // Leave the job clean: drop the probe row and the slot it stamped.
+      await admin.from("job_variations").delete().eq("id", fourth.id);
+      const { data: finalParent } = await admin
+        .from("payments").select("metadata").eq("id", thirdApprove.json.paymentId).single();
+      const cleaned = { ...(finalParent?.metadata || {}) };
+      delete cleaned.pending_increase;
+      await admin.from("payments").update({ metadata: cleaned }).eq("id", thirdApprove.json.paymentId);
     }
   }
 

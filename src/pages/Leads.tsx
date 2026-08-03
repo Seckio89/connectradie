@@ -298,7 +298,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
   const [jobPaymentIds, setJobPaymentIds] = useState<Map<string, string>>(new Map());
   const [jobPaymentInvoiceNumbers, setJobPaymentInvoiceNumbers] = useState<Map<string, string | null>>(new Map());
   const [jobPaymentData, setJobPaymentData] = useState<Map<string, { id: string; amount: number; metadata: Record<string, unknown> | null; created_at?: string }>>(new Map());
-  const [pendingIncreases, setPendingIncreases] = useState<Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number }>>({});
+  const [pendingIncreases, setPendingIncreases] = useState<Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number; variationId: string | null }>>({});
   const [paidIncreaseJobIds, setPaidIncreaseJobIds] = useState<Set<string>>(new Set());
   const [viewCompletedJob, setViewCompletedJob] = useState<LeadWithClient | null>(null);
   const [withdrawQuoteTarget, setWithdrawQuoteTarget] = useState<LeadWithClient | null>(null);
@@ -697,7 +697,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
           .eq('status', 'completed');
 
         if (activePayments) {
-          const increases: Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number }> = {};
+          const increases: Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number; variationId: string | null }> = {};
           for (const p of activePayments) {
             const meta = p.metadata as Record<string, unknown> | null;
             if (meta?.pending_increase) {
@@ -710,6 +710,9 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
                   amount: diffCents / 100,
                   originalAmount: originalCents / 100,
                   finalAmount: (originalCents + diffCents) / 100,
+                  // A tradie-raised variation and a post-site-visit quote
+                  // adjustment both land here; only the former has this set.
+                  variationId: typeof inc.variation_id === 'string' ? inc.variation_id : null,
                 };
               }
             }
@@ -2004,7 +2007,11 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
             <div className="px-5 py-3 border-t border-ct-amber/[0.34] bg-ct-amber/[0.13]">
               <div className="flex items-center gap-2 text-sm font-medium text-ct-paper mb-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>Price adjusted after site visit</span>
+                <span>
+                  {pendingIncreases[lead.id].variationId
+                    ? 'Additional cost approved — pay to continue'
+                    : 'Price adjusted after site visit'}
+                </span>
               </div>
               <div className="flex items-center gap-x-4 gap-y-1 flex-wrap text-xs text-ct-amber mb-3 ml-0 sm:ml-6">
                 <span>Original: <span className="font-semibold">${pendingIncreases[lead.id].originalAmount.toFixed(2)}</span></span>
@@ -2034,7 +2041,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   ) : (
                     <CreditCard className="w-3.5 h-3.5" />
                   )}
-                  Pay Difference
+                  Pay additional cost
                 </button>
               </div>
             </div>

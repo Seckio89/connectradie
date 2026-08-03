@@ -63,6 +63,7 @@ const AUTHED = [
   "instant-payout",
   "pay-milestone",
   "approve-variation",
+  "decline-variation",
   "pay-price-increase",
   "resolve-dispute-split",
   "create-payment-session",

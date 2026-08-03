@@ -184,8 +184,23 @@ export const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!payment) {
+      // The lookup above filters status='completed'. Both release paths set the
+      // funding payment to 'released', so an already-paid-out job lands here
+      // too — and telling that client the job "hasn't been funded yet" is
+      // simply false. Distinguish the two before choosing the message.
+      const { data: anyFunding } = await supabase
+        .from("payments")
+        .select("status")
+        .eq("job_id", variation.job_id)
+        .eq("payment_type", "job_funding")
+        .neq("status", "failed")
+        .limit(1)
+        .maybeSingle();
+
       return errorJson(
-        "This job hasn't been funded yet, so there's nothing to add to. Accept and pay for the quote first.",
+        anyFunding
+          ? "The payment for this job has already been released to the tradie, so it can't be topped up. Ask them to invoice you for the extra work."
+          : "This job hasn't been funded yet, so there's nothing to add to. Accept and pay for the quote first.",
         400,
       );
     }
@@ -196,15 +211,45 @@ export const handler = async (req: Request): Promise<Response> => {
     // at once would silently overwrite each other and the client would pay one
     // amount while the other variation waited forever.
     const inFlight = existingMetadata.pending_increase as
-      | { variation_id?: string }
+      | {
+        variation_id?: string;
+        diff_cents?: number;
+        additional_gst?: number;
+        additional_processing_fee?: number;
+      }
       | undefined;
     if (inFlight) {
-      const sameVariation = inFlight.variation_id === variationId;
-      return errorJson(
-        sameVariation
-          ? "This variation is already awaiting payment. Check your email for the checkout link, or try again in a moment."
-          : "Another price change on this job is already awaiting payment. Finish or cancel that one first.",
-        409,
+      if (inFlight.variation_id !== variationId) {
+        return errorJson(
+          "Another price change on this job is already awaiting payment. Finish or cancel that one first.",
+          409,
+        );
+      }
+
+      // Same variation: resume rather than dead-end. The client opened the
+      // Stripe page, closed it, and came back — 409ing here left declining as
+      // the only way forward, and declining used to strand the slot for good.
+      //
+      // The figures come from the STORED slot, never from re-running the
+      // pricing below. pay-price-increase bills off this same metadata, so
+      // re-pricing here would quote a total Stripe will not charge if the fee
+      // configuration moved in between.
+      const storedDiff = typeof inFlight.diff_cents === "number" ? inFlight.diff_cents : diffCents;
+      const storedGst = typeof inFlight.additional_gst === "number" ? inFlight.additional_gst : 0;
+      const storedProcessing = typeof inFlight.additional_processing_fee === "number"
+        ? inFlight.additional_processing_fee
+        : 0;
+
+      return new Response(
+        JSON.stringify({
+          paymentId: payment.id,
+          jobId: variation.job_id,
+          diffCents: storedDiff,
+          gstCents: storedGst,
+          totalCents: storedDiff + storedGst + storedProcessing,
+          resumed: true,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
