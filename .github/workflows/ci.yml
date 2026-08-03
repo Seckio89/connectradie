@@ -74,6 +74,47 @@ jobs:
       # had moved.
       - run: node scripts/typecheck-edge.mjs
 
+  security:
+    name: Security (secrets, sinks, deps)
+    runs-on: ubuntu-latest
+    # BLOCKING on purpose — no continue-on-error, unlike `lint` and `drift`.
+    #
+    # A Google OAuth client secret sat in .claude/settings.json in this PUBLIC
+    # repo for roughly two months (removed by #227). Every security scan in that
+    # window reported "no exposed secrets", because the scanner that was meant to
+    # find it had been folded into the nightly audit on 2026-07-01 and silently
+    # dropped: its patterns never covered Google's GOCSPX- prefix, and it never
+    # looked in .claude/ at all.
+    #
+    # Nightly detection was also the wrong altitude. This runs on the pull
+    # request, so a credential fails the build that introduces it rather than up
+    # to 24h after it is already public and being scraped.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # check:secrets asserts on git history (no .env ever committed), which
+          # needs more than the default single-commit fetch.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # Tracked files at HEAD, every one of them — the allowlist names the
+      # exceptions rather than the scan naming the directories, because a
+      # scanner that picks where to look is always wrong about somewhere.
+      # Reports position and pattern name only, never the value: these logs are
+      # public on a public repo.
+      - name: Committed credentials
+        run: npm run check:secrets
+      # Ratchets. Both start from a baseline of what is already here and fail
+      # only on something new, because a check that fails on day one for
+      # pre-existing reasons is a check that gets switched off.
+      - name: Injection sinks
+        run: npm run check:sinks
+      - name: Dependency advisories
+        run: npm run check:deps
+
   db-columns:
     name: DB Columns
     runs-on: ubuntu-latest
