@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import { parseGoogleTokenError } from "../_shared/googleTokenError.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -182,6 +183,70 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // Handle disconnect.
+    //
+    // Two comments in this file have claimed since launch that disconnect is
+    // handled here. It never was — no branch matched it, so the request fell
+    // through to the callback path and died on "Missing code or state". No
+    // frontend called it, so nothing surfaced, and a tradie whose refresh token
+    // Google had revoked was stuck: the dashboard only offers Connect when no
+    // integration row exists, and nothing could remove that row.
+    if (action === "disconnect") {
+      const { data: integration } = await supabaseClient
+        .from("calendar_integrations")
+        .select("id, refresh_token, access_token")
+        .eq("tradie_id", user!.id)
+        .eq("provider", "google")
+        .maybeSingle();
+
+      if (!integration) {
+        // Already gone. Disconnecting nothing is the desired end state, so this
+        // succeeds rather than erroring — the caller wants "not connected".
+        return new Response(
+          JSON.stringify({ success: true, alreadyDisconnected: true }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Best-effort revoke at Google, so the grant disappears from the tradie's
+      // account permissions too. Never blocks the disconnect: if Google has
+      // already revoked the token this returns 400, which is the very state the
+      // tradie is trying to clear.
+      const revokeToken = integration.refresh_token || integration.access_token;
+      if (revokeToken) {
+        try {
+          const revokeRes = await fetch("https://oauth2.googleapis.com/revoke", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ token: revokeToken }),
+          });
+          if (!revokeRes.ok) {
+            console.warn("Google revoke returned", revokeRes.status, (await revokeRes.text()).slice(0, 200));
+          }
+        } catch (revokeErr) {
+          console.warn("Google revoke request failed:", revokeErr);
+        }
+      }
+
+      const { error: deleteError } = await supabaseClient
+        .from("calendar_integrations")
+        .delete()
+        .eq("id", integration.id);
+
+      if (deleteError) {
+        console.error("Disconnect delete failed:", deleteError.message, deleteError.details);
+        return new Response(
+          JSON.stringify({ error: "Could not disconnect Google Calendar. Try again." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Handle OAuth callback
     if (!code || !state) {
       return new Response(
@@ -226,6 +291,16 @@ Deno.serve(async (req: Request) => {
     });
 
     if (!tokenResponse.ok) {
+      // The callback answers with a redirect, so this log is the only place the
+      // reason survives. Response body only — the request above carries
+      // client_secret and must never be logged.
+      const { code, detail } = parseGoogleTokenError(await tokenResponse.text());
+      console.error(
+        "Google code exchange failed",
+        tokenResponse.status,
+        code,
+        detail
+      );
       return resultRedirect("failed");
     }
 
