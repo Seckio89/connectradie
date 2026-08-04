@@ -226,6 +226,12 @@ Deno.serve(async (req: Request) => {
     });
 
     if (!tokenResponse.ok) {
+      // Log Google's actual rejection so this is diagnosable. The body names the
+      // cause: invalid_client (secret/client mismatch), redirect_uri_mismatch
+      // (the callback URL isn't registered on this OAuth client), or invalid_grant
+      // (the code was reused/expired). Without this the callback failed blind.
+      const errBody = await tokenResponse.text().catch(() => "");
+      console.error(`Google token exchange failed: HTTP ${tokenResponse.status} — ${errBody}`);
       return resultRedirect("failed");
     }
 
