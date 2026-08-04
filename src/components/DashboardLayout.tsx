@@ -577,6 +577,13 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
     ].includes(notification.type)) {
       navigate(isTradie ? '/work?tab=services' : '/leads?tab=services');
       setNotificationsOpen(false);
+    } else if (notification.type === 'VARIATION_REQUEST' || notification.type === 'variation_declined') {
+      // Explicit, because the fallback sent the client to /leads — which has no
+      // variation UI. "Please review and approve" landed on a page with nothing
+      // to approve. The client's approve/decline block lives on the dashboard;
+      // the tradie's status view is on the job itself.
+      navigate(isTradie ? activeJobHref(jobId) : '/dashboard');
+      setNotificationsOpen(false);
     } else {
       // Fallback: notifications with a jobId likely concern a job already in the pipeline,
       // so route to the active-work tab rather than the default Leads view.
