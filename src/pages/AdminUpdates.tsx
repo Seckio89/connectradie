@@ -288,7 +288,7 @@ export default function AdminUpdates() {
                       <h3 className="font-semibold text-ct-paper text-sm">{update.title}</h3>
                       <p className="text-xs text-ct-mute mt-1 line-clamp-2">{update.content}</p>
 
-                      <div className="flex items-center gap-4 mt-3 text-[11px] text-ct-mute">
+                      <div className="flex items-center gap-4 mt-3 text-[0.6875rem] text-ct-mute">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {new Date(update.published_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}

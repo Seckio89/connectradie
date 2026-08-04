@@ -111,7 +111,12 @@ body {
   }
 }
 
-/* --- Prevent iOS zoom on input focus (font-size >= 16px) --- */
+/* --- Prevent iOS zoom on input focus (font-size >= 16px) ---
+   max(), not a flat 16px: iOS only needs 16px as a FLOOR to skip the focus
+   zoom, so pinning it exactly also pinned every mobile form control against
+   the Settings → Interface text-size slider. Labels grew, values didn't, and
+   form-heavy screens came out inverted. 1rem tracks --ct-text-scale, and max()
+   keeps the anti-zoom guarantee at any scale below 100%. */
 @media screen and (max-width: 768px) {
   input[type="text"],
   input[type="email"],
@@ -124,7 +129,7 @@ body {
   input[type="time"],
   textarea,
   select {
-    font-size: 16px !important;
+    font-size: max(16px, 1rem) !important;
   }
 }
 

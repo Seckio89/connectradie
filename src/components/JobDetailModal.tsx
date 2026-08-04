@@ -494,7 +494,7 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                           <span className="text-xs font-bold">{i + 1}</span>
                         )}
                       </div>
-                      <span className={`text-[10px] sm:text-xs mt-1.5 font-medium leading-tight whitespace-nowrap ${
+                      <span className={`text-[0.625rem] sm:text-xs mt-1.5 font-medium leading-tight whitespace-nowrap ${
                         isCurrent ? 'text-ct-mute-2' : done ? 'text-ct-mute-2' : 'text-ct-mute'
                       }`}>
                         {step.label}

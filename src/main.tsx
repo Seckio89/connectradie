@@ -6,6 +6,14 @@ import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
 import { registerServiceWorker } from './lib/serviceWorker';
 import { initAnalytics } from './lib/analytics';
+import { initTextScale } from './lib/textScale';
+
+// Apply the saved text size before the first paint. Synchronous and ahead of
+// createRoot on purpose: doing it in a React effect would render one frame at
+// the default size first, so anyone who has scaled up sees a visible jump on
+// every load. It also must not depend on auth — the setting has to hold on
+// Login, the landing page and public quote pages.
+initTextScale();
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 if (sentryDsn) {

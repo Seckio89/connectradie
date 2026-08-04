@@ -139,7 +139,7 @@ export default function HireHeroSection() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-ct-paper">Payment Protected</p>
-                    <p className="text-[10px] text-ct-mute leading-snug mt-0.5">Held securely until you approve the work</p>
+                    <p className="text-[0.625rem] text-ct-mute leading-snug mt-0.5">Held securely until you approve the work</p>
                   </div>
                 </div>
               </div>
@@ -150,7 +150,7 @@ export default function HireHeroSection() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-ct-paper">$0 to post, $0 to quote</p>
-                    <p className="text-[10px] text-ct-mute leading-snug mt-0.5">Compare quotes with no obligation</p>
+                    <p className="text-[0.625rem] text-ct-mute leading-snug mt-0.5">Compare quotes with no obligation</p>
                   </div>
                 </div>
               </div>

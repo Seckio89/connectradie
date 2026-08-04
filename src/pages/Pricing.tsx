@@ -200,7 +200,7 @@ export default function Pricing() {
             return (
               <div
                 key={t.id}
-                className={`bg-ct-surface rounded-ct-lg p-7 relative ${popular ? 'border-2 border-ct-teal' : 'border border-ct-line'}`}
+                className={`bg-ct-surface rounded-ct-lg p-7 relative flex flex-col ${popular ? 'border-2 border-ct-teal' : 'border border-ct-line'}`}
               >
                 {popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 px-3 py-1 bg-ct-teal text-ct-ink text-xs font-bold rounded-full">
@@ -211,12 +211,12 @@ export default function Pricing() {
                   {t.id === 'pm' && <Building2 className="w-5 h-5 text-ct-mute" />}
                   <h2 className="text-xl font-bold text-ct-paper">{t.name}</h2>
                 </div>
-                <p className="text-sm text-ct-mute mb-4 min-h-[40px]">{TIER_BLURB[t.id] ?? ''}</p>
+                <p className="text-sm text-ct-mute mb-4 min-h-[2.5rem]">{TIER_BLURB[t.id] ?? ''}</p>
                 <div className="mb-1">
                   <span className="text-4xl font-bold text-ct-paper">{dollars(t.monthly_price_cents)}</span>
                   <span className="text-ct-mute text-sm ml-1">/ month</span>
                 </div>
-                <p className="text-xs text-ct-mute mb-5 min-h-[16px]">
+                <p className="text-xs text-ct-mute mb-5 min-h-[1rem]">
                   {t.annual_monthly_price_cents != null
                     ? `or ${dollars(t.annual_monthly_price_cents)}/mo billed annually`
                     : ' '}
@@ -242,7 +242,7 @@ export default function Pricing() {
                 </ul>
                 <Link
                   to="/register?type=tradie"
-                  className={`block w-full text-center px-6 py-3 font-semibold rounded-ct-md transition-colors ${
+                  className={`block w-full text-center px-6 py-3 font-semibold rounded-ct-md transition-colors mt-auto ${
                     popular
                       ? 'bg-ct-teal text-ct-ink hover:brightness-110'
                       : 'border border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
@@ -289,7 +289,7 @@ export default function Pricing() {
                   onChange={(e) => setMaterialsPct(e.target.value)}
                   className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm bg-ct-surface text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal tabular-nums"
                 />
-                <p className="mt-1 text-[11px] text-ct-mute">We charge nothing on this part.</p>
+                <p className="mt-1 text-[0.6875rem] text-ct-mute">We charge nothing on this part.</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-ct-mute mb-1">Repeat clients (%)</label>
@@ -298,7 +298,7 @@ export default function Pricing() {
                   onChange={(e) => setRepeatPct(e.target.value)}
                   className="w-full px-3 py-2.5 border border-ct-line rounded-ct-sm bg-ct-surface text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal tabular-nums"
                 />
-                <p className="mt-1 text-[11px] text-ct-mute">Returning clients cost you less.</p>
+                <p className="mt-1 text-[0.6875rem] text-ct-mute">Returning clients cost you less.</p>
               </div>
             </div>
 
@@ -337,7 +337,7 @@ export default function Pricing() {
                                   teal/[0.14] composites to a lighter teal and
                                   drags teal-on-teal down to 4.48:1. */}
                               {best && (
-                                <span className="ml-2 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-ct-teal text-ct-ink">
+                                <span className="ml-2 px-2 py-0.5 rounded-full text-[0.6875rem] font-semibold bg-ct-teal text-ct-ink">
                                   Cheapest for you
                                 </span>
                               )}

@@ -153,7 +153,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
           <Package className="w-3.5 h-3.5 text-ct-mute" />
           Supplies ({items.length})
           {lowStockItems.length > 0 && (
-            <span className="px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber rounded-full text-[10px] font-semibold normal-case">
+            <span className="px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber rounded-full text-[0.625rem] font-semibold normal-case">
               {lowStockItems.length} low stock
             </span>
           )}
@@ -174,7 +174,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
             return (
               <div key={item.id} className={`flex items-center gap-2 px-3 py-2 rounded-ct-sm text-xs ${isLow ? 'bg-ct-amber/[0.13]' : 'bg-ct-surface-2'}`}>
                 <span className="font-medium text-ct-paper flex-1">{item.name}</span>
-                <span className={`px-1.5 py-0.5 rounded-ct-xs text-[10px] font-medium ${
+                <span className={`px-1.5 py-0.5 rounded-ct-xs text-[0.625rem] font-medium ${
                   item.provided_by === 'tradie' ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface-2 text-ct-mute'
                 }`}>
                   {item.provided_by === 'tradie' ? 'Tradie supplies' : 'You supply'}
@@ -205,7 +205,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
               {item.stock_level != null && (
                 <span className="text-xs text-ct-mute">{item.stock_level} {item.unit || ''}</span>
               )}
-              <span className="text-[10px] text-ct-mute">{item.provided_by}</span>
+              <span className="text-[0.625rem] text-ct-mute">{item.provided_by}</span>
               <button onClick={() => handleRemoveItem(item.id)} className="text-ct-rose hover:text-ct-rose">
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -216,7 +216,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
           <div className="p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[10px] font-medium text-ct-teal uppercase tracking-wide mb-1">Item Name</label>
+                <label className="block text-[0.625rem] font-medium text-ct-teal uppercase tracking-wide mb-1">Item Name</label>
                 <select
                   value={availableSuggestions.slice(0, 5).includes(newName) ? newName : newName === '' ? '' : '__other__'}
                   onChange={e => {
@@ -251,7 +251,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
                 )}
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-ct-teal uppercase tracking-wide mb-1">Unit</label>
+                <label className="block text-[0.625rem] font-medium text-ct-teal uppercase tracking-wide mb-1">Unit</label>
                 <input
                   value={newUnit}
                   onChange={e => setNewUnit(e.target.value)}
@@ -262,7 +262,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
             </div>
             <div className="grid grid-cols-3 gap-2" data-supplies-grid>
               <div>
-                <label className="block text-[10px] font-medium text-ct-teal uppercase tracking-wide mb-1">Supplied By</label>
+                <label className="block text-[0.625rem] font-medium text-ct-teal uppercase tracking-wide mb-1">Supplied By</label>
                 <select
                   value={newProvidedBy}
                   onChange={e => setNewProvidedBy(e.target.value as 'tradie' | 'client')}
@@ -273,7 +273,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-ct-teal uppercase tracking-wide mb-1">Stock Qty</label>
+                <label className="block text-[0.625rem] font-medium text-ct-teal uppercase tracking-wide mb-1">Stock Qty</label>
                 <input
                   type="number"
                   value={newStock}
@@ -284,7 +284,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-medium text-ct-teal uppercase tracking-wide mb-1">Alert When ≤</label>
+                <label className="block text-[0.625rem] font-medium text-ct-teal uppercase tracking-wide mb-1">Alert When ≤</label>
                 <input
                   type="number"
                   value={newThreshold}
@@ -296,7 +296,7 @@ function ClientSuppliesManager({ jobId, supplies, tradeCategory, onUpdate }: { j
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-ct-teal uppercase tracking-wide mb-1">Notes</label>
+              <label className="block text-[0.625rem] font-medium text-ct-teal uppercase tracking-wide mb-1">Notes</label>
               <input
                 value={newNotes}
                 onChange={e => setNewNotes(e.target.value)}
@@ -869,7 +869,7 @@ function InlineScheduleForm({ userId, onDone, onCancel, prefill }: {
                       className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-line hover:bg-ct-surface-2/30 transition-colors group"
                     >
                       <Camera className="w-4 h-4 text-ct-mute group-hover:text-ct-mute-2 transition-colors" />
-                      <span className="text-[10px] text-ct-mute group-hover:text-ct-mute-2">
+                      <span className="text-[0.625rem] text-ct-mute group-hover:text-ct-mute-2">
                         {photos.length === 0 ? 'Add' : `${photos.length}/5`}
                       </span>
                     </button>
@@ -1653,7 +1653,7 @@ export default function ClientServicesTab() {
                         <ChevronDown className={`w-4 h-4 text-ct-mute transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
                         <p className="text-sm font-semibold text-ct-paper capitalize">{label}</p>
                         {/* Mobile: show Active badge inline with title */}
-                        <span className="sm:hidden px-2 py-0.5 bg-ct-teal/[0.14] text-ct-teal text-[10px] font-medium rounded-full ml-auto">
+                        <span className="sm:hidden px-2 py-0.5 bg-ct-teal/[0.14] text-ct-teal text-[0.625rem] font-medium rounded-full ml-auto">
                           Active
                         </span>
                       </div>
@@ -1697,7 +1697,7 @@ export default function ClientServicesTab() {
                           </span>
                         )}
                         {savedMethods.has(job.id) && savedMethods.get(job.id)!.mandate_status === 'active' && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-ct-mute-2 bg-ct-surface-2 border border-ct-line px-1.5 py-0.5 rounded-ct-xs">
+                          <span className="inline-flex items-center gap-1 text-[0.625rem] font-medium text-ct-mute-2 bg-ct-surface-2 border border-ct-line px-1.5 py-0.5 rounded-ct-xs">
                             <Building2 className="w-2.5 h-2.5" />
                             Direct debit
                           </span>
@@ -1800,7 +1800,7 @@ export default function ClientServicesTab() {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <p className="text-sm font-semibold text-ct-paper">{qInfo.topTradie}</p>
                                   {qInfo.isPro && (
-                                    <span className="px-2 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-[10px] font-semibold rounded-full">PRO</span>
+                                    <span className="px-2 py-0.5 bg-ct-amber/[0.13] text-ct-amber text-[0.625rem] font-semibold rounded-full">PRO</span>
                                   )}
                                 </div>
                                 {qInfo.businessName && (
@@ -1815,7 +1815,7 @@ export default function ClientServicesTab() {
                               </div>
                               <div className="text-right flex-shrink-0">
                                 <p className="text-lg font-bold text-ct-teal">${qInfo.topPrice.toFixed(0)}</p>
-                                <p className="text-[10px] text-ct-mute">per visit</p>
+                                <p className="text-[0.625rem] text-ct-mute">per visit</p>
                               </div>
                             </div>
 
@@ -1880,7 +1880,7 @@ export default function ClientServicesTab() {
                               </button>
                             </div>
 
-                            <p className="text-[11px] text-ct-mute mt-2 ml-13">Accepting locks in this price and assigns {qInfo.topTradie} to your service. Payment secured with Stripe.</p>
+                            <p className="text-[0.6875rem] text-ct-mute mt-2 ml-13">Accepting locks in this price and assigns {qInfo.topTradie} to your service. Payment secured with Stripe.</p>
                           </div>
                         )}
                       </div>
@@ -1928,7 +1928,7 @@ export default function ClientServicesTab() {
                     <ol className="space-y-1.5">
                       {taskLines.map((line, i) => (
                         <li key={i} className="flex items-start gap-2 text-xs text-ct-mute-2">
-                          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-ct-teal/[0.14] text-ct-teal flex items-center justify-center text-[10px] font-bold mt-0.5">
+                          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-ct-teal/[0.14] text-ct-teal flex items-center justify-center text-[0.625rem] font-bold mt-0.5">
                             {i + 1}
                           </span>
                           <span className="pt-0.5">{line}</span>
@@ -2148,17 +2148,17 @@ export default function ClientServicesTab() {
                                       {(isCompleted || isOverdue) && job.agreed_price != null && job.agreed_price > 0
                                         ? `$${job.agreed_price.toFixed(2)}` : ''}
                                     </span>
-                                    <span className={`sm:w-[78px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                                    <span className={`sm:w-[78px] text-center px-1 py-0.5 rounded-full text-[0.625rem] font-medium whitespace-nowrap ${
                                       isOverdue ? 'bg-ct-rose/[0.13] text-ct-rose' : isCompleted ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface-2 text-ct-mute'
                                     }`}>
                                       {isOverdue ? 'Not completed' : isCompleted ? 'Completed' : 'Skipped'}
                                     </span>
-                                    <span className={`sm:w-[88px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                                    <span className={`sm:w-[88px] text-center px-1 py-0.5 rounded-full text-[0.625rem] font-medium whitespace-nowrap ${
                                       isOverdue ? 'bg-ct-rose/[0.13] text-ct-rose' : isCompleted && paymentStatus ? paymentStatus.style : 'bg-transparent text-transparent'
                                     }`}>
                                       {isOverdue ? 'Awaiting action' : isCompleted && paymentStatus ? paymentStatus.label : '-'}
                                     </span>
-                                    <span className={`sm:w-[72px] text-center px-1 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                                    <span className={`sm:w-[72px] text-center px-1 py-0.5 rounded-full text-[0.625rem] font-medium whitespace-nowrap ${
                                       isCompleted && paymentStatus?.method ? 'bg-ct-surface-2 text-ct-mute' : 'bg-transparent text-transparent'
                                     }`}>
                                       {isCompleted && paymentStatus?.method ? paymentStatus.method : '-'}
@@ -2204,7 +2204,7 @@ export default function ClientServicesTab() {
                                   </div>
                                 )}
                                 {!isExpandedVisit && s.status === 'skipped' && s.reschedule_reason && (
-                                  <p className="px-3 pb-2 text-[10px] text-ct-mute italic truncate">
+                                  <p className="px-3 pb-2 text-[0.625rem] text-ct-mute italic truncate">
                                     Reason: {s.reschedule_reason}
                                   </p>
                                 )}
@@ -2400,13 +2400,13 @@ export default function ClientServicesTab() {
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className="text-xs font-medium text-ct-paper">${inv.total.toFixed(2)}</span>
-                                <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute text-[10px] font-medium rounded-ct-xs">{method}</span>
+                                <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute text-[0.625rem] font-medium rounded-ct-xs">{method}</span>
                               </div>
                             </div>
                           );
                         })}
                         {paidInvs.length > 5 && (
-                          <p className="text-[10px] text-ct-mute text-center pt-1">+ {paidInvs.length - 5} older payments</p>
+                          <p className="text-[0.625rem] text-ct-mute text-center pt-1">+ {paidInvs.length - 5} older payments</p>
                         )}
                       </div>
                     </div>
@@ -2540,7 +2540,7 @@ export default function ClientServicesTab() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-ct-paper capitalize">{label}</p>
-                            <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium border ${
+                            <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[0.625rem] sm:text-xs font-medium border ${
                               isPaused ? 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]' : 'bg-ct-surface-2 text-ct-mute border-ct-line'
                             }`}>
                               {isPaused ? 'Paused' : 'Ended'}

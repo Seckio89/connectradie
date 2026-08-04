@@ -522,7 +522,7 @@ export default function QuoteComparisonView({
                     <div className="flex items-center gap-2 flex-wrap">
                       <button
                         onClick={() => navigate(`/tradie/${quote.tradie_id}`)}
-                        className="text-[15px] font-semibold text-ct-paper truncate hover:text-ct-mute-2 transition-colors"
+                        className="text-[0.9375rem] font-semibold text-ct-paper truncate hover:text-ct-mute-2 transition-colors"
                         title="View profile"
                       >
                         {formatTradieDisplayName(quote)}
@@ -585,7 +585,7 @@ export default function QuoteComparisonView({
                         {quote.tradie_profile?.is_gst_registered && (
                           <span className="text-xs font-normal text-ct-mute ml-1">+ GST</span>
                         )}
-                        <div className="text-[11px] text-ct-mute mt-0.5">
+                        <div className="text-[0.6875rem] text-ct-mute mt-0.5">
                           Estimate was ${quote.price_min.toLocaleString()}–${quote.price_max.toLocaleString()}
                         </div>
                       </>
@@ -614,7 +614,7 @@ export default function QuoteComparisonView({
                 {/* Quote details — shown by default */}
                 <div className="mt-3 ml-[4.75rem]">
                   {/* Meta row */}
-                  <div className="flex items-center gap-4 text-[13px] text-ct-mute">
+                  <div className="flex items-center gap-4 text-[0.8125rem] text-ct-mute">
                     {quote.estimated_duration && (
                       <span className="inline-flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5 flex-shrink-0" />
@@ -821,7 +821,7 @@ export default function QuoteComparisonView({
                                 <span className="font-bold">{day}</span> · {timeRange}
                               </p>
                               {quote.status === 'site_visit_scheduled' && (
-                                <p className="mt-0.5 text-[11px] text-ct-mute-2">
+                                <p className="mt-0.5 text-[0.6875rem] text-ct-mute-2">
                                   {confirmed
                                     ? 'Confirmed by the tradie.'
                                     : `Awaiting confirmation from the tradie. They may propose a different time.`}
@@ -981,7 +981,7 @@ export default function QuoteComparisonView({
                         );
                       })}
                     </div>
-                    <p className="mt-2 text-[11px] text-ct-mute">Tap a window to lock it in.</p>
+                    <p className="mt-2 text-[0.6875rem] text-ct-mute">Tap a window to lock it in.</p>
                   </>
                 ) : (
                   <div className="p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm text-xs text-ct-paper">
@@ -1002,7 +1002,7 @@ export default function QuoteComparisonView({
                       className="px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal outline-none" />
                   </div>
                   {proposeDate && proposeTime && !selectedSlotId && (
-                    <p className="mt-1.5 text-[11px] text-ct-mute">{tradieName} will confirm this proposed time.</p>
+                    <p className="mt-1.5 text-[0.6875rem] text-ct-mute">{tradieName} will confirm this proposed time.</p>
                   )}
                 </div>
               </div>
@@ -1010,7 +1010,7 @@ export default function QuoteComparisonView({
               <div className="p-3 bg-ct-surface-2/60 border border-ct-line-soft rounded-ct-sm mb-4">
                 <p className="text-xs font-semibold text-ct-mute-2 mb-1">Your address will be shared with {tradieName}</p>
                 <p className="text-sm text-ct-paper">{address}</p>
-                <p className="text-[11px] text-ct-mute mt-1.5">Shared so they can plan the visit. Use is limited to this engagement under our Privacy Policy.</p>
+                <p className="text-[0.6875rem] text-ct-mute mt-1.5">Shared so they can plan the visit. Use is limited to this engagement under our Privacy Policy.</p>
               </div>
 
               <div className="flex items-center justify-end gap-2">

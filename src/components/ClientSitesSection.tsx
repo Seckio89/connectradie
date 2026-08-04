@@ -113,7 +113,7 @@ function SiteModal({
           <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Access instructions <span className="text-ct-mute font-normal">(optional)</span></label>
           <input type="text" value={access} onChange={(e) => setAccess(e.target.value)}
             placeholder="e.g. Gate code 1234, key in lockbox…" className={input} />
-          <p className="mt-1 text-[11px] text-ct-mute">Copied onto jobs at this site — where they’re PIN-protected like all access details.</p>
+          <p className="mt-1 text-[0.6875rem] text-ct-mute">Copied onto jobs at this site — where they’re PIN-protected like all access details.</p>
         </div>
 
         <div>
@@ -199,12 +199,12 @@ export default function ClientSitesSection({ contactId, onChanged }: Props) {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium text-ct-paper">{s.site_name}</span>
                     {s.is_default && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-ct-surface-2 text-ct-mute-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-ct-surface-2 text-ct-mute-2">
                         <Star className="w-3 h-3" /> Default
                       </span>
                     )}
                     {s.access_instructions && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-ct-amber/[0.13] text-ct-amber">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-ct-amber/[0.13] text-ct-amber">
                         <KeyRound className="w-3 h-3" /> Access notes
                       </span>
                     )}

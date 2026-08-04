@@ -1203,11 +1203,11 @@ export default function TradieDashboard() {
                 <p className="text-xs md:text-sm font-semibold text-ct-paper flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-ct-amber" />
                   Your next steps
-                  <span className="bg-ct-amber/[0.13] text-ct-amber text-[10px] md:text-xs font-medium px-2 md:px-3 py-0.5 md:py-1 rounded-full">
+                  <span className="bg-ct-amber/[0.13] text-ct-amber text-[0.625rem] md:text-xs font-medium px-2 md:px-3 py-0.5 md:py-1 rounded-full">
                     {pendingJobs.length + inProgressJobs.length + unreadConvos.length + pendingConfirmations.length}
                   </span>
                 </p>
-                <Link to="/work" className="text-[11px] font-medium text-ct-teal md:hidden">Manage</Link>
+                <Link to="/work" className="text-[0.6875rem] font-medium text-ct-teal md:hidden">Manage</Link>
               </div>
               <div className="space-y-2">
                 {pendingConfirmations.length > 0 && (
@@ -1459,7 +1459,7 @@ export default function TradieDashboard() {
                           </div>
 
                           <div className="flex items-center justify-between px-3 sm:px-5 py-3 border-t border-ct-line-soft gap-2" onClick={(e) => e.stopPropagation()}>
-                            <span className="text-[10px] sm:text-xs text-ct-mute truncate min-w-0">
+                            <span className="text-[0.625rem] sm:text-xs text-ct-mute truncate min-w-0">
                               {clientName} · {formatDate(lead.created_at)}
                             </span>
                             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
@@ -1613,7 +1613,7 @@ export default function TradieDashboard() {
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   <p className="text-sm text-ct-paper font-semibold truncate">{item.clientName}</p>
-                                  <span className="px-2 py-0.5 bg-ct-teal/[0.14] text-ct-teal text-[10px] sm:text-xs font-medium rounded-full flex-shrink-0">
+                                  <span className="px-2 py-0.5 bg-ct-teal/[0.14] text-ct-teal text-[0.625rem] sm:text-xs font-medium rounded-full flex-shrink-0">
                                     Active
                                   </span>
                                 </div>
@@ -1990,17 +1990,17 @@ export default function TradieDashboard() {
 
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 w-full overflow-visible">
                   {isProUser ? (
-                    <button onClick={() => setShowAddSlot(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-teal transition-colors min-h-[44px]">
+                    <button onClick={() => setShowAddSlot(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[0.625rem] sm:text-sm font-medium rounded-ct-md hover:bg-ct-teal transition-colors min-h-[44px]">
                       <Plus className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk add</span><span className="sm:hidden">Add</span> slots
                     </button>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[10px] sm:text-sm font-medium rounded-ct-md hover:brightness-110 transition-all min-h-[44px]">
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 bg-ct-teal text-ct-ink text-[0.625rem] sm:text-sm font-medium rounded-ct-md hover:brightness-110 transition-all min-h-[44px]">
                       <Crown className="w-4 h-4 flex-shrink-0" /><span className="hidden sm:inline">Bulk add</span><span className="sm:hidden">Add</span> slots<span className="text-xs font-bold bg-ct-surface/20 px-1.5 py-0.5 rounded-ct-xs ml-1">PRO</span>
                     </button>
                   )}
                   {isProUser ? (
                     <>
-                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
+                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[0.625rem] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
                       {/* Three states, not two. Offering "Connect" while the lookup
                           is unresolved told an already-connected tradie they were
                           disconnected, and sent them to Google consent instead of
@@ -2019,7 +2019,7 @@ export default function TradieDashboard() {
                     </button>
                     {/* Only offered once connected — nothing to strip out otherwise. */}
                     {calendarIntegration && (
-                      <button onClick={() => setShowUnsyncConfirm(true)} disabled={unsyncLoading || syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
+                      <button onClick={() => setShowUnsyncConfirm(true)} disabled={unsyncLoading || syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[0.625rem] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
                         {unsyncLoading ? (
                           <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">Unsyncing...</span><span className="sm:hidden">Unsync</span></>
                         ) : (
@@ -2029,7 +2029,7 @@ export default function TradieDashboard() {
                     )}
                     </>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-teal/30 text-ct-amber text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-amber/[0.13] transition-colors min-h-[44px]">
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-teal/30 text-ct-amber text-[0.625rem] sm:text-sm font-medium rounded-ct-md hover:bg-ct-amber/[0.13] transition-colors min-h-[44px]">
                       <Calendar className="w-4 h-4" /><span className="hidden sm:inline">Google Calendar</span><span className="sm:hidden">Calendar</span><span className="text-xs font-bold bg-ct-amber/[0.13] text-ct-amber px-1.5 py-0.5 rounded-ct-xs">PRO</span>
                     </button>
                   )}
@@ -2195,7 +2195,7 @@ export default function TradieDashboard() {
                 <>
                   <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2 w-full" role="row">
                     {dayNames.map((day) => (
-                      <div key={day} className="text-center text-[10px] sm:text-xs font-medium text-ct-mute py-1 sm:py-2 truncate" role="columnheader">{day}</div>
+                      <div key={day} className="text-center text-[0.625rem] sm:text-xs font-medium text-ct-mute py-1 sm:py-2 truncate" role="columnheader">{day}</div>
                     ))}
                   </div>
 
@@ -2367,23 +2367,23 @@ export default function TradieDashboard() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-ct-surface-2 rounded-ct-md px-2 py-3">
             <div className="flex flex-col items-center gap-1 text-center p-1">
               <Clock className="w-5 h-5 text-ct-teal" />
-              <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight tabular-nums">{totalAvailableHours.toFixed(0)}</p>
-              <p className="text-[11px] text-ct-mute leading-tight">Available<br className="sm:hidden" /> hours</p>
+              <p className="text-2xl sm:text-[1.75rem] font-bold text-ct-paper leading-tight tabular-nums">{totalAvailableHours.toFixed(0)}</p>
+              <p className="text-[0.6875rem] text-ct-mute leading-tight">Available<br className="sm:hidden" /> hours</p>
             </div>
             <div className="flex flex-col items-center gap-1 text-center p-1">
               <Calendar className="w-5 h-5 text-ct-mute-2" />
-              <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight tabular-nums">{bookedSlots}</p>
-              <p className="text-[11px] text-ct-mute leading-tight">Booked<br className="sm:hidden" /> slots</p>
+              <p className="text-2xl sm:text-[1.75rem] font-bold text-ct-paper leading-tight tabular-nums">{bookedSlots}</p>
+              <p className="text-[0.6875rem] text-ct-mute leading-tight">Booked<br className="sm:hidden" /> slots</p>
             </div>
             <Link to="/work?tab=active" className="flex flex-col items-center gap-1 text-center p-1 rounded-ct-sm hover:bg-ct-surface transition-colors">
               <Users className="w-5 h-5 text-ct-mute-2" />
-              <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight tabular-nums">{activeJobCount}</p>
-              <p className="text-[11px] text-ct-mute leading-tight">Active<br className="sm:hidden" /> jobs</p>
+              <p className="text-2xl sm:text-[1.75rem] font-bold text-ct-paper leading-tight tabular-nums">{activeJobCount}</p>
+              <p className="text-[0.6875rem] text-ct-mute leading-tight">Active<br className="sm:hidden" /> jobs</p>
             </Link>
             <button onClick={() => setShowSubscriptionModal(true)} className="flex flex-col items-center gap-1 text-center p-1 rounded-ct-sm hover:bg-ct-surface transition-colors">
               <Crown className={`w-5 h-5 ${isProUser ? 'text-ct-mute-2' : 'text-ct-mute'}`} />
-              <p className="text-2xl sm:text-[28px] font-bold text-ct-paper leading-tight">{isProUser ? 'Pro' : 'Free'}</p>
-              <p className="text-[11px] text-ct-mute leading-tight">Your<br className="sm:hidden" /> plan</p>
+              <p className="text-2xl sm:text-[1.75rem] font-bold text-ct-paper leading-tight">{isProUser ? 'Pro' : 'Free'}</p>
+              <p className="text-[0.6875rem] text-ct-mute leading-tight">Your<br className="sm:hidden" /> plan</p>
             </button>
           </div>
         </CollapsibleSection>
@@ -2446,7 +2446,7 @@ export default function TradieDashboard() {
                 <div key={review.id} className="py-2">
                   <div className="flex items-center gap-2.5 min-h-[32px]">
                     <div className="w-7 h-7 rounded-full bg-ct-surface-2 flex items-center justify-center flex-shrink-0">
-                      <span className="text-[11px] font-bold text-ct-mute-2">
+                      <span className="text-[0.6875rem] font-bold text-ct-mute-2">
                         {(review.client_name || 'C').charAt(0).toUpperCase()}
                       </span>
                     </div>
@@ -2459,7 +2459,7 @@ export default function TradieDashboard() {
                         />
                       ))}
                     </div>
-                    <span className="ml-auto text-[11px] text-ct-mute flex-shrink-0 tabular-nums">
+                    <span className="ml-auto text-[0.6875rem] text-ct-mute flex-shrink-0 tabular-nums">
                       {new Date(review.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>

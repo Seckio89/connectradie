@@ -270,7 +270,7 @@ export default function PaymentRequestsSection() {
               <div className="flex-1 min-w-[200px]">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold text-ct-paper">{row.business_name}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_CHIP[row.status]}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-[0.6875rem] font-medium ${STATUS_CHIP[row.status]}`}>
                     {row.status === 'sent' ? 'Awaiting payment' : row.status === 'paid' ? 'Paid' : 'Draft'}
                   </span>
                 </div>
@@ -280,7 +280,7 @@ export default function PaymentRequestsSection() {
                     {row.payment_account_name} · BSB {row.payment_bsb} · Acc {row.payment_account_number}
                   </p>
                 )}
-                <p className="text-[11px] text-ct-mute mt-0.5">
+                <p className="text-[0.6875rem] text-ct-mute mt-0.5">
                   {row.invoice_number} · {new Date(row.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                 </p>
               </div>
@@ -306,12 +306,12 @@ export default function PaymentRequestsSection() {
               <Clock className="w-4 h-4 text-ct-mute flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-ct-mute-2 truncate">{row.notes}</p>
-                <p className="text-[11px] text-ct-mute">
+                <p className="text-[0.6875rem] text-ct-mute">
                   {row.invoice_number} · {new Date(row.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                 </p>
               </div>
               <span className="text-sm font-semibold text-ct-paper">{money(row.total_amount)}</span>
-              <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium flex-shrink-0 ${STATUS_CHIP[row.status]}`}>
+              <span className={`px-2 py-0.5 rounded-full text-[0.6875rem] font-medium flex-shrink-0 ${STATUS_CHIP[row.status]}`}>
                 {row.status === 'sent' ? 'Awaiting payment' : row.status === 'paid' ? 'Paid' : 'Draft'}
               </span>
             </div>

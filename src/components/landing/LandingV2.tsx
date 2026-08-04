@@ -116,7 +116,7 @@ function Eyebrow({ children, onPaper = false, center = false }: { children: stri
   const tone = onPaper ? 'text-ct-teal-ink' : 'text-ct-teal';
   const rule = onPaper ? 'bg-ct-teal-ink' : 'bg-ct-teal';
   return (
-    <p className={cx('font-ct-mono text-[11px] font-medium uppercase tracking-[0.16em] mb-4 flex items-center gap-2.5', tone, center && 'justify-center')}>
+    <p className={cx('font-ct-mono text-[0.6875rem] font-medium uppercase tracking-[0.16em] mb-4 flex items-center gap-2.5', tone, center && 'justify-center')}>
       <span aria-hidden="true" className={cx('inline-block h-px w-[22px] flex-none', rule)} />
       {children}
     </p>
@@ -133,10 +133,10 @@ export default function LandingV2() {
     <div className="bg-ct-ink text-ct-paper font-sans overflow-x-hidden">
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 bg-ct-ink/85 backdrop-blur-md border-b border-ct-line">
-        <div className="max-w-[1240px] mx-auto px-[clamp(20px,4vw,64px)] flex items-center gap-7 h-[62px]">
+        <div className="max-w-[1240px] mx-auto px-[clamp(20px,4vw,64px)] flex items-center gap-7 min-h-[62px] py-2">
           <Link to="/" className="font-ct-display text-lg font-bold tracking-tight whitespace-nowrap">
             Connec<span className="text-ct-teal">Tradie</span>
-            <sup className="text-[9px] text-ct-mute ml-0.5 font-sans">™</sup>
+            <sup className="text-[0.5625rem] text-ct-mute ml-0.5 font-sans">™</sup>
           </Link>
           <div className="hidden md:flex gap-6 ml-auto text-sm text-ct-mute-2">
             <a href="#difference" className="py-1.5 border-b border-transparent hover:text-ct-paper hover:border-ct-teal transition-colors">How it works</a>
@@ -174,7 +174,7 @@ export default function LandingV2() {
                     onClick={() => setAudience(value)}
                     className={cx(
                       META,
-                      'px-3.5 py-2 rounded-ct-xs whitespace-nowrap transition-colors max-sm:flex-1 max-sm:px-1.5 max-sm:text-[10px]',
+                      'px-3.5 py-2 rounded-ct-xs whitespace-nowrap transition-colors max-sm:flex-1 max-sm:px-1.5 max-sm:text-[0.625rem]',
                       audience === value
                         ? 'bg-ct-teal text-ct-ink font-bold'
                         : 'text-ct-mute hover:text-ct-paper',
@@ -185,11 +185,11 @@ export default function LandingV2() {
                 ))}
               </div>
 
-              <h1 className="font-ct-display font-semibold tracking-[-0.03em] leading-[1.04] text-[clamp(38px,6.4vw,74px)] mt-5">
+              <h1 className="font-ct-display font-semibold tracking-[-0.03em] leading-[1.04] text-[clamp(2.375rem,6.4vw,4.625rem)] mt-5">
                 {view.head[0]}
                 <em className="not-italic text-ct-teal block">{view.head[1]}</em>
               </h1>
-              <p className="text-[clamp(16px,1.6vw,19px)] leading-relaxed text-ct-mute-2 max-w-[53ch] mt-5">
+              <p className="text-[clamp(1rem,1.6vw,1.1875rem)] leading-relaxed text-ct-mute-2 max-w-[53ch] mt-5">
                 {view.lede}
               </p>
 
@@ -257,7 +257,7 @@ export default function LandingV2() {
               ['Clear cancellation', 'Terms set before you start'],
             ].map(([title, sub], i, arr) => (
               <div key={title} className={cx('flex-1 basis-[190px] px-5 py-4', i < arr.length - 1 && 'sm:border-r border-ct-line')}>
-                <b className="block font-ct-display text-[15px] font-semibold text-ct-paper mb-0.5">{title}</b>
+                <b className="block font-ct-display text-[0.9375rem] font-semibold text-ct-paper mb-0.5">{title}</b>
                 <span className={cx(META, 'text-ct-mute tracking-[0.08em]')}>{sub}</span>
               </div>
             ))}
@@ -270,10 +270,10 @@ export default function LandingV2() {
         <div className="max-w-[1240px] mx-auto px-[clamp(20px,4vw,64px)]">
           <div className="max-w-[60ch] mb-[clamp(34px,4.6vw,58px)]">
             <Eyebrow>Funded → Varied → Released</Eyebrow>
-            <h2 className="font-ct-display font-semibold tracking-[-0.03em] leading-tight text-[clamp(30px,4.4vw,50px)] mb-4">
+            <h2 className="font-ct-display font-semibold tracking-[-0.03em] leading-tight text-[clamp(1.875rem,4.4vw,3.125rem)] mb-4">
               Built for jobs that take weeks, not afternoons.
             </h2>
-            <p className="text-[clamp(16px,1.6vw,19px)] leading-relaxed text-ct-mute-2">
+            <p className="text-[clamp(1rem,1.6vw,1.1875rem)] leading-relaxed text-ct-mute-2">
               Task marketplaces pay in one lump at the end. That works for flat-pack assembly.
               It falls apart on a job with three trades, a five-week timeline and a subfloor
               nobody knew was rotten.
@@ -312,14 +312,14 @@ export default function LandingV2() {
                 )}
               >
                 {tile.tag && (
-                  <span className={cx(META, 'inline-block text-ct-teal border border-ct-teal/30 bg-ct-teal/[0.14] px-2 py-1 rounded-ct-xs mb-3.5 tracking-[0.11em] text-[9.5px]')}>
+                  <span className={cx(META, 'inline-block text-ct-teal border border-ct-teal/30 bg-ct-teal/[0.14] px-2 py-1 rounded-ct-xs mb-3.5 tracking-[0.11em] text-[0.59375rem]')}>
                     Only here
                   </span>
                 )}
-                <h3 className={cx('font-ct-display font-semibold tracking-tight mb-2.5', tile.tag ? 'text-[clamp(21px,2.3vw,27px)]' : 'text-[clamp(19px,2vw,23px)]')}>
+                <h3 className={cx('font-ct-display font-semibold tracking-tight mb-2.5', tile.tag ? 'text-[clamp(1.3125rem,2.3vw,1.6875rem)]' : 'text-[clamp(1.1875rem,2vw,1.4375rem)]')}>
                   {tile.title}
                 </h3>
-                <p className={cx('leading-relaxed text-ct-mute-2', tile.tag ? 'text-[15.5px]' : 'text-[14.5px]')}>{tile.body}</p>
+                <p className={cx('leading-relaxed text-ct-mute-2', tile.tag ? 'text-[0.96875rem]' : 'text-[0.90625rem]')}>{tile.body}</p>
               </div>
             ))}
           </div>
@@ -331,10 +331,10 @@ export default function LandingV2() {
         <div className="max-w-[1240px] mx-auto px-[clamp(20px,4vw,64px)]">
           <div className="max-w-[60ch] mb-[clamp(34px,4.6vw,58px)]">
             <Eyebrow onPaper>Where we actually differ</Eyebrow>
-            <h2 className="font-ct-display font-semibold tracking-[-0.03em] leading-tight text-[clamp(30px,4.4vw,50px)] mb-4">
+            <h2 className="font-ct-display font-semibold tracking-[-0.03em] leading-tight text-[clamp(1.875rem,4.4vw,3.125rem)] mb-4">
               An honest comparison.
             </h2>
-            <p className="text-[clamp(16px,1.6vw,19px)] leading-relaxed text-ct-mute-on-paper">
+            <p className="text-[clamp(1rem,1.6vw,1.1875rem)] leading-relaxed text-ct-mute-on-paper">
               Plenty of platforms hold your money until a job's done — that part isn't new,
               and we're not going to pretend it is. The difference shows up on jobs big
               enough to have stages and surprises.
@@ -344,7 +344,7 @@ export default function LandingV2() {
           {/* The table concedes what competitors also do. Do not "improve" it —
               an inaccurate comparison is misleading conduct under the ACL. */}
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-[14.5px] mt-2 max-md:text-[13px]">
+            <table className="w-full border-collapse text-[0.90625rem] mt-2 max-md:text-[0.8125rem]">
               <thead>
                 <tr>
                   {['Feature', 'ConnecTradie', 'Task marketplaces', 'Lead-fee directories'].map((h, i) => (
@@ -353,7 +353,7 @@ export default function LandingV2() {
                       scope="col"
                       className={cx(
                         META,
-                        'text-left px-3.5 py-4 border-b-[1.5px] border-ct-ink-on-paper tracking-[0.11em] text-[10.5px] font-medium',
+                        'text-left px-3.5 py-4 border-b-[1.5px] border-ct-ink-on-paper tracking-[0.11em] text-[0.65625rem] font-medium',
                         i === 0 && 'w-[38%]',
                         i === 1 ? 'text-ct-teal-ink font-bold bg-ct-teal-deep/[0.07] border-l-2 border-l-ct-teal-deep' : 'text-ct-mute-on-paper',
                       )}
@@ -388,7 +388,7 @@ export default function LandingV2() {
             </table>
           </div>
 
-          <p className="text-[12.5px] text-ct-mute-on-paper mt-4 max-w-[72ch] leading-relaxed">
+          <p className="text-[0.78125rem] text-ct-mute-on-paper mt-4 max-w-[72ch] leading-relaxed">
             Comparison reflects publicly documented features of category competitors at the time
             of writing, grouped by business model rather than named individually. Features change —
             check current terms before deciding.
@@ -401,10 +401,10 @@ export default function LandingV2() {
         <div className="max-w-[1240px] mx-auto px-[clamp(20px,4vw,64px)] grid lg:grid-cols-2 gap-[clamp(30px,5vw,72px)] items-center">
           <div>
             <Eyebrow>For tradies</Eyebrow>
-            <h2 className="font-ct-display font-semibold tracking-[-0.03em] leading-tight text-[clamp(30px,4.4vw,50px)]">
+            <h2 className="font-ct-display font-semibold tracking-[-0.03em] leading-tight text-[clamp(1.875rem,4.4vw,3.125rem)]">
               Get paid for the extra work. In writing. Before you do it.
             </h2>
-            <p className="text-[clamp(16px,1.6vw,19px)] leading-relaxed text-ct-mute-2 mt-4">
+            <p className="text-[clamp(1rem,1.6vw,1.1875rem)] leading-relaxed text-ct-mute-2 mt-4">
               Every tradie knows the job where the scope crept, the client swore they never
               agreed to it, and you ate the difference to keep the peace. That's the problem
               we built the platform around.
@@ -427,8 +427,8 @@ export default function LandingV2() {
               ['05', 'Cancellation terms you saw first.', 'Agreed before the job, not applied to you afterwards.'],
             ].map(([num, strong, rest]) => (
               <li key={num} className="bg-ct-ink px-5 py-4 flex gap-3.5 items-start">
-                <b className="font-ct-mono text-[11px] text-ct-teal tracking-[0.08em] flex-none pt-[3px] w-6">{num}</b>
-                <span className="text-[14.5px] text-ct-mute-2 leading-relaxed">
+                <b className="font-ct-mono text-[0.6875rem] text-ct-teal tracking-[0.08em] flex-none pt-[3px] w-6">{num}</b>
+                <span className="text-[0.90625rem] text-ct-mute-2 leading-relaxed">
                   <strong className="text-ct-paper font-semibold">{strong}</strong> {rest}
                 </span>
               </li>
@@ -442,10 +442,10 @@ export default function LandingV2() {
         <div className="max-w-[1240px] mx-auto px-[clamp(20px,4vw,64px)]">
           <div className="max-w-[60ch] mb-[clamp(34px,4.6vw,58px)]">
             <Eyebrow>For property managers</Eyebrow>
-            <h2 className="font-ct-display font-semibold tracking-[-0.03em] leading-tight text-[clamp(30px,4.4vw,50px)] mb-4">
+            <h2 className="font-ct-display font-semibold tracking-[-0.03em] leading-tight text-[clamp(1.875rem,4.4vw,3.125rem)] mb-4">
               Twelve properties, one panel of tradies, one audit trail.
             </h2>
-            <p className="text-[clamp(16px,1.6vw,19px)] leading-relaxed text-ct-mute-2">
+            <p className="text-[clamp(1rem,1.6vw,1.1875rem)] leading-relaxed text-ct-mute-2">
               Maintenance across a portfolio is the same three problems repeated: finding
               someone available, approving the spend, and proving to the owner what was
               actually done and why.
@@ -459,8 +459,8 @@ export default function LandingV2() {
               ['03', 'Owner reporting that writes itself', 'Every job, quote, variation and release recorded per property. Month-end stops being a reconstruction exercise.'],
             ].map(([num, title, body]) => (
               <div key={num} className="border border-ct-line rounded-ct-lg p-5 bg-ct-ink-2">
-                <span className="block font-ct-mono text-[11px] text-ct-teal tracking-[0.1em] mb-3">{num}</span>
-                <h4 className="font-ct-display text-[15px] font-semibold tracking-tight mb-2">{title}</h4>
+                <span className="block font-ct-mono text-[0.6875rem] text-ct-teal tracking-[0.1em] mb-3">{num}</span>
+                <h4 className="font-ct-display text-[0.9375rem] font-semibold tracking-tight mb-2">{title}</h4>
                 <p className="text-sm text-ct-mute-2 leading-relaxed">{body}</p>
               </div>
             ))}
@@ -472,10 +472,10 @@ export default function LandingV2() {
       <section className="py-[clamp(64px,9vw,120px)] text-center border-t border-ct-line">
         <div className="max-w-[1240px] mx-auto px-[clamp(20px,4vw,64px)]">
           <Eyebrow center>Ready when you are</Eyebrow>
-          <h2 className="font-ct-display font-semibold tracking-[-0.03em] leading-tight text-[clamp(30px,4.4vw,50px)] max-w-[19ch] mx-auto mb-4">
+          <h2 className="font-ct-display font-semibold tracking-[-0.03em] leading-tight text-[clamp(1.875rem,4.4vw,3.125rem)] max-w-[19ch] mx-auto mb-4">
             Post the job. See who's licensed. Pay as it gets done.
           </h2>
-          <p className="text-[clamp(16px,1.6vw,19px)] leading-relaxed text-ct-mute-2">
+          <p className="text-[clamp(1rem,1.6vw,1.1875rem)] leading-relaxed text-ct-mute-2">
             Free to post. No obligation to hire anyone.
           </p>
           <div className="flex flex-wrap gap-3 justify-center mt-8">
@@ -485,7 +485,7 @@ export default function LandingV2() {
         </div>
       </section>
 
-      <footer className="border-t border-ct-line py-6 text-[13px] text-ct-mute">
+      <footer className="border-t border-ct-line py-6 text-[0.8125rem] text-ct-mute">
         <div className="max-w-[1240px] mx-auto px-[clamp(20px,4vw,64px)] flex flex-wrap gap-4 items-center justify-between">
           <span>© ConnecTradie™ · Australia</span>
           <div className="flex gap-5 flex-wrap">

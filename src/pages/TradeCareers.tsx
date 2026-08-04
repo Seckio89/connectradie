@@ -236,7 +236,7 @@ export default function TradeCareers({ embedded = false }: { embedded?: boolean 
                 </div>
                 <div className="min-w-0">
                   <p className="text-2xl font-bold text-ct-paper">{stat.value}</p>
-                  <p className="text-[11px] sm:text-sm text-ct-mute leading-tight whitespace-nowrap">{stat.label}</p>
+                  <p className="text-[0.6875rem] sm:text-sm text-ct-mute leading-tight whitespace-nowrap">{stat.label}</p>
                 </div>
               </div>
             </div>

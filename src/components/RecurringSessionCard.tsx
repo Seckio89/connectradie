@@ -716,7 +716,7 @@ export default function RecurringSessionCard({
               {showApplyToAll && onApplyToAll && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onApplyToAll(arrival, finish); }}
-                  className="text-[11px] font-semibold text-ct-teal hover:text-ct-teal underline underline-offset-2 transition-colors"
+                  className="text-[0.6875rem] font-semibold text-ct-teal hover:text-ct-teal underline underline-offset-2 transition-colors"
                 >
                   Apply to All
                 </button>
@@ -850,7 +850,7 @@ export default function RecurringSessionCard({
       {showDeclineForm && (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5 flex-1 min-w-[160px]">
-            <label className="text-[10px] font-medium text-ct-mute uppercase flex-shrink-0">Reason</label>
+            <label className="text-[0.625rem] font-medium text-ct-mute uppercase flex-shrink-0">Reason</label>
             <input
               type="text"
               value={declineReason}
@@ -961,7 +961,7 @@ export default function RecurringSessionCard({
         <div className="mt-2.5 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5">
-              <label className="text-[10px] font-medium text-ct-mute uppercase">Date</label>
+              <label className="text-[0.625rem] font-medium text-ct-mute uppercase">Date</label>
               <input
                 type="date"
                 value={rescheduleDate}
@@ -973,7 +973,7 @@ export default function RecurringSessionCard({
               />
             </div>
             <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
-              <label className="text-[10px] font-medium text-ct-mute uppercase">Reason</label>
+              <label className="text-[0.625rem] font-medium text-ct-mute uppercase">Reason</label>
               <input
                 type="text"
                 value={reason}
@@ -997,12 +997,12 @@ export default function RecurringSessionCard({
             </button>
           </div>
           {checkingClash && (
-            <p className="text-[10px] text-ct-mute animate-pulse">Checking availability...</p>
+            <p className="text-[0.625rem] text-ct-mute animate-pulse">Checking availability...</p>
           )}
           {clashWarning && (
             <div className="flex items-center gap-1.5 px-2 py-1 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-xs">
               <AlertTriangle className="w-3 h-3 text-ct-rose flex-shrink-0" />
-              <p className="text-[10px] text-ct-rose font-medium">{clashWarning}</p>
+              <p className="text-[0.625rem] text-ct-rose font-medium">{clashWarning}</p>
             </div>
           )}
         </div>
@@ -1185,7 +1185,7 @@ export default function RecurringSessionCard({
         <div className="mt-2.5 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5">
-              <label className="text-[10px] font-medium text-ct-mute uppercase">Date</label>
+              <label className="text-[0.625rem] font-medium text-ct-mute uppercase">Date</label>
               <input
                 type="date"
                 value={rescheduleDate}
@@ -1197,7 +1197,7 @@ export default function RecurringSessionCard({
               />
             </div>
             <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
-              <label className="text-[10px] font-medium text-ct-mute uppercase">Reason</label>
+              <label className="text-[0.625rem] font-medium text-ct-mute uppercase">Reason</label>
               <input
                 type="text"
                 value={reason}
@@ -1221,12 +1221,12 @@ export default function RecurringSessionCard({
             </button>
           </div>
           {checkingClash && (
-            <p className="text-[10px] text-ct-mute animate-pulse">Checking availability...</p>
+            <p className="text-[0.625rem] text-ct-mute animate-pulse">Checking availability...</p>
           )}
           {clashWarning && (
             <div className="flex items-center gap-1.5 px-2 py-1 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-xs">
               <AlertTriangle className="w-3 h-3 text-ct-rose flex-shrink-0" />
-              <p className="text-[10px] text-ct-rose font-medium">{clashWarning}</p>
+              <p className="text-[0.625rem] text-ct-rose font-medium">{clashWarning}</p>
             </div>
           )}
         </div>
@@ -1236,7 +1236,7 @@ export default function RecurringSessionCard({
       {showSkip && (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5 flex-1 min-w-[160px]">
-            <label className="text-[10px] font-medium text-ct-mute uppercase flex-shrink-0">Reason</label>
+            <label className="text-[0.625rem] font-medium text-ct-mute uppercase flex-shrink-0">Reason</label>
             <input
               type="text"
               value={reason}
@@ -1265,7 +1265,7 @@ export default function RecurringSessionCard({
       {showChangeTime && (
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5">
-            <label className="text-[10px] font-medium text-ct-mute uppercase">Start</label>
+            <label className="text-[0.625rem] font-medium text-ct-mute uppercase">Start</label>
             <input
               type="time"
               value={newStartTime}
@@ -1275,7 +1275,7 @@ export default function RecurringSessionCard({
           </div>
           <span className="text-ct-mute text-xs">–</span>
           <div className="flex items-center gap-1.5">
-            <label className="text-[10px] font-medium text-ct-mute uppercase">End</label>
+            <label className="text-[0.625rem] font-medium text-ct-mute uppercase">End</label>
             <input
               type="time"
               value={newEndTime}
@@ -1304,7 +1304,7 @@ export default function RecurringSessionCard({
         <div className="mt-2.5 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5">
-              <label className="text-[10px] font-medium text-ct-mute uppercase">Date</label>
+              <label className="text-[0.625rem] font-medium text-ct-mute uppercase">Date</label>
               <input
                 type="date"
                 value={extraDate}
@@ -1316,7 +1316,7 @@ export default function RecurringSessionCard({
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <label className="text-[10px] font-medium text-ct-mute uppercase">Hrs</label>
+              <label className="text-[0.625rem] font-medium text-ct-mute uppercase">Hrs</label>
               <input
                 type="number"
                 step="0.5"
@@ -1329,7 +1329,7 @@ export default function RecurringSessionCard({
               />
             </div>
             <div className="flex items-center gap-1.5">
-              <label className="text-[10px] font-medium text-ct-mute uppercase">$</label>
+              <label className="text-[0.625rem] font-medium text-ct-mute uppercase">$</label>
               <input
                 type="number"
                 step="0.01"
@@ -1355,7 +1355,7 @@ export default function RecurringSessionCard({
             </button>
           </div>
           <div className="flex items-center gap-1.5">
-            <label className="text-[10px] font-medium text-ct-mute uppercase flex-shrink-0">Notes</label>
+            <label className="text-[0.625rem] font-medium text-ct-mute uppercase flex-shrink-0">Notes</label>
             <input
               type="text"
               value={extraNotes}
@@ -1365,12 +1365,12 @@ export default function RecurringSessionCard({
             />
           </div>
           {checkingExtraClash && (
-            <p className="text-[10px] text-ct-mute animate-pulse">Checking availability...</p>
+            <p className="text-[0.625rem] text-ct-mute animate-pulse">Checking availability...</p>
           )}
           {extraClashWarning && (
             <div className="flex items-center gap-1.5 px-2 py-1 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-xs">
               <AlertTriangle className="w-3 h-3 text-ct-rose flex-shrink-0" />
-              <p className="text-[10px] text-ct-rose font-medium">{extraClashWarning}</p>
+              <p className="text-[0.625rem] text-ct-rose font-medium">{extraClashWarning}</p>
             </div>
           )}
         </div>

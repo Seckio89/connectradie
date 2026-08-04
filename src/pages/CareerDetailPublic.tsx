@@ -208,7 +208,7 @@ export default function CareerDetailPublic() {
 
               <div className="mt-6">
                 <h2 className="text-xs font-semibold text-ct-mute uppercase tracking-wide mb-2">About the role</h2>
-                <p className="text-[15px] text-ct-mute-2 leading-relaxed whitespace-pre-wrap">{v.description}</p>
+                <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed whitespace-pre-wrap">{v.description}</p>
               </div>
             </div>
 
@@ -234,7 +234,7 @@ export default function CareerDetailPublic() {
                       <div key={i} className="flex items-start gap-2.5">
                         <Icon className="w-4 h-4 text-ct-mute flex-shrink-0 mt-0.5" />
                         <div className="min-w-0">
-                          <p className="text-[11px] text-ct-mute uppercase tracking-wide font-semibold">{f.label}</p>
+                          <p className="text-[0.6875rem] text-ct-mute uppercase tracking-wide font-semibold">{f.label}</p>
                           <p className="text-sm text-ct-paper">{f.value}</p>
                         </div>
                       </div>

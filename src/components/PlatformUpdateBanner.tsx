@@ -175,16 +175,16 @@ export default function PlatformUpdateBanner() {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className={`text-[10px] font-semibold uppercase tracking-wider ${config.color}`}>
+                    <span className={`text-[0.625rem] font-semibold uppercase tracking-wider ${config.color}`}>
                       {config.label}
                     </span>
                     {update.priority === 'critical' && (
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-ct-rose bg-ct-rose/[0.13] px-1.5 py-0.5 rounded-full">
+                      <span className="flex items-center gap-1 text-[0.625rem] font-bold text-ct-rose bg-ct-rose/[0.13] px-1.5 py-0.5 rounded-full">
                         <AlertTriangle className="w-3 h-3" />
                         Urgent
                       </span>
                     )}
-                    <span className="text-[10px] text-ct-mute">
+                    <span className="text-[0.625rem] text-ct-mute">
                       {new Date(update.published_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                     </span>
                   </div>

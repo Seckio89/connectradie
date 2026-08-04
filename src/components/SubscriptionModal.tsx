@@ -437,7 +437,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     <Percent className="w-3.5 h-3.5 text-ct-mute" />
                     <span className="text-xs font-medium text-ct-mute-2">Low platform fees on completed jobs</span>
                   </div>
-                  <p className="text-[11px] text-ct-mute mt-1">Fees decrease as your job values grow. Upgrade to Pro to save more.</p>
+                  <p className="text-[0.6875rem] text-ct-mute mt-1">Fees decrease as your job values grow. Upgrade to Pro to save more.</p>
                 </div>
 
                 <div className="space-y-2.5 flex-1">
@@ -505,7 +505,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                     <Percent className="w-3.5 h-3.5 text-ct-amber" />
                     <span className="text-xs font-medium text-ct-amber">Lowest platform fees — keep more of every job</span>
                   </div>
-                  <p className="text-[11px] text-ct-mute-2 mt-1">Up to 50% lower fees than free. The bigger the job, the more you save.</p>
+                  <p className="text-[0.6875rem] text-ct-mute-2 mt-1">Up to 50% lower fees than free. The bigger the job, the more you save.</p>
                 </div>
 
                 <div className="space-y-2.5 flex-1">
@@ -535,7 +535,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                           Free trial active
                         </div>
                         {trialConvertsOn && (
-                          <p className="text-[11px] text-ct-mute-2 text-center leading-relaxed">
+                          <p className="text-[0.6875rem] text-ct-mute-2 text-center leading-relaxed">
                             Your card is charged on <span className="font-semibold text-ct-mute-2">{trialConvertsOn}</span> to
                             continue Pro. Cancel any time before then and you won&rsquo;t be charged.
                           </p>
@@ -584,7 +584,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                           )}
                         </button>
                         {trialEligible ? (
-                          <p className="text-[11px] text-ct-mute-2 text-center leading-relaxed">
+                          <p className="text-[0.6875rem] text-ct-mute-2 text-center leading-relaxed">
                             Free for 14 days, then{' '}
                             <span className="font-semibold text-ct-mute-2">
                               {billingCycle === 'annual'
@@ -594,7 +594,7 @@ export default function SubscriptionModal({ isOpen, onClose }: SubscriptionModal
                             . We&rsquo;ll email you before it ends — cancel any time during the trial and you won&rsquo;t be charged.
                           </p>
                         ) : (
-                          <p className="text-[11px] text-ct-mute-2 text-center">
+                          <p className="text-[0.6875rem] text-ct-mute-2 text-center">
                             {billingCycle === 'annual'
                               ? `Billed $${TIER_PRICING.pro.annual}/yr. Cancel anytime.`
                               : `Billed $${TIER_PRICING.pro.monthly}/mo. Cancel anytime.`}

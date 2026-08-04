@@ -534,7 +534,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
       <div className="flex items-center gap-2">
         <Sparkles className="w-4 h-4 text-ct-mute-2" />
         <span className="text-sm font-semibold text-ct-paper">Pricing helper</span>
-        <span className="text-[11px] text-ct-mute">suggests — you decide</span>
+        <span className="text-[0.6875rem] text-ct-mute">suggests — you decide</span>
       </div>
 
       {/* Property preview — auto Street View from the client's stored address */}
@@ -571,8 +571,8 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                 </button>
               </div>
               {taskSubmitted
-                ? <p className="text-[11px] text-ct-teal flex items-center gap-1"><Check className="w-3 h-3" /> Thanks — we’ll review this and may add it as a category.</p>
-                : <p className="text-[11px] text-ct-mute">Can’t see your trade? Tell us and we’ll add popular requests. Your description also sharpens the estimate.</p>}
+                ? <p className="text-[0.6875rem] text-ct-teal flex items-center gap-1"><Check className="w-3 h-3" /> Thanks — we’ll review this and may add it as a category.</p>
+                : <p className="text-[0.6875rem] text-ct-mute">Can’t see your trade? Tell us and we’ll add popular requests. Your description also sharpens the estimate.</p>}
               {approvedTasks.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                   {approvedTasks.map((t) => (
@@ -588,7 +588,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
           {/* Property type — reshapes the quantity questions (office/warehouse ≠ rooms) */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-ct-mute">Property:</span>
+            <span className="text-[0.6875rem] text-ct-mute">Property:</span>
             {PROPERTY_TYPES.map((p) => (
               <button key={p} type="button" onClick={() => { setProperty(p); setQuantities({}); }}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
@@ -601,7 +601,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {fields.map((f) => (
               <div key={f.key}>
-                <label className="block text-[11px] text-ct-mute mb-0.5">{f.label}</label>
+                <label className="block text-[0.6875rem] text-ct-mute mb-0.5">{f.label}</label>
                 <input type="number" min="0" value={quantities[f.key] ?? ''}
                   onChange={(e) => setQuantities((q) => ({ ...q, [f.key]: e.target.value }))}
                   className={`w-full ${numInput}`} />
@@ -612,7 +612,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           {/* End-of-lease inclusions — yes/no toggles per bond-clean staple */}
           {property === 'End of lease' && (
             <div>
-              <span className="block text-[11px] text-ct-mute mb-1">Included in this clean:</span>
+              <span className="block text-[0.6875rem] text-ct-mute mb-1">Included in this clean:</span>
               <div className="flex flex-wrap gap-1.5">
                 {EOL_EXTRAS.map((x) => (
                   <button key={x} type="button" onClick={() => toggleEolExtra(x)}
@@ -626,7 +626,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
           {/* Condition */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-ct-mute">Condition:</span>
+            <span className="text-[0.6875rem] text-ct-mute">Condition:</span>
             {CONDITIONS.map((c) => (
               <button key={c} type="button" onClick={() => setCondition(condition === c ? '' : c)}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium border capitalize transition-colors ${
@@ -637,7 +637,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
           {/* Access */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-ct-mute">Access:</span>
+            <span className="text-[0.6875rem] text-ct-mute">Access:</span>
             {ACCESS.map((a) => (
               <button key={a} type="button" onClick={() => toggleAccess(a)}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
@@ -648,7 +648,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
           {/* Estimated time on site — feeds the pricing (hours × rate). */}
           <div>
-            <label className="block text-[11px] text-ct-mute mb-1">Estimated time on site</label>
+            <label className="block text-[0.6875rem] text-ct-mute mb-1">Estimated time on site</label>
             <div className="flex items-center gap-2">
               <div className="flex-1">
                 <select value={durHours} onChange={(e) => setDurHours(e.target.value)} className={`w-full ${numInput}`} aria-label="Hours on site">
@@ -664,13 +664,13 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               </div>
             </div>
             {enteredHours > 0 && (
-              <p className="text-[11px] text-ct-mute mt-1">Used for the estimate instead of the AI's hour guess.</p>
+              <p className="text-[0.6875rem] text-ct-mute mt-1">Used for the estimate instead of the AI's hour guess.</p>
             )}
           </div>
 
           {/* Crew size + how the on-site hours are counted (per-worker vs combined) */}
           <div>
-            <label className="block text-[11px] text-ct-mute mb-1">Workers on site</label>
+            <label className="block text-[0.6875rem] text-ct-mute mb-1">Workers on site</label>
             <div className="flex items-center gap-2 flex-wrap">
               <input type="number" min="1" value={workers}
                 onChange={(e) => setWorkers(e.target.value)}
@@ -689,7 +689,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               )}
             </div>
             {Number(workers) > 1 && (
-              <p className="text-[11px] text-ct-mute mt-1">
+              <p className="text-[0.6875rem] text-ct-mute mt-1">
                 {hoursMode === 'combined'
                   ? `${workers} workers share the hours — labour billed as the combined time, not multiplied.`
                   : `Each of the ${workers} workers is on site for the full time — labour = hours × ${workers}.`}
@@ -699,7 +699,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
           {/* Preferred days — client-facing availability. */}
           <div>
-            <label className="block text-[11px] text-ct-mute mb-1">Preferred days to visit</label>
+            <label className="block text-[0.6875rem] text-ct-mute mb-1">Preferred days to visit</label>
             <div className="flex flex-wrap gap-1.5">
               {DAYS.map((d) => (
                 <button key={d} type="button" onClick={() => toggleDay(d)}
@@ -714,7 +714,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           <div>
             <button type="button" onClick={() => setMultiVisit((v) => !v)}
               className="flex items-center justify-between w-full text-left">
-              <span className="text-[11px] text-ct-mute">This job needs multiple visits</span>
+              <span className="text-[0.6875rem] text-ct-mute">This job needs multiple visits</span>
               <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${multiVisit ? 'bg-ct-surface-2' : 'bg-ct-line'}`}>
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-ct-surface transition-transform ${multiVisit ? 'translate-x-4' : 'translate-x-0.5'}`} />
               </span>
@@ -757,20 +757,20 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                 </div>
               ))}
               {photos.length < MAX_PHOTOS && (
-                <label className="flex flex-col items-center justify-center gap-0.5 w-14 h-14 border border-dashed border-ct-line rounded-ct-sm text-[10px] text-ct-mute cursor-pointer hover:bg-ct-surface-2">
+                <label className="flex flex-col items-center justify-center gap-0.5 w-14 h-14 border border-dashed border-ct-line rounded-ct-sm text-[0.625rem] text-ct-mute cursor-pointer hover:bg-ct-surface-2">
                   <Camera className="w-4 h-4" /> Add
                   <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotos} />
                 </label>
               )}
               {photos.length < MAX_PHOTOS && (
-                <label className={`flex flex-col items-center justify-center gap-0.5 w-14 h-14 border border-dashed border-ct-line rounded-ct-sm text-[10px] text-ct-mute cursor-pointer hover:bg-ct-surface-2 ${videoProcessing ? 'opacity-60 pointer-events-none' : ''}`}>
+                <label className={`flex flex-col items-center justify-center gap-0.5 w-14 h-14 border border-dashed border-ct-line rounded-ct-sm text-[0.625rem] text-ct-mute cursor-pointer hover:bg-ct-surface-2 ${videoProcessing ? 'opacity-60 pointer-events-none' : ''}`}>
                   {videoProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Video className="w-4 h-4" />}
                   {videoProcessing ? 'Frames…' : 'Video'}
                   <input type="file" accept="video/*" className="hidden" onChange={handleVideo} disabled={videoProcessing} />
                 </label>
               )}
             </div>
-            <p className="text-[11px] text-ct-mute mt-1.5">Add a short walk-around video — we’ll pull the key frames on your device to help estimate. The video isn’t uploaded.</p>
+            <p className="text-[0.6875rem] text-ct-mute mt-1.5">Add a short walk-around video — we’ll pull the key frames on your device to help estimate. The video isn’t uploaded.</p>
           </div>
 
           {/* Anonymised area market range — Pro/PM see the numbers; free tier a
@@ -783,20 +783,20 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                   Market range for {property.toLowerCase()} {trade.toLowerCase()} in this area:{' '}
                   <span className="font-semibold">{money(areaRange.low)}–{money(areaRange.high)}</span>
                   {areaRange.mid != null && <span className="text-ct-mute-2"> · typically {money(areaRange.mid)}</span>}
-                  <span className="block text-[11px] text-ct-mute-2/80 mt-0.5">Anonymised from {areaRange.sampleSize} nearby quotes — a guide, not a target.</span>
+                  <span className="block text-[0.6875rem] text-ct-mute-2/80 mt-0.5">Anonymised from {areaRange.sampleSize} nearby quotes — a guide, not a target.</span>
                 </p>
               </div>
             ) : (
               <Link to="/pricing" className="flex items-center gap-2 rounded-ct-sm border border-dashed border-ct-line bg-ct-surface px-3 py-2 hover:bg-ct-surface-2 transition-colors">
                 <BarChart3 className="w-4 h-4 flex-shrink-0 text-ct-mute" />
-                <span className="text-[11px] text-ct-mute"><span className="font-medium text-ct-mute-2">See what {trade.toLowerCase()}s charge in this area</span> — market price ranges are a Pro feature.</span>
+                <span className="text-[0.6875rem] text-ct-mute"><span className="font-medium text-ct-mute-2">See what {trade.toLowerCase()}s charge in this area</span> — market price ranges are a Pro feature.</span>
               </Link>
             )
           )}
 
           {/* History anchors — your own recent accepted quotes, with context */}
           {history.length > 0 && (
-            <div className="text-[11px] text-ct-mute">
+            <div className="text-[0.6875rem] text-ct-mute">
               <span className="text-ct-mute">Anchored to your recent quotes</span>
               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
                 {history.slice(0, 4).map((h, i) => (
@@ -817,12 +817,12 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             </button>
             {econOpen && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 px-3 pb-3">
-                <div><label className="block text-[11px] text-ct-mute mb-0.5">Rate $/h</label><input type="number" min="0" value={rate} onChange={(e) => setRate(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div><label className="block text-[11px] text-ct-mute mb-0.5">Workers</label><input type="number" min="1" value={workers} onChange={(e) => setWorkers(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div><label className="block text-[11px] text-ct-mute mb-0.5">Margin %</label><input type="number" min="0" value={marginPct} onChange={(e) => setMarginPct(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div><label className="block text-[11px] text-ct-mute mb-0.5">Materials markup %</label><input type="number" min="0" value={markupPct} onChange={(e) => setMarkupPct(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div><label className="block text-[11px] text-ct-mute mb-0.5">Call-out $</label><input type="number" min="0" value={callOut} onChange={(e) => setCallOut(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div className="flex items-end text-[11px] text-ct-mute pb-2">GST: {profile?.is_gst_registered ? 'registered' : 'not registered'}</div>
+                <div><label className="block text-[0.6875rem] text-ct-mute mb-0.5">Rate $/h</label><input type="number" min="0" value={rate} onChange={(e) => setRate(e.target.value)} className={`w-full ${numInput}`} /></div>
+                <div><label className="block text-[0.6875rem] text-ct-mute mb-0.5">Workers</label><input type="number" min="1" value={workers} onChange={(e) => setWorkers(e.target.value)} className={`w-full ${numInput}`} /></div>
+                <div><label className="block text-[0.6875rem] text-ct-mute mb-0.5">Margin %</label><input type="number" min="0" value={marginPct} onChange={(e) => setMarginPct(e.target.value)} className={`w-full ${numInput}`} /></div>
+                <div><label className="block text-[0.6875rem] text-ct-mute mb-0.5">Materials markup %</label><input type="number" min="0" value={markupPct} onChange={(e) => setMarkupPct(e.target.value)} className={`w-full ${numInput}`} /></div>
+                <div><label className="block text-[0.6875rem] text-ct-mute mb-0.5">Call-out $</label><input type="number" min="0" value={callOut} onChange={(e) => setCallOut(e.target.value)} className={`w-full ${numInput}`} /></div>
+                <div className="flex items-end text-[0.6875rem] text-ct-mute pb-2">GST: {profile?.is_gst_registered ? 'registered' : 'not registered'}</div>
               </div>
             )}
           </div>
@@ -830,7 +830,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           {/* Extra details — free text fed to the AI. Answer the sharpening
               questions here, then Estimate again to tighten the quote. */}
           <div>
-            <label className="block text-[11px] text-ct-mute mb-1">Add details to sharpen the estimate (optional)</label>
+            <label className="block text-[0.6875rem] text-ct-mute mb-1">Add details to sharpen the estimate (optional)</label>
             <textarea value={notes}
               onChange={(e) => setNotes(e.target.value)}
               onInput={(e) => { const t = e.currentTarget; t.style.height = 'auto'; t.style.height = `${Math.max(t.scrollHeight, 120)}px`; }}
@@ -841,7 +841,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               placeholder="e.g. one-off deep clean, no carpets, after-hours access only, before a health inspection"
               className={`w-full ${numInput} resize-y min-h-[120px] leading-relaxed`} />
             {result && result.sharpeningQuestions.length > 0 && (
-              <p className="text-[11px] text-ct-mute mt-1">Answer the questions below here, then tap Estimate again.</p>
+              <p className="text-[0.6875rem] text-ct-mute mt-1">Answer the questions below here, then tap Estimate again.</p>
             )}
           </div>
 
@@ -862,7 +862,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-bold text-ct-teal">Go Pro — unlimited estimates</span>
-                      <span className="px-1.5 py-0.5 rounded-full bg-ct-teal text-ct-ink text-[10px] font-semibold uppercase tracking-wide">Best value</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-ct-teal text-ct-ink text-[0.625rem] font-semibold uppercase tracking-wide">Best value</span>
                     </div>
                     <p className="text-xs text-ct-teal mt-0.5">${TIER_PRICING.pro.monthly}/mo · unlimited AI estimates + lower platform fees</p>
                   </div>
@@ -875,7 +875,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                 className="w-full flex items-center justify-between gap-2 rounded-ct-sm border border-ct-line bg-ct-surface px-3 py-2 text-left hover:bg-ct-surface-2 disabled:opacity-50 transition-colors">
                 <span className="text-sm font-medium text-ct-mute-2">
                   {buyingPack ? 'Starting checkout…' : 'Get 20 more — $4.99'}
-                  <span className="block text-[11px] text-ct-mute font-normal">One-time top-up · credits don’t expire</span>
+                  <span className="block text-[0.6875rem] text-ct-mute font-normal">One-time top-up · credits don’t expire</span>
                 </span>
                 {buyingPack ? <Loader2 className="w-4 h-4 animate-spin text-ct-mute" /> : <Package className="w-4 h-4 text-ct-mute flex-shrink-0" />}
               </button>
@@ -887,7 +887,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             </button>
           )}
           {aiUsage && aiUsage.limit != null && !aiLimitReached && aiTotalRemaining !== null && (
-            <p className="text-[11px] text-ct-mute text-center">
+            <p className="text-[0.6875rem] text-ct-mute text-center">
               {aiPackRemaining > 0
                 ? `${aiTotalRemaining} estimate${aiTotalRemaining === 1 ? '' : 's'} remaining (${aiMonthlyRemaining} monthly + ${aiPackRemaining} pack credit${aiPackRemaining === 1 ? '' : 's'})`
                 : `${aiMonthlyRemaining}/${aiUsage.limit} free estimates this month`}
@@ -903,8 +903,8 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
         <div className="bg-ct-surface border border-ct-line rounded-ct-sm p-3 space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5">
-              <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${CONF_CHIP[result.confidence]}`}>{result.confidence} confidence</span>
-              <span className="text-[11px] text-ct-mute">{result.source === 'ai' ? 'AI' : 'estimate'}</span>
+              <span className={`px-2 py-0.5 rounded-full text-[0.6875rem] font-medium ${CONF_CHIP[result.confidence]}`}>{result.confidence} confidence</span>
+              <span className="text-[0.6875rem] text-ct-mute">{result.source === 'ai' ? 'AI' : 'estimate'}</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-ct-mute">
               <span>Hours{visits > 1 ? '/visit' : ''}</span>
@@ -921,7 +921,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               <span>Materials $</span>
               <input type="number" min="0" value={materialsEdit} onChange={(e) => setMaterialsEdit(e.target.value)}
                 className="w-20 px-2 py-1 border border-ct-line rounded-ct-xs text-sm" aria-label="Materials cost" />
-              <span className="text-[11px] text-ct-mute">edit if it’s off</span>
+              <span className="text-[0.6875rem] text-ct-mute">edit if it’s off</span>
             </div>
           )}
 

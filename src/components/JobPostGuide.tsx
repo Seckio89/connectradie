@@ -369,7 +369,7 @@ export default function JobPostGuide() {
                 return (
                   <div key={i} className="flex items-start gap-2.5 py-1">
                     <HintIcon className="w-4 h-4 text-ct-mute flex-shrink-0 mt-0.5" />
-                    <span className="text-[13px] text-ct-mute-2 leading-snug">{hint.text}</span>
+                    <span className="text-[0.8125rem] text-ct-mute-2 leading-snug">{hint.text}</span>
                   </div>
                 );
               })}

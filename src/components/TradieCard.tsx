@@ -248,7 +248,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
             Chat
             {!!unreadCount && (
               <span
-                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-ct-teal text-ct-ink text-[10px] font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-white"
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-ct-teal text-ct-ink text-[0.625rem] font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-white"
                 aria-label={`${unreadCount} unread message${unreadCount === 1 ? '' : 's'}`}
               >
                 {unreadCount > 9 ? '9+' : unreadCount}

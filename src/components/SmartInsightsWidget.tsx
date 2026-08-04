@@ -206,7 +206,7 @@ export default function SmartInsightsWidget() {
               Smart Insight
             </h3>
           </div>
-          <p className="text-ct-paper text-[15px] leading-relaxed">{insight.text}</p>
+          <p className="text-ct-paper text-[0.9375rem] leading-relaxed">{insight.text}</p>
           <Link
             to="/performance"
             className={`inline-flex items-center gap-1.5 mt-3 text-sm font-semibold transition-colors ${

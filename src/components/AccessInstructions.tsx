@@ -60,7 +60,7 @@ export default function AccessInstructions({ jobId, className }: { jobId: string
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-ct-paper uppercase tracking-wide">
               <KeyRound className="w-3.5 h-3.5" /> Access instructions
             </span>
-            <span className="text-[11px] text-ct-amber tabular-nums">Auto-locking in {secondsLeft}s</span>
+            <span className="text-[0.6875rem] text-ct-amber tabular-nums">Auto-locking in {secondsLeft}s</span>
           </div>
           {text.trim()
             ? <FormattedNotes text={text} className="text-sm text-ct-paper space-y-1" />

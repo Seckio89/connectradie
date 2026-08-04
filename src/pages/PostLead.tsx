@@ -899,7 +899,7 @@ export default function PostLead() {
                         className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-teal hover:bg-ct-amber/[0.13] transition-colors group"
                       >
                         <Camera className="w-4 h-4 text-ct-mute group-hover:text-ct-amber transition-colors" />
-                        <span className="text-[10px] text-ct-mute group-hover:text-ct-amber">
+                        <span className="text-[0.625rem] text-ct-mute group-hover:text-ct-amber">
                           {photos.length === 0 ? 'Add' : `${photos.length}/5`}
                         </span>
                       </button>
@@ -1155,7 +1155,7 @@ export default function PostLead() {
                         <span className="text-ct-mute">· your preferred time; the tradie confirms the final window</span>
                       </p>
                     ) : (
-                      <p className="mt-2 text-[11px] text-ct-mute">Leave blank to keep it flexible — the tradie confirms a time after accepting.</p>
+                      <p className="mt-2 text-[0.6875rem] text-ct-mute">Leave blank to keep it flexible — the tradie confirms a time after accepting.</p>
                     )}
                   </div>
                 </div>

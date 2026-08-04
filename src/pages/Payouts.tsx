@@ -992,23 +992,23 @@ export default function Payouts() {
                       it as an application fee on the instant payout. The tradie
                       never has to take it — standard payouts remain free — so say
                       that plainly rather than burying the choice. */}
-                  <p className="mt-1.5 text-[11px] text-ct-mute">
+                  <p className="mt-1.5 text-[0.6875rem] text-ct-mute">
                     Only charged if you choose instant. Waiting costs nothing — standard payouts are always free.
                   </p>
                   {instantError && <p className="mt-1.5 text-xs text-ct-rose">{instantError}</p>}
                 </div>
               ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'below_minimum' ? (
-                <p className="mt-3 text-[11px] text-ct-mute">
+                <p className="mt-3 text-[0.6875rem] text-ct-mute">
                   Instant payout is available from {formatCurrency(instantStatus.minBaseCents ?? 0)} — below that the{' '}
                   {formatCurrency(instantStatus.feeMinCents ?? 0)} minimum fee takes too much of it. Your{' '}
                   {formatCurrency(instantStatus.instantAvailable)} is on its way free of charge.
                 </p>
               ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'funds_pending' ? (
-                <p className="mt-3 text-[11px] text-ct-mute">
+                <p className="mt-3 text-[0.6875rem] text-ct-mute">
                   Instant payout available once funds clear (usually next business day).
                 </p>
               ) : instantStatus && !instantStatus.eligible && instantStatus.reason === 'no_instant_method' && summary.transit.amount > 0 && payoutPref !== 'standard' ? (
-                <p className="mt-3 text-[11px] text-ct-mute">
+                <p className="mt-3 text-[0.6875rem] text-ct-mute">
                   This payout account can’t receive instant payouts — add an instant-eligible debit card or bank in Bank settings.
                 </p>
               ) : null}
@@ -1101,7 +1101,7 @@ export default function Payouts() {
                     </select>
                   </label>
                   {instantPreferenceBlocked && payoutPref === 'instant' && (
-                    <p className="text-[11px] text-ct-mute max-w-sm">
+                    <p className="text-[0.6875rem] text-ct-mute max-w-sm">
                       {instantPreferenceBlocked === 'no_instant_method'
                         ? 'Instant needs an instant-eligible debit card or bank account — add one in Bank settings. Until then your payouts go out free on the standard schedule.'
                         : 'Instant payouts aren’t available right now. Your payouts go out free on the standard schedule until they are.'}
@@ -1121,7 +1121,7 @@ export default function Payouts() {
                       <h2 className="text-sm font-semibold text-ct-paper whitespace-nowrap">Recent payments</h2>
                       <span className="text-xs text-ct-mute font-medium hidden sm:inline">(Last 5 days)</span>
                     </div>
-                    <span className="text-[11px] text-ct-mute font-medium ml-6 sm:hidden">Last 5 days</span>
+                    <span className="text-[0.6875rem] text-ct-mute font-medium ml-6 sm:hidden">Last 5 days</span>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <input
@@ -1169,7 +1169,7 @@ export default function Payouts() {
                           ) : (
                             <ChevronDown className="w-4 h-4 text-ct-mute" />
                           )}
-                          <span className="text-[15px] sm:text-sm font-bold sm:font-semibold text-ct-paper">{monthGroup.label}</span>
+                          <span className="text-[0.9375rem] sm:text-sm font-bold sm:font-semibold text-ct-paper">{monthGroup.label}</span>
                           <span className="text-xs text-ct-mute">
                             ({monthGroup.weeks.reduce((s, w) => s + w.payments.length, 0)} payments)
                           </span>
@@ -1236,14 +1236,14 @@ export default function Payouts() {
                                               <div className="flex items-center gap-2 min-w-0">
                                                 <p className="text-sm font-medium text-ct-paper truncate">{jobTitle}</p>
                                                 {p.isRecurring && (
-                                                  <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                                                  <span className={`inline-flex items-center text-[0.625rem] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
                                                     isCancelled ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'
                                                   }`}>
                                                     {isCancelled ? 'Cancelled' : 'Ongoing'}
                                                   </span>
                                                 )}
                                                 {!p.isRecurring && isCancelled && (
-                                                  <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-ct-rose/[0.13] text-ct-rose">
+                                                  <span className="inline-flex items-center text-[0.625rem] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-ct-rose/[0.13] text-ct-rose">
                                                     Cancelled
                                                   </span>
                                                 )}
@@ -1299,12 +1299,12 @@ export default function Payouts() {
                                             <div className="min-w-0 flex items-center gap-1.5 flex-wrap">
                                               <p className="text-sm font-medium text-ct-paper leading-snug">{jobTitle}</p>
                                               {p.isRecurring && (
-                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isCancelled ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
+                                                <span className={`text-[0.625rem] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${isCancelled ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
                                                   {isCancelled ? 'Cancelled' : 'Ongoing'}
                                                 </span>
                                               )}
                                               {!p.isRecurring && isCancelled && (
-                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-ct-rose/[0.13] text-ct-rose">Cancelled</span>
+                                                <span className="text-[0.625rem] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 bg-ct-rose/[0.13] text-ct-rose">Cancelled</span>
                                               )}
                                             </div>
                                           </div>
@@ -1316,7 +1316,7 @@ export default function Payouts() {
                                           <p className="text-xs text-ct-mute truncate min-w-0">
                                             {p.client_name} · {new Date(p.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}
                                           </p>
-                                          <span className={`inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${statusClass}`}>
+                                          <span className={`inline-flex items-center text-[0.6875rem] font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${statusClass}`}>
                                             {statusLabel}
                                           </span>
                                         </div>

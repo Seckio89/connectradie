@@ -484,9 +484,9 @@ export default function SubmitQuoteModal({
                 <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md p-4 mb-6 max-w-sm text-left">
                   <p className="text-sm font-semibold text-ct-paper mb-2">What happens next?</p>
                   <ul className="text-xs text-ct-mute-2 space-y-2">
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>1</span>The client reviews your quote</li>
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>2</span>If accepted, they'll pay securely via Stripe</li>
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>3</span>You'll be notified to start the job</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[0.625rem] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>1</span>The client reviews your quote</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[0.625rem] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>2</span>If accepted, they'll pay securely via Stripe</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[0.625rem] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>3</span>You'll be notified to start the job</li>
                   </ul>
                 </div>
               </>
@@ -498,9 +498,9 @@ export default function SubmitQuoteModal({
                 <div className="bg-ct-surface-2 border border-ct-line rounded-ct-md p-4 mb-6 max-w-sm text-left">
                   <p className="text-sm font-semibold text-ct-paper mb-2">What happens next?</p>
                   <ul className="text-xs text-ct-mute-2 space-y-2">
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>1</span>The client reviews all incoming quotes</li>
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>2</span>You'll get a notification when they respond</li>
-                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>3</span>Track your quote status in the "My quotes" tab</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[0.625rem] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>1</span>The client reviews all incoming quotes</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[0.625rem] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>2</span>You'll get a notification when they respond</li>
+                    <li className="flex items-start gap-2.5"><span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[0.625rem] font-bold" style={{ backgroundColor: 'var(--surface-2)', color: 'var(--mute-2)' }}>3</span>Track your quote status in the "My quotes" tab</li>
                   </ul>
                 </div>
               </>
