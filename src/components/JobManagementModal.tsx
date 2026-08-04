@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 import type { Job, Quote, Update } from '../types/database';
 import { extractSuburb } from '../lib/contactGating';
 import SubmitQuoteModal from './SubmitQuoteModal';
+import RequestVariationModal from './RequestVariationModal';
 import ConfirmModal from './ConfirmModal';
 import TradieQuoteActions from './TradieQuoteActions';
 import { adjustQuotePrice, approvePriceReduction } from '../lib/stripePayments';
@@ -201,6 +202,13 @@ export default function JobManagementModal({
   const [finalPriceSuccess, setFinalPriceSuccess] = useState<string | null>(null);
   // For firm-price variations: tradie has to click "site visit completed" first
   // so we don't surface a price-change form by default on every funded job.
+
+  // "Additional cost" variation flow. Firm-price jobs are locked once funded, so
+  // a genuine mid-work scope change goes through job_variations (client approves +
+  // pays the extra), not a rewrite of the agreed price. This entry point makes that
+  // flow reachable from the tradie's own management surface — previously it lived
+  // only inside JobDetailsCard, buried in the Messages booking-request modal.
+  const [showVariationModal, setShowVariationModal] = useState(false);
 
   // In-app confirm modal (replaces native window.confirm for price adjustments)
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -1029,6 +1037,28 @@ export default function JobManagementModal({
                   );
                 })()}
 
+                {/* ── Additional cost (mid-work variation) ──
+                    For any in-progress, funded job: the tradie can raise an extra
+                    charge for scope beyond what was agreed. The client approves and
+                    pays the difference through the job_variations flow (RLS allows
+                    the INSERT only while status='in_progress'). This is the intended
+                    path for firm-price jobs, whose agreed price is otherwise locked. */}
+                {job?.status === 'in_progress' && payment?.status === 'completed' && (
+                  <div className="bg-ct-surface border border-ct-line rounded-ct-md p-4">
+                    <p className="text-sm font-semibold text-ct-paper mb-1">Need to charge more?</p>
+                    <p className="text-xs text-ct-mute mb-3">
+                      Extra work beyond the agreed scope goes here as a separate cost. The client approves and pays the difference before it's added — the price they already paid isn't touched.
+                    </p>
+                    <button
+                      onClick={() => setShowVariationModal(true)}
+                      className="w-full px-4 py-3 border border-dashed border-ct-line text-ct-mute-2 rounded-ct-sm hover:border-ct-teal hover:text-ct-teal flex items-center justify-center gap-2 font-medium transition-colors"
+                    >
+                      <Plus className="w-5 h-5" />
+                      Additional cost
+                    </button>
+                  </div>
+                )}
+
                 {/* ── 3-Stage Flow Actions (v2 pre-payment) ──
                     Renders the tradie-side action surface for v2 jobs:
                     "mark site visit complete" once the client has booked one,
@@ -1468,6 +1498,18 @@ export default function JobManagementModal({
             loadJob();
             onJobUpdated();
           }}
+        />
+      )}
+
+      {/* Mid-work "additional cost" variation — reachable here as well as in
+          JobDetailsCard, so the tradie doesn't have to dig through Messages. */}
+      {job && (
+        <RequestVariationModal
+          isOpen={showVariationModal}
+          onClose={() => setShowVariationModal(false)}
+          jobId={job.id}
+          jobBudget={job.budget_amount}
+          onSuccess={() => { setShowVariationModal(false); loadJob(); onJobUpdated(); }}
         />
       )}
 
