@@ -656,7 +656,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
   };
 
   return (
-    <div className="min-h-screen bg-ct-ink flex flex-col max-w-[100vw]">
+    <div className="min-h-screen bg-ct-ink flex flex-col max-w-full">
       {/* Native background-location disclosure — no-op on web / for non-tradies. */}
       <SiteGeofenceConsent />
       {/* One-time reassurance when geofencing first goes live for a job. */}
@@ -673,7 +673,11 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
 
       <aside
         ref={sidebarRef}
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-ct-ink border-r border-ct-line transform transition-transform lg:translate-x-0 ${
+        // ink-2, not ink: on ink the sidebar was the same colour as the page with
+        // only a 1px border between them, so below the nav list it read as empty
+        // gutter rather than as a region — which made centred content look
+        // pushed right on a wide screen even though the shell centres correctly.
+        className={`fixed top-0 left-0 z-50 h-full w-64 bg-ct-ink-2 border-r border-ct-line transform transition-transform lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}

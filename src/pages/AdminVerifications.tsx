@@ -220,7 +220,7 @@ export default function AdminVerifications() {
                 onClick={() => setActiveTab('pending')}
                 className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'pending'
-                    ? 'text-ct-amber bg-ct-amber/[0.13]'
+                    ? 'text-ct-teal bg-ct-teal/[0.14]'
                     : 'text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface-2'
                 }`}
               >
@@ -230,7 +230,7 @@ export default function AdminVerifications() {
                   {pendingCount > 0 && (
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                       activeTab === 'pending'
-                        ? 'bg-ct-teal/[0.14] text-ct-paper'
+                        ? 'bg-ct-teal/[0.14] text-ct-teal'
                         : 'bg-ct-line text-ct-mute-2'
                     }`}>
                       {pendingCount}

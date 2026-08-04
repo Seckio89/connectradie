@@ -37,8 +37,12 @@ export default function WorkHub() {
     { key: 'hiring', label: 'Hiring', shortLabel: 'Hire', icon: GraduationCap },
   ];
 
+  // `wide` because this hub embeds Leads, Jobs, Services and Careers as tabs.
+  // At the default max-w-5xl the lead cards and tables sat in a 1024px column
+  // on a 1600px-plus screen, and the Hiring tab rendered narrower here than the
+  // same component does at its own route (which already opts into wide).
   return (
-    <DashboardLayout>
+    <DashboardLayout wide>
       <div>
         <nav className="flex items-center gap-1.5 text-xs text-ct-mute mb-3">
           <Link to="/dashboard" className="hover:text-ct-mute-2 transition-colors">Dashboard</Link>

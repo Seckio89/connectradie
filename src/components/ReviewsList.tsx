@@ -93,7 +93,7 @@ export default function ReviewsList({ tradieId }: ReviewsListProps) {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-0.5">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`w-3 h-3 ${i < Math.round(avgRating) ? 'fill-amber-400 text-ct-amber' : 'text-ct-paper'}`} />
+                    <Star key={i} className={`w-3 h-3 ${i < Math.round(avgRating) ? 'fill-ct-amber text-ct-amber' : 'text-ct-paper'}`} />
                   ))}
                 </div>
                 <span className="text-xs text-ct-mute">{monthReviews.length} review{monthReviews.length !== 1 ? 's' : ''}</span>
@@ -128,7 +128,7 @@ export default function ReviewsList({ tradieId }: ReviewsListProps) {
                       </div>
                       <div className="flex items-center gap-0.5 flex-shrink-0">
                         {[...Array(5)].map((_, i) => (
-                          <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'fill-amber-400 text-ct-amber' : 'text-ct-paper'}`} />
+                          <Star key={i} className={`w-3.5 h-3.5 ${i < review.rating ? 'fill-ct-amber text-ct-amber' : 'text-ct-paper'}`} />
                         ))}
                       </div>
                     </div>

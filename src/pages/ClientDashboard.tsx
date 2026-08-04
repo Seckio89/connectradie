@@ -929,7 +929,7 @@ export default function ClientDashboard() {
                         onClick={() => { setJobTab(tab.key); setShowArchived(false); }}
                         className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                           isActive
-                            ? 'border-ct-teal text-ct-amber'
+                            ? 'border-ct-teal text-ct-paper'
                             : needsAttention
                               ? 'border-ct-amber/[0.34] text-ct-mute hover:text-ct-mute-2'
                               : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
@@ -944,7 +944,7 @@ export default function ClientDashboard() {
                       onClick={() => { setShowArchived(!showArchived); setJobTab('active'); }}
                       className={`inline-flex items-center gap-1.5 pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                         showArchived
-                          ? 'border-ct-teal text-ct-amber'
+                          ? 'border-ct-teal text-ct-paper'
                           : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
                       }`}
                     >

@@ -502,7 +502,7 @@ export default function PublicTradieProfile() {
                     {rating && rating.total_reviews > 0 && (
                       <div className="mt-3 pt-3 border-t border-ct-line-soft">
                         <div className="flex items-center gap-1.5">
-                          <Star className="w-4 h-4 fill-yellow-400 text-ct-amber" />
+                          <Star className="w-4 h-4 fill-ct-amber text-ct-amber" />
                           <span className="font-semibold text-ct-paper text-sm">
                             {rating.average_rating.toFixed(1)}
                           </span>
@@ -618,7 +618,7 @@ export default function PublicTradieProfile() {
                 <p className="font-semibold text-ct-paper text-sm truncate">{displayName}</p>
                 {rating && rating.total_reviews > 0 && (
                   <div className="flex items-center gap-1">
-                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-ct-amber" />
+                    <Star className="w-3.5 h-3.5 fill-ct-amber text-ct-amber" />
                     <span className="text-xs text-ct-mute-2">
                       {rating.average_rating.toFixed(1)} ({rating.total_reviews})
                     </span>

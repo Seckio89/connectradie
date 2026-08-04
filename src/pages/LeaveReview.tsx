@@ -243,8 +243,8 @@ export default function LeaveReview() {
       <DashboardLayout>
         <div className="max-w-lg mx-auto py-12">
           <div className="bg-ct-surface rounded-ct-lg border border-ct-line p-8 text-center">
-            <div className="w-16 h-16 bg-ct-amber/[0.13] rounded-full flex items-center justify-center mx-auto mb-5">
-              <CheckCircle2 className="w-8 h-8 text-ct-amber" />
+            <div className="w-16 h-16 bg-ct-teal/[0.14] rounded-full flex items-center justify-center mx-auto mb-5">
+              <CheckCircle2 className="w-8 h-8 text-ct-teal" />
             </div>
             <h1 className="text-xl font-bold text-ct-paper mb-2">Review submitted{paymentReleased ? ' & payment released' : ''}</h1>
             <p className="text-sm text-ct-mute-2 mb-1">
@@ -260,7 +260,7 @@ export default function LeaveReview() {
               {[1, 2, 3, 4, 5].map(star => (
                 <Star
                   key={star}
-                  className={`w-6 h-6 ${star <= rating ? 'fill-yellow-400 text-ct-amber' : 'text-ct-mute'}`}
+                  className={`w-6 h-6 ${star <= rating ? 'fill-ct-amber text-ct-amber' : 'text-ct-mute'}`}
                 />
               ))}
               <span className="ml-2 text-sm font-medium text-ct-mute-2">{RATING_LABELS[rating]}</span>
@@ -269,13 +269,13 @@ export default function LeaveReview() {
             <div className="flex gap-3">
               <Link
                 to="/payments"
-                className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors text-center"
+                className="flex-1 px-4 py-2.5 border border-ct-line text-ct-mute-2 rounded-ct-sm text-sm font-medium hover:bg-ct-surface-2 transition-colors text-center whitespace-nowrap"
               >
                 View payments
               </Link>
               <Link
                 to="/dashboard"
-                className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 transition-colors text-center"
+                className="flex-1 px-4 py-2.5 bg-ct-teal text-ct-ink rounded-ct-sm text-sm font-semibold hover:brightness-110 transition-colors text-center whitespace-nowrap"
               >
                 Back to dashboard
               </Link>
@@ -390,7 +390,7 @@ export default function LeaveReview() {
                     <Star
                       className={`w-8 h-8 transition-colors ${
                         star <= displayRating
-                          ? 'fill-yellow-400 text-ct-amber'
+                          ? 'fill-ct-amber text-ct-amber'
                           : 'text-ct-mute'
                       }`}
                     />
@@ -415,8 +415,8 @@ export default function LeaveReview() {
                       onClick={() => toggleTag(tag.key)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                         isSelected
-                          ? 'bg-ct-amber/[0.13] text-ct-amber border-ct-teal/30'
-                          : 'bg-ct-surface text-ct-mute border-ct-line hover:border-ct-line hover:text-ct-mute-2'
+                          ? 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30'
+                          : 'bg-ct-surface text-ct-mute border-ct-line hover:border-ct-teal/30 hover:text-ct-mute-2'
                       }`}
                     >
                       {isSelected && <span className="mr-1">&#10003;</span>}

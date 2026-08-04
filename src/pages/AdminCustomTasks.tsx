@@ -75,7 +75,7 @@ export default function AdminCustomTasks() {
           {(['pending', 'approved', 'rejected'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-4 py-2.5 text-sm font-medium capitalize border-b-2 -mb-px transition-colors ${
-                tab === t ? 'border-ct-teal text-ct-amber' : 'border-transparent text-ct-mute hover:text-ct-mute-2'
+                tab === t ? 'border-ct-teal text-ct-paper' : 'border-transparent text-ct-mute hover:text-ct-mute-2'
               }`}>{t}</button>
           ))}
         </div>

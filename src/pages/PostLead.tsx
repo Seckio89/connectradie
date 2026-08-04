@@ -267,7 +267,6 @@ function SmartCalendar({
 
           const disabled = day < minDate;
           const isSelected = selectedDate && isSameDay(day, selectedDate);
-          const isWeekend = day.getDay() === 0 || day.getDay() === 6;
 
           return (
             <button
@@ -277,12 +276,15 @@ function SmartCalendar({
               onClick={() => onSelectDate(day)}
               className={`relative py-2 rounded-ct-sm text-sm font-medium transition-all ${
                 disabled
-                  ? 'bg-ct-rose/[0.13] text-ct-rose cursor-not-allowed'
+                  // Not rose: a date you can't pick is neither failed nor
+                  // declined. Rose here made every past day read as an error.
+                  ? 'text-ct-mute opacity-40 cursor-not-allowed'
                   : isSelected
-                  ? 'bg-ct-surface-2 text-ct-paper shadow-md'
-                  : isWeekend
-                  ? 'bg-ct-teal/[0.14] text-ct-mute-2 hover:bg-ct-teal/[0.14] hover:text-ct-mute-2'
-                  : 'bg-ct-teal/[0.14] text-ct-mute-2 hover:bg-ct-teal/[0.14] hover:text-ct-teal'
+                  // Selection has to be the strongest state on the grid. It was
+                  // a flat surface tint while every *unselected* available day
+                  // carried a teal fill, so picking a date looked like clearing it.
+                  ? 'bg-ct-teal text-ct-ink font-semibold shadow-md'
+                  : 'bg-ct-teal/[0.14] text-ct-mute-2 hover:text-ct-teal'
               }`}
             >
               {day.getDate()}
@@ -297,7 +299,7 @@ function SmartCalendar({
           <span>Available</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-ct-xs bg-ct-rose/[0.13] border border-ct-rose/[0.34]"></div>
+          <div className="w-3 h-3 rounded-ct-xs border border-ct-line opacity-40"></div>
           <span>Unavailable</span>
         </div>
       </div>
@@ -1082,7 +1084,9 @@ export default function PostLead() {
                       }
                     </p>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  {/* One per row on a phone: three across leaves ~110px each,
+                      which breaks "10:00 AM - 12:00 PM" mid-range. */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {TIME_SLOTS.map((slot) => {
                       const Icon = slot.icon;
                       const isSelected = preferredSlot === slot.key;
@@ -1090,25 +1094,29 @@ export default function PostLead() {
                         <button
                           key={slot.key}
                           type="button"
+                          aria-pressed={isSelected}
                           onClick={() => setPreferredSlot(slot.key)}
+                          // Selected and unselected were the same border with two
+                          // near-identical surface tints and identical text colour,
+                          // so there was no way to tell which slot you'd picked.
                           className={`relative rounded-ct-md border-2 p-3 text-center transition-all duration-200 ${
                             isSelected
-                              ? 'border-ct-line bg-ct-surface-2 shadow-sm'
-                              : 'border-ct-line bg-ct-surface hover:border-ct-line hover:bg-ct-surface-2/30'
+                              ? 'border-ct-teal bg-ct-teal/[0.14] shadow-sm'
+                              : 'border-ct-line bg-ct-surface hover:border-ct-teal/30 hover:bg-ct-surface-2/30'
                           }`}
                         >
                           {isSelected && (
                             <div className="absolute -top-2 right-2">
-                              <span className="inline-block w-2 h-2 rounded-full bg-ct-surface-2" title="Your selected time" />
+                              <span className="inline-block w-2 h-2 rounded-full bg-ct-teal" title="Your selected time" />
                             </div>
                           )}
                           <Icon className={`w-5 h-5 mx-auto mb-1.5 ${
-                            isSelected ? 'text-ct-mute-2' : 'text-ct-mute'
+                            isSelected ? 'text-ct-teal' : 'text-ct-mute'
                           }`} />
-                          <div className={`text-sm font-semibold ${isSelected ? 'text-ct-mute-2' : 'text-ct-mute-2'}`}>
+                          <div className={`text-sm font-semibold ${isSelected ? 'text-ct-teal' : 'text-ct-mute-2'}`}>
                             {slot.label}
                           </div>
-                          <div className={`text-xs mt-0.5 ${isSelected ? 'text-ct-mute-2' : 'text-ct-mute'}`}>{slot.range}</div>
+                          <div className={`text-xs mt-0.5 whitespace-nowrap ${isSelected ? 'text-ct-mute-2' : 'text-ct-mute'}`}>{slot.range}</div>
                         </button>
                       );
                     })}
@@ -1228,16 +1236,17 @@ export default function PostLead() {
                       key={num}
                       type="button"
                       onClick={() => setMaxQuotes(num)}
+                      // Selection reads the same either way now. The scheduled
+                      // branch used to fall back to a bare surface tint, so on
+                      // the non-urgent path you couldn't see which you'd chosen.
                       className={`py-2.5 px-4 rounded-ct-md text-left border-2 transition-all ${
                         maxQuotes === num
-                          ? scheduleMode === 'urgent'
-                            ? 'border-ct-teal/30 bg-ct-teal/[0.14]'
-                            : 'border-ct-line bg-ct-surface-2'
-                          : 'border-ct-line hover:border-ct-line'
+                          ? 'border-ct-teal/30 bg-ct-teal/[0.14]'
+                          : 'border-ct-line hover:border-ct-teal/30'
                       }`}
                     >
-                      <span className={`block text-sm font-semibold ${maxQuotes === num ? (scheduleMode === 'urgent' ? 'text-ct-teal' : 'text-ct-mute-2') : 'text-ct-mute-2'}`}>{label}</span>
-                      <span className={`block text-xs mt-0.5 ${maxQuotes === num ? (scheduleMode === 'urgent' ? 'text-ct-teal' : 'text-ct-mute-2') : 'text-ct-mute'}`}>{desc}</span>
+                      <span className={`block text-sm font-semibold ${maxQuotes === num ? 'text-ct-teal' : 'text-ct-mute-2'}`}>{label}</span>
+                      <span className={`block text-xs mt-0.5 ${maxQuotes === num ? 'text-ct-mute-2' : 'text-ct-mute'}`}>{desc}</span>
                     </button>
                   ))}
                 </div>
