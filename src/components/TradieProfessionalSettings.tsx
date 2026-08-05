@@ -21,6 +21,7 @@ import { supabase } from '../lib/supabase';
 import type { Update } from '../types/database';
 import { ALL_TRADES, TOP_10_TRADES, normalizeTradeName, AUSTRALIAN_STATES, getLicensingRequirements, isLicenseRequiredForTrade, type AustralianState } from '../lib/licensingRequirements';
 import SearchableSelect from './SearchableSelect';
+import CostBasisSettingsCard from './CostBasisSettingsCard';
 
 type TeamSize = 'Solo' | 'Small Team (2-5)' | 'Large Team (6+)';
 
@@ -660,6 +661,8 @@ export default function TradieProfessionalSettings() {
           </div>
         </div>
       </div>
+
+      <CostBasisSettingsCard />
 
       <div className="bg-ct-surface border border-ct-line rounded-ct-md overflow-hidden">
         <div className="px-3 py-3 sm:px-5 sm:py-4 border-b border-ct-line-soft bg-ct-surface-2/50">

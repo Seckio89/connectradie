@@ -23,7 +23,12 @@ import { supabase } from '../lib/supabase';
 import { proseInputProps } from '../lib/proseInput';
 import { useAuth } from '../contexts/AuthContext';
 import QuoteFeeDisclosure from './QuoteFeeDisclosure';
+import MarginCheckPanel from './MarginCheckPanel';
 import CancellationTerms from './CancellationTerms';
+import { checkMargin, toCostSnapshot, COST_BASIS_DEFAULTS } from '../lib/costModel';
+import type { CostBasis } from '../lib/costModel';
+import { getCostBasis, saveQuoteCostSnapshot } from '../lib/pricingHelper';
+import { calculatePlatformFee, getChargedTier } from '../lib/subscription';
 import { acceptCancellationTerms } from '../lib/cancellationPolicy';
 import type { Job } from '../types/database';
 import { extractSuburb } from '../lib/contactGating';
@@ -192,6 +197,56 @@ export default function SubmitQuoteModal({
   const materialsRatioHigh =
     quoteTotalDollars > 0 && materialsDollars / quoteTotalDollars > 0.75 && !materialsExceedTotal;
 
+  // ── Margin check (tradie-only, advisory) ──────────────────────────────────
+  // Does the price clear what the job costs to deliver? Stays silent until the
+  // tradie has set a wage in their cost basis, and never blocks a submit.
+  const [costBasis, setCostBasis] = useState<CostBasis>(COST_BASIS_DEFAULTS);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let live = true;
+    getCostBasis(user.id)
+      .then((b) => { if (live) setCostBasis(b); })
+      .catch(() => { /* advisory only — a failure just means no verdict */ });
+    return () => { live = false; };
+  }, [user?.id]);
+
+  // Person-hours from the duration fields. Weeks is too coarse to turn into
+  // labour hours without inventing a working week, and "to be confirmed" has no
+  // hours at all — both return 0, which shows no verdict rather than a guess.
+  // Crew size isn't captured on this form, so this reads as one person on site;
+  // the note under the panel says so.
+  const quoteHours = useMemo(() => {
+    if (durationTBD) return 0;
+    const n = parseFloat(durationValue);
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    if (durationUnit === 'hours') return n;
+    if (durationUnit === 'days') return n * 8;
+    return 0;
+  }, [durationTBD, durationValue, durationUnit]);
+
+  const marginCheck = useMemo(() => {
+    if (quoteHours <= 0 || quoteTotalDollars <= 0) return null;
+    const feeDollars = calculatePlatformFee(
+      labourDollars,
+      getChargedTier(tradieDetails?.subscription_tier),
+      profile?.platform_fee_override_bps,
+    );
+    // The price field is entered ex-GST (it is labelled so for registered
+    // tradies), so it needs no unwinding before the comparison.
+    return checkMargin({
+      hours: quoteHours,
+      workers: 1,
+      materialsCostCents: Math.round(materialsDollars * 100),
+      quotedExGstCents: Math.round(quoteTotalDollars * 100),
+      platformFeeCents: Math.round(feeDollars * 100),
+      basis: costBasis,
+    });
+  }, [
+    quoteHours, quoteTotalDollars, labourDollars, materialsDollars, costBasis,
+    tradieDetails?.subscription_tier, profile?.platform_fee_override_bps,
+  ]);
+
   // Prefill the call-out fee from the tradie's saved default, if they have one.
   useEffect(() => {
     const def = (tradieDetails as { default_call_out_fee_cents?: number | null } | null)?.default_call_out_fee_cents;
@@ -355,7 +410,7 @@ export default function SubmitQuoteModal({
       ? Math.min(10000, Math.max(2000, Math.round((Number(callOutFee) || 40) * 100)))
       : null;
 
-    const { error: insertError } = await supabase.from('quotes').insert({
+    const { data: insertedQuote, error: insertError } = await supabase.from('quotes').insert({
       job_id: job.id,
       tradie_id: user.id,
       price_min: min,
@@ -373,7 +428,7 @@ export default function SubmitQuoteModal({
       labour_cents: Math.round(max * 100) - Math.round(materialsDollars * 100),
       materials_description: materialsDescription.trim() || null,
       status: 'pending',
-    });
+    }).select('id').single();
 
     if (insertError) {
       console.error('Quote insert failed:', insertError);
@@ -389,6 +444,24 @@ export default function SubmitQuoteModal({
       }
       setModalState('form');
       return;
+    }
+
+    // Keep what the numbers were when this went out, so the quote can be
+    // reopened and understood later. Tradie-private, and strictly best-effort —
+    // the quote is already sent, and losing a reference snapshot is never worth
+    // showing the tradie an error over.
+    if (insertedQuote?.id && marginCheck) {
+      await saveQuoteCostSnapshot(
+        insertedQuote.id,
+        user.id,
+        toCostSnapshot(marginCheck, {
+          hours: quoteHours,
+          workers: 1,
+          hourlyRateCents: quoteHours > 0 ? Math.round((labourDollars * 100) / quoteHours) : 0,
+          marginPct: 0,
+          materialsMarkupPct: 0,
+        }),
+      ).catch((e) => console.error('Failed to save quote cost snapshot:', e));
     }
 
     // Record that this tradie agreed to the cancellation terms, which the modal
@@ -888,6 +961,16 @@ export default function SubmitQuoteModal({
                   materialsDollars={materialsDollars}
                   className="mt-2"
                 />
+
+                {/* Does this price clear your costs? Tradie-only, advisory. */}
+                <MarginCheckPanel check={marginCheck} className="mt-2" />
+                {marginCheck && (
+                  <p className="mt-1 text-[10px] leading-snug text-ct-mute">
+                    Based on {quoteHours} h on site for one person
+                    {durationUnit === 'days' ? ' (8 h a day)' : ''}. Add a crew and your labour cost
+                    rises with it.
+                  </p>
+                )}
               </div>
 
               <div>

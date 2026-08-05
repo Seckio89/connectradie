@@ -1,11 +1,14 @@
 import { supabase } from './supabase';
 import type { QuoteTemplate, CustomTaskSuggestion } from '../types/database';
+import { COST_BASIS_DEFAULTS } from './costModel';
+import type { CostBasis, QuoteCostSnapshot } from './costModel';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pricing Helper data access:
 //   • custom task suggestions (the "Other" trade feedback loop)
 //   • quote templates (save a sent quote, reuse it later)
 //   • area price range (anonymised, aggregate-only market data)
+//   • cost basis (the tradie's private wage/overhead/profit settings)
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Custom task suggestions ──────────────────────────────────────────────────
@@ -125,6 +128,67 @@ export async function saveQuoteTemplate(tradieId: string, input: SaveTemplateInp
 export async function deleteQuoteTemplate(id: string): Promise<{ ok: boolean }> {
   const { error } = await supabase.from('quote_templates').delete().eq('id', id);
   return { ok: !error };
+}
+
+// ── Cost basis (tradie-private) ──────────────────────────────────────────────
+//
+// Lives in its own table rather than on tradie_details, which PublicTradieProfile
+// reads — a wage or profit target stored there would be published to the open web.
+// RLS is owner-only, so these calls return nothing for anyone but the tradie.
+
+/**
+ * The tradie's cost basis, or the defaults when they haven't set one. Never
+ * returns null on a miss: a fresh tradie gets workable percentages and a wage of
+ * 0, and a wage of 0 is what keeps the margin check switched off.
+ */
+export async function getCostBasis(tradieId: string): Promise<CostBasis> {
+  const { data, error } = await supabase
+    .from('tradie_cost_settings')
+    .select('staff_wage_cents, labour_burden_pct, overhead_recovery_pct, profit_target_pct, minimum_job_value_cents')
+    .eq('tradie_id', tradieId)
+    .maybeSingle();
+
+  if (error || !data) return COST_BASIS_DEFAULTS;
+
+  return {
+    staffWageCents: data.staff_wage_cents ?? COST_BASIS_DEFAULTS.staffWageCents,
+    labourBurdenPct: data.labour_burden_pct ?? COST_BASIS_DEFAULTS.labourBurdenPct,
+    overheadRecoveryPct: data.overhead_recovery_pct ?? COST_BASIS_DEFAULTS.overheadRecoveryPct,
+    profitTargetPct: data.profit_target_pct ?? COST_BASIS_DEFAULTS.profitTargetPct,
+    minimumJobValueCents: data.minimum_job_value_cents ?? COST_BASIS_DEFAULTS.minimumJobValueCents,
+  };
+}
+
+/** Upsert the cost basis. One row per tradie, keyed on the UNIQUE tradie_id. */
+export async function saveCostBasis(tradieId: string, basis: CostBasis): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.from('tradie_cost_settings').upsert(
+    {
+      tradie_id: tradieId,
+      staff_wage_cents: Math.max(0, Math.round(basis.staffWageCents)),
+      labour_burden_pct: basis.labourBurdenPct,
+      overhead_recovery_pct: basis.overheadRecoveryPct,
+      profit_target_pct: basis.profitTargetPct,
+      minimum_job_value_cents: Math.max(0, Math.round(basis.minimumJobValueCents)),
+    },
+    { onConflict: 'tradie_id' },
+  );
+  if (error) return { ok: false, error: 'Could not save your cost basis. Check the figures and try again.' };
+  return { ok: true };
+}
+
+/**
+ * Record what the numbers were when a quote went out. Best-effort: a failure
+ * here must never surface to the tradie or undo a quote that has already been
+ * sent — the snapshot is for their later reference, not part of the send.
+ */
+export async function saveQuoteCostSnapshot(
+  quoteId: string,
+  tradieId: string,
+  basis: QuoteCostSnapshot,
+): Promise<void> {
+  await supabase
+    .from('quote_cost_snapshots')
+    .upsert({ quote_id: quoteId, tradie_id: tradieId, basis }, { onConflict: 'quote_id' });
 }
 
 // ── Area price range (anonymised market data) ────────────────────────────────
