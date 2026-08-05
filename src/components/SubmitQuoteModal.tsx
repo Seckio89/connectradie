@@ -427,6 +427,15 @@ export default function SubmitQuoteModal({
       materials_cents: Math.round(materialsDollars * 100),
       labour_cents: Math.round(max * 100) - Math.round(materialsDollars * 100),
       materials_description: materialsDescription.trim() || null,
+      // get_area_price_range matches on lower(trade_category), so a quote
+      // without one is invisible to the anonymised market range — and until
+      // now NO on-app quote set it, which made the entire on-app corpus
+      // uncountable. jobs has no category column (it is parsed from the
+      // "[Category]" prefix on the description), so tradeType is the best
+      // available signal: the tradie's own trade, falling back to the job's.
+      // property_type has no source on a posted job and stays null, which the
+      // RPC already treats as a match.
+      trade_category: tradeType || null,
       status: 'pending',
     }).select('id').single();
 
