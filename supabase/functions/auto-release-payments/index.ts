@@ -4,13 +4,26 @@ import Stripe from "npm:stripe@14.21.0";
 import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
 import { createReleasePayout } from "../_shared/instantPayout.ts";
 import { expirePendingVariations } from "../_shared/expireVariations.ts";
-import { clearPayoutFailure, markPayoutFailed } from "../_shared/payoutFailure.ts";
+import { clearPayoutFailure, markPayoutFailed, type PaymentMetadata } from "../_shared/payoutFailure.ts";
 
 const formatAud = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 
-/** Minimal structural type — avoids importing the Supabase SDK here. */
-// deno-lint-ignore no-explicit-any
-type SupabaseLike = any;
+/**
+ * The narrow slice of the Supabase client recordPayoutFailure needs.
+ *
+ * Structural rather than the `SupabaseLike = any` alias the _shared helpers
+ * use: that alias carries a `deno-lint-ignore`, which ESLint does not honour,
+ * so it lands as a fresh `no-explicit-any` error in a repo already carrying a
+ * 91-error backlog. Naming the two calls actually made costs three lines and
+ * keeps both linters quiet.
+ */
+interface PaymentRowUpdater {
+  from(table: string): {
+    update(values: { metadata: PaymentMetadata }): {
+      eq(column: string, value: string): PromiseLike<unknown>;
+    };
+  };
+}
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
@@ -32,7 +45,7 @@ function requireEnv(key: string): string {
  * lets the remaining jobs in the batch run.
  */
 async function recordPayoutFailure(
-  supabase: SupabaseLike,
+  supabase: PaymentRowUpdater,
   paymentId: string,
   metadata: Record<string, unknown> | null | undefined,
   message: string,
