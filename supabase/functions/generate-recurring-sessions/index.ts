@@ -29,15 +29,6 @@ function jsonResponse(data: unknown, status = 200) {
 }
 
 const DEFAULT_SESSION_DURATION_HOURS = 2;
-const DEFAULT_PREFERRED_TIME = "09:00:00";
-
-function addHoursToTime(time: string, hours: number): string {
-  const [h, m] = time.split(":").map(Number);
-  const totalMinutes = (h + hours) * 60 + m;
-  const newH = Math.min(Math.floor(totalMinutes / 60), 23);
-  const newM = totalMinutes % 60;
-  return `${String(newH).padStart(2, "0")}:${String(newM).padStart(2, "0")}:00`;
-}
 
 // Frequency conventions: -3 = daily, -1 = weekly, -2 = fortnightly, positive = months
 function calculateNextDueDate(current: string, frequencyMonths: number): string {

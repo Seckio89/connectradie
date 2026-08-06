@@ -404,7 +404,7 @@ function findBusinessName(text: string): string {
     /^payment/i, /^bank/i, /^bsb/i, /^account/i,
     /^description/i, /^qty/i, /^quantity/i, /^amount/i,
     /^unit/i, /^rate/i, /^item/i,
-    /^\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}$/,
+    /^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$/,
     /^\d+$/, /^\$[\d,.]+$/,
     /^www\./i, /^http/i, /[@]/,
     /^\+?\d[\d\s()-]{6,}$/,
@@ -573,7 +573,7 @@ function findDueDate(text: string): string {
   const parseDate = (line: string): string | null => {
     // Australian format: DD/MM/YYYY. If one value is >12 it must be the day;
     // when ambiguous (both ≤12), default to AU convention (first = day).
-    const m1 = line.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/);
+    const m1 = line.match(/(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})/);
     if (m1) {
       const [, a, b, y] = m1;
       const aNum = parseInt(a);
@@ -584,7 +584,7 @@ function findDueDate(text: string): string {
         return `${y}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
       }
     }
-    const m2 = line.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2})/);
+    const m2 = line.match(/(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2})/);
     if (m2) {
       const [, a, b, yy] = m2;
       const y = parseInt(yy) > 50 ? `19${yy}` : `20${yy}`;

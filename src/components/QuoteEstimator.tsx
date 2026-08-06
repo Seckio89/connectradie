@@ -332,15 +332,15 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   };
 
   const toggleAccess = (a: string) => setAccess((prev) => {
-    const next = new Set(prev); next.has(a) ? next.delete(a) : next.add(a); return next;
+    const next = new Set(prev); if (next.has(a)) next.delete(a); else next.add(a); return next;
   });
 
   const toggleEolExtra = (x: string) => setEolExtras((prev) => {
-    const next = new Set(prev); next.has(x) ? next.delete(x) : next.add(x); return next;
+    const next = new Set(prev); if (next.has(x)) next.delete(x); else next.add(x); return next;
   });
 
   const toggleDay = (d: string) => setPreferredDays((prev) => {
-    const next = new Set(prev); next.has(d) ? next.delete(d) : next.add(d); return next;
+    const next = new Set(prev); if (next.has(d)) next.delete(d); else next.add(d); return next;
   });
 
   // Tradie-entered time on site overrides the AI's hour guess when set.

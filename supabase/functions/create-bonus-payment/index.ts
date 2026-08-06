@@ -142,8 +142,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const existingMetadata = (payment.metadata || {}) as Record<string, unknown>;
-
     // Sanity cap: bonus cannot exceed 2x the original amount (guard against slipped decimals)
     const originalAmountCents = payment.amount;
     const bonusCents = Math.round(bonusAmount * 100);

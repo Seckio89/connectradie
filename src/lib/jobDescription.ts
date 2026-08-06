@@ -11,7 +11,7 @@
 
 // Explicit "Site notes:" / "Notes:" / "Assumptions:" style prefixes (how
 // composeDescription and the pricing helper mark non-scope lines).
-const NOTE_MARKER = /^(site notes?|notes?|conditions?|access|assumptions?|internal notes?)\s*[:\-]\s*/i;
+const NOTE_MARKER = /^(site notes?|notes?|conditions?|access|assumptions?|internal notes?)\s*[:-]\s*/i;
 
 // Lines that are pricing rationale, not duties — e.g. "Estimated 2.5 h · $181".
 const ESTIMATE_LINE = /^estimated\s+[\d.]+\s*h\b/i;
