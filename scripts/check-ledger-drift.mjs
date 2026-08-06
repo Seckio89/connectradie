@@ -123,6 +123,18 @@ async function main() {
   loadEnvFiles();
   const token = process.env.SUPABASE_ACCESS_TOKEN;
   if (!token) {
+    // A step that exits 0 looks identical to one that passed, so the notice
+    // below is invisible unless someone opens the log — which is how nobody
+    // noticed for months that the two gated steps in this job had never run.
+    // An annotation surfaces it on the run summary instead. Single line: the
+    // workflow-command format takes no raw newlines.
+    if (process.env.GITHUB_ACTIONS) {
+      console.log(
+        '::warning title=Ledger drift not configured::' +
+          'SUPABASE_ACCESS_TOKEN is not set, so the production migration ledger was NOT checked. ' +
+          'Set it as a repository secret under that exact name (Settings -> Secrets and variables -> Actions).',
+      );
+    }
     console.log(`check-ledger-drift skipped — no SUPABASE_ACCESS_TOKEN.
 
 It reads production's own migration ledger, which needs a personal access
