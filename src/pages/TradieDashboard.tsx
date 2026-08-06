@@ -20,6 +20,7 @@ import {
   Pencil,
   Trash2,
   MoreVertical,
+  Unlink,
   Copy,
   Settings,
   Crown,
@@ -226,6 +227,8 @@ export default function TradieDashboard() {
   const [syncLoading, setSyncLoading] = useState(false);
   const [unsyncLoading, setUnsyncLoading] = useState(false);
   const [showUnsyncConfirm, setShowUnsyncConfirm] = useState(false);
+  const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
+  const [disconnectLoading, setDisconnectLoading] = useState(false);
 
   // Earnings
   const [earnings, setEarnings] = useState({ total: 0, thisMonth: 0, pendingJobs: 0 });
@@ -420,8 +423,13 @@ export default function TradieDashboard() {
   // stayed null, so a failed lookup showed "Connect Google Calendar" to a tradie
   // who was already connected — and pressing it started a fresh OAuth consent
   // round-trip instead of syncing, so no sync request was ever sent.
-  const fetchCalendarIntegration = useCallback(async () => {
-    if (!user) return;
+  // Returns the row so callers can act on the result without reading state that
+  // has not re-rendered yet. Three outcomes, deliberately distinct:
+  //   CalendarIntegration → connected
+  //   null                → confirmed not connected
+  //   undefined           → the lookup itself failed; we do not know
+  const fetchCalendarIntegration = useCallback(async (): Promise<CalendarIntegration | null | undefined> => {
+    if (!user) return undefined;
     setCalendarStatus('loading');
     try {
       const { data, error } = await supabase
@@ -431,11 +439,14 @@ export default function TradieDashboard() {
         .eq('provider', 'google')
         .maybeSingle();
       if (error) throw error;
-      setCalendarIntegration(data as CalendarIntegration | null);
+      const integration = data as CalendarIntegration | null;
+      setCalendarIntegration(integration);
       setCalendarStatus('loaded');
+      return integration;
     } catch (err) {
       console.error('Failed to fetch calendar integration:', err);
       setCalendarStatus('error');
+      return undefined;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
@@ -706,11 +717,23 @@ export default function TradieDashboard() {
             return;
           }
 
-          const checkWindow = setInterval(() => {
+          // The popup closing proves only that it closed. Previously this
+          // claimed success unconditionally, so a rejected consent, an expired
+          // state, or a bad client secret all reported "connected successfully"
+          // — which is how a six-day outage stayed invisible. Confirm against
+          // the row Google's callback would have written instead.
+          const checkWindow = setInterval(async () => {
             if (authWindow.closed) {
               clearInterval(checkWindow);
-              fetchCalendarIntegration();
-              showToast('Calendar connected successfully!');
+              const integration = await fetchCalendarIntegration();
+              showToast(
+                integration
+                  ? 'Calendar connected successfully!'
+                  : integration === null
+                    ? 'Google Calendar was not connected. Try again, and make sure you allow calendar access.'
+                    : 'Could not check whether Google Calendar connected. Refresh and look at the calendar button.',
+                !integration
+              );
               setSyncLoading(false);
             }
           }, 500);
@@ -845,6 +868,41 @@ export default function TradieDashboard() {
   const handleRemoveDups = async () => {
     await handleRemoveDuplicates();
     setShowManageMenu(false);
+  };
+
+  // Disconnect drops the stored Google tokens and revokes them at Google.
+  //
+  // This exists because a revoked refresh token was previously unrecoverable
+  // from the interface: the Connect flow is offered only when there is no
+  // integration row (see handleSyncCalendar), so a tradie whose token Google
+  // had rejected could press Sync forever and never be able to reconnect.
+  const handleDisconnectCalendar = async () => {
+    if (!user) return;
+    setShowDisconnectConfirm(false);
+    setDisconnectLoading(true);
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-oauth?action=disconnect`,
+        { method: 'POST', headers }
+      );
+      const result = await res.json();
+
+      if (result.success) {
+        // Clear locally as well as re-fetching, so the button flips to Connect
+        // immediately rather than after the round trip.
+        setCalendarIntegration(null);
+        await fetchCalendarIntegration();
+        showToast('Google Calendar disconnected. Press the calendar button to connect again.');
+      } else {
+        showToast(result.error || 'Could not disconnect Google Calendar. Try again.', true);
+      }
+    } catch {
+      showToast('Could not disconnect Google Calendar. Check your connection and try again.', true);
+    } finally {
+      setDisconnectLoading(false);
+      setShowManageMenu(false);
+    }
   };
 
   // ─── Render ───────────────────────────────────────────────
@@ -1989,6 +2047,16 @@ export default function TradieDashboard() {
                           <button onClick={() => setConfirmClearAll(true)} className="w-full px-4 py-2.5 text-left text-sm text-ct-rose hover:bg-ct-rose/[0.13] flex items-center gap-3">
                             <Trash2 className="w-4 h-4" />Clear all upcoming
                           </button>
+                          {calendarIntegration && (
+                            <button
+                              onClick={() => { setShowManageMenu(false); setShowDisconnectConfirm(true); }}
+                              disabled={disconnectLoading}
+                              className="w-full px-4 py-2.5 text-left text-sm text-ct-rose hover:bg-ct-rose/[0.13] disabled:opacity-50 flex items-center gap-3"
+                            >
+                              <Unlink className="w-4 h-4" />
+                              {disconnectLoading ? 'Disconnecting...' : 'Disconnect Google Calendar'}
+                            </button>
+                          )}
                         </div>
                       </>
                     )}
@@ -2042,7 +2110,7 @@ export default function TradieDashboard() {
                         })}
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
                         <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
                       </div>
                     </div>
@@ -2116,7 +2184,7 @@ export default function TradieDashboard() {
                       <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-ct-surface to-transparent sm:hidden" />
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
-                        <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
+                        <div className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
                         <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
                       </div>
                     </div>
@@ -2149,6 +2217,13 @@ export default function TradieDashboard() {
                         ? `, ${availableCount} available slot${availableCount !== 1 ? 's' : ''}${bookedCount > 0 ? `, ${bookedCount} booked` : ''}`
                         : ', no slots';
 
+                      // Fill and ring are INDEPENDENT axes, not one chain. A
+                      // single if/else could only express one of them, which is
+                      // why `isToday` sat last and therefore never rendered on a
+                      // day that had slots — on a calendar where nearly every day
+                      // has availability, today was never marked at all. Fill
+                      // carries booked; ring carries today, else available. A day
+                      // that is both today and booked now shows both.
                       return (
                         <button
                           key={day}
@@ -2157,30 +2232,37 @@ export default function TradieDashboard() {
                           aria-pressed={isSelected}
                           className={`aspect-square rounded-ct-sm p-0 sm:p-1 text-xs sm:text-sm transition-all min-w-0 ${
                             isSelected ? 'bg-ct-teal text-ct-ink ring-2 ring-ct-teal ring-offset-2'
-                            : isPast ? 'opacity-50 hover:opacity-75'
-                            : hasAvailable && hasBooked ? 'bg-gradient-to-br from-ct-teal to-ct-rose hover:from-ct-teal hover:to-ct-rose'
-                            : hasAvailable ? 'bg-ct-teal/[0.14] hover:bg-ct-teal/[0.14]'
-                            : hasBooked ? 'bg-ct-rose/[0.13] hover:bg-ct-rose/[0.13]'
-                            : isToday ? 'ring-2 ring-ct-teal hover:bg-ct-surface-2'
-                            : 'hover:bg-ct-surface-2'
+                            : [
+                                isPast ? 'opacity-50 hover:opacity-75' : '',
+                                hasBooked ? 'bg-ct-rose/[0.13]' : 'hover:bg-ct-surface-2',
+                                isToday ? 'ring-2 ring-ct-paper' : hasAvailable ? 'ring-1 ring-ct-teal' : '',
+                              ].filter(Boolean).join(' ')
                           }`}
                         >
                           <div className="flex flex-col items-center">
-                            {/* Mirrors the fill chain above branch for branch.
-                                The two ran in a different order, so a day could
-                                take its fill from one condition and its text
-                                colour from another — which is how mute-2 ended
-                                up on the solid teal→rose fill at 1.03:1. */}
+                            {/* The old version of this mirrored a fill chain
+                                branch for branch, and the two drifted out of
+                                order — which is how mute-2 ended up on a solid
+                                fill at 1.03:1. That hazard is gone: the only
+                                fill a day can now carry is rose/[0.13], where
+                                mute-2 measures 7.30:1, so text depends on
+                                selection and date alone, never on slot state. */}
                             <span className={`text-xs sm:text-sm font-medium ${
                               isSelected ? 'text-ct-ink'
                               : isPast ? 'text-ct-mute'
-                              : hasAvailable && hasBooked ? 'text-ct-ink'
-                              : isToday ? 'text-ct-mute-2 font-bold'
+                              : isToday ? 'text-ct-paper font-bold'
                               : 'text-ct-mute-2'
                             }`}>{day}</span>
+                            {/* Solid dots on a dim or neutral fill. These were
+                                previously the SAME dim tint as the cell behind
+                                them — a 14% teal dot on a 14% teal fill — so
+                                they were effectively invisible, which is what
+                                made every day look alike. CLAUDE.md: inside a
+                                container that already carries a tint, use the
+                                solid fill, not a second dim layer. */}
                             <div className="flex gap-0.5 mt-0.5">
-                              {hasAvailable && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-teal/[0.14]' : 'bg-ct-teal/[0.14]'}`} />}
-                              {hasBooked && <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isSelected ? 'bg-ct-rose/[0.13]' : 'bg-ct-rose/[0.13]'}`} />}
+                              {hasAvailable && <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-ct-teal" />}
+                              {hasBooked && <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-ct-rose" />}
                             </div>
                           </div>
                         </button>
@@ -2189,7 +2271,7 @@ export default function TradieDashboard() {
                   </div>
 
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
-                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal/[0.14] border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
                     <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
                   </div>
                 </>
@@ -2401,7 +2483,10 @@ export default function TradieDashboard() {
         {/* Push Notification Banner — dismissible */}
         {showPushBanner && pushStatus !== 'granted' && pushStatus !== 'unsupported' && (
           <div className="bg-ct-teal/[0.14] rounded-ct-lg border border-ct-teal/30 p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-4">
+            {/* Stacks on mobile in the markup, not from mobile-responsive.css:
+                section O used to do this globally and stacked every row of this
+                shape in the app (D3 tranche 3). */}
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-ct-surface-2 rounded-ct-md flex items-center justify-center flex-shrink-0">
                   <BellRing className="w-6 h-6 text-ct-mute-2" />
@@ -2411,7 +2496,7 @@ export default function TradieDashboard() {
                   <p className="text-sm text-ct-mute-2 mt-0.5">Get instant desktop alerts when high-priority jobs are posted in your area.</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto">
                 <button
                   onClick={handleEnablePush}
                   disabled={pushEnabling || pushStatus === 'denied'}
@@ -2609,6 +2694,18 @@ export default function TradieDashboard() {
           cancelText="Keep synced"
           onConfirm={handleUnsyncCalendar}
           onCancel={() => setShowUnsyncConfirm(false)}
+        />
+      )}
+
+      {showDisconnectConfirm && (
+        <ConfirmModal
+          type="warning"
+          title="Disconnect Google Calendar?"
+          message="ConnecTradie will stop reading and writing your Google Calendar, and the access it holds is revoked at Google. Events already in your Google Calendar stay there — use Unsync first if you want them removed. Your slots and jobs here are not affected, and you can connect again whenever you like."
+          confirmText="Disconnect"
+          cancelText="Stay connected"
+          onConfirm={handleDisconnectCalendar}
+          onCancel={() => setShowDisconnectConfirm(false)}
         />
       )}
 

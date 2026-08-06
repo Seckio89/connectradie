@@ -177,12 +177,45 @@ export const handler = async (req: Request): Promise<Response> => {
     // -----------------------------------------------------------------------
     // 3. Check for existing additional payment (prevent duplicates)
     // -----------------------------------------------------------------------
-    const { data: existingAdditional } = await supabase
+    // Scoped to THIS increase, newest first. Two things were wrong with an
+    // unfiltered maybeSingle() on parent_payment_id + payment_type:
+    //
+    //  • A job carries several variations over its life and each gets its own
+    //    price_adjustment row, so a COMPLETED row from an earlier variation was
+    //    read as "this one is already paid" — the second variation on any job
+    //    409'd forever with "Additional payment has already been completed".
+    //  • decline-variation leaves a cancelled attempt behind as 'failed' for
+    //    the audit trail. A 'failed' row is neither completed (no 409) nor
+    //    pending (not deleted), so the next approval inserted a SECOND row and
+    //    the call after that errored on multiple rows.
+    //
+    // pending_increase carries the variation id, so scope by it when present.
+    // Quote adjustments have no variation_id and keep the original behaviour.
+    const scopedVariationId = typeof pendingIncrease.variation_id === "string"
+      ? pendingIncrease.variation_id
+      : null;
+
+    let existingAdditionalQuery = supabase
       .from("payments")
       .select("id, status")
       .eq("parent_payment_id", paymentId)
       .eq("payment_type", "price_adjustment")
-      .maybeSingle();
+      .in("status", ["pending", "completed"])
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (scopedVariationId) {
+      existingAdditionalQuery = existingAdditionalQuery.eq(
+        "metadata->>variation_id",
+        scopedVariationId,
+      );
+    } else {
+      // Symmetric: a quote adjustment must not be blocked by a variation's row
+      // either. Only earlier quote adjustments count against this one.
+      existingAdditionalQuery = existingAdditionalQuery.is("metadata->>variation_id", null);
+    }
+
+    const { data: existingAdditional } = await existingAdditionalQuery.maybeSingle();
 
     if (existingAdditional?.status === "completed") {
       return errorJson("Additional payment has already been completed", 409);

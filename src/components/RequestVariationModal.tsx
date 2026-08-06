@@ -77,10 +77,6 @@ export default function RequestVariationModal({
       return;
     }
 
-    if (reasonCategory !== 'other' && !description.trim() && reasonCategory) {
-      // description optional for non-other categories, but amount required
-    }
-
     if (isNaN(amountNum) || amountNum <= 0) {
       setError('Please enter a valid amount greater than $0');
       return;
@@ -99,9 +95,11 @@ export default function RequestVariationModal({
       if (jobError) throw jobError;
 
       const reasonLabel = REASON_CATEGORIES.find(r => r.key === reasonCategory)?.label || reasonCategory;
-      const fullDescription = description.trim()
-        ? `${reasonLabel}: ${description.trim()}`
-        : reasonLabel;
+      // The reason already renders as its own Pill directly above the
+      // description, so prefixing it here printed the same label twice. Fall
+      // back to the label when nothing was typed: the column is NOT NULL and
+      // the history timeline renders description with no category fallback.
+      const fullDescription = description.trim() || reasonLabel;
 
       const { error: insertError } = await supabase
         .from('job_variations')

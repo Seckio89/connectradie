@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import { parseGoogleTokenError } from "../_shared/googleTokenError.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -134,10 +135,21 @@ Deno.serve(async (req: Request) => {
       });
 
       if (!refreshResponse.ok) {
+        // Response body only — the request above carries client_secret and
+        // refresh_token and must never be logged.
+        const { code, message, detail } = parseGoogleTokenError(
+          await refreshResponse.text()
+        );
+        console.error(
+          "Google token refresh failed",
+          refreshResponse.status,
+          code,
+          detail
+        );
         return new Response(
-          JSON.stringify({ error: "Failed to refresh access token" }),
+          JSON.stringify({ error: message, code, detail }),
           {
-            status: 500,
+            status: 401,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );

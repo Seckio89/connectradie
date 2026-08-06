@@ -229,7 +229,7 @@ export default function HelpFAQ() {
         <h1 className="text-3xl font-bold text-ct-paper mb-2">Help & frequently asked questions</h1>
         <p className="text-ct-mute-2 mb-8">
           Find answers to common questions about using ConnecTradie. Can't find what you're looking for?{' '}
-          <Link to="/contact" className="text-ct-mute-2 hover:text-ct-mute-2 font-medium">
+          <Link to="/contact" className="text-ct-mute-2 hover:text-ct-paper font-medium transition-colors">
             Contact us
           </Link>
           .
@@ -268,11 +268,15 @@ export default function HelpFAQ() {
           {filteredSections.length === 0 && (
             <div className="text-center py-12">
               <Search className="w-10 h-10 text-ct-mute mx-auto mb-3" />
-              <h3 className="text-base font-semibold text-ct-paper mb-1">No results found</h3>
-              <p className="text-sm text-ct-mute">Try different keywords or browse the categories below</p>
+              <h3 className="text-base font-semibold text-ct-paper mb-1">No answers match that search</h3>
+              {/* Was "browse the categories below" — nothing is below it: the
+                  sections this replaces are exactly the ones filtered out. */}
+              <p className="text-sm text-ct-mute">
+                Nothing matches &ldquo;{searchQuery}&rdquo;. Try a shorter word, or clear the search to browse every question.
+              </p>
               <button
                 onClick={() => setSearchQuery('')}
-                className="mt-4 text-sm text-ct-mute-2 font-medium hover:text-ct-mute-2"
+                className="mt-4 text-sm text-ct-mute-2 font-medium hover:text-ct-paper transition-colors"
               >
                 Clear search
               </button>

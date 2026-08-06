@@ -75,6 +75,24 @@ export default function HelpButton() {
             <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
               {content ? (
                 <>
+                  {/* Tips. These are authored for every page in helpContent.ts and
+                      were never rendered — the drawer showed FAQs only, so on
+                      /schedule and /messages a client opened help to an empty
+                      panel (both have `faqs: []`). */}
+                  {content.tips.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-ct-mute uppercase tracking-wide mb-2">Quick tips</p>
+                      <ul className="space-y-2">
+                        {content.tips.map((tip, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-ct-mute-2 leading-relaxed">
+                            <span className="text-ct-mute-2 mt-0.5 flex-shrink-0">&bull;</span>
+                            <span className="break-words">{tip}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   {/* FAQ */}
                   {content.faqs.length > 0 && (
                     <div>

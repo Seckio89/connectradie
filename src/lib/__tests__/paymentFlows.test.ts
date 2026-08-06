@@ -4,6 +4,8 @@ import {
   releaseEscrow,
   processRefund,
   payPriceIncrease,
+  approveVariation,
+  declineVariation,
   createBonusPayment,
   verifyPayment,
   acceptAndPay,
@@ -325,6 +327,61 @@ describe('paymentFlows', () => {
       await expect(payPriceIncrease('pay-no-url', 'job-no-url')).rejects.toThrow(
         'No checkout URL received from pay-price-increase',
       );
+    });
+
+    // Approving a variation is two hops: approve-variation prices it and
+    // returns the funding payment to charge, then payPriceIncrease opens
+    // Stripe. Neither of these ever writes job_variations from the browser —
+    // that is the whole point of the pair.
+    it('sends variationId to approve-variation and returns the priced payload', async () => {
+      vi.mocked(callEdgeFunction).mockResolvedValue({
+        paymentId: 'pay-fund-1',
+        jobId: 'job-var-1',
+        diffCents: 120000,
+        gstCents: 12000,
+        totalCents: 132000,
+      });
+
+      const result = await approveVariation('var-1');
+
+      expect(callEdgeFunction).toHaveBeenCalledWith('approve-variation', { variationId: 'var-1' });
+      expect(result.paymentId).toBe('pay-fund-1');
+      expect(result.totalCents).toBe(132000);
+    });
+
+    it('propagates an approve-variation refusal instead of swallowing it', async () => {
+      vi.mocked(callEdgeFunction).mockRejectedValue(
+        new Error("This job hasn't been funded yet, so there's nothing to add to."),
+      );
+
+      await expect(approveVariation('var-unfunded')).rejects.toThrow(
+        "This job hasn't been funded yet",
+      );
+    });
+
+    it('sends variationId to decline-variation and reports whether the slot was freed', async () => {
+      vi.mocked(callEdgeFunction).mockResolvedValue({
+        variationId: 'var-2',
+        jobId: 'job-var-2',
+        status: 'rejected',
+        slotCleared: true,
+      });
+
+      const result = await declineVariation('var-2');
+
+      expect(callEdgeFunction).toHaveBeenCalledWith('decline-variation', { variationId: 'var-2' });
+      expect(result.status).toBe('rejected');
+      // The freed slot is the fix for the deadlock: a decline that left
+      // pending_increase set wedged every later variation on the job.
+      expect(result.slotCleared).toBe(true);
+    });
+
+    it('propagates the 409 raised when a declined variation was just paid', async () => {
+      vi.mocked(callEdgeFunction).mockRejectedValue(
+        new Error('This variation was just paid for. Refresh to see it approved.'),
+      );
+
+      await expect(declineVariation('var-raced')).rejects.toThrow('just paid for');
     });
 
     it('propagates edge function errors for price increase', async () => {
