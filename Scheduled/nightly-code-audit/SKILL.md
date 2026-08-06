@@ -80,11 +80,17 @@ Three outcomes, and one of them always fires:
    ran and their headline numbers**, e.g.
    `Audit green 2026-08-03 · typecheck 0 · columns clean · nav 0 new · ink/tokens clean · secrets clean · sinks/deps baseline · 962 tests`.
    The counts are the point. "All green" from a run that executed two of the
-   eight checkers is a worse lie than silence, so a check that did not run is
+   nine checkers is a worse lie than silence, so a check that did not run is
    named as `not run`, never omitted and never counted as a pass.
 2. **Completed, regression found** — which check, what broke, since when if
    determinable, and Tier A or Tier B per `docs/governance/CHANGE-POLICY.md`.
    Do not fix it; the owner (or a day-time session) decides.
+
+   **A `check:secrets` failure is CRITICAL and notifies regardless of Tier.**
+   Name the file and the pattern, but **never put the matched value in the
+   notification** — say where it is, not what it is. The fix is rotation at
+   the issuer first, then removal; deleting it from HEAD alone leaves it in
+   history, and this repository is public.
 3. **Could not complete** — `npm ci` failed, the repo would not clone, a
    checker crashed rather than reported, or you ran out of time. Say so
    explicitly and name the step that stopped you. This is a distinct outcome
@@ -95,11 +101,6 @@ Absence of any notification now means the Routine itself never fired or the
 container never came up — which is actionable, and visible, in a way that
 silence-as-success never was. `list_triggers` shows `last_fired_at` if you
 need to confirm the schedule end of it.
-- **A `check:secrets` failure is CRITICAL and always notifies**, overriding
-  "silence means green" and the Tier judgement. Name the file and the pattern.
-  **Never put the matched value in the notification** — say where it is, not
-  what it is. The fix is rotation at the issuer first, then removal; deleting
-  it from HEAD alone leaves it in history, and this repository is public.
 
 ## Guardrails
 - Read-only toward the repo: no commits, no file edits, no baseline
