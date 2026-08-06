@@ -139,6 +139,12 @@ jobs:
       # Schema source is the generated src/types/supabase.ts — in-repo, no
       # credentials. Regenerate it whenever migrations land.
       - run: npm run check:columns
+      # Filename stamps, not contents. `check:drift` is the real rebuild check
+      # but needs SUPABASE_ACCESS_TOKEN, so its job has never actually run;
+      # this one is pure filesystem and can therefore be blocking. It rides
+      # here rather than in its own job because both are cheap, credential-free
+      # migration checks.
+      - run: npm run check:migrations
 
   ink-contrast:
     name: Ink Contrast

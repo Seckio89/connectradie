@@ -11,6 +11,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "check:columns": "node scripts/check-db-columns.mjs",
+    "check:migrations": "node scripts/check-migration-stamps.mjs",
+    "check:migrations:baseline": "node scripts/check-migration-stamps.mjs --update",
     "check:secrets": "node scripts/check-secrets.mjs",
     "check:secrets:history": "node scripts/check-secrets.mjs --history",
     "check:sinks": "node scripts/check-sinks.mjs",
