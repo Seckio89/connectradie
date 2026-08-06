@@ -25,6 +25,7 @@ import AddressAutocomplete from '../components/AddressAutocomplete';
 import { getRecurringJobs, createRecurringJob, cancelRecurringJob, pauseRecurringJob, resumeRecurringJob, updateRecurringJob, suggestRecurringJob, getUpcomingSessions, getKeywordSuggestions, RECURRING_SERVICE_SUBCATEGORIES, RECURRING_SERVICE_DESCRIPTIONS, type RecurringJob, type RecurringSession, type KeywordSuggestion } from '../lib/recurringJobs';
 import { releaseEscrow, payPriceIncrease, humanizePaymentError, createJobPaymentCheckout } from '../lib/stripePayments';
 import { callEdgeFunction } from '../lib/edgeFn';
+import JobVariationsSection from '../components/JobVariationsSection';
 import RecurringSessionCard from '../components/RecurringSessionCard';
 import RecurringInvoiceCard from '../components/RecurringInvoiceCard';
 import type { RecurringInvoice } from '../components/RecurringInvoiceCard';
@@ -929,7 +930,7 @@ export default function ClientDashboard() {
                         onClick={() => { setJobTab(tab.key); setShowArchived(false); }}
                         className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                           isActive
-                            ? 'border-ct-teal text-ct-amber'
+                            ? 'border-ct-teal text-ct-paper'
                             : needsAttention
                               ? 'border-ct-amber/[0.34] text-ct-mute hover:text-ct-mute-2'
                               : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
@@ -944,7 +945,7 @@ export default function ClientDashboard() {
                       onClick={() => { setShowArchived(!showArchived); setJobTab('active'); }}
                       className={`inline-flex items-center gap-1.5 pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                         showArchived
-                          ? 'border-ct-teal text-ct-amber'
+                          ? 'border-ct-teal text-ct-paper'
                           : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
                       }`}
                     >
@@ -1328,6 +1329,24 @@ export default function ClientDashboard() {
                                   </span>
                                 </div>
                               </div>
+                            )}
+                            {/* A variation the tradie has raised but the client
+                                has not yet decided on. Hidden once an increase
+                                is in flight, because at that point the variation
+                                is already approved and the banner below is the
+                                live step — showing both read as two decisions.
+
+                                Before this, approving was only possible from a
+                                project drill-down, so a client whose job had no
+                                project could not action a variation at all. */}
+                            {!pendingIncreases[job.id] && (job.status !== null && ['funded', 'in_progress', 'completed'].includes(job.status)) && (
+                              <JobVariationsSection
+                                jobId={job.id}
+                                jobBudget={job.budget_amount ?? null}
+                                jobStatus={job.status}
+                                role="client"
+                                className="px-5 py-3 border-t border-ct-line-soft"
+                              />
                             )}
                             {pendingIncreases[job.id] && (job.status !== null && ['funded', 'in_progress', 'completed'].includes(job.status)) && (
                               <div className="px-5 py-3 border-t border-ct-amber/[0.34] bg-ct-amber/[0.13]">

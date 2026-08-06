@@ -246,7 +246,7 @@ export default function RecommendedTradies() {
                       <>
                         <span className="text-ct-mute">·</span>
                         <span className="inline-flex items-center gap-0.5">
-                          <Star className="w-3 h-3 fill-amber-400 text-ct-amber" />
+                          <Star className="w-3 h-3 fill-ct-amber text-ct-amber" />
                           {tradie.__averageRating.toFixed(1)}
                           <span className="text-ct-mute">({tradie.__totalReviews})</span>
                         </span>

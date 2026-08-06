@@ -368,9 +368,15 @@ export const handler = async (req: Request): Promise<Response> => {
       // Mark the call-out fee as credited (it was deducted from the charge above).
       const creditFee = quote.site_visit_fee_status === "paid" && Number(quote.call_out_fee_cents) > 0;
       // Annotated so every key is column-checked — see ../_shared/dbTypes.ts.
+      // accepted_at must be set here, not left to the DB trigger. The trigger
+      // (handle_quote_acceptance) guards on OLD.status = 'pending', but a
+      // flow_version=2 quote goes final_submitted -> accepted, so the guard
+      // never fires and every 3-stage win was landing with accepted_at NULL.
+      // Without it there is no reliable win timestamp to measure against.
+      const acceptedAt = new Date().toISOString();
       const quoteUpdate: Update<"quotes"> = creditFee
-        ? { status: "accepted", site_visit_fee_status: "credited" }
-        : { status: "accepted" };
+        ? { status: "accepted", accepted_at: acceptedAt, site_visit_fee_status: "credited" }
+        : { status: "accepted", accepted_at: acceptedAt };
       const { error: quoteUpdateError } = await supabase
         .from("quotes")
         .update(quoteUpdate)
@@ -486,9 +492,19 @@ export const handler = async (req: Request): Promise<Response> => {
             previousStatus: s.status as string,
           }));
           const siblingIds = cascadedSiblings.map((s) => s.id);
+          // Label the loss, don't just set the status. A cascade decline means
+          // "lost to a competitor on this job", which is the dependent variable
+          // for any win-rate work — and until now it was recorded only as a bare
+          // status, indistinguishable from a client explicitly declining, and
+          // recoverable only by inferring against a sibling 'accepted' row.
+          const cascadeUpdate: Update<"quotes"> = {
+            status: "declined",
+            declined_at: new Date().toISOString(),
+            decline_reason: "cascade",
+          };
           const { error: cascadeError } = await supabase
             .from("quotes")
-            .update({ status: "declined" })
+            .update(cascadeUpdate)
             .in("id", siblingIds);
           if (cascadeError) {
             console.warn("accept-and-pay: cascade-decline update failed", cascadeError);
@@ -569,9 +585,12 @@ export const handler = async (req: Request): Promise<Response> => {
       // originalQuoteStatus rather than a hardcoded 'pending' so that v2 quotes
       // (whose original status was 'final_submitted') revert correctly.
       if (!alreadyAccepted) {
+        // Clear accepted_at alongside the status — a reverted acceptance that
+        // kept its timestamp would read as a win that never happened.
+        const revertUpdate: Update<"quotes"> = { status: originalQuoteStatus, accepted_at: null };
         await supabase
           .from("quotes")
-          .update({ status: originalQuoteStatus })
+          .update(revertUpdate)
           .eq("id", quoteId);
         await supabase
           .from("jobs")
@@ -581,9 +600,16 @@ export const handler = async (req: Request): Promise<Response> => {
         // statuses may differ, so we can't do a single bulk update).
         for (const sibling of cascadedSiblings) {
           try {
+            // Clear the loss labels too, or a rolled-back acceptance leaves
+            // phantom competitive losses behind for every sibling.
+            const siblingRevert: Update<"quotes"> = {
+              status: sibling.previousStatus,
+              declined_at: null,
+              decline_reason: null,
+            };
             await supabase
               .from("quotes")
-              .update({ status: sibling.previousStatus })
+              .update(siblingRevert)
               .eq("id", sibling.id);
           } catch (revertErr) {
             console.warn(

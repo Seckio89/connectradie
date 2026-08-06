@@ -152,7 +152,7 @@ export default function ReviewModal({
                   <Star
                     className={`w-8 h-8 transition-colors ${
                       star <= displayRating
-                        ? 'fill-yellow-400 text-ct-amber'
+                        ? 'fill-ct-amber text-ct-amber'
                         : 'text-ct-mute'
                     }`}
                   />

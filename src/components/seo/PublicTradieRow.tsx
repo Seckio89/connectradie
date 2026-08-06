@@ -86,7 +86,7 @@ export default function PublicTradieRow({ tradie }: PublicTradieRowProps) {
           {/* Rating */}
           {reviews > 0 ? (
             <div className="flex items-center gap-1 text-sm text-ct-mute-2 mb-1.5">
-              <Star className="w-3.5 h-3.5 text-ct-amber fill-amber-500" />
+              <Star className="w-3.5 h-3.5 text-ct-amber fill-ct-amber" />
               <span className="font-medium text-ct-paper">{rating.toFixed(1)}</span>
               <span className="text-ct-mute">
                 ({reviews} review{reviews === 1 ? '' : 's'})

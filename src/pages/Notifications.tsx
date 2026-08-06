@@ -397,6 +397,11 @@ export default function Notifications() {
       navigate('/work');
     } else if (notification.type === 'vacancy_match') {
       navigate('/work?tab=recruitment');
+    } else if (notification.type === 'VARIATION_REQUEST' || notification.type === 'variation_declined') {
+      // Explicit, because the jobId fallback below sent the client to
+      // /leads?job=… — a page with no variation UI at all. The approve/decline
+      // block lives on the client dashboard.
+      navigate(isTradie ? `/work?tab=active${jobId ? `&job=${jobId}` : ''}` : '/dashboard');
     } else if (notification.type === 'message' || notification.type === 'new_message') {
       navigate('/messages');
     } else if (notification.type === 'payment' || notification.type === 'invoice') {
@@ -477,7 +482,7 @@ export default function Notifications() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                   isActive
-                    ? 'border-ct-teal text-ct-amber'
+                    ? 'border-ct-teal text-ct-paper'
                     : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
                 }`}
               >

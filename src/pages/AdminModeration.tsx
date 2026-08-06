@@ -284,7 +284,7 @@ export default function AdminModeration() {
                 onClick={() => { setActiveTab('flagged'); setSearchQuery(''); }}
                 className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'flagged'
-                    ? 'text-ct-amber bg-ct-amber/[0.13]'
+                    ? 'text-ct-teal bg-ct-teal/[0.14]'
                     : 'text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface-2'
                 }`}
               >
@@ -299,14 +299,14 @@ export default function AdminModeration() {
                   )}
                 </div>
                 {activeTab === 'flagged' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-ct-amber/[0.13]" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-ct-teal" />
                 )}
               </button>
               <button
                 onClick={() => { setActiveTab('reviews'); setSearchQuery(''); }}
                 className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'reviews'
-                    ? 'text-ct-amber bg-ct-amber/[0.13]'
+                    ? 'text-ct-teal bg-ct-teal/[0.14]'
                     : 'text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface-2'
                 }`}
               >
@@ -603,7 +603,7 @@ export default function AdminModeration() {
                                 key={i}
                                 className={`w-4 h-4 ${
                                   i < review.rating
-                                    ? 'fill-yellow-400 text-ct-amber'
+                                    ? 'fill-ct-amber text-ct-amber'
                                     : 'text-ct-mute'
                                 }`}
                               />

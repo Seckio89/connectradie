@@ -52,6 +52,7 @@
     "e2e:run": "node connectradie-e2e.mjs",
     "e2e:dispute": "node scripts/e2e-dispute.mjs",
     "e2e:variation": "node scripts/e2e-variation.mjs",
+    "e2e:variation:milestone": "node scripts/e2e-variation-milestone.mjs",
     "e2e:cancel": "node scripts/e2e-cancel.mjs"
   },
   "dependencies": {

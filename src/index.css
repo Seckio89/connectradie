@@ -125,7 +125,9 @@
   --r-xl: 18px;  /* modals, sheets, app shell                   */
 
   /* ── Layout ── */
-  --sidebar: 238px;                   /* app shell sidebar      */
+  /* No --sidebar token: the app shell sidebar is Tailwind's w-64 paired with
+     lg:pl-64 in DashboardLayout, so a second source of truth here could only
+     drift. The one that used to live here said 238px and matched nothing. */
   --maxw: 1240px;                     /* marketing content width */
   --gut: clamp(20px, 4vw, 64px);      /* marketing side gutter   */
 }

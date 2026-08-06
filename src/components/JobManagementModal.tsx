@@ -21,6 +21,7 @@ import AccessInstructions from './AccessInstructions';
 import ViewTrackingButton from './ViewTrackingButton';
 import { emailOffAppClientOnCompletion } from '../lib/offAppCompletionEmail';
 import { useSignedUrls } from '../hooks/useSignedUrl';
+import JobVariationsSection from './JobVariationsSection';
 
 // ── Types ──
 
@@ -942,8 +943,13 @@ export default function JobManagementModal({
                   && (quote.requires_site_inspection || quote.final_price != null) && (() => {
                   const isSiteInspect = !!quote.requires_site_inspection;
                   const inputVisible = quote.final_price == null && isSiteInspect;
+                  // Not "Variation submitted": this path is adjust-quote-price,
+                  // which moves the accepted quote's final_price and writes no
+                  // job_variations row. Calling it a variation made the two
+                  // mechanisms look like one — see the section above for the
+                  // real thing.
                   const title = quote.final_price != null
-                    ? (isSiteInspect ? 'Final price set' : 'Variation submitted')
+                    ? (isSiteInspect ? 'Final price set' : 'Final price submitted')
                     : 'Set final price after site visit';
                   const helper = quote.final_price != null
                     ? (() => {
@@ -1028,6 +1034,21 @@ export default function JobManagementModal({
                   </div>
                   );
                 })()}
+
+                {/* ── Variations ──
+                    A genuine mid-work scope change, as distinct from the final
+                    price adjustment above: that one is site-inspection-only and
+                    moves the accepted quote, this raises a separate charge the
+                    client approves and funds. */}
+                {job && (
+                  <JobVariationsSection
+                    jobId={job.id}
+                    jobBudget={job.budget_amount}
+                    jobStatus={job.status}
+                    role="tradie"
+                    onChange={() => { loadJob(); onJobUpdated(); }}
+                  />
+                )}
 
                 {/* ── 3-Stage Flow Actions (v2 pre-payment) ──
                     Renders the tradie-side action surface for v2 jobs:

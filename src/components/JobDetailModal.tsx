@@ -34,6 +34,7 @@ import AccessInstructions from './AccessInstructions';
 import ViewTrackingButton from './ViewTrackingButton';
 import Modal from './Modal';
 import AvailabilityMiniCalendar from './AvailabilityMiniCalendar';
+import JobVariationsSection from './JobVariationsSection';
 
 interface JobDetailModalProps {
   isOpen: boolean;
@@ -338,10 +339,19 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
                 .update({ agreed_price: price })
                 .eq('id', recurringJob.id);
 
-              await supabase
+              // Agreements link back through original_job_id, not the recurring
+              // job's id — createRecurringJob mirrors `original_job_id` onto the
+              // agreement, and cancelRecurringJob resolves it the same way. The
+              // previous `recurring_job_id` filter named a column that does not
+              // exist on service_agreements, so PostgREST returned 42703, the
+              // catch below swallowed it, and the rate silently stayed stale
+              // while the success message claimed otherwise.
+              const { error: agreementError } = await supabase
                 .from('service_agreements')
                 .update({ rate_per_visit: price })
-                .eq('recurring_job_id', recurringJob.id);
+                .eq('original_job_id', job.id);
+
+              if (agreementError) throw agreementError;
 
               setRecurringJob({ ...recurringJob, agreed_price: price });
               successMsg += ` The ongoing service rate has also been updated to $${price.toFixed(2)} per visit.`;
@@ -895,6 +905,19 @@ export default function JobDetailModal({ isOpen, onClose, job, onQuote, onStatus
             />
           </div>
         )}
+
+        {/* ── Variations ──
+            The tradie's only entry point on a job won through the ordinary
+            lead → quote → accept pipeline. Before this, "Additional cost" lived
+            solely in JobDetailsCard, which is reachable only from a
+            booking-request message. */}
+        <JobVariationsSection
+          jobId={job.id}
+          jobBudget={job.budget_amount ?? null}
+          jobStatus={localStatus}
+          role={isTradie ? 'tradie' : 'client'}
+          onChange={onStatusChange}
+        />
       </div>
 
       {/* ── Footer Actions ── */}

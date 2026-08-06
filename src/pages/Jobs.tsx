@@ -784,7 +784,7 @@ export default function Jobs({ embedded = false }: { embedded?: boolean }) {
               onClick={() => setFilter(tab.key)}
               className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors flex items-center gap-1.5 ${
                 filter === tab.key
-                  ? 'border-ct-teal text-ct-amber'
+                  ? 'border-ct-teal text-ct-paper'
                   : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
               }`}
             >

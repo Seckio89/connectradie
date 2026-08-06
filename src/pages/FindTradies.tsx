@@ -309,7 +309,7 @@ export default function FindTradies() {
               </div>
               {avgRating > 0 && (
                 <div className="flex items-center gap-2 text-ct-mute-2">
-                  <Star className="w-4 h-4 text-ct-amber fill-amber-500" />
+                  <Star className="w-4 h-4 text-ct-amber fill-ct-amber" />
                   <span>
                     <span className="font-semibold text-ct-paper">{avgRating.toFixed(1)}</span> avg rating
                   </span>

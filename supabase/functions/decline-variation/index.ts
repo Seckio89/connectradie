@@ -23,6 +23,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import { selectFundingPaymentForVariation } from "../_shared/selectFundingPayment.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin":
@@ -144,18 +145,24 @@ export const handler = async (req: Request): Promise<Response> => {
     // -----------------------------------------------------------------------
     // 3. Find the funding payment and the slot this variation may be holding
     // -----------------------------------------------------------------------
-    const { data: payment, error: paymentError } = await supabase
+    // Milestone jobs carry one completed job_funding row per milestone
+    // (pay-milestone), so .maybeSingle() here returned PGRST116 and 500'd —
+    // leaving the client unable to decline as well as unable to approve. Pick
+    // the row actually holding a slot; declining only ever needs that one.
+    const { data: fundingPayments, error: paymentError } = await supabase
       .from("payments")
       .select("id, metadata")
       .eq("job_id", variation.job_id)
       .eq("payment_type", "job_funding")
       .eq("status", "completed")
-      .maybeSingle();
+      .order("created_at", { ascending: true });
 
     if (paymentError) {
       console.error("Failed to load funding payment:", paymentError);
       return errorJson("Could not load this job's payment", 500);
     }
+
+    const payment = selectFundingPaymentForVariation(fundingPayments, variationId);
 
     const existingMetadata = (payment?.metadata || {}) as Record<string, unknown>;
     const inFlight = existingMetadata.pending_increase as

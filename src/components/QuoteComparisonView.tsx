@@ -148,7 +148,7 @@ function RatingStars({ rating }: { rating: number }) {
           key={i}
           className={`w-3.5 h-3.5 ${
             i <= Math.round(rating)
-              ? 'text-ct-amber fill-yellow-400'
+              ? 'text-ct-amber fill-ct-amber'
               : 'text-ct-mute-2'
           }`}
         />
@@ -519,7 +519,7 @@ export default function QuoteComparisonView({
 
                   {/* Tradie info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
                       <button
                         onClick={() => navigate(`/tradie/${quote.tradie_id}`)}
                         className="text-[0.9375rem] font-semibold text-ct-paper truncate hover:text-ct-mute-2 transition-colors"
@@ -611,30 +611,33 @@ export default function QuoteComparisonView({
                   </div>
                 </div>
 
-                {/* Quote details — shown by default */}
-                <div className="mt-3 ml-[4.75rem]">
+                {/* Quote details — shown by default. The 4.75rem indent lines the
+                    detail column up with the tradie name (number chip + avatar +
+                    gaps), but on a phone that leaves the column too narrow to hold
+                    a single meta item on one line — so it only applies from sm up. */}
+                <div className="mt-3 ml-0 sm:ml-[4.75rem]">
                   {/* Meta row */}
-                  <div className="flex items-center gap-4 text-[0.8125rem] text-ct-mute">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[0.8125rem] text-ct-mute">
                     {quote.estimated_duration && (
-                      <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                         <Clock className="w-3.5 h-3.5 flex-shrink-0" />
                         {quote.estimated_duration}
                       </span>
                     )}
                     {quote.includes_materials && (
-                      <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                         <Package className="w-3.5 h-3.5 flex-shrink-0" />
                         Materials incl.
                       </span>
                     )}
                     {quote.requires_site_inspection && (
-                      <span className="inline-flex items-center gap-1.5 text-ct-teal">
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-ct-teal">
                         <Eye className="w-3.5 h-3.5 flex-shrink-0" />
                         Site visit required
                       </span>
                     )}
                     {quote.proposed_start_date && (
-                      <span className="inline-flex items-center gap-1.5 text-ct-teal">
+                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-ct-teal">
                         <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
                         Available from {formatProposedStartDate(quote.proposed_start_date)}
                       </span>
@@ -642,7 +645,7 @@ export default function QuoteComparisonView({
                     {quote.message && (
                       <button
                         onClick={() => setCollapsedId(isCollapsed ? null : quote.id)}
-                        className="inline-flex items-center gap-1 text-ct-mute-2 hover:text-ct-mute-2 font-medium ml-auto"
+                        className="inline-flex items-center gap-1 whitespace-nowrap text-ct-mute-2 hover:text-ct-mute-2 font-medium sm:ml-auto"
                       >
                         {isCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
                         {isCollapsed ? 'Show message' : 'Hide message'}
@@ -667,7 +670,7 @@ export default function QuoteComparisonView({
                 const deposit = Math.max(quote.price_min, budget ?? quote.price_min);
                 const usingBudget = budget != null && budget >= quote.price_min;
                 return (
-                  <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm text-xs text-ct-paper leading-relaxed">
+                  <div className="mx-5 mt-3 ml-0 sm:ml-[4.75rem] p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm text-xs text-ct-mute-2 leading-relaxed">
                     <span className="font-semibold">How this works:</span>{' '}
                     You deposit ${deposit.toLocaleString()} {usingBudget ? '(your budget)' : "(the tradie's minimum quote)"} securely via Stripe — the tradie gets your address and visits the site. After the visit, they confirm the final price. If it's higher, you approve the top-up before work starts; if lower, the difference is refunded.
                   </div>
@@ -679,18 +682,18 @@ export default function QuoteComparisonView({
                   resolution, GST receipt) so the client sees the value bundle
                   alongside the deposit ask. */}
               {!acceptedQuote && !isV2 && quote.status === 'pending' && (
-                <div className="mx-5 mt-3 ml-[4.75rem]">
+                <div className="mx-5 mt-3 ml-0 sm:ml-[4.75rem]">
                   <TrustSignals role="client" />
                 </div>
               )}
 
               {/* LEGACY v1 action footer — unchanged behaviour */}
               {!acceptedQuote && !isV2 && quote.status === 'pending' && (
-                <div className="flex items-center gap-2.5 px-5 py-3 border-t border-ct-line-soft bg-ct-surface-2/50 ml-[4.75rem]">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 px-5 py-3 border-t border-ct-line-soft bg-ct-surface-2/50 ml-0 sm:ml-[4.75rem]">
                   <button
                     onClick={() => handleAccept(quote.id)}
                     disabled={!!acceptingId || !!decliningId}
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors disabled:opacity-50 text-sm shadow-sm"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2 bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors disabled:opacity-50 text-sm shadow-sm whitespace-nowrap"
                   >
                     {acceptingId === quote.id ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -703,7 +706,7 @@ export default function QuoteComparisonView({
                   </button>
                   <button
                     onClick={() => onMessageTradie(quote.tradie_id, job.id)}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-ct-surface-2 border border-ct-line text-ct-mute-2 font-semibold rounded-ct-sm hover:bg-ct-surface-2 hover:border-ct-line transition-colors text-sm"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-2 bg-ct-surface-2 border border-ct-line text-ct-mute-2 font-semibold rounded-ct-sm hover:bg-ct-surface-2 hover:border-ct-line transition-colors text-sm whitespace-nowrap"
                   >
                     <MessageSquare className="w-4 h-4" />
                     Message tradie
@@ -711,13 +714,19 @@ export default function QuoteComparisonView({
                   <button
                     onClick={() => handleDecline(quote.id)}
                     disabled={!!acceptingId || !!decliningId}
-                    className="inline-flex items-center justify-center px-3 py-2 border border-ct-line text-ct-mute rounded-ct-sm hover:text-ct-rose hover:border-ct-rose/[0.34] hover:bg-ct-rose/[0.13] transition-colors disabled:opacity-50 ml-auto"
+                    aria-label="Decline quote"
+                    title="Decline quote"
+                    className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-3 py-2 border border-ct-line text-ct-mute rounded-ct-sm hover:text-ct-rose hover:border-ct-rose/[0.34] hover:bg-ct-rose/[0.13] transition-colors disabled:opacity-50 sm:ml-auto text-sm font-semibold"
                   >
                     {decliningId === quote.id ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <XCircle className="w-4 h-4" />
                     )}
+                    {/* Icon-only is fine once the row is horizontal and the other
+                        two buttons carry labels; stacked full-width on a phone it
+                        reads as an unlabelled mystery button, so name it there. */}
+                    <span className="sm:hidden">Decline</span>
                   </button>
                 </div>
               )}
@@ -753,7 +762,7 @@ export default function QuoteComparisonView({
                     {/* ACL anti-misleading advisory (spec §5.5) when final
                         exceeds the original estimate range by >25%. */}
                     {exceedsAdvisory && !expired && (
-                      <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm text-xs text-ct-paper leading-relaxed flex gap-2 items-start">
+                      <div className="mx-5 mt-3 ml-0 sm:ml-[4.75rem] p-3 bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm text-xs text-ct-paper leading-relaxed flex gap-2 items-start">
                         <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                         <span>
                           <span className="font-semibold">Final is above the original estimate:</span>{' '}
@@ -766,7 +775,7 @@ export default function QuoteComparisonView({
 
                     {/* Expired final — block acceptance, show clearly. */}
                     {expired && (
-                      <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-xs text-ct-paper">
+                      <div className="mx-5 mt-3 ml-0 sm:ml-[4.75rem] p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-xs text-ct-paper">
                         <span className="font-semibold">This final quote expired on {quote.final_valid_until}.</span>{' '}
                         The tradie can submit a new quote on this job.
                       </div>
@@ -775,14 +784,14 @@ export default function QuoteComparisonView({
                     {/* Value bundle at the accept-and-pay moment so the client
                         sees what they're getting in return for the deposit. */}
                     {actions.includes('accept_and_pay') && !expired && (
-                      <div className="mx-5 mt-3 ml-[4.75rem]">
+                      <div className="mx-5 mt-3 ml-0 sm:ml-[4.75rem]">
                         <TrustSignals role="client" />
                       </div>
                     )}
 
                     {/* Call-out fee credit at the accept moment */}
                     {actions.includes('accept_and_pay') && !expired && feeCredited && finalAfterCredit != null && (
-                      <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm text-xs text-ct-teal leading-relaxed">
+                      <div className="mx-5 mt-3 ml-0 sm:ml-[4.75rem] p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm text-xs text-ct-teal leading-relaxed">
                         Your <span className="font-semibold">${callOutFeeDollars.toLocaleString()}</span> call-out fee is credited.
                         You pay the remaining <span className="font-semibold">${finalAfterCredit.toLocaleString()}</span> of the
                         ${Number(quote.final_price).toLocaleString()} final price.
@@ -791,7 +800,7 @@ export default function QuoteComparisonView({
 
                     {/* Call-out fee explainer at the book-visit moment */}
                     {actions.includes('book_site_visit') && callOutFeeDollars > 0 && (
-                      <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm text-xs text-ct-mute-2 leading-relaxed">
+                      <div className="mx-5 mt-3 ml-0 sm:ml-[4.75rem] p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm text-xs text-ct-mute-2 leading-relaxed">
                         <span className="font-semibold">${callOutFeeDollars.toLocaleString()} call-out fee.</span>{' '}
                         Payable now to confirm your site visit, where the tradie assesses the job in person to
                         provide an accurate, detailed final price. The fee covers their time to attend and is
@@ -812,7 +821,7 @@ export default function QuoteComparisonView({
                       const timeRange = end ? `${t(start)} – ${t(end)}` : t(start);
                       const confirmed = quote.site_visit_time_confirmed === true;
                       return (
-                        <div className="mx-5 mt-3 ml-[4.75rem] p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm">
+                        <div className="mx-5 mt-3 ml-0 sm:ml-[4.75rem] p-3 bg-ct-surface-2 border border-ct-line rounded-ct-sm">
                           <div className="flex items-start gap-2">
                             <Eye className="w-4 h-4 text-ct-mute-2 flex-shrink-0 mt-0.5" />
                             <div className="text-xs text-ct-mute-2 leading-relaxed">
@@ -833,12 +842,12 @@ export default function QuoteComparisonView({
                       );
                     })()}
 
-                    <div className="flex items-center gap-2.5 px-5 py-3 border-t border-ct-line-soft bg-ct-surface-2/50 ml-[4.75rem]">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 px-5 py-3 border-t border-ct-line-soft bg-ct-surface-2/50 ml-0 sm:ml-[4.75rem]">
                       {actions.includes('book_site_visit') && (
                         <button
                           onClick={() => setConfirmingBookVisitId(quote.id)}
                           disabled={busy}
-                          className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:bg-ct-teal-deep transition-colors disabled:opacity-50 text-sm shadow-sm"
+                          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2 bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:bg-ct-teal-deep transition-colors disabled:opacity-50 text-sm shadow-sm whitespace-nowrap"
                         >
                           {bookingVisitId === quote.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -853,7 +862,7 @@ export default function QuoteComparisonView({
                         <button
                           onClick={() => handleAccept(quote.id)}
                           disabled={busy}
-                          className="inline-flex items-center justify-center gap-2 px-5 py-2 bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors disabled:opacity-50 text-sm shadow-sm"
+                          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-5 py-2 bg-ct-teal text-ct-ink font-semibold rounded-ct-sm hover:brightness-110 transition-colors disabled:opacity-50 text-sm shadow-sm whitespace-nowrap"
                           title={feeCredited ? `$${Number(quote.final_price).toLocaleString()} final less $${callOutFeeDollars.toLocaleString()} call-out already paid` : undefined}
                         >
                           {acceptingId === quote.id ? (
@@ -871,7 +880,7 @@ export default function QuoteComparisonView({
 
                       <button
                         onClick={() => onMessageTradie(quote.tradie_id, job.id)}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-ct-surface-2 border border-ct-line text-ct-mute-2 font-semibold rounded-ct-sm hover:bg-ct-surface-2 hover:border-ct-line transition-colors text-sm"
+                        className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-2 bg-ct-surface-2 border border-ct-line text-ct-mute-2 font-semibold rounded-ct-sm hover:bg-ct-surface-2 hover:border-ct-line transition-colors text-sm whitespace-nowrap"
                       >
                         <MessageSquare className="w-4 h-4" />
                         Message tradie
@@ -881,7 +890,8 @@ export default function QuoteComparisonView({
                         <button
                           onClick={() => handleDecline(quote.id)}
                           disabled={busy}
-                          className="inline-flex items-center justify-center px-3 py-2 border border-ct-line text-ct-mute rounded-ct-sm hover:text-ct-rose hover:border-ct-rose/[0.34] hover:bg-ct-rose/[0.13] transition-colors disabled:opacity-50 ml-auto"
+                          aria-label="Decline quote"
+                          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-3 py-2 border border-ct-line text-ct-mute rounded-ct-sm hover:text-ct-rose hover:border-ct-rose/[0.34] hover:bg-ct-rose/[0.13] transition-colors disabled:opacity-50 sm:ml-auto text-sm font-semibold"
                           title="Decline this quote"
                         >
                           {decliningId === quote.id ? (
@@ -889,6 +899,7 @@ export default function QuoteComparisonView({
                           ) : (
                             <XCircle className="w-4 h-4" />
                           )}
+                          <span className="sm:hidden">Decline</span>
                         </button>
                       )}
                     </div>

@@ -230,11 +230,16 @@ export default function AnalyticsDashboard() {
 
   // Conversion by price range
   const conversionByRange = useMemo(() => {
+    // Bounds are DOLLARS, matching quoteAmount(), which reads firm_price /
+    // price_min / price_max — all numeric dollar columns. These were previously
+    // written cents-scaled (50000, 200000, 500000), so every real quote fell
+    // into the first bucket and the chart reported a single bar. It is the only
+    // price-vs-conversion view in the app, so it was silently useless.
     const ranges = [
-      { label: '$0-500', min: 0, max: 50000 },
-      { label: '$500-2k', min: 50000, max: 200000 },
-      { label: '$2k-5k', min: 200000, max: 500000 },
-      { label: '$5k+', min: 500000, max: Infinity },
+      { label: '$0-500', min: 0, max: 500 },
+      { label: '$500-2k', min: 500, max: 2000 },
+      { label: '$2k-5k', min: 2000, max: 5000 },
+      { label: '$5k+', min: 5000, max: Infinity },
     ];
     return ranges.map(r => {
       const inRange = quotes.filter(q => { const a = quoteAmount(q); return a >= r.min && a < r.max; });

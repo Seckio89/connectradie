@@ -20,6 +20,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import { selectFundingPaymentForTopUp } from "../_shared/selectFundingPayment.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin":
@@ -170,18 +171,29 @@ export const handler = async (req: Request): Promise<Response> => {
     // -----------------------------------------------------------------------
     // 4. Find the job's escrow funding payment
     // -----------------------------------------------------------------------
-    const { data: payment, error: paymentError } = await supabase
+    // A job can carry MORE THAN ONE completed job_funding row: pay-milestone
+    // inserts one per milestone. This used to be .maybeSingle(), so any job with
+    // two or more settled milestones made PostgREST return PGRST116 and this
+    // function 500 — the client could neither approve nor decline. Fetch them
+    // all and choose deliberately; auto-release-payments already treats this as
+    // a many-row relationship.
+    const { data: fundingPayments, error: paymentError } = await supabase
       .from("payments")
       .select("id, metadata, amount")
       .eq("job_id", variation.job_id)
       .eq("payment_type", "job_funding")
       .eq("status", "completed")
-      .maybeSingle();
+      .order("created_at", { ascending: true });
 
     if (paymentError) {
       console.error("Failed to load funding payment:", paymentError);
       return errorJson("Could not load this job's payment", 500);
     }
+
+    // Released rows are excluded by the status filter above, so a top-up never
+    // attaches to money that has already left. See selectFundingPayment.ts for
+    // why a row already holding a slot outranks the escrow deposit.
+    const payment = selectFundingPaymentForTopUp(fundingPayments);
 
     if (!payment) {
       // The lookup above filters status='completed'. Both release paths set the

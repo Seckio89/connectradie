@@ -1511,9 +1511,16 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
     if (lead.quoting_status === 'awarded') return 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30';
     if (lead.quote_count > 0) return 'bg-ct-surface-2 text-ct-mute-2 border-ct-line';
     if (lead.tradie_id) return 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30';
-    if (lead.is_flash_boost) return 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]';
-    if (lead.priority === 'high') return 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]';
-    return 'bg-ct-amber/[0.13] text-ct-amber border-ct-amber/[0.34]';
+    // A running boost is the thing working, not something blocked on a person —
+    // teal, matching the boost-active banner further down this file.
+    if (lead.is_flash_boost) return 'bg-ct-teal/[0.14] text-ct-teal border-ct-teal/30';
+    // Priority is a client-set attribute, not a wait state.
+    if (lead.priority === 'high') return 'bg-ct-surface-2 text-ct-mute-2 border-ct-line';
+    // Default is "Awaiting Quotes": nobody has been asked for anything yet, so
+    // it is a no-state-yet grey — see ui/Pill.tsx and ClientDashboard, which
+    // already render this same job grey. Amber here made every unquoted job
+    // look blocked on a person.
+    return 'bg-ct-surface-2 text-ct-mute-2 border-ct-line';
   };
 
   const tradieFilters: { key: LeadFilter; label: string }[] = [
@@ -1856,14 +1863,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           })()}
 
           {!isTradie && !lead.tradie_id && lead.status === 'pending' && lead.quote_count === 0 && (
-            <div className="flex items-center justify-between px-5 py-2.5 border-t border-ct-line-soft">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-2.5 border-t border-ct-line-soft">
               <div className="flex items-center gap-2 text-xs text-ct-mute">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 Waiting for tradies to submit quotes...
               </div>
               <Link
                 to={`/search?trade=${extractCategory(lead.description) || ''}`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-medium rounded-ct-sm hover:brightness-110 transition-colors"
+                className="inline-flex flex-shrink-0 items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-medium rounded-ct-sm hover:brightness-110 transition-colors whitespace-nowrap"
                 onClick={(e) => e.stopPropagation()}
               >
                 <SearchIcon className="w-3 h-3" />
@@ -1936,7 +1943,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <button
                       onClick={() => handleReleasePayment(lead.id)}
                       disabled={releasingJobId === lead.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:bg-ct-amber transition-colors disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:brightness-110 transition-colors disabled:opacity-60"
                     >
                       {releasingJobId === lead.id ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -2419,7 +2426,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                           setFilter('pending');
                         }
                       }}
-                      className="inline-flex items-center gap-2 px-4 py-2 border border-ct-amber/[0.34] text-ct-amber text-sm font-semibold rounded-ct-sm hover:bg-ct-amber/[0.13] transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 border border-ct-teal/30 text-ct-teal text-sm font-semibold rounded-ct-sm hover:bg-ct-teal/[0.14] transition-colors whitespace-nowrap"
                     >
                       <Zap className="w-4 h-4" />
                       Boost ${BOOST_PRICE.toFixed(2)}
@@ -2481,14 +2488,14 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           )
         ) : (
           <div className="overflow-x-auto -mx-1 px-1 border-b border-ct-line mb-6 scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <div className="flex items-center gap-3 sm:gap-6 flex-nowrap">
+            <div className="flex items-center gap-3 sm:gap-6 flex-nowrap pr-4">
               {filters.map((f) => (
                 <button
                   key={f.key}
                   onClick={() => setFilter(f.key)}
                   className={`pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                     filter === f.key
-                      ? 'border-ct-teal text-ct-amber'
+                      ? 'border-ct-teal text-ct-paper'
                       : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
                   }`}
                 >
@@ -2677,7 +2684,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                           <button
                             onClick={() => handleReleasePayment(lead.id)}
                             disabled={releasingJobId === lead.id}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:bg-ct-amber transition-colors disabled:opacity-60"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-teal text-ct-ink text-xs font-semibold rounded-ct-sm hover:brightness-110 transition-colors disabled:opacity-60"
                           >
                             {releasingJobId === lead.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />

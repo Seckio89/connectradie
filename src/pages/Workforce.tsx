@@ -248,7 +248,7 @@ export default function Workforce() {
                     onClick={() => setStatusFilter(s)}
                     className={`px-4 py-2 min-h-[44px] rounded-ct-sm text-sm font-medium border transition-colors ${
                       statusFilter === s
-                        ? 'border-ct-teal text-ct-amber bg-ct-amber/[0.13]'
+                        ? 'border-ct-teal text-ct-teal bg-ct-teal/[0.14]'
                         : 'border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                     }`}
                   >

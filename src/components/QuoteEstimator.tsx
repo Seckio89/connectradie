@@ -18,8 +18,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { calculateDistance } from '../hooks/useGeolocation';
 import type { ClientContact } from '../types/database';
 import PropertyPreview from './PropertyPreview';
-import { TIER_PRICING } from '../lib/subscription';
-import { submitCustomTask, getApprovedCustomTasks, getAreaPriceRange, type AreaPriceRange } from '../lib/pricingHelper';
+import { TIER_PRICING, calculatePlatformFee, getChargedTier } from '../lib/subscription';
+import {
+  submitCustomTask, getApprovedCustomTasks, getAreaPriceRange, type AreaPriceRange,
+  getCostBasis, saveCostBasis,
+} from '../lib/pricingHelper';
+import CostBasisFields from './CostBasisFields';
+import MarginCheckPanel from './MarginCheckPanel';
+import { checkMargin, hasCostBasis, COST_BASIS_DEFAULTS } from '../lib/costModel';
+import type { CostBasis } from '../lib/costModel';
 
 interface QuoteEstimatorProps {
   /**
@@ -231,6 +238,12 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const MAX_PHOTOS = 15;
 
   const [econOpen, setEconOpen] = useState(false);
+  // Cost basis: what the work costs to deliver, as opposed to what it is priced
+  // at. Private to the tradie, and silent until they set a wage.
+  const [costBasis, setCostBasis] = useState<CostBasis>(COST_BASIS_DEFAULTS);
+  const [costOpen, setCostOpen] = useState(false);
+  const [costSaving, setCostSaving] = useState(false);
+  const [costSaved, setCostSaved] = useState(false);
   const [rate, setRate] = useState('');
   const [workers, setWorkers] = useState('1');
   // How the on-site hours are counted when there's a crew: 'perCleaner' bills
@@ -270,6 +283,17 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
     // visits, and should prefill as 0 rather than reading as "no default".
     else if (tradieDetails?.default_call_out_fee_cents != null) setCallOut(String(Math.round(tradieDetails.default_call_out_fee_cents / 100)));
   }, [tradieDetails, profile]);
+
+  // Load the tradie's cost basis. Failure is silent: no basis simply means no
+  // margin verdict, which is the correct resting state rather than an error.
+  useEffect(() => {
+    if (!user?.id) return;
+    let live = true;
+    getCostBasis(user.id)
+      .then((b) => { if (live) setCostBasis(b); })
+      .catch(() => { /* advisory only */ });
+    return () => { live = false; };
+  }, [user?.id]);
 
   // Auto travel distance from the tradie's base to the client.
   const travelKm = useMemo(() => {
@@ -504,9 +528,58 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
     // by headcount; 'perCleaner' keeps the full hours × crew (each on site).
     const labourEconomics = hoursMode === 'combined' ? { ...economics, workers: 1 } : economics;
     const per = computePrice(hours, mats, labourEconomics, clientSupplies);
-    return { ...per, perVisitTotal: per.total, total: per.total * visits, visits };
+    return {
+      ...per,
+      perVisitTotal: per.total,
+      total: per.total * visits,
+      visits,
+      // Carried out for the margin check: it needs the physical inputs and the
+      // ex-GST subtotal, not the GST-inclusive total shown to the client.
+      hours,
+      mats,
+      labourWorkers: labourEconomics.workers,
+      perVisitSubtotal: per.subtotal,
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, hoursEdit, materialsEdit, enteredHours, visits, rate, workers, hoursMode, marginPct, markupPct, callOut, clientSupplies, travelKm, profile?.is_gst_registered]);
+
+  // Does the quote clear the cost of delivering it? Graded per visit, since
+  // that is the unit of work the hours and materials describe.
+  //
+  // Two adjustments the headline total doesn't make: GST comes out (it is the
+  // ATO's, not income), and platform commission comes off the labour (it is
+  // charged on labour only under v2.1). What's left is what the tradie banks.
+  const marginCheck = useMemo(() => {
+    if (!priced || !hasCostBasis(costBasis)) return null;
+    const materialsPortion = clientSupplies ? 0 : priced.mats;
+    const labourPortion = Math.max(0, priced.perVisitSubtotal - materialsPortion);
+    const feeDollars = calculatePlatformFee(
+      labourPortion,
+      getChargedTier(tradieDetails?.subscription_tier),
+      profile?.platform_fee_override_bps,
+    );
+    return checkMargin({
+      hours: priced.hours,
+      workers: priced.labourWorkers,
+      materialsCostCents: Math.round(materialsPortion * 100),
+      quotedExGstCents: Math.round(priced.perVisitSubtotal * 100),
+      platformFeeCents: Math.round(feeDollars * 100),
+      basis: costBasis,
+    });
+  }, [priced, costBasis, clientSupplies, tradieDetails?.subscription_tier, profile?.platform_fee_override_bps]);
+
+  const persistCostBasis = async () => {
+    if (!user?.id) return;
+    setCostSaving(true);
+    const res = await saveCostBasis(user.id, costBasis);
+    setCostSaving(false);
+    if (res.ok) {
+      setCostSaved(true);
+      setTimeout(() => setCostSaved(false), 2000);
+    } else {
+      setError(res.error ?? 'Could not save your cost basis.');
+    }
+  };
 
   const applyResult = () => {
     if (!result || !priced) return;
@@ -829,6 +902,29 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             )}
           </div>
 
+          {/* What the work COSTS, as distinct from what it's priced at. One
+              quiet line when unset — no banner, no prompt, no setup step. */}
+          <div className="border border-ct-line rounded-ct-sm bg-ct-surface">
+            <button type="button" onClick={() => setCostOpen((v) => !v)} className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-ct-mute-2">
+              <span>
+                {hasCostBasis(costBasis)
+                  ? `Your costs · ${money(costBasis.staffWageCents / 100)}/h wage + ${costBasis.labourBurdenPct}%`
+                  : 'Set your cost basis to see whether a quote clears your costs'}
+              </span>
+              <ChevronDown className={`w-4 h-4 text-ct-mute transition-transform ${costOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {costOpen && (
+              <div className="px-3 pb-3 space-y-3">
+                <CostBasisFields value={costBasis} onChange={setCostBasis} />
+                <button type="button" onClick={persistCostBasis} disabled={costSaving}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 border border-ct-line text-ct-paper text-xs font-medium rounded-ct-sm hover:bg-ct-line transition-colors disabled:opacity-60">
+                  {costSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : costSaved ? <Check className="w-3 h-3 text-ct-teal" /> : null}
+                  {costSaved ? 'Costs saved' : 'Save my costs'}
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Extra details — free text fed to the AI. Answer the sharpening
               questions here, then Estimate again to tighten the quote. */}
           <div>
@@ -958,6 +1054,12 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               <span className="text-lg font-bold text-ct-paper tabular-nums">{money(priced.total)}</span>
             </div>
           </div>
+
+          {/* Advisory only — never gates the Use button below. */}
+          <MarginCheckPanel check={marginCheck} />
+          {marginCheck && visits > 1 && (
+            <p className="text-[0.625rem] leading-snug text-ct-mute">Graded per visit.</p>
+          )}
 
           {result.assumptions.length > 0 && (
             <ul className="space-y-0.5">
