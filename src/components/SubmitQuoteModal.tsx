@@ -114,7 +114,9 @@ export default function SubmitQuoteModal({
   const [durationUnit, setDurationUnit] = useState<'hours' | 'days' | 'weeks'>('hours');
   const [durationTBD, setDurationTBD] = useState(false);
   // Call-out fee (3-stage flow): the client pays this at booking, it's routed to
-  // the tradie, and credited against the final price if they proceed. UI clamp $20-$100.
+  // the tradie, and credited against the final price if they proceed. $0 means a
+  // FREE visit (book-site-visit skips checkout entirely); anything else is
+  // clamped to $20-$100 in the UI.
   const [callOutFee, setCallOutFee] = useState('40');
   const estimatedDuration = durationTBD
     ? 'TBD after inspection'
@@ -195,7 +197,8 @@ export default function SubmitQuoteModal({
   // Prefill the call-out fee from the tradie's saved default, if they have one.
   useEffect(() => {
     const def = (tradieDetails as { default_call_out_fee_cents?: number | null } | null)?.default_call_out_fee_cents;
-    if (def != null && def > 0) setCallOutFee(String(Math.round(def / 100)));
+    // >= 0, not > 0: a saved 0 is a real default — this tradie offers free visits.
+    if (def != null && def >= 0) setCallOutFee(String(Math.round(def / 100)));
   }, [tradieDetails]);
   const tradeType = tradieDetails?.trade_category || category.toLowerCase();
 
@@ -350,9 +353,16 @@ export default function SubmitQuoteModal({
     const min = useFirmPrice ? parseFloat(firmPrice) : parseFloat(priceMin);
     const max = useFirmPrice ? parseFloat(firmPrice) : parseFloat(priceMax);
 
-    // Call-out fee only applies when a site visit is required. Clamp to $20-$100.
+    // Call-out fee only applies when a site visit is required. An explicit 0 (or
+    // a cleared field) means the tradie offers a FREE visit and MUST survive as
+    // 0 — the previous `Number(x) || 40` treated 0 as falsy and the Math.max
+    // floor then rewrote it to $20, silently charging clients for visits the
+    // tradie priced at nothing. Non-zero fees keep the $20-$100 clamp.
+    const callOutFeeInput = Number(callOutFee);
     const callOutFeeCents = durationTBD
-      ? Math.min(10000, Math.max(2000, Math.round((Number(callOutFee) || 40) * 100)))
+      ? (!Number.isFinite(callOutFeeInput) || callOutFeeInput <= 0
+        ? 0
+        : Math.min(10000, Math.max(2000, Math.round(callOutFeeInput * 100))))
       : null;
 
     const { error: insertError } = await supabase.from('quotes').insert({
@@ -410,8 +420,10 @@ export default function SubmitQuoteModal({
     // be done here because RLS blocks a tradie from updating the client's job row
     // (tradie_id is NULL on a pending job, so the UPDATE would match zero rows).
 
-    // Remember this call-out fee as the tradie's default for next time (non-critical).
-    if (callOutFeeCents) {
+    // Remember this call-out fee as the tradie's default for next time
+    // (non-critical). `!= null`, not truthy: 0 — a free visit — is a default
+    // worth remembering too.
+    if (callOutFeeCents != null) {
       await supabase
         .from('tradie_details')
         .update({ default_call_out_fee_cents: callOutFeeCents })
@@ -719,21 +731,34 @@ export default function SubmitQuoteModal({
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ct-mute text-sm font-medium">$</span>
                     <input
                       type="number"
-                      min={20}
+                      min={0}
                       max={100}
                       step={5}
                       value={callOutFee}
                       onChange={(e) => setCallOutFee(e.target.value)}
                       onBlur={() => {
-                        const n = Math.round(Number(callOutFee) || 0);
-                        setCallOutFee(String(Math.min(100, Math.max(20, n))));
+                        // 0 (or cleared) is a deliberate choice — a free visit —
+                        // and must not snap back to $20. Charged visits clamp
+                        // to the $20-$100 band.
+                        const n = Math.round(Number(callOutFee));
+                        setCallOutFee(
+                          !Number.isFinite(n) || n <= 0
+                            ? '0'
+                            : String(Math.min(100, Math.max(20, n))),
+                        );
                       }}
                       className="w-full pl-7 pr-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal focus:border-ct-teal"
                     />
                   </div>
-                  <p className="text-xs text-ct-mute">
-                    The client pays this when they book your visit — it goes to you, and comes off their final bill if they go ahead. $20–$100.
-                  </p>
+                  {Number(callOutFee) <= 0 ? (
+                    <p className="text-xs text-ct-teal">
+                      Free site visit — the client books without paying anything.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-ct-mute">
+                      The client pays this when they book your visit — it goes to you, and comes off their final bill if they go ahead. Set $0 to offer a free visit; otherwise $20–$100.
+                    </p>
+                  )}
                 </div>
               )}
 

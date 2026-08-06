@@ -266,7 +266,9 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   useEffect(() => {
     if (tradieDetails?.hourly_rate) setRate(String(tradieDetails.hourly_rate));
     if (profile?.call_out_fee) setCallOut(String(profile.call_out_fee));
-    else if (tradieDetails?.default_call_out_fee_cents) setCallOut(String(Math.round(tradieDetails.default_call_out_fee_cents / 100)));
+    // != null, not truthy: a saved default of 0 means this tradie offers free
+    // visits, and should prefill as 0 rather than reading as "no default".
+    else if (tradieDetails?.default_call_out_fee_cents != null) setCallOut(String(Math.round(tradieDetails.default_call_out_fee_cents / 100)));
   }, [tradieDetails, profile]);
 
   // Auto travel distance from the tradie's base to the client.

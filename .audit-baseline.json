@@ -1,15 +1,7 @@
 {
   "advisories": [
-    "brace-expansion::https://github.com/advisories/GHSA-mh99-v99m-4gvg",
-    "brace-expansion::https://github.com/advisories/GHSA-rgw5-rvv9-x895",
     "react-router-dom::https://github.com/advisories/GHSA-jjmj-jmhj-qwj2",
     "react-router::https://github.com/advisories/GHSA-337j-9hxr-rhxg",
-    "react-router::https://github.com/advisories/GHSA-wrjc-x8rr-h8h6",
-    "tar::https://github.com/advisories/GHSA-r292-9mhp-454m",
-    "undici::https://github.com/advisories/GHSA-4cwx-7wf7-3272",
-    "undici::https://github.com/advisories/GHSA-8xcm-r25x-g524",
-    "undici::https://github.com/advisories/GHSA-jr45-8vmc-qm54",
-    "undici::https://github.com/advisories/GHSA-m8rv-5g2x-5cg5",
-    "undici::https://github.com/advisories/GHSA-v3r7-h72x-cjcm"
+    "react-router::https://github.com/advisories/GHSA-wrjc-x8rr-h8h6"
   ]
 }
