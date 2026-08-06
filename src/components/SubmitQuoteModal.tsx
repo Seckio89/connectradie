@@ -17,6 +17,7 @@ import {
   Eye,
   Car,
   ShieldCheck,
+  BarChart3,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -27,7 +28,7 @@ import MarginCheckPanel from './MarginCheckPanel';
 import CancellationTerms from './CancellationTerms';
 import { checkMargin, toCostSnapshot, COST_BASIS_DEFAULTS } from '../lib/costModel';
 import type { CostBasis } from '../lib/costModel';
-import { getCostBasis, saveQuoteCostSnapshot } from '../lib/pricingHelper';
+import { getCostBasis, saveQuoteCostSnapshot, getAreaPriceRange, type AreaPriceRange } from '../lib/pricingHelper';
 import { calculatePlatformFee, getChargedTier } from '../lib/subscription';
 import { acceptCancellationTerms } from '../lib/cancellationPolicy';
 import type { Job } from '../types/database';
@@ -256,6 +257,8 @@ export default function SubmitQuoteModal({
     if (def != null && def >= 0) setCallOutFee(String(Math.round(def / 100)));
   }, [tradieDetails]);
   const tradeType = tradieDetails?.trade_category || category.toLowerCase();
+  // Market ranges are a paid feature — same gate as QuoteEstimator.
+  const isPaidTier = getChargedTier(tradieDetails?.subscription_tier) !== 'free';
 
   // Resolve which message options to show based on job trade/category
   const messageOptionsKey = useMemo(() =>
@@ -271,35 +274,41 @@ export default function SubmitQuoteModal({
   const [messageOptionIndex, setMessageOptionIndex] = useState(0);
   const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [messageExpanded, setMessageExpanded] = useState(false);
-  const [priceHint, setPriceHint] = useState<{ min: number; max: number } | null>(null);
+  const [areaRange, setAreaRange] = useState<AreaPriceRange | null>(null);
   const [selectedPill, setSelectedPill] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const durationPills = useMemo(() => getDurationPillsForTrade(tradeType), [tradeType]);
 
-  // Fetch price guidance from similar quotes
+  // Anonymised area market range, from the same RPC QuoteEstimator uses.
+  //
+  // This used to select straight from `quotes` filtered only on
+  // status='pending', then average the result and label it "typical range for
+  // similar jobs". Under the table's RLS policy — `auth.uid() = tradie_id OR
+  // the caller is the job's client` — a tradie matches only their OWN rows, so
+  // that panel showed a tradie their own last 20 quotes back as market data.
+  // Someone who habitually underprices saw their own low numbers confirmed as
+  // typical, which is precisely the trap the cost-basis margin check exists to
+  // catch. (The old effect even listed categoryRaw and location_address as
+  // dependencies while the query used neither — the filters were intended and
+  // never wired up.)
+  //
+  // get_area_price_range is SECURITY DEFINER, so it aggregates the whole
+  // corpus rather than the caller's slice: accepted quotes only (agreed
+  // prices, not asked), 18-month window, matched on trade and a lat/lng box,
+  // and it returns nulls below 5 comparable quotes so nothing here can be
+  // traced to one tradie.
   useEffect(() => {
-    if (!isOpen) return;
-    setPriceHint(null);
-
-    supabase
-      .from('quotes')
-      .select('price_min, price_max')
-      .eq('status', 'pending')
-      .limit(20)
-      .then(({ data }) => {
-        if (!data || data.length < 3) return;
-        const mins = data.map((q: Record<string, unknown>) => q.price_min as number).sort((a: number, b: number) => a - b);
-        const maxes = data.map((q: Record<string, unknown>) => q.price_max as number).sort((a: number, b: number) => a - b);
-        const trimmedMin = mins.slice(1, -1);
-        const trimmedMax = maxes.slice(1, -1);
-        const avgMin = trimmedMin.reduce((a: number, b: number) => a + b, 0) / trimmedMin.length;
-        const avgMax = trimmedMax.reduce((a: number, b: number) => a + b, 0) / trimmedMax.length;
-        if (avgMin > 0 && avgMax > 0) {
-          setPriceHint({ min: Math.round(avgMin / 10) * 10, max: Math.round(avgMax / 10) * 10 });
-        }
-      }, () => {});
-  }, [isOpen, categoryRaw, job.location_address]);
+    if (!isOpen || !tradeType) { setAreaRange(null); return; }
+    let cancelled = false;
+    // tradeType is what gets written to quotes.trade_category on submit below;
+    // the read has to use the same value or a quote is invisible to the very
+    // range it feeds. property_type has no source on a posted job — the RPC
+    // treats null as a match.
+    getAreaPriceRange(tradeType.toLowerCase(), null, job.latitude ?? null, job.longitude ?? null)
+      .then((r) => { if (!cancelled) setAreaRange(r); });
+    return () => { cancelled = true; };
+  }, [isOpen, tradeType, job.latitude, job.longitude]);
 
   // Auto-load first message option (or saved template) when modal opens
   useEffect(() => {
@@ -922,10 +931,24 @@ export default function SubmitQuoteModal({
                   }
                   return null;
                 })()}
-                {priceHint && (
-                  <p className="mt-1.5 text-xs text-ct-mute">
-                    Typical range for similar jobs: ${priceHint.min.toLocaleString()} – ${priceHint.max.toLocaleString()}
-                  </p>
+                {/* Anonymised area market range — Pro/PM see the numbers, free
+                    tier a teaser, and only when there are ≥5 comparable quotes.
+                    Same data and same gate as QuoteEstimator, so the submit form
+                    doesn't give away what the estimator sells. */}
+                {areaRange && areaRange.low != null && areaRange.high != null && (
+                  isPaidTier ? (
+                    <p className="mt-1.5 text-xs text-ct-mute-2">
+                      Market range for {tradeType.toLowerCase()} in this area:{' '}
+                      <span className="font-semibold">${areaRange.low.toLocaleString()}–${areaRange.high.toLocaleString()}</span>
+                      {areaRange.mid != null && <span className="text-ct-mute-2"> · typically ${areaRange.mid.toLocaleString()}</span>}
+                      <span className="block text-[0.6875rem] text-ct-mute-2/80 mt-0.5">Anonymised from {areaRange.sampleSize} nearby quotes — a guide, not a target.</span>
+                    </p>
+                  ) : (
+                    <Link to="/pricing" className="mt-1.5 flex items-center gap-2 rounded-ct-sm border border-dashed border-ct-line bg-ct-surface px-3 py-2 hover:bg-ct-surface-2 transition-colors">
+                      <BarChart3 className="w-4 h-4 flex-shrink-0 text-ct-mute" />
+                      <span className="text-[0.6875rem] text-ct-mute"><span className="font-medium text-ct-mute-2">See what {tradeType.toLowerCase()}s charge in this area</span> — market price ranges are a Pro feature.</span>
+                    </Link>
+                  )
                 )}
                 {/* Pricing v2.1 — materials at cost carry no commission. Part of the
                     quoted total above; labour is the remainder. */}

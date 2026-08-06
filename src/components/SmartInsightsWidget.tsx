@@ -32,7 +32,11 @@ function generateInsight(data: InsightData): { text: string; type: 'positive' | 
 
   if (data.winRate >= 50) {
     return {
-      text: `Your quote win rate is ${data.winRate}% -- above average for your area. Keep up the strong pricing.`,
+      // Says only what was measured. This used to read "above average for your
+      // area — keep up the strong pricing", but no area comparison is performed
+      // anywhere (the threshold is a flat winRate >= 50) and nothing here ties
+      // win rate to price.
+      text: `You're winning ${data.winRate}% of the quotes you send. Keep an eye on it as you take on more work.`,
       type: 'positive',
     };
   }
