@@ -339,6 +339,8 @@
     "20260804120000_variations_require_fundable_escrow.sql",
     "20260805010000_create_tradie_cost_settings.sql",
     "20260805020000_fix_area_price_range_basis.sql",
-    "20260806010000_label_v1_cascade_declines.sql"
+    "20260806010000_label_v1_cascade_declines.sql",
+    "20260806092759_backfill_quote_trade_category_and_price_floor.sql",
+    "20260806111049_fix_role_first_claim_and_team_reinvite.sql"
   ]
 }
