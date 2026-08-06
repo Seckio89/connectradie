@@ -102,9 +102,15 @@ export default function Login() {
       // redirectTo resolves to the live origin (e.g. https://connectradie.com/dashboard),
       // which is what the Capacitor WebView loads — so the OAuth round-trip stays
       // in-app. This URL must be whitelisted in Supabase Auth → URL Configuration.
+      // prompt=select_account forces Google's account chooser every time. Without
+      // it Google silently reuses the browser's active session, so someone with
+      // more than one Google account never gets to pick which one signs in.
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}/dashboard` },
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+          queryParams: { prompt: 'select_account' },
+        },
       });
       if (error) throw error;
       // Success: the browser is now redirecting to Google — keep the spinner up.

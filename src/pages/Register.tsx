@@ -84,9 +84,15 @@ export default function Register() {
       return;
     }
 
+    // prompt=select_account forces Google's account chooser every time. Without
+    // it Google silently reuses the browser's active session, so someone with
+    // more than one Google account never gets to pick which one they sign up as.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/onboarding` },
+      options: {
+        redirectTo: `${window.location.origin}/onboarding`,
+        queryParams: { prompt: 'select_account' },
+      },
     });
     if (error) {
       setError(friendlyError(error, 'Unable to sign up with Google. Please try again.'));
