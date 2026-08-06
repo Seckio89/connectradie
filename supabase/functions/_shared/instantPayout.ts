@@ -200,6 +200,16 @@ export function isUnavailableFlagFresh(checkedAt: unknown, nowMs: number): boole
  * Attempt 0 deliberately yields the bare, unsuffixed key: a payment already
  * in flight under the old scheme keeps the key it started with, so this change
  * cannot orphan one mid-release.
+ *
+ * THE COUNTER'S CONTRACT (enforced at the recording sites, not here): it
+ * advances only on DETERMINISTIC rejections — canFallBackToStandard(err) true,
+ * meaning Stripe received the request and refused it, creating nothing. An
+ * AMBIGUOUS failure (network drop, timeout) may mean the payout was actually
+ * created and only the response was lost; advancing the key past one would
+ * make the retry create a SECOND payout. Keeping the key lets Stripe's replay
+ * resolve it either way: payout exists → replay returns it and the release
+ * completes; request never executed → the retry is effectively fresh. See
+ * PayoutFailureOptions.countAttempt in payoutFailure.ts.
  */
 export function releasePayoutIdempotencyKey(
   paymentId: string,

@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
-import { createReleasePayout, releasePayoutIdempotencyKey } from "../_shared/instantPayout.ts";
+import { canFallBackToStandard, createReleasePayout, releasePayoutIdempotencyKey } from "../_shared/instantPayout.ts";
 import { expirePendingVariations } from "../_shared/expireVariations.ts";
 import { clearPayoutFailure, markPayoutFailed, type PaymentMetadata } from "../_shared/payoutFailure.ts";
 
@@ -49,11 +49,20 @@ async function recordPayoutFailure(
   paymentId: string,
   metadata: Record<string, unknown> | null | undefined,
   message: string,
+  // The counter advances the idempotency key, so it may only count failures
+  // where Stripe DEFINITELY created nothing. An ambiguous failure (network
+  // drop, timeout) retried under a new key could pay the tradie twice —
+  // callers that just caught a Stripe error must pass canFallBackToStandard.
+  // Sites that failed BEFORE any Stripe call default to true: no request was
+  // made, so no payout can exist and a fresh key is harmless.
+  countAttempt = true,
 ): Promise<void> {
   try {
     await supabase
       .from("payments")
-      .update({ metadata: markPayoutFailed(metadata, message, new Date().toISOString()) })
+      .update({
+        metadata: markPayoutFailed(metadata, message, new Date().toISOString(), { countAttempt }),
+      })
       .eq("id", paymentId);
   } catch (err) {
     console.error(`Could not record payout failure for payment ${paymentId}:`, err);
@@ -570,7 +579,18 @@ Deno.serve(async (req: Request) => {
           // The row stays 'completed' so the next tick retries — but until now it
           // also stayed SILENT, which is how two live payments sat unpaid for
           // days looking exactly like ones nobody had attempted.
-          await recordPayoutFailure(supabase, payment.id, existingMetadata, msg);
+          //
+          // canFallBackToStandard: only a DETERMINISTIC rejection advances the
+          // counter (and so the key). An ambiguous error may mean the payout
+          // was actually created — the retry must replay the SAME key so
+          // Stripe returns it instead of creating a second one.
+          await recordPayoutFailure(
+            supabase,
+            payment.id,
+            existingMetadata,
+            msg,
+            canFallBackToStandard(stripeErr),
+          );
         }
 
         // Skip the legacy transfer path below
@@ -832,7 +852,18 @@ Deno.serve(async (req: Request) => {
           : "Stripe transfer failed";
         errors.push(`Job ${job.id}: ${msg}`);
         console.error(`Stripe transfer failed for job ${job.id}:`, stripeErr);
-        await recordPayoutFailure(supabase, payment.id, existingMetadata, msg);
+        // Same discrimination as the destination path: an ambiguous transfer
+        // failure must not advance the counter. The legacy transfer key is a
+        // fixed string the counter never touches, but the counter feeds the
+        // DESTINATION key — and metadata.flow is data, not a constraint, so a
+        // row must never carry a counter its own history can't justify.
+        await recordPayoutFailure(
+          supabase,
+          payment.id,
+          existingMetadata,
+          msg,
+          canFallBackToStandard(stripeErr),
+        );
       }
     }
 
@@ -925,7 +956,7 @@ Deno.serve(async (req: Request) => {
           const m = splitErr instanceof Error ? splitErr.message : String(splitErr);
           console.error(`Split payout retry failed for payment ${row.id}:`, m);
           errors.push(`Split payout ${row.id}: ${m}`);
-          await recordPayoutFailure(supabase, row.id, sm, m);
+          await recordPayoutFailure(supabase, row.id, sm, m, canFallBackToStandard(splitErr));
         }
       }
     } catch (sweepErr) {

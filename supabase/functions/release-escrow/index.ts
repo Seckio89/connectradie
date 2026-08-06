@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
 import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
-import { createReleasePayout, releasePayoutIdempotencyKey } from "../_shared/instantPayout.ts";
+import { canFallBackToStandard, createReleasePayout, releasePayoutIdempotencyKey } from "../_shared/instantPayout.ts";
 import { clearPayoutFailure, payoutFailureFields } from "../_shared/payoutFailure.ts";
 import { expirePendingVariations } from "../_shared/expireVariations.ts";
 
@@ -240,6 +240,11 @@ export const handler = async (req: Request): Promise<Response> => {
       let payoutId: string | null = null;
       let payoutAmount: number | null = null;
       let payoutError: string | null = null;
+      // Whether the failure DEFINITELY created no payout. Only such failures
+      // may advance payout_attempts — the counter moves the idempotency key,
+      // and advancing it past an ambiguous failure (timeout after Stripe
+      // created the payout) would pay the tradie twice on the retry.
+      let payoutErrorDeterministic = true;
       let payoutMethod: "standard" | "instant" = "standard";
       let instantFeeCents = 0;
 
@@ -285,6 +290,7 @@ export const handler = async (req: Request): Promise<Response> => {
         instantFeeCents = outcome.feeCents;
       } catch (payoutErr) {
         payoutError = payoutErr instanceof Error ? payoutErr.message : String(payoutErr);
+        payoutErrorDeterministic = canFallBackToStandard(payoutErr);
         console.warn(
           "Destination payout failed — keeping payment retryable. Payment:",
           paymentId,
@@ -323,11 +329,15 @@ export const handler = async (req: Request): Promise<Response> => {
                 payout_method: payoutMethod,
                 ...(instantFeeCents > 0 ? { instant_fee_cents: instantFeeCents } : {}),
               }
-              // Records the attempt COUNT as well as the reason. That counter is
+              // Records the attempt COUNT as well as the reason. The counter is
               // what advances the idempotency key on the next try, so a
-              // transient failure can no longer wedge the payout for 24 hours
-              // behind Stripe's cached error.
-              : payoutFailureFields(existingMetadata, payoutError, releasedAt)),
+              // DETERMINISTIC failure can no longer wedge the payout for 24
+              // hours behind Stripe's cached error — while an ambiguous one
+              // (which may have created a payout) keeps the key, so the retry
+              // replays it rather than paying twice.
+              : payoutFailureFields(existingMetadata, payoutError, releasedAt, {
+                countAttempt: payoutErrorDeterministic,
+              })),
             platform_fee_deducted: platformFeeCents,
             // v2.1: keep the two components visible on the released record so a
             // tradie's payout breakdown can show "our fee" and "card processing

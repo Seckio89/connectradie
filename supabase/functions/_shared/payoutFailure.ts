@@ -47,8 +47,33 @@ export function markPayoutFailed(
   metadata: PaymentMetadata | null | undefined,
   message: string | null | undefined,
   nowIso: string,
+  options?: PayoutFailureOptions,
 ): PaymentMetadata {
-  return { ...(metadata ?? {}), ...payoutFailureFields(metadata, message, nowIso) };
+  return { ...(metadata ?? {}), ...payoutFailureFields(metadata, message, nowIso, options) };
+}
+
+export interface PayoutFailureOptions {
+  /**
+   * Whether this failure should advance `payout_attempts` — and therefore the
+   * idempotency key the next attempt uses (releasePayoutIdempotencyKey).
+   *
+   * MUST be false for AMBIGUOUS failures: a network drop or timeout may mean
+   * Stripe actually CREATED the payout and only the response was lost. Retrying
+   * under a new key would then create a second payout and pay the tradie twice.
+   * Keeping the counter — and so the key — lets Stripe's replay resolve it: if
+   * the payout exists the replay returns it and the release completes; if the
+   * request never executed the retry is effectively fresh.
+   *
+   * True (the default) is correct only for DETERMINISTIC rejections — Stripe
+   * received the request and refused it, creating nothing — which are exactly
+   * the responses Stripe caches for 24h and that wedge a fixed key.
+   * canFallBackToStandard in instantPayout.ts is the discriminator.
+   *
+   * Caught in review before it shipped: the first version of this module
+   * counted every failure, which would have traded the 24h wedge for a
+   * double payout on ambiguous errors.
+   */
+  countAttempt?: boolean;
 }
 
 /**
@@ -66,17 +91,21 @@ export function payoutFailureFields(
   metadata: PaymentMetadata | null | undefined,
   message: string | null | undefined,
   nowIso: string,
+  options?: PayoutFailureOptions,
 ): PaymentMetadata {
   const prior = Number((metadata ?? {}).payout_attempts);
+  const priorCount = Number.isFinite(prior) && prior > 0 ? Math.floor(prior) : 0;
+  const countAttempt = options?.countAttempt ?? true;
   return {
     payout_pending: true,
     // Stored as given. release-escrow's payoutError is `string | null` and a
     // null there is honest — it means no message was captured — so it is not
-    // dressed up as one. The timestamp and counter still advance either way,
-    // which is what the retry actually depends on.
+    // dressed up as one. The timestamp still advances either way; the COUNTER
+    // only advances for deterministic rejections (see PayoutFailureOptions),
+    // because the counter is what moves the idempotency key.
     payout_last_error: message ?? null,
     payout_last_attempt_at: nowIso,
-    payout_attempts: Number.isFinite(prior) && prior > 0 ? prior + 1 : 1,
+    payout_attempts: countAttempt ? priorCount + 1 : priorCount,
   };
 }
 

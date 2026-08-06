@@ -149,6 +149,50 @@ Deno.test("a junk counter cannot collapse two attempts onto one key", () => {
   notStrictEqual(junk, next);
 });
 
+Deno.test("an AMBIGUOUS failure records the error but does NOT advance the key", () => {
+  // The double-payout guard, caught in review. A timeout may mean Stripe
+  // actually created the payout; a new key on the retry would create a second
+  // one. The failure is still visible — message and timestamp update — but the
+  // counter, and therefore the key, holds still so the retry REPLAYS.
+  const before = markPayoutFailed({}, "balance_insufficient", "2026-08-06T00:00:00.000Z");
+  strictEqual(before.payout_attempts, 1);
+
+  const afterAmbiguous = markPayoutFailed(before, "connection reset", "2026-08-06T06:00:00.000Z", {
+    countAttempt: false,
+  });
+  strictEqual(afterAmbiguous.payout_attempts, 1, "counter must not advance");
+  strictEqual(afterAmbiguous.payout_last_error, "connection reset", "error still recorded");
+  strictEqual(afterAmbiguous.payout_last_attempt_at, "2026-08-06T06:00:00.000Z");
+
+  strictEqual(
+    releasePayoutIdempotencyKey("pay_1", before),
+    releasePayoutIdempotencyKey("pay_1", afterAmbiguous),
+    "same key → Stripe replays the original outcome instead of paying twice",
+  );
+});
+
+Deno.test("an ambiguous failure with no prior counter leaves the bare key", () => {
+  // First-ever attempt times out: counter stays 0, key stays the legacy bare
+  // form — the retry replays whatever that first request actually did.
+  const after = markPayoutFailed({}, "timeout", "2026-08-06T00:00:00.000Z", {
+    countAttempt: false,
+  });
+  strictEqual(after.payout_attempts, 0);
+  strictEqual(releasePayoutIdempotencyKey("pay_1", after), "release_payout_pay_1");
+});
+
+Deno.test("deterministic after ambiguous advances exactly once", () => {
+  // timeout (hold) → replayed 400 (advance): the sequence our two live
+  // payments would follow. The key must move exactly one step.
+  let meta = markPayoutFailed({}, "timeout", "2026-08-06T00:00:00.000Z", { countAttempt: false });
+  const heldKey = releasePayoutIdempotencyKey("pay_1", meta);
+  meta = markPayoutFailed(meta, "balance_insufficient", "2026-08-06T06:00:00.000Z");
+  const movedKey = releasePayoutIdempotencyKey("pay_1", meta);
+
+  strictEqual(heldKey, "release_payout_pay_1");
+  strictEqual(movedKey, "release_payout_pay_1:r1");
+});
+
 Deno.test("payoutFailureFields carries the counter forward for release-escrow", () => {
   // release-escrow assembles its metadata inline. If it dropped the counter the
   // key would never advance on the client-initiated path.
