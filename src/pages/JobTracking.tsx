@@ -200,7 +200,7 @@ export default function JobTracking() {
               <span className="text-xs">Map unavailable</span>
             </div>
           )}
-          <div className="flex items-center gap-3 px-4 py-2.5 text-[11px] text-ct-mute border-t border-ct-line-soft">
+          <div className="flex items-center gap-3 px-4 py-2.5 text-[0.6875rem] text-ct-mute border-t border-ct-line-soft">
             <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-ct-surface-2" /> Site</span>
             <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-ct-teal" /> Check-in</span>
             <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-ct-rose/[0.13]" /> Check-out</span>
@@ -225,15 +225,15 @@ export default function JobTracking() {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center">
                 <div className="rounded-ct-md bg-ct-surface-2 p-3">
-                  <p className="text-[11px] text-ct-mute uppercase tracking-wide">Check-in</p>
+                  <p className="text-[0.6875rem] text-ct-mute uppercase tracking-wide">Check-in</p>
                   <p className="text-base font-bold text-ct-paper mt-0.5 tabular-nums">{formatTime(latest.arrivedAt)}</p>
                 </div>
                 <div className="rounded-ct-md bg-ct-surface-2 p-3">
-                  <p className="text-[11px] text-ct-mute uppercase tracking-wide">Check-out</p>
+                  <p className="text-[0.6875rem] text-ct-mute uppercase tracking-wide">Check-out</p>
                   <p className="text-base font-bold text-ct-paper mt-0.5 tabular-nums">{latest.leftAt ? formatTime(latest.leftAt) : 'On site'}</p>
                 </div>
                 <div className="rounded-ct-md bg-ct-teal/[0.14] p-3">
-                  <p className="text-[11px] text-ct-teal uppercase tracking-wide">On site</p>
+                  <p className="text-[0.6875rem] text-ct-teal uppercase tracking-wide">On site</p>
                   <p className="text-base font-bold text-ct-teal mt-0.5 tabular-nums">
                     {latest.leftAt
                       ? formatDuration(latest.durationMs)
@@ -249,7 +249,7 @@ export default function JobTracking() {
                   <span className={`flex-1 h-1.5 mx-1 rounded-full ${latest.leftAt ? 'bg-ct-teal/[0.14]' : 'bg-ct-teal/[0.14] animate-pulse'}`} />
                   <span className={`w-3 h-3 rounded-full flex-shrink-0 ${latest.leftAt ? 'bg-ct-rose/[0.13]' : 'bg-ct-line'}`} />
                 </div>
-                <div className="flex items-center justify-between mt-1 text-[11px] text-ct-mute">
+                <div className="flex items-center justify-between mt-1 text-[0.6875rem] text-ct-mute">
                   <span>Arrived {formatTime(latest.arrivedAt)}</span>
                   <span>{latest.leftAt ? `Left ${formatTime(latest.leftAt)}` : 'Still on site'}</span>
                 </div>
@@ -282,7 +282,7 @@ export default function JobTracking() {
                   Check in now
                 </button>
               )}
-              <p className="mt-1.5 text-[11px] text-ct-mute text-center">
+              <p className="mt-1.5 text-[0.6875rem] text-ct-mute text-center">
                 Check-in is automatic when you cross the site boundary — use this if GPS is unreliable indoors.
               </p>
               {checkError && <p className="mt-1 text-xs text-ct-rose text-center">{checkError}</p>}
@@ -372,7 +372,7 @@ function WorkerRow({ worker, avgMs }: { worker: TrackWorker; avgMs: number | nul
         </div>
       </div>
       {earlyLeave && (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-ct-amber/[0.13] text-ct-amber flex-shrink-0">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-ct-amber/[0.13] text-ct-amber flex-shrink-0">
           <AlertTriangle className="w-3 h-3" /> Left early
         </span>
       )}

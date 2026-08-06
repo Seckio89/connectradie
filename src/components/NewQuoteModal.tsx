@@ -543,7 +543,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                         <span className="min-w-0">
                           <span className="text-sm font-medium text-ct-paper">{s.site_name}</span>
                           {s.address && <span className="block text-xs text-ct-mute truncate">{s.address}</span>}
-                          {s.contact_email && <span className="block text-[11px] text-ct-mute truncate">Quote emails go to {s.contact_email}</span>}
+                          {s.contact_email && <span className="block text-[0.6875rem] text-ct-mute truncate">Quote emails go to {s.contact_email}</span>}
                         </span>
                       </button>
                     ))}
@@ -572,7 +572,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                           {savingSite && <Loader2 className="w-3 h-3 animate-spin" />} Save location
                         </button>
                       </div>
-                      <p className="text-[11px] text-ct-mute">Add full details (site email, access notes) later on the client page.</p>
+                      <p className="text-[0.6875rem] text-ct-mute">Add full details (site email, access notes) later on the client page.</p>
                     </div>
                   ) : (
                     <button
@@ -794,7 +794,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                   <div className="mt-3 space-y-3">
                     {/* Frequency */}
                     <div>
-                      <p className="text-[11px] font-medium text-ct-mute uppercase tracking-wide mb-1.5">Frequency</p>
+                      <p className="text-[0.6875rem] font-medium text-ct-mute uppercase tracking-wide mb-1.5">Frequency</p>
                       <div className="flex flex-wrap gap-1.5">
                         {FREQUENCIES.map((f) => (
                           <button key={f.key} type="button" onClick={() => setFrequency(f.key)}
@@ -808,7 +808,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                     {/* Visits per cycle */}
                     <div>
                       <div className="flex items-center justify-between">
-                        <p className="text-[11px] font-medium text-ct-mute uppercase tracking-wide">Visits per {freqLabel.toLowerCase()} cycle</p>
+                        <p className="text-[0.6875rem] font-medium text-ct-mute uppercase tracking-wide">Visits per {freqLabel.toLowerCase()} cycle</p>
                         <div className="flex items-center gap-2">
                           <button type="button" onClick={() => setVisits(visitsPerCycle - 1)} disabled={visitsPerCycle <= 1}
                             aria-label="Fewer visits"
@@ -819,14 +819,14 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                             className="w-7 h-7 inline-flex items-center justify-center rounded-ct-sm border border-ct-line text-ct-mute-2 hover:bg-ct-surface-2 disabled:opacity-40">+</button>
                         </div>
                       </div>
-                      <p className="text-[11px] text-ct-mute mt-1">e.g. a weekly office clean with a full clean on Monday and a light one on Thursday.</p>
+                      <p className="text-[0.6875rem] text-ct-mute mt-1">e.g. a weekly office clean with a full clean on Monday and a light one on Thursday.</p>
                     </div>
 
                     {/* Per-visit day + duration */}
                     <div className="space-y-1.5">
                       {visitSlots.map((s, i) => (
                         <div key={i} className="flex items-center gap-2">
-                          <span className="text-[11px] text-ct-mute w-12 flex-shrink-0">Visit {i + 1}</span>
+                          <span className="text-[0.6875rem] text-ct-mute w-12 flex-shrink-0">Visit {i + 1}</span>
                           <select value={s.day} onChange={(e) => updateSlot(i, { day: e.target.value })} aria-label={`Visit ${i + 1} day`}
                             className="flex-1 px-2 py-1.5 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal">
                             {DAY_OPTS.map((d) => <option key={d} value={d}>{d}</option>)}
@@ -847,7 +847,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
 
                     {/* Price basis */}
                     <div>
-                      <p className="text-[11px] font-medium text-ct-mute uppercase tracking-wide mb-1.5">The price above is</p>
+                      <p className="text-[0.6875rem] font-medium text-ct-mute uppercase tracking-wide mb-1.5">The price above is</p>
                       <div className="flex flex-wrap items-center gap-1.5">
                         {([['per_visit', 'Per visit'], ['per_cycle', `Per ${freqLabel.toLowerCase()} cycle`]] as const).map(([key, label]) => (
                           <button key={key} type="button" onClick={() => setPriceBasis(key)}
@@ -857,7 +857,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                         ))}
                       </div>
                       {priceNum > 0 && visitsPerCycle > 1 && (
-                        <p className="text-[11px] text-ct-mute mt-1.5">
+                        <p className="text-[0.6875rem] text-ct-mute mt-1.5">
                           {priceBasis === 'per_visit'
                             ? <>≈ <span className="font-medium text-ct-mute-2">{aud(cyclePrice)}</span> per {freqLabel.toLowerCase()} cycle ({visitsPerCycle} × {aud(perVisitPrice)})</>
                             : <>≈ <span className="font-medium text-ct-mute-2">{aud(perVisitPrice)}</span> per visit ({aud(cyclePrice)} ÷ {visitsPerCycle})</>}
@@ -867,7 +867,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
 
                     {/* Consumables */}
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] text-ct-mute">Consumables:</span>
+                      <span className="text-[0.6875rem] text-ct-mute">Consumables:</span>
                       {(['client', 'tradie_billed'] as const).map((c) => (
                         <button key={c} type="button" onClick={() => setConsumables(c)}
                           className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${

@@ -392,7 +392,7 @@ export default function MyProfile() {
                   </div>
                   <div className="p-6">
                     {(profile?.bio || tradieDetails?.bio) ? (
-                      <p className="text-ct-mute-2 leading-relaxed whitespace-pre-line text-[15px]">
+                      <p className="text-ct-mute-2 leading-relaxed whitespace-pre-line text-[0.9375rem]">
                         {profile?.bio || tradieDetails?.bio}
                       </p>
                     ) : (

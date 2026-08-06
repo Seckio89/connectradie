@@ -613,7 +613,7 @@ function InvoiceSection({ jobId, billingCycle, lastInvoicedAt, onSent }: {
                       </div>
                     ))}
                   </div>
-                  <p className="text-[11px] text-ct-mute mt-1.5">
+                  <p className="text-[0.6875rem] text-ct-mute mt-1.5">
                     These visits won't be invoiced until you confirm them as completed.
                   </p>
                 </div>
@@ -1067,7 +1067,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
           Supplies
           {supplies.length > 0 && <span className="text-ct-mute font-normal normal-case">({supplies.length})</span>}
           {lowStockItems.length > 0 && (
-            <span className="px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber rounded-full text-[10px] font-semibold normal-case">
+            <span className="px-1.5 py-0.5 bg-ct-amber/[0.13] text-ct-amber rounded-full text-[0.625rem] font-semibold normal-case">
               {lowStockItems.length} low
             </span>
           )}
@@ -1090,7 +1090,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
         <div className="rounded-ct-sm border border-ct-line overflow-hidden mb-3">
           <table className="w-full">
             <thead>
-              <tr className="bg-ct-surface-2 text-[10px] font-medium text-ct-mute uppercase tracking-wide">
+              <tr className="bg-ct-surface-2 text-[0.625rem] font-medium text-ct-mute uppercase tracking-wide">
                 <th className="text-left px-3 py-2">Item</th>
                 <th className="text-center px-2 py-2 w-24">Stock</th>
                 <th className="text-right px-3 py-2 w-20"></th>
@@ -1105,13 +1105,13 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-medium text-ct-paper">{item.name}</span>
-                        <span className={`px-1.5 py-0.5 rounded-ct-xs text-[9px] font-semibold ${
+                        <span className={`px-1.5 py-0.5 rounded-ct-xs text-[0.5625rem] font-semibold ${
                           item.provided_by === 'tradie' ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface-2 text-ct-mute'
                         }`}>
                           {item.provided_by === 'tradie' ? 'You' : 'Client'}
                         </span>
                       </div>
-                      {item.notes && <p className="text-[10px] text-ct-mute mt-0.5">{item.notes}</p>}
+                      {item.notes && <p className="text-[0.625rem] text-ct-mute mt-0.5">{item.notes}</p>}
                     </td>
                     <td className="px-2 py-2.5">
                       {item.stock_level != null ? (
@@ -1129,7 +1129,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
                           >+</button>
                         </div>
                       ) : (
-                        <span className="text-[10px] text-ct-mute block text-center">—</span>
+                        <span className="text-[0.625rem] text-ct-mute block text-center">—</span>
                       )}
                     </td>
                     <td className="px-3 py-2.5 text-right">
@@ -1138,13 +1138,13 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
                           <button
                             onClick={() => handleFlagRestock(item)}
                             disabled={restocking === item.id}
-                            className="px-2 py-1 bg-ct-amber/[0.13] hover:bg-ct-amber hover:text-ct-ink text-ct-amber text-[9px] font-semibold rounded-ct-xs transition-colors disabled:opacity-50"
+                            className="px-2 py-1 bg-ct-amber/[0.13] hover:bg-ct-amber hover:text-ct-ink text-ct-amber text-[0.5625rem] font-semibold rounded-ct-xs transition-colors disabled:opacity-50"
                           >
                             {restocking === item.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Restock'}
                           </button>
                         )}
                         {isLow && alreadyNotified && (
-                          <span className="text-[9px] text-ct-amber font-medium">Alerted</span>
+                          <span className="text-[0.5625rem] text-ct-amber font-medium">Alerted</span>
                         )}
                         <button
                           onClick={() => handleRemoveItem(item.id)}
@@ -1173,7 +1173,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
 
           {/* Item selector */}
           <div>
-            <label className="block text-[10px] font-medium text-ct-mute mb-1">Item</label>
+            <label className="block text-[0.625rem] font-medium text-ct-mute mb-1">Item</label>
             <select
               value={top5.includes(newName) ? newName : newName === '' ? '' : '__other__'}
               onChange={e => {
@@ -1210,7 +1210,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
           {/* Details row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div>
-              <label className="block text-[10px] font-medium text-ct-mute mb-1">Unit</label>
+              <label className="block text-[0.625rem] font-medium text-ct-mute mb-1">Unit</label>
               <input
                 value={newUnit}
                 onChange={e => setNewUnit(e.target.value)}
@@ -1219,7 +1219,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
               />
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-ct-mute mb-1">Supplied by</label>
+              <label className="block text-[0.625rem] font-medium text-ct-mute mb-1">Supplied by</label>
               <select
                 value={newProvidedBy}
                 onChange={e => setNewProvidedBy(e.target.value as 'tradie' | 'client')}
@@ -1230,7 +1230,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-ct-mute mb-1">In stock</label>
+              <label className="block text-[0.625rem] font-medium text-ct-mute mb-1">In stock</label>
               <input
                 type="number"
                 value={newStock}
@@ -1241,7 +1241,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
               />
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-ct-mute mb-1">Alert at</label>
+              <label className="block text-[0.625rem] font-medium text-ct-mute mb-1">Alert at</label>
               <input
                 type="number"
                 value={newThreshold}
@@ -1255,7 +1255,7 @@ function SuppliesSection({ supplies, jobId, clientId, tradeCategory, onUpdate }:
 
           {/* Notes */}
           <div>
-            <label className="block text-[10px] font-medium text-ct-mute mb-1">Notes (optional)</label>
+            <label className="block text-[0.625rem] font-medium text-ct-mute mb-1">Notes (optional)</label>
             <input
               value={newNotes}
               onChange={e => setNewNotes(e.target.value)}
@@ -1351,7 +1351,7 @@ function JobCard({
             <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
               <ChevronDown className={`w-4 h-4 text-ct-mute transition-transform flex-shrink-0 ${isCollapsed ? '-rotate-90' : ''}`} />
               <h4 className="text-sm font-bold text-ct-paper capitalize">{jobLabel}</h4>
-              <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium border ${statusBadge.bg} ${statusBadge.text}`}>
+              <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-full text-[0.625rem] sm:text-xs font-medium border ${statusBadge.bg} ${statusBadge.text}`}>
                 {statusBadge.label}
               </span>
             </div>
@@ -1490,7 +1490,7 @@ function JobCard({
             <ol className="space-y-1.5">
               {descLines.map((line, i) => (
                 <li key={i} className="flex items-start gap-2 text-xs text-ct-mute-2">
-                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-ct-teal/[0.14] text-ct-teal flex items-center justify-center text-[10px] font-bold mt-0.5">
+                  <span className="flex-shrink-0 w-5 h-5 rounded-full bg-ct-teal/[0.14] text-ct-teal flex items-center justify-center text-[0.625rem] font-bold mt-0.5">
                     {i + 1}
                   </span>
                   <span className="pt-0.5">{line}</span>

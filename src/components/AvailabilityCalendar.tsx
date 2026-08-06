@@ -694,7 +694,7 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
                       />
                       <div className="mt-1.5 flex items-start gap-2 rounded-ct-sm bg-ct-surface-2 border border-ct-line px-3 py-2">
                         <Lock className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-ct-mute-2" />
-                        <p className="text-[11px] text-ct-mute-2 leading-relaxed">
+                        <p className="text-[0.6875rem] text-ct-mute-2 leading-relaxed">
                           <span className="font-medium">For entry details only</span> — gate or alarm codes, where the key is, parking or lockbox info. Kept private and shown to your assigned tradie <span className="font-medium">only after they enter their security PIN</span>.
                         </p>
                       </div>

@@ -29,7 +29,7 @@ export default function ProBadge({
   label,
 }: ProBadgeProps) {
   const sizes = {
-    xs: { wrap: 'px-1 py-0.5 text-[10px] gap-0.5', icon: 'w-2 h-2' },
+    xs: { wrap: 'px-1 py-0.5 text-[0.625rem] gap-0.5', icon: 'w-2 h-2' },
     sm: { wrap: 'px-1.5 py-0.5 text-xs gap-0.5', icon: 'w-2.5 h-2.5' },
     md: { wrap: 'px-2 py-1 text-sm gap-1', icon: 'w-3 h-3' },
   }[size];

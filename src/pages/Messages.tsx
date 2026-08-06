@@ -922,7 +922,7 @@ export default function Messages() {
                                   : 'No messages yet'}
                               </p>
                               {hasUnread && (
-                                <span className="w-5 h-5 bg-ct-teal text-ct-ink text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0">
+                                <span className="w-5 h-5 bg-ct-teal text-ct-ink text-[0.625rem] font-bold rounded-full flex items-center justify-center flex-shrink-0">
                                   {conv.unreadCount}
                                 </span>
                               )}
@@ -1004,7 +1004,7 @@ export default function Messages() {
                         <div key={message.id}>
                           {showDate && (
                             <div className="flex items-center justify-center my-3">
-                              <span className="px-3 py-1 bg-ct-surface border border-ct-line rounded-full text-[11px] font-medium text-ct-mute shadow-sm">
+                              <span className="px-3 py-1 bg-ct-surface border border-ct-line rounded-full text-[0.6875rem] font-medium text-ct-mute shadow-sm">
                                 {formatMessageDateSeparator(message.created_at)}
                               </span>
                             </div>
@@ -1027,7 +1027,7 @@ export default function Messages() {
                             }`}
                           >
                             {selectedConversation.is_group && !isOwn && (
-                              <p className="text-[11px] font-semibold text-ct-mute-2 mb-0.5">
+                              <p className="text-[0.6875rem] font-semibold text-ct-mute-2 mb-0.5">
                                 {message.sender_profile?.full_name?.split(' ')[0] || 'Unknown'}
                               </p>
                             )}
@@ -1092,7 +1092,7 @@ export default function Messages() {
                             )}
 
                             <div className={`flex items-center gap-1 mt-1.5 ${isOwn ? 'justify-end' : ''}`}>
-                              <p className={`text-[11px] ${isOwn ? 'text-ct-mute-2' : 'text-ct-mute'}`}>
+                              <p className={`text-[0.6875rem] ${isOwn ? 'text-ct-mute-2' : 'text-ct-mute'}`}>
                                 {new Date(message.created_at).toLocaleTimeString('en-AU', {
                                   hour: '2-digit',
                                   minute: '2-digit',

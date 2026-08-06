@@ -304,7 +304,7 @@ export default function UpcomingTimeline() {
                         <div className="flex items-center gap-1.5">
                           <p className="text-sm font-medium text-ct-paper truncate">{item.title}</p>
                           {item.badge && (
-                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-ct-surface-2 text-ct-mute-2 flex-shrink-0">
+                            <span className="px-1.5 py-0.5 rounded-full text-[0.625rem] font-medium bg-ct-surface-2 text-ct-mute-2 flex-shrink-0">
                               {item.badge}
                             </span>
                           )}

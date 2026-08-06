@@ -44,7 +44,7 @@ const TONE: Record<MarginStatus, { wrap: string; text: string; Icon: typeof Tren
 function Row({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-1">
-      <span className={`text-[11px] ${strong ? 'text-ct-paper font-medium' : 'text-ct-mute-2'}`}>{label}</span>
+      <span className={`text-[0.6875rem] ${strong ? 'text-ct-paper font-medium' : 'text-ct-mute-2'}`}>{label}</span>
       <span className={`text-xs font-ct-mono tabular-nums ${strong ? 'text-ct-paper font-medium' : 'text-ct-mute-2'}`}>
         {value}
       </span>
@@ -75,14 +75,14 @@ export default function MarginCheckPanel({ check, className = '' }: MarginCheckP
                 {money(check.cushionCents)}
               </span>
             </div>
-            <p className="mt-1 text-[11px] leading-snug text-ct-mute-2">{marginStatusHint(check)}</p>
+            <p className="mt-1 text-[0.6875rem] leading-snug text-ct-mute-2">{marginStatusHint(check)}</p>
           </div>
         </div>
 
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="mt-2 inline-flex items-center gap-1 text-[11px] text-ct-mute-2 hover:text-ct-paper transition-colors"
+          className="mt-2 inline-flex items-center gap-1 text-[0.6875rem] text-ct-mute-2 hover:text-ct-paper transition-colors"
           aria-expanded={open}
         >
           <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -106,7 +106,7 @@ export default function MarginCheckPanel({ check, className = '' }: MarginCheckP
           <Row label="You receive, after fees and GST" value={money(check.netToTradieCents)} />
           <Row label="Cushion" value={money(check.cushionCents)} strong />
           {check.minimumApplied && (
-            <p className="mt-2 text-[10px] leading-snug text-ct-mute-2">
+            <p className="mt-2 text-[0.625rem] leading-snug text-ct-mute-2">
               Your minimum job value is higher than this job's costs, so it sets the floor.
             </p>
           )}

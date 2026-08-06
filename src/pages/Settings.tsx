@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { User, Loader2, CheckCircle2, Shield, X, Zap, Crown, BadgeCheck, Wrench, Bell, Settings2, Lock, CreditCard } from 'lucide-react';
+import { User, Loader2, CheckCircle2, Shield, X, Zap, Crown, BadgeCheck, Wrench, Bell, Settings2, Lock, CreditCard, Type } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { saveBaseCoords } from '../lib/profilePrivate';
@@ -17,12 +17,13 @@ import SiteCheckInSetting from '../components/settings/SiteCheckInSetting';
 import { isNativeApp } from '../lib/siteGeofence';
 import AdminToolsTab from '../components/settings/AdminToolsTab';
 import PaymentSettings from '../components/settings/PaymentSettings';
+import InterfaceTab from '../components/settings/InterfaceTab';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import { calculateProfileCompletion, getProfileCompletionTasks, friendlyError } from '../lib/utils';
 import { isPlatformAdmin } from '../lib/subscription';
 import { requestPushPermission, subscribeToPush, savePushPreferences, saveSmsPreference, getPushPermissionStatus } from '../lib/notifications';
 
-type TabType = 'profile' | 'professional' | 'security' | 'verification' | 'notifications' | 'payments' | 'admin';
+type TabType = 'profile' | 'professional' | 'security' | 'verification' | 'notifications' | 'payments' | 'interface' | 'admin';
 
 export default function Settings() {
   const { user, profile, tradieDetails, refreshProfile, signOut } = useAuth();
@@ -554,6 +555,7 @@ export default function Settings() {
     { id: 'verification', label: 'Get Verified', mobileLabel: 'Verify', icon: Shield, show: showTradieFeatures },
     { id: 'notifications', label: 'Notifications', mobileLabel: 'Notify', icon: Bell, show: true },
     { id: 'payments', label: 'Payments', mobileLabel: 'Pay', icon: CreditCard, show: showTradieFeatures },
+    { id: 'interface', label: 'Interface', mobileLabel: 'Text', icon: Type, show: true },
     { id: 'admin', label: 'Admin Tools', mobileLabel: 'Admin', icon: Wrench, show: isAdmin },
   ];
 
@@ -774,13 +776,15 @@ export default function Settings() {
                 onToggleSiteArrival={handleToggleSiteArrival}
                 role={profile?.role as 'tradie' | 'client' | 'admin'}
               />
-              {/* The light/dark Appearance toggle lived here. Removed with the
-                  v2 cutover — the design system is dark-only, and a toggle
-                  that can no longer do anything is worse than none. */}
               {/* Native-only: background-location check-in toggle (tradies). */}
               {isTradie && isNativeApp() && <SiteCheckInSetting />}
             </>
           )}
+
+          {/* Successor to the light/dark Appearance toggle that was removed at
+              the v2 cutover — display preferences have a home again, and this
+              one can actually do something. */}
+          {activeTab === 'interface' && <InterfaceTab />}
 
           {activeTab === 'admin' && isAdmin && (
             <AdminToolsTab

@@ -10,7 +10,16 @@
         <item name="android:navigationBarColor">@color/colorPrimaryDark</item>
     </style>
 
-    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+    <!-- Deliberately NOT DayNight. Under DayNight this theme resolves to night
+         on a dark-mode device, which switches on Android WebView's algorithmic
+         darkening for any page that doesn't declare a color-scheme. Our own web
+         content is exempt (index.css declares color-scheme: dark), but Stripe
+         Checkout is loaded in this same WebView by design — see allowNavigation
+         in capacitor.config.ts — and it is not. WebView darkened Stripe's
+         background while leaving its slate text dark, so the post-payment
+         "You're all done here" screen rendered as unreadable dark-on-dark.
+         The app renders dark regardless via CSS, so nothing here needs DayNight. -->
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>

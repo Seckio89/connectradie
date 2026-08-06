@@ -196,7 +196,7 @@ export default function NewGroupModal({ isOpen, onClose, currentUserId, onCreate
             ) : (
               Object.entries(grouped).map(([group, items]) => (
                 <div key={group}>
-                  <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-ct-mute bg-ct-surface-2">{group}</p>
+                  <p className="px-3 pt-2 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wide text-ct-mute bg-ct-surface-2">{group}</p>
                   {items.map((c) => {
                     const on = selected.has(c.userId);
                     return (

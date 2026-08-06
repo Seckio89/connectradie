@@ -831,7 +831,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-ct-paper truncate">{profile?.full_name}</p>
-                <p className="text-[11px] text-ct-mute capitalize truncate">
+                <p className="text-[0.6875rem] text-ct-mute capitalize truncate">
                   {profile?.role}{isTradie && tradieDetails?.trade_category ? ` \u00B7 ${tradieDetails.trade_category}` : ''}
                 </p>
               </div>
@@ -879,8 +879,11 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                   {(() => {
                     const unreadCount = notifications.filter(n => !n.read_at).length;
                     if (unreadCount === 0) return null;
+                    // min-h, not a fixed h: the count is text-xs, which grows with
+                    // the text-size setting, and an exact 18px box clipped it
+                    // above ~110%.
                     return (
-                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-ct-rose text-ct-ink text-xs font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-ct-ink-2">
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] min-h-[18px] bg-ct-rose text-ct-ink text-xs font-bold rounded-full flex items-center justify-center px-1 ring-2 ring-ct-ink-2">
                         {unreadCount > 9 ? '9+' : unreadCount}
                       </span>
                     );
@@ -896,7 +899,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                           const unread = notifications.filter(n => !n.read_at).length;
                           if (unread === 0) return null;
                           return (
-                            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold text-ct-ink bg-ct-rose rounded-full">
+                            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[0.625rem] font-bold text-ct-ink bg-ct-rose rounded-full">
                               {unread > 9 ? '9+' : unread}
                             </span>
                           );
@@ -944,7 +947,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                                   <p className="text-xs text-ct-mute-2 mt-0.5 line-clamp-2 leading-relaxed">
                                     {notification.message}
                                   </p>
-                                  <p className="font-ct-mono text-[11px] text-ct-mute mt-1">
+                                  <p className="font-ct-mono text-[0.6875rem] text-ct-mute mt-1">
                                     {relativeTime(notification.created_at)}
                                   </p>
                                 </div>
@@ -1129,7 +1132,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     }`}
                   >
                     <Home className="w-5 h-5" />
-                    <span className="text-[10px]">Dashboard</span>
+                    <span className="text-[0.625rem]">Dashboard</span>
                   </Link>
                   <Link
                     to="/work"
@@ -1138,7 +1141,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     }`}
                   >
                     <Briefcase className="w-5 h-5" />
-                    <span className="text-[10px]">Work hub</span>
+                    <span className="text-[0.625rem]">Work hub</span>
                   </Link>
                   <Link
                     to="/schedule"
@@ -1147,7 +1150,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     }`}
                   >
                     <CalendarDays className="w-5 h-5" />
-                    <span className="text-[10px]">Schedule</span>
+                    <span className="text-[0.625rem]">Schedule</span>
                   </Link>
                   <Link
                     to="/messages"
@@ -1156,14 +1159,14 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     }`}
                   >
                     <MessageCircle className="w-5 h-5" />
-                    <span className="text-[10px]">Messages</span>
+                    <span className="text-[0.625rem]">Messages</span>
                   </Link>
                   <button
                     onClick={() => setSidebarOpen(true)}
                     className="flex flex-col items-center justify-center gap-1 text-ct-mute"
                   >
                     <Menu className="w-5 h-5" />
-                    <span className="text-[10px]">More</span>
+                    <span className="text-[0.625rem]">More</span>
                   </button>
                 </>
               ) : (
@@ -1175,7 +1178,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     }`}
                   >
                     <Home className="w-5 h-5" />
-                    <span className="text-[10px]">Dashboard</span>
+                    <span className="text-[0.625rem]">Dashboard</span>
                   </Link>
                   <Link
                     to="/leads"
@@ -1184,7 +1187,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     }`}
                   >
                     <Briefcase className="w-5 h-5" />
-                    <span className="text-[10px]">My jobs</span>
+                    <span className="text-[0.625rem]">My jobs</span>
                   </Link>
                   <Link
                     to="/post-lead"
@@ -1193,7 +1196,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     <div className="bg-ct-teal text-ct-ink rounded-full w-14 h-14 flex items-center justify-center -mt-6 shadow-xl ring-4 ring-ct-ink-2">
                       <Plus className="w-7 h-7" strokeWidth={2.5} />
                     </div>
-                    <span className="text-[10px] font-semibold text-ct-teal -mt-1">Post job</span>
+                    <span className="text-[0.625rem] font-semibold text-ct-teal -mt-1">Post job</span>
                   </Link>
                   <Link
                     to="/messages"
@@ -1202,14 +1205,14 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
                     }`}
                   >
                     <MessageCircle className="w-5 h-5" />
-                    <span className="text-[10px]">Messages</span>
+                    <span className="text-[0.625rem]">Messages</span>
                   </Link>
                   <button
                     onClick={() => setSidebarOpen(true)}
                     className="flex flex-col items-center justify-center gap-1 text-ct-mute"
                   >
                     <Menu className="w-5 h-5" />
-                    <span className="text-[10px]">More</span>
+                    <span className="text-[0.625rem]">More</span>
                   </button>
                 </>
               )}
@@ -1242,7 +1245,7 @@ export default function DashboardLayout({ children, wide = false }: DashboardLay
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-ct-paper leading-tight">{toastNotification.title}</p>
               <p className="text-xs text-ct-mute-2 truncate mt-0.5">{toastNotification.message}</p>
-              <p className="text-[10px] text-ct-teal font-medium mt-1">Click to view</p>
+              <p className="text-[0.625rem] text-ct-teal font-medium mt-1">Click to view</p>
             </div>
             <button
               onClick={(e) => { e.stopPropagation(); setToastNotification(null); }}

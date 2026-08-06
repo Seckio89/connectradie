@@ -1830,7 +1830,7 @@ export default function ClientDashboard() {
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         onClick={(e) => e.stopPropagation()}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-ct-teal text-ct-ink hover:brightness-110 transition-colors"
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.625rem] font-semibold bg-ct-teal text-ct-ink hover:brightness-110 transition-colors"
                                                       >
                                                         Pay now
                                                         <ExternalLink className="w-2.5 h-2.5" />
@@ -1839,7 +1839,7 @@ export default function ClientDashboard() {
                                                       <Link
                                                         to="/payments"
                                                         onClick={(e) => e.stopPropagation()}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-ct-teal text-ct-ink hover:brightness-110 transition-colors"
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.625rem] font-semibold bg-ct-teal text-ct-ink hover:brightness-110 transition-colors"
                                                       >
                                                         Pay now
                                                       </Link>
@@ -1880,7 +1880,7 @@ export default function ClientDashboard() {
                                                           ) : s.status === 'completed' && job.agreed_price ? (
                                                             <span className="text-xs font-medium text-ct-mute-2">${job.agreed_price.toFixed(2)}</span>
                                                           ) : null}
-                                                          <span className={`text-[10px] font-medium ${sStyle.text}`}>{sStyle.label}</span>
+                                                          <span className={`text-[0.625rem] font-medium ${sStyle.text}`}>{sStyle.label}</span>
                                                         </div>
                                                       </div>
                                                     );
@@ -2118,7 +2118,7 @@ export default function ClientDashboard() {
                                         return next;
                                       });
                                     }}
-                                    className="text-[11px] text-ct-mute-2 hover:text-ct-mute-2 font-medium mt-0.5"
+                                    className="text-[0.6875rem] text-ct-mute-2 hover:text-ct-mute-2 font-medium mt-0.5"
                                   >
                                     {expandedDescs.has(job.id) ? 'Show less' : 'Show more'}
                                   </button>
@@ -2127,23 +2127,23 @@ export default function ClientDashboard() {
                             )}
                             <div className="grid grid-cols-2 gap-2 mb-2.5">
                               <div className="bg-ct-surface-2 rounded-ct-sm px-2.5 py-1.5">
-                                <p className="text-[10px] text-ct-mute leading-tight">Frequency</p>
+                                <p className="text-[0.625rem] text-ct-mute leading-tight">Frequency</p>
                                 <p className="text-xs font-medium text-ct-paper">{freqLabel}</p>
                               </div>
                               {job.location && (
                                 <div className="bg-ct-surface-2 rounded-ct-sm px-2.5 py-1.5 min-w-0">
-                                  <p className="text-[10px] text-ct-mute leading-tight">Location</p>
+                                  <p className="text-[0.625rem] text-ct-mute leading-tight">Location</p>
                                   <p className="text-xs font-medium text-ct-paper truncate">{job.location}</p>
                                 </div>
                               )}
                               {job.times_completed > 0 && (
                                 <div className="bg-ct-surface-2 rounded-ct-sm px-2.5 py-1.5">
-                                  <p className="text-[10px] text-ct-mute leading-tight">Sessions</p>
+                                  <p className="text-[0.625rem] text-ct-mute leading-tight">Sessions</p>
                                   <p className="text-xs font-medium text-ct-paper">{job.times_completed}</p>
                                 </div>
                               )}
                               <div className="bg-ct-surface-2 rounded-ct-sm px-2.5 py-1.5">
-                                <p className="text-[10px] text-ct-mute leading-tight">Created</p>
+                                <p className="text-[0.625rem] text-ct-mute leading-tight">Created</p>
                                 <p className="text-xs font-medium text-ct-paper">{new Date(job.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                               </div>
                             </div>

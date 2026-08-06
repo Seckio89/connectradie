@@ -46,7 +46,7 @@ export default function PropertyPreview({ address, lat, lng }: PropertyPreviewPr
       >
         <Home className="w-4 h-4 flex-shrink-0" />
         <span className="font-medium">See the property</span>
-        {address && <span className="text-[11px] text-ct-mute truncate">{address}</span>}
+        {address && <span className="text-[0.6875rem] text-ct-mute truncate">{address}</span>}
       </button>
     );
   }

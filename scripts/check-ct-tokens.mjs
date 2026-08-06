@@ -75,9 +75,58 @@ const files = execSync('git grep -l -- "-ct-" -- "src/*"', { encoding: 'utf8' })
 const stripComment = (line) => {
   const t = line.trimStart();
   if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) return '';
-  const at = line.search(/(?<!:)\/\//);
-  return at === -1 ? line : line.slice(0, at);
+  // `{/* … */}` is how a comment is written inside JSX, and it is the form a
+  // note about a class is most likely to take — the surrounding markup is the
+  // thing being explained. It does not start with `/*` (the brace comes first),
+  // so the prefix test above walks straight past it. Strip closed block spans
+  // before the `//` scan so a documented class name is prose, not a finding.
+  const withoutBlocks = line.replace(/\{?\/\*[\s\S]*?\*\/\}?/g, '');
+  const at = withoutBlocks.search(/(?<!:)\/\//);
+  return at === -1 ? withoutBlocks : withoutBlocks.slice(0, at);
 };
+
+// A font size written in px cannot be scaled by the user. `rem` resolves
+// against the root font size, which is what the text-size setting moves; `px`
+// is absolute and ignores it entirely. So a single `text-[13px]` is not a
+// rounding difference — it is a line of text that stays 13px while every line
+// around it grows, and the larger the user's setting the more conspicuously it
+// is left behind. 434 of them had to be converted by hand to make the setting
+// work at all; this stops the 435th.
+//
+// Scoped to typography deliberately. `min-h-[44px]` is the mobile touch target
+// and MUST stay absolute — a tap target that shrinks with a smaller text
+// setting is a worse bug than the one this prevents. Same for the `min-w`,
+// `max-w` and `w` layout values: those size boxes, not text.
+const SCALE_BLOCKING = /(?<![\w-])(text|leading)-\[(?:length:)?([0-9.]+)px\]/g;
+
+const scaling = [];
+const pxFiles = (() => {
+  try {
+    // Its own file list, not the ct- one above: a hard-coded size can land in a
+    // file that uses no ct- utility at all, and scanning only ct- files would
+    // wave it straight through.
+    //
+    // `--untracked` because the file most likely to carry a fresh `text-[13px]`
+    // is a brand-new component the author has not git-added yet. CI never sees
+    // that state, but the developer running this locally before committing does,
+    // and catching it there is the entire point of a guard rather than a report.
+    return execSync('git grep -l --untracked -E -- "(text|leading)-\\[(length:)?[0-9.]+px\\]" -- "src/*"', { encoding: 'utf8' })
+      .trim().split('\n').filter(Boolean);
+  } catch {
+    return []; // git grep exits 1 on no matches, which is the state we want.
+  }
+})();
+
+for (const file of pxFiles) {
+  readFileSync(file, 'utf8').split('\n').forEach((rawLine, i) => {
+    const line = stripComment(rawLine);
+    for (const m of line.matchAll(SCALE_BLOCKING)) {
+      const [full, prefix, px] = m;
+      const rem = +(parseFloat(px) / 16).toFixed(4);
+      scaling.push({ file, line: i + 1, cls: full, fix: `${prefix}-[${rem}rem]` });
+    }
+  });
+}
 
 const bad = [];
 for (const file of files) {
@@ -110,16 +159,30 @@ for (const file of files) {
   });
 }
 
-if (!bad.length) {
+if (!bad.length && !scaling.length) {
   console.log(`every ct- utility resolves to a real token (${files.length} files scanned).`);
+  console.log('no px font sizes — text scaling is unblocked.');
   process.exit(0);
 }
 
-console.error(`${bad.length} ct- utility/utilities will not render:\n`);
-for (const b of bad) console.error(`  ${b.file}:${b.line}  ${b.cls}\n      ${b.why}`);
-console.error(`
+if (bad.length) {
+  console.error(`${bad.length} ct- utility/utilities will not render:\n`);
+  for (const b of bad) console.error(`  ${b.file}:${b.line}  ${b.cls}\n      ${b.why}`);
+  console.error(`
 A class Tailwind cannot parse fails silently — no build error, no warning, the
 property just never applies. Check the name against tailwind.config.js, and
 remember an opacity modifier can only appear once: bg-ct-teal/[0.14], never
 bg-ct-teal/[0.14]/50.`);
+}
+
+if (scaling.length) {
+  if (bad.length) console.error('');
+  console.error(`${scaling.length} px font size/sizes ignore the text-size setting:\n`);
+  for (const s of scaling) console.error(`  ${s.file}:${s.line}  ${s.cls}\n      use ${s.fix}`);
+  console.error(`
+px is absolute, so this text stays put while everything around it scales. Divide
+by 16 and write rem. Layout values are a different case and are not checked here:
+min-h-[44px] is the touch target and must stay absolute.`);
+}
+
 process.exit(1);

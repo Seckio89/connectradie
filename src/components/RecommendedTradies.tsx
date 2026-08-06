@@ -266,7 +266,7 @@ export default function RecommendedTradies() {
                       size="sm"
                     />
                     {tradie.__matchesActiveTrade && (
-                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30">
+                      <span className="px-1.5 py-0.5 rounded-full text-[0.625rem] font-medium bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30">
                         Same as your service
                       </span>
                     )}

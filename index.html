@@ -4,7 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icons/icon-192x192.svg" />
     <link rel="icon" type="image/svg+xml" sizes="any" href="/icons/icon-192x192.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <!-- No maximum-scale / user-scalable=no. Blocking pinch-zoom is a WCAG 2.1
+         SC 1.4.4 (Resize Text) failure, and it was the reason there was no way
+         to enlarge text at all: Android WebView honours those directives, which
+         is how this ships. Settings → Interface now offers a text-size slider,
+         and pinch-zoom is the escape hatch beyond its range. Double-tap zoom
+         stays suppressed via touch-action in mobile-responsive.css. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">

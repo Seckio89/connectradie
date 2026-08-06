@@ -1605,7 +1605,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                         })()}
                       </h3>
                       {lead.status === 'completed' && jobPaymentIds.get(lead.id) && (
-                        <span className="px-2 py-0.5 bg-ct-surface-2 text-ct-mute rounded-ct-xs text-[10px] font-medium flex-shrink-0">
+                        <span className="px-2 py-0.5 bg-ct-surface-2 text-ct-mute rounded-ct-xs text-[0.625rem] font-medium flex-shrink-0">
                           {fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id))}
                         </span>
                       )}
@@ -2646,12 +2646,12 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                             {(lead.title || category || 'Untitled Job').replace(/_/g, ' ')}
                           </h4>
                           {jobPaymentIds.get(lead.id) && (
-                            <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute rounded-ct-xs text-[10px] font-medium flex-shrink-0">
+                            <span className="px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute rounded-ct-xs text-[0.625rem] font-medium flex-shrink-0">
                               {fmtInvoiceRef(jobPaymentInvoiceNumbers.get(lead.id), jobPaymentIds.get(lead.id))}
                             </span>
                           )}
                           {category && (
-                            <span className="hidden sm:inline px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute-2 rounded-ct-xs text-[10px] font-medium flex-shrink-0">
+                            <span className="hidden sm:inline px-1.5 py-0.5 bg-ct-surface-2 text-ct-mute-2 rounded-ct-xs text-[0.625rem] font-medium flex-shrink-0">
                               {category}
                             </span>
                           )}
@@ -2872,7 +2872,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
                       <MapPin className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Location</p>
+                        <p className="text-[0.625rem] font-semibold text-ct-mute uppercase tracking-wider">Location</p>
                         <p className="text-sm text-ct-mute-2 mt-0.5">{extractSuburb(vl.location_address) || 'Nearby'}</p>
                       </div>
                     </div>
@@ -2881,7 +2881,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
                       <CalendarDays className="w-4 h-4 text-ct-mute-2 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Scheduled Date</p>
+                        <p className="text-[0.625rem] font-semibold text-ct-mute uppercase tracking-wider">Scheduled Date</p>
                         <p className="text-sm text-ct-mute-2 mt-0.5">
                           {new Date(vl.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
@@ -2892,7 +2892,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
                       {(() => { const Icon = vlSlotIcon; return <Icon className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />; })()}
                       <div>
-                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Preferred Time</p>
+                        <p className="text-[0.625rem] font-semibold text-ct-mute uppercase tracking-wider">Preferred Time</p>
                         <p className="text-sm text-ct-mute-2 mt-0.5">{SLOT_LABELS[vl.preferred_time_slot]}</p>
                       </div>
                     </div>
@@ -2901,7 +2901,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-teal/[0.14] rounded-ct-md">
                       <DollarSign className="w-4 h-4 text-ct-teal mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-ct-mute-2 uppercase tracking-wider">Budget</p>
+                        <p className="text-[0.625rem] font-semibold text-ct-mute-2 uppercase tracking-wider">Budget</p>
                         <p className="text-sm font-semibold text-ct-teal mt-0.5">${vl.budget_amount.toLocaleString()}</p>
                       </div>
                     </div>
@@ -2909,7 +2909,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
                       <FileText className="w-4 h-4 text-ct-mute-2 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-ct-mute-2 uppercase tracking-wider">Budget</p>
+                        <p className="text-[0.625rem] font-semibold text-ct-mute-2 uppercase tracking-wider">Budget</p>
                         <p className="text-sm font-medium text-ct-mute-2 mt-0.5">Requesting Quote</p>
                       </div>
                     </div>
@@ -2917,7 +2917,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
                     <Clock className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Posted</p>
+                      <p className="text-[0.625rem] font-semibold text-ct-mute uppercase tracking-wider">Posted</p>
                       <p className="text-sm text-ct-mute-2 mt-0.5">{formatDate(vl.created_at)}</p>
                     </div>
                   </div>
@@ -2925,7 +2925,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
                       <Users className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Quote Slots</p>
+                        <p className="text-[0.625rem] font-semibold text-ct-mute uppercase tracking-wider">Quote Slots</p>
                         <p className="text-sm text-ct-mute-2 mt-0.5">{vl.quote_count}/{vl.max_quotes} filled</p>
                       </div>
                     </div>
@@ -2934,7 +2934,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
                       <Eye className="w-4 h-4 text-ct-mute-2 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Site Inspection</p>
+                        <p className="text-[0.625rem] font-semibold text-ct-mute uppercase tracking-wider">Site Inspection</p>
                         <p className="text-sm text-ct-mute-2 mt-0.5">Client allows inspections</p>
                       </div>
                     </div>
@@ -3285,7 +3285,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                       className="w-16 h-16 flex-shrink-0 flex flex-col items-center justify-center gap-0.5 border border-dashed border-ct-line rounded-ct-sm hover:border-ct-teal hover:bg-ct-amber/[0.13] transition-colors group"
                     >
                       <Plus className="w-4 h-4 text-ct-mute group-hover:text-ct-amber transition-colors" />
-                      <span className="text-[10px] text-ct-mute group-hover:text-ct-amber">Add</span>
+                      <span className="text-[0.625rem] text-ct-mute group-hover:text-ct-amber">Add</span>
                     </button>
                   )}
                 </div>
@@ -3598,7 +3598,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
                       <MapPin className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Location</p>
+                        <p className="text-[0.625rem] font-semibold text-ct-mute uppercase tracking-wider">Location</p>
                         <p className="text-sm text-ct-mute-2 mt-0.5">{cj.location_address}</p>
                       </div>
                     </div>
@@ -3607,7 +3607,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
                       <CalendarDays className="w-4 h-4 text-ct-mute-2 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Scheduled Date</p>
+                        <p className="text-[0.625rem] font-semibold text-ct-mute uppercase tracking-wider">Scheduled Date</p>
                         <p className="text-sm text-ct-mute-2 mt-0.5">
                           {new Date(cj.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
@@ -3617,7 +3617,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                   <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-surface-2 rounded-ct-md">
                     <Calendar className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Completed</p>
+                      <p className="text-[0.625rem] font-semibold text-ct-mute uppercase tracking-wider">Completed</p>
                       <p className="text-sm text-ct-mute-2 mt-0.5">{completedDate}</p>
                     </div>
                   </div>
@@ -3625,7 +3625,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
                     <div className="flex items-start gap-2.5 px-3.5 py-3 bg-ct-teal/[0.14] rounded-ct-md">
                       <DollarSign className="w-4 h-4 text-ct-teal mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-[10px] font-semibold text-ct-mute uppercase tracking-wider">Amount Paid</p>
+                        <p className="text-[0.625rem] font-semibold text-ct-mute uppercase tracking-wider">Amount Paid</p>
                         <p className="text-sm font-semibold text-ct-teal mt-0.5">${cj.budget_amount.toLocaleString()}</p>
                       </div>
                     </div>

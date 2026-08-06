@@ -255,7 +255,7 @@ export default function RecurringInvoiceCard({ invoice, userRole, paymentMethod 
                   <p className="text-xs font-semibold text-ct-paper">Dispute reason</p>
                   <p className="text-xs text-ct-rose mt-0.5">{invoice.dispute_reason}</p>
                   {invoice.disputed_at && (
-                    <p className="text-[10px] text-ct-rose mt-1">
+                    <p className="text-[0.625rem] text-ct-rose mt-1">
                       Disputed {new Date(invoice.disputed_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   )}
@@ -272,7 +272,7 @@ export default function RecurringInvoiceCard({ invoice, userRole, paymentMethod 
                     <p className="text-xs font-semibold text-ct-mute-2">Tradie response</p>
                     <p className="text-xs text-ct-mute-2 mt-0.5">{invoice.tradie_response}</p>
                     {invoice.tradie_responded_at && (
-                      <p className="text-[10px] text-ct-mute mt-1">
+                      <p className="text-[0.625rem] text-ct-mute mt-1">
                         Responded {new Date(invoice.tradie_responded_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
                     )}
@@ -573,7 +573,7 @@ export default function RecurringInvoiceCard({ invoice, userRole, paymentMethod 
             {invoice.stripe_payment_intent_id && (
               <div className="flex justify-between">
                 <span>Payment ref</span>
-                <span className="text-ct-mute font-mono text-[10px]">
+                <span className="text-ct-mute font-mono text-[0.625rem]">
                   {invoice.stripe_payment_intent_id.slice(0, 20)}…
                 </span>
               </div>

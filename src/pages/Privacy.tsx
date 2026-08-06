@@ -67,7 +67,7 @@ export default function Privacy() {
                   <strong className="font-semibold">Legal Note:</strong> This Policy operates in accordance with the Privacy Act 1988 (Cth), the Australian Privacy Principles (APPs), and the Notifiable Data Breaches (NDB) scheme under Part IIIC of the Privacy Act.
                 </p>
               </div>
-              <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+              <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                 By creating an account or using the Platform, you confirm that you have read and understood this Policy and consent to the collection and use of your personal information as described herein. If you do not agree, you must not use the Platform.
               </p>
             </div>
@@ -80,7 +80,7 @@ export default function Privacy() {
                 <h2 className="text-lg font-bold text-ct-paper mb-3 flex items-baseline gap-2">
                   <span className="text-ct-mute-2">1.</span> Our Commitment to Your Privacy
                 </h2>
-                <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+                <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                   ConnecTradie is committed to handling personal information responsibly, transparently, and in accordance with Australian law. We collect only what is reasonably necessary to operate our marketplace, we do not sell personal information, and we take active steps to protect the data entrusted to us by our community. This Policy applies to all users including Clients, Tradies, and website visitors.
                 </p>
                 <div className="mt-4 bg-ct-amber/[0.13] border-l-4 border-ct-amber/[0.34] pl-4 py-3 pr-4 rounded-r-xl">
@@ -100,17 +100,17 @@ export default function Privacy() {
 
                 <div className="space-y-6">
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-2">2.1 Identity & Contact Information (all users)</h3>
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-2">2.1 Identity & Contact Information (all users)</h3>
                     <ul className="space-y-2">
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Full name:</strong> to create and identify your account</span>
                       </li>
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Email address:</strong> to communicate with you and send platform notifications</span>
                       </li>
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Phone number:</strong> to facilitate communication between Clients and Tradies once a job is initiated</span>
                       </li>
@@ -118,24 +118,24 @@ export default function Privacy() {
                   </div>
 
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-2">2.2 Verification & Professional Credentials (Tradies only)</h3>
-                    <p className="text-[15px] text-ct-mute-2 leading-relaxed mb-3">
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-2">2.2 Verification & Professional Credentials (Tradies only)</h3>
+                    <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed mb-3">
                       To maintain a secure marketplace and issue Verified badges, ConnecTradie collects:
                     </p>
                     <ul className="space-y-2">
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Australian Business Number (ABN):</strong> verified against the Australian Business Register</span>
                       </li>
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Trade licences and qualifications:</strong> to confirm compliance with Australian law</span>
                       </li>
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Public Liability Insurance details (Certificates of Currency):</strong> to confirm minimum $5,000,000 AUD coverage</span>
                       </li>
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Government-issued identification:</strong> solely to match identity to business credentials</span>
                       </li>
@@ -146,17 +146,17 @@ export default function Privacy() {
                   </div>
 
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-2">2.3 Profile & Trust Data</h3>
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-2">2.3 Profile & Trust Data</h3>
                     <ul className="space-y-2">
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Profile photos:</strong> displayed publicly to help Clients identify Tradies</span>
                       </li>
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">User reviews and ratings:</strong> to inform other users&rsquo; decision-making</span>
                       </li>
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Identity verification documents:</strong> where required for enhanced verification tiers</span>
                       </li>
@@ -164,8 +164,8 @@ export default function Privacy() {
                   </div>
 
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-2">2.4 Financial Data & Secure Payments</h3>
-                    <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-2">2.4 Financial Data & Secure Payments</h3>
+                    <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                       ConnecTradie facilitates payments through Stripe, our secure third-party payment processor. ConnecTradie does not store full credit card numbers or bank account routing details. Financial data is transmitted directly to Stripe via encrypted tokenisation. We retain transaction records (amount, date, job reference) for legal and tax purposes.
                     </p>
                     <div className="mt-3 flex items-start gap-3 bg-ct-surface-2/70 border border-ct-line rounded-ct-md p-4">
@@ -177,17 +177,17 @@ export default function Privacy() {
                   </div>
 
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-2">2.5 Technical & Usage Data</h3>
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-2">2.5 Technical & Usage Data</h3>
                     <ul className="space-y-2">
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">IP addresses and device identifiers:</strong> to prevent fraud and maintain security</span>
                       </li>
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Browser type and operating system:</strong> for platform optimisation</span>
                       </li>
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Usage data and session logs:</strong> to improve platform performance</span>
                       </li>
@@ -195,27 +195,27 @@ export default function Privacy() {
                   </div>
 
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-2">2.6 Marketing Communications</h3>
-                    <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-2">2.6 Marketing Communications</h3>
+                    <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                       We may send you service-related notifications and, with your consent, promotional communications about ConnecTradie features and updates. All marketing communications comply with the Spam Act 2003 (Cth). You may opt out at any time via the unsubscribe link in any email or through your account notification settings.
                     </p>
                   </div>
 
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-2">2.7 Google Account &amp; Calendar Integration (optional)</h3>
-                    <p className="text-[15px] text-ct-mute-2 leading-relaxed mb-3">
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-2">2.7 Google Account &amp; Calendar Integration (optional)</h3>
+                    <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed mb-3">
                       ConnecTradie offers optional features that connect to your Google Account. These are only ever activated by you, and you can disconnect them at any time.
                     </p>
                     <ul className="space-y-2">
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Sign in with Google:</strong> if you choose this option, we receive your basic Google profile (name, email address, and profile picture) to create and authenticate your account. We request only the <span className="font-medium">email</span> and <span className="font-medium">profile</span> permissions for sign-in.</span>
                       </li>
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Google Calendar sync:</strong> if you connect Google Calendar from your dashboard, you grant ConnecTradie access to your calendar so we can create and update events for your ConnecTradie bookings and site visits, and read your existing events to help you avoid double-booking. We access only the signed-in user&rsquo;s own calendar, and only to provide this scheduling feature.</span>
                       </li>
-                      <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                         <span><strong className="text-ct-paper">Disconnecting:</strong> you can revoke access at any time from your dashboard &mdash; open the menu beside the calendar buttons and choose Disconnect Google Calendar &mdash; or via your Google Account permissions at <span className="font-medium">myaccount.google.com/permissions</span>. When you disconnect, we revoke the access with Google and delete the Google tokens we hold for you.</span>
                       </li>
@@ -238,20 +238,20 @@ export default function Privacy() {
                 <h2 className="text-lg font-bold text-ct-paper mb-3 flex items-baseline gap-2">
                   <span className="text-ct-mute-2">3.</span> Public Profile Visibility & Tiered Access
                 </h2>
-                <p className="text-[15px] text-ct-mute-2 leading-relaxed mb-3">
+                <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed mb-3">
                   By using the Platform, you consent to the public display of certain profile information:
                 </p>
                 <ul className="space-y-2">
-                  <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                  <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                     <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Free-Tier Tradies:</strong> first name, last initial, trade category, and verified badges only</span>
                   </li>
-                  <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                  <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                     <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Pro-Tier Tradies:</strong> full registered business name and permitted portfolio details</span>
                   </li>
                 </ul>
-                <p className="text-[15px] text-ct-mute-2 leading-relaxed mt-3">
+                <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed mt-3">
                   We will never publicly display your residential address, private phone number, or government-issued ID documents.
                 </p>
               </section>
@@ -263,21 +263,21 @@ export default function Privacy() {
                 <h2 className="text-lg font-bold text-ct-paper mb-4 flex items-baseline gap-2">
                   <span className="text-ct-mute-2">4.</span> How Your Information Is Shared
                 </h2>
-                <p className="text-[15px] text-ct-mute-2 leading-relaxed mb-4">
+                <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed mb-4">
                   We do not sell, rent, or trade your personal information. Sharing is strictly limited to operating the Platform.
                 </p>
 
                 <div className="space-y-5">
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-1.5">4.1 Marketplace Connections</h3>
-                    <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-1.5">4.1 Marketplace Connections</h3>
+                    <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                       Contact details are shared between Client and Tradie only once a booking is formally initiated through the Platform.
                     </p>
                   </div>
 
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-1.5">4.2 Service Providers & Sub-processors</h3>
-                    <p className="text-[15px] text-ct-mute-2 leading-relaxed mb-3">
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-1.5">4.2 Service Providers & Sub-processors</h3>
+                    <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed mb-3">
                       We share data with trusted third parties contractually bound to the APPs. Key sub-processors:
                     </p>
                     <div className="overflow-x-auto rounded-ct-sm border border-ct-line">
@@ -321,15 +321,15 @@ export default function Privacy() {
                   </div>
 
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-1.5">4.3 Legal & Regulatory Disclosure</h3>
-                    <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-1.5">4.3 Legal & Regulatory Disclosure</h3>
+                    <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                       We may disclose personal information to government bodies, law enforcement, or regulatory authorities where required by Australian law.
                     </p>
                   </div>
 
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-1.5">4.4 Overseas Disclosure</h3>
-                    <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-1.5">4.4 Overseas Disclosure</h3>
+                    <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                       Some sub-processors store data outside Australia as shown in the table above. We take reasonable steps to ensure recipients handle information consistently with the APPs. By using the Platform, you consent to this potential overseas disclosure.
                     </p>
                   </div>
@@ -345,19 +345,19 @@ export default function Privacy() {
                 </h2>
 
                 <ul className="space-y-2 mb-5">
-                  <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                  <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                     <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Encryption:</strong> all data encrypted in transit (TLS 1.2+) and at rest (AES-256)</span>
                   </li>
-                  <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                  <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                     <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Access Controls:</strong> only authorised personnel can access sensitive information</span>
                   </li>
-                  <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                  <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                     <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Authentication:</strong> multi-factor authentication available and encouraged</span>
                   </li>
-                  <li className="flex items-start gap-3 text-[15px] text-ct-mute-2">
+                  <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                     <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
                     <span><strong className="text-ct-paper">Audits & Monitoring:</strong> regular security audits and suspicious activity monitoring</span>
                   </li>
@@ -365,15 +365,15 @@ export default function Privacy() {
 
                 <div className="space-y-5">
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-1.5">5.1 Notifiable Data Breaches</h3>
-                    <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-1.5">5.1 Notifiable Data Breaches</h3>
+                    <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                       ConnecTradie complies with the NDB scheme. In the event of an eligible data breach likely to cause serious harm, we will notify the OAIC and affected users within 30 days of becoming aware.
                     </p>
                   </div>
 
                   <div>
-                    <h3 className="text-[15px] font-semibold text-ct-paper mb-1.5">5.2 Do Not Track</h3>
-                    <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-1.5">5.2 Do Not Track</h3>
+                    <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                       ConnecTradie does not currently respond to Do Not Track (DNT) or Global Privacy Control (GPC) browser signals.
                     </p>
                   </div>
@@ -425,7 +425,7 @@ export default function Privacy() {
                   </table>
                 </div>
 
-                <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+                <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                   To exercise any of the above rights, contact our Privacy Officer at{' '}
                   <a href="mailto:admin@connectradie.com" className="text-ct-mute-2 hover:text-ct-mute-2 font-medium underline decoration-primary-300 underline-offset-2">admin@connectradie.com</a>.
                   We will respond within 30 days.
@@ -439,7 +439,7 @@ export default function Privacy() {
                 <h2 className="text-lg font-bold text-ct-paper mb-3 flex items-baseline gap-2">
                   <span className="text-ct-mute-2">7.</span> Retention of Personal Information & Account Deletion
                 </h2>
-                <p className="text-[15px] text-ct-mute-2 leading-relaxed mb-4">
+                <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed mb-4">
                   When you delete your account we remove your public profile and portfolio data. We are legally required to retain certain records:
                 </p>
 
@@ -482,7 +482,7 @@ export default function Privacy() {
                   </table>
                 </div>
 
-                <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+                <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                   Where personal information is no longer legally required, we will destroy or de-identify it securely.
                 </p>
               </section>
@@ -498,15 +498,15 @@ export default function Privacy() {
                 <div className="space-y-3 mb-4">
                   <div className="flex items-start gap-3">
                     <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
-                    <p className="text-[15px] text-ct-mute-2"><strong className="text-ct-paper">Essential Cookies:</strong> required for core functionality including login and session security. Cannot be disabled without affecting Platform operation.</p>
+                    <p className="text-[0.9375rem] text-ct-mute-2"><strong className="text-ct-paper">Essential Cookies:</strong> required for core functionality including login and session security. Cannot be disabled without affecting Platform operation.</p>
                   </div>
                   <div className="flex items-start gap-3">
                     <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
-                    <p className="text-[15px] text-ct-mute-2"><strong className="text-ct-paper">Analytics Cookies:</strong> used to improve user experience. Non-essential and can be managed via browser settings or account notification settings.</p>
+                    <p className="text-[0.9375rem] text-ct-mute-2"><strong className="text-ct-paper">Analytics Cookies:</strong> used to improve user experience. Non-essential and can be managed via browser settings or account notification settings.</p>
                   </div>
                 </div>
 
-                <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+                <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                   ConnecTradie does not use cookies to serve third-party advertising. ConnecTradie does not share personal information with advertisers. Our platform is currently ad-free.
                 </p>
               </section>
@@ -518,7 +518,7 @@ export default function Privacy() {
                 <h2 className="text-lg font-bold text-ct-paper mb-3 flex items-baseline gap-2">
                   <span className="text-ct-mute-2">9.</span> Amendments to This Policy
                 </h2>
-                <p className="text-[15px] text-ct-mute-2 leading-relaxed">
+                <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed">
                   Where changes are material &mdash; including changes to what we collect, how we share information, or your rights &mdash; we will provide at least 30 days written notice via the Platform or your registered email. Continued use after the effective date constitutes acceptance.
                 </p>
               </section>
@@ -556,7 +556,7 @@ export default function Privacy() {
                   </div>
                 </div>
 
-                <p className="text-[15px] text-ct-mute-2 leading-relaxed mt-4">
+                <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed mt-4">
                   For complaints not resolved by ConnecTradie, contact the OAIC at{' '}
                   <span className="font-medium text-ct-paper">www.oaic.gov.au</span> or call{' '}
                   <span className="font-medium text-ct-paper">1300 363 992</span>.

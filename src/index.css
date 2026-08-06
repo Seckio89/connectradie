@@ -106,6 +106,16 @@
   --font-body:    'Inter', system-ui, sans-serif;
   --font-mono:    'JetBrains Mono', ui-monospace, monospace;
 
+  /* User text-size preference, 0.9–1.3. Set on <html> by src/lib/textScale.ts
+     from Settings → Interface; this declaration is the default and the fallback
+     for anyone who has never touched the slider.
+
+     It is a multiplier rather than an absolute size on purpose. Assigning
+     documentElement.style.fontSize directly is an inline style, so it would beat
+     the two min-width rules below and silently cancel the large-screen
+     readability bump. Multiplying composes with them instead. */
+  --ct-text-scale: 1;
+
   /* ── Radius. A nested element always steps down one level:
         a 9px button inside a 14px card. Never equal, never larger. ── */
   --r-xs: 6px;   /* chips, tags, small inline elements          */
@@ -122,20 +132,23 @@
   --gut: clamp(20px, 4vw, 64px);      /* marketing side gutter   */
 }
 
+/* Tailwind's type, spacing and sizing scales are all rem, so this one value
+   scales the whole interface — which is what browser zoom does, and what the
+   text-size slider relies on. */
 html {
-  font-size: 16px;
+  font-size: calc(16px * var(--ct-text-scale));
 }
 
 /* Scale up text on large / high-res screens for readability */
 @media (min-width: 1920px) {
   html {
-    font-size: 16.5px;
+    font-size: calc(16.5px * var(--ct-text-scale));
   }
 }
 
 @media (min-width: 2560px) {
   html {
-    font-size: 17px;
+    font-size: calc(17px * var(--ct-text-scale));
   }
 }
 

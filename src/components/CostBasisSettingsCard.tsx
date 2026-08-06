@@ -94,7 +94,7 @@ export default function CostBasisSettingsCard() {
               )}
             </div>
 
-            <p className="text-[11px] leading-snug text-ct-mute">
+            <p className="text-[0.6875rem] leading-snug text-ct-mute">
               These figures are yours alone. They never appear on your public profile, and no client
               ever sees them or the verdict they produce.
             </p>

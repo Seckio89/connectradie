@@ -61,7 +61,7 @@ function Field({
           </span>
         )}
       </div>
-      <p className="mt-1 text-[11px] leading-snug text-ct-mute">{hint}</p>
+      <p className="mt-1 text-[0.6875rem] leading-snug text-ct-mute">{hint}</p>
     </div>
   );
 }

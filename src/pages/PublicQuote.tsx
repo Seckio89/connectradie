@@ -76,7 +76,7 @@ function Detail({ icon: Icon, label, value }: { icon: LucideIcon; label: string;
     <div className="flex items-start gap-2">
       <Icon className="w-4 h-4 text-ct-mute mt-0.5 flex-shrink-0" />
       <div className="min-w-0">
-        <p className="text-[11px] text-ct-mute uppercase tracking-wide">{label}</p>
+        <p className="text-[0.6875rem] text-ct-mute uppercase tracking-wide">{label}</p>
         <p className="text-sm font-medium text-ct-paper break-words">{value}</p>
       </div>
     </div>
@@ -257,7 +257,7 @@ export default function PublicQuote() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold text-ct-teal uppercase tracking-wide mb-0.5">Quote from</p>
+                  <p className="text-[0.6875rem] font-semibold text-ct-teal uppercase tracking-wide mb-0.5">Quote from</p>
                   <h1 className="text-xl sm:text-2xl font-bold text-ct-paper leading-tight break-words">{businessName}</h1>
                   {(data.tradie.trade || data.tradie.memberSince) && (
                     <p className="text-xs text-ct-mute mt-0.5">
@@ -288,24 +288,24 @@ export default function PublicQuote() {
               {(data.tradie.abn || data.tradie.license || data.tradie.insured || data.tradie.identityVerified) && (
                 <div className="px-5 sm:px-6 py-3.5 border-b border-ct-line-soft flex flex-wrap gap-2">
                   {data.tradie.abn && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-ct-surface-2 text-ct-mute-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.6875rem] font-medium bg-ct-surface-2 text-ct-mute-2">
                       {data.tradie.abnVerified && <BadgeCheck className="w-3.5 h-3.5 text-ct-teal" />}
                       ABN {data.tradie.abn}
                     </span>
                   )}
                   {data.tradie.license && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-ct-surface-2 text-ct-mute-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.6875rem] font-medium bg-ct-surface-2 text-ct-mute-2">
                       {data.tradie.license.verified && <BadgeCheck className="w-3.5 h-3.5 text-ct-teal" />}
                       Licensed{data.tradie.license.state ? ` (${data.tradie.license.state})` : ''}
                     </span>
                   )}
                   {data.tradie.insured && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-ct-surface-2 text-ct-mute-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.6875rem] font-medium bg-ct-surface-2 text-ct-mute-2">
                       <ShieldCheck className="w-3.5 h-3.5 text-ct-teal" /> Insured
                     </span>
                   )}
                   {data.tradie.identityVerified && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-ct-surface-2 text-ct-mute-2">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[0.6875rem] font-medium bg-ct-surface-2 text-ct-mute-2">
                       <BadgeCheck className="w-3.5 h-3.5 text-ct-teal" /> ID verified
                     </span>
                   )}
@@ -323,7 +323,7 @@ export default function PublicQuote() {
 
               {/* Scope of work */}
               <div className="p-5 sm:p-6 border-b border-ct-line-soft">
-                <p className="text-[11px] font-medium text-ct-mute uppercase tracking-wide mb-1.5">Scope of work</p>
+                <p className="text-[0.6875rem] font-medium text-ct-mute uppercase tracking-wide mb-1.5">Scope of work</p>
                 <h2 className="text-lg font-semibold text-ct-paper">{data.job.title || 'Your job'}</h2>
                 {data.job.address && (
                   <p className="mt-1 flex items-center gap-1.5 text-sm text-ct-mute">
@@ -549,7 +549,7 @@ export default function PublicQuote() {
               </div>
             </div>
 
-            <p className="text-center text-[11px] text-ct-mute pt-1">
+            <p className="text-center text-[0.6875rem] text-ct-mute pt-1">
               Sent securely through <span className="font-semibold text-ct-mute">ConnecTradie</span> · Australian tradie marketplace
             </p>
           </div>

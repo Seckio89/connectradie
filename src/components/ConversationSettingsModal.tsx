@@ -457,7 +457,7 @@ export default function ConversationSettingsModal({
                                   <span className="ml-1.5 text-xs font-normal text-ct-mute">(You)</span>
                                 )}
                               </p>
-                              <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                              <span className={`px-2 py-0.5 rounded-full text-[0.6875rem] font-medium ${
                                 participant.is_admin ? 'bg-ct-teal/[0.14] text-ct-teal' : 'bg-ct-surface-2 text-ct-mute-2'
                               }`}>
                                 {participant.is_admin ? 'Owner' : 'Member'}

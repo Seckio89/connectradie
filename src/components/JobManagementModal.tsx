@@ -655,7 +655,7 @@ export default function JobManagementModal({
                           }`}>
                             {isActive ? <Check className="w-3 h-3" /> : i + 1}
                           </div>
-                          <span className={`text-[10px] mt-1 font-medium ${isCurrent ? 'text-ct-teal' : isActive ? 'text-ct-mute-2' : 'text-ct-mute'}`}>
+                          <span className={`text-[0.625rem] mt-1 font-medium ${isCurrent ? 'text-ct-teal' : isActive ? 'text-ct-mute-2' : 'text-ct-mute'}`}>
                             {STEP_LABELS[step]}
                           </span>
                         </div>
@@ -1359,7 +1359,7 @@ export default function JobManagementModal({
                     className="w-full px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:ring-2 focus:ring-ct-teal resize-none"
                   />
                   {notes.trim() && (
-                    <p className="mt-1 text-[11px] text-ct-mute">Long notes? Tap “View full” to read them all.</p>
+                    <p className="mt-1 text-[0.6875rem] text-ct-mute">Long notes? Tap “View full” to read them all.</p>
                   )}
                 </div>
 
@@ -1406,7 +1406,7 @@ export default function JobManagementModal({
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <label className="block text-xs font-medium text-ct-mute">Priority</label>
-                        <span className="flex items-center gap-1 text-[11px] text-ct-mute"><EyeOff className="w-3 h-3" /> Only visible to you</span>
+                        <span className="flex items-center gap-1 text-[0.6875rem] text-ct-mute"><EyeOff className="w-3 h-3" /> Only visible to you</span>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         {(['low', 'normal', 'high'] as const).map((p) => (

@@ -204,7 +204,7 @@ export default function BonusModal({ isOpen, onClose, jobId, tradieName, jobLabe
                   />
                 </div>
                 {capDollars != null && (
-                  <p className="text-[11px] text-ct-mute mt-1">
+                  <p className="text-[0.6875rem] text-ct-mute mt-1">
                     Max ${capDollars.toFixed(2)} (2× the original payment).
                   </p>
                 )}

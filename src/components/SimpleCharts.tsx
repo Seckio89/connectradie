@@ -27,7 +27,7 @@ export function BarChart({ data, height = 200, showValues = true }: BarChartProp
             >
               {showValues && (
                 <span
-                  className={`text-[10px] sm:text-xs font-medium transition-opacity duration-200 ${
+                  className={`text-[0.625rem] sm:text-xs font-medium transition-opacity duration-200 ${
                     isHovered ? 'text-ct-paper opacity-100' : 'text-ct-mute-2 opacity-70'
                   }`}
                 >
@@ -43,7 +43,7 @@ export function BarChart({ data, height = 200, showValues = true }: BarChartProp
                   transform: isHovered ? 'scaleX(1.1)' : 'scaleX(1)',
                 }}
               />
-              <span className="text-[9px] sm:text-xs text-ct-mute truncate w-full text-center leading-tight">{d.label}</span>
+              <span className="text-[0.5625rem] sm:text-xs text-ct-mute truncate w-full text-center leading-tight">{d.label}</span>
             </div>
           );
         })}
@@ -148,7 +148,7 @@ export function LineChart({ data, height = 200, color = 'var(--teal)', formatVal
         {data.map((d, i) => (
           <span
             key={i}
-            className={`text-[9px] sm:text-xs truncate ${hoveredIndex === i ? 'text-ct-paper font-medium' : 'text-ct-mute'}`}
+            className={`text-[0.5625rem] sm:text-xs truncate ${hoveredIndex === i ? 'text-ct-paper font-medium' : 'text-ct-mute'}`}
           >
             {d.label}
           </span>
@@ -218,10 +218,14 @@ export function DonutChart({ data, size = 160, centerLabel = 'Total' }: DonutCha
         {/* These were #111827 and #6b7280 — gray-900 and gray-500, left behind by
             the v2 cutover. On a card the total measured 1.06:1 (invisible) and
             the label 3.46:1 (fails AA). Now 15.38:1 and 5.25:1. */}
-        <text x={center} y={center - 6} textAnchor="middle" className="text-lg font-bold" fill="var(--paper)">
+        {/* fontSize in user units, not a rem text-* class. The SVG box is pinned
+            to 160px, so rem-sized labels grew with the text-size setting while
+            the hole they sit in did not, and overflowed it. User units scale
+            with the chart instead, which is what "inside the donut" requires. */}
+        <text x={center} y={center - 6} textAnchor="middle" fontSize={size * 0.1125} className="font-bold" fill="var(--paper)">
           {total}
         </text>
-        <text x={center} y={center + 10} textAnchor="middle" className="text-xs" fill="var(--mute)">
+        <text x={center} y={center + 10} textAnchor="middle" fontSize={size * 0.075} fill="var(--mute)">
           {centerLabel}
         </text>
       </svg>

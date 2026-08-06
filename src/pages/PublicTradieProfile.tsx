@@ -389,7 +389,7 @@ export default function PublicTradieProfile() {
                     <h2 className="text-lg font-semibold text-ct-paper">About</h2>
                   </div>
                   <div className="p-6">
-                    <p className="text-ct-mute-2 leading-relaxed whitespace-pre-line text-[15px]">
+                    <p className="text-ct-mute-2 leading-relaxed whitespace-pre-line text-[0.9375rem]">
                       {tradie.bio || details?.bio}
                     </p>
                   </div>
