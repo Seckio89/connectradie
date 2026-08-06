@@ -1,5 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+// Kept for the `Stripe.Checkout.SessionCreateParams.LineItem` type below. The
+// Stripe *client* this file used to construct is gone — only the namespace is
+// still referenced, and eslint's no-unused-vars does not see a type-only use.
+import Stripe from "npm:stripe@14.21.0";
 import { hasServiceRole } from "../_shared/serviceAuth.ts";
 
 const corsHeaders = {
