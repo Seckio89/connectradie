@@ -9,8 +9,9 @@
 // removes. A key that only one of them knows about is how a released payment
 // ends up permanently flagged as pending.
 
-import { deepStrictEqual, strictEqual } from "node:assert/strict";
-import { clearPayoutFailure, markPayoutFailed } from "./payoutFailure.ts";
+import { deepStrictEqual, notStrictEqual, strictEqual } from "node:assert/strict";
+import { clearPayoutFailure, markPayoutFailed, payoutFailureFields } from "./payoutFailure.ts";
+import { releasePayoutIdempotencyKey } from "./instantPayout.ts";
 
 const NOW = "2026-08-05T18:00:00.000Z";
 const LATER = "2026-08-06T00:00:00.000Z";
@@ -83,6 +84,77 @@ Deno.test("mark then clear round-trips to the original metadata", () => {
     clearPayoutFailure(markPayoutFailed(original, "balance_insufficient", NOW)),
     original,
   );
+});
+
+// ── The idempotency key ─────────────────────────────────────────────────────
+// Two properties are in tension and BOTH must hold. Losing the first pays a
+// tradie twice; losing the second wedges a payout behind Stripe's 24h cached
+// failure, which is what stranded two live payments for days.
+
+Deno.test("racing callers on the same row state compute the SAME key", () => {
+  // release-escrow (homeowner clicks release) and auto-release-payments (cron)
+  // can run at once. Identical keys are what stops two payouts for one payment.
+  const row = { flow: "destination", payout_attempts: 3 };
+
+  strictEqual(
+    releasePayoutIdempotencyKey("pay_1", row),
+    releasePayoutIdempotencyKey("pay_1", { ...row }),
+  );
+});
+
+Deno.test("a retry after a recorded failure computes a DIFFERENT key", () => {
+  // The fix. Same payment, one more recorded failure → a key Stripe has never
+  // seen, so the request actually reaches it instead of replaying a cached error.
+  const before = { flow: "destination" };
+  const after = markPayoutFailed(before, "balance_insufficient", "2026-08-06T00:00:00.000Z");
+
+  notStrictEqual(
+    releasePayoutIdempotencyKey("pay_1", before),
+    releasePayoutIdempotencyKey("pay_1", after),
+  );
+});
+
+Deno.test("attempt 0 keeps the bare legacy key", () => {
+  // A payment already in flight under the old scheme must keep the key it
+  // started with, or this change orphans it mid-release.
+  strictEqual(releasePayoutIdempotencyKey("pay_1", {}), "release_payout_pay_1");
+  strictEqual(releasePayoutIdempotencyKey("pay_1", null), "release_payout_pay_1");
+  strictEqual(
+    releasePayoutIdempotencyKey("pay_1", { payout_attempts: 0 }),
+    "release_payout_pay_1",
+  );
+});
+
+Deno.test("the key advances monotonically and never repeats a used one", () => {
+  const seen = new Set<string>();
+  let meta: Record<string, unknown> = {};
+  for (let i = 0; i < 6; i++) {
+    const key = releasePayoutIdempotencyKey("pay_1", meta);
+    strictEqual(seen.has(key), false, `key repeated on attempt ${i}: ${key}`);
+    seen.add(key);
+    meta = markPayoutFailed(meta, "balance_insufficient", `2026-08-0${i + 1}T00:00:00.000Z`);
+  }
+  strictEqual(seen.size, 6);
+});
+
+Deno.test("a junk counter cannot collapse two attempts onto one key", () => {
+  // Number("abc") is NaN; if that reached the key it would render as the same
+  // string every time and silently restore the wedge.
+  const junk = releasePayoutIdempotencyKey("pay_1", { payout_attempts: "abc" });
+  const next = releasePayoutIdempotencyKey(
+    "pay_1",
+    markPayoutFailed({ payout_attempts: "abc" }, "err", "2026-08-06T00:00:00.000Z"),
+  );
+  strictEqual(junk, "release_payout_pay_1");
+  notStrictEqual(junk, next);
+});
+
+Deno.test("payoutFailureFields carries the counter forward for release-escrow", () => {
+  // release-escrow assembles its metadata inline. If it dropped the counter the
+  // key would never advance on the client-initiated path.
+  const fields = payoutFailureFields({ payout_attempts: 2 }, "err", "2026-08-06T00:00:00.000Z");
+  strictEqual(fields.payout_attempts, 3);
+  strictEqual(fields.payout_pending, true);
 });
 
 Deno.test("neither function mutates its input", () => {

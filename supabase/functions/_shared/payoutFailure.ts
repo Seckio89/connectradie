@@ -45,16 +45,36 @@ const FAILURE_KEYS = [
  */
 export function markPayoutFailed(
   metadata: PaymentMetadata | null | undefined,
-  message: string,
+  message: string | null | undefined,
   nowIso: string,
 ): PaymentMetadata {
-  const existing = metadata ?? {};
-  const prior = Number(existing.payout_attempts);
+  return { ...(metadata ?? {}), ...payoutFailureFields(metadata, message, nowIso) };
+}
 
+/**
+ * Just the four failure keys, for callers that assemble the metadata object
+ * inline rather than transforming a whole one — release-escrow builds its
+ * update with a conditional spread and would otherwise re-spread the metadata
+ * twice.
+ *
+ * `payout_attempts` MUST be derived from the metadata as it was READ, not from
+ * an already-cleared copy: the counter is what advances the idempotency key
+ * (see releasePayoutIdempotencyKey), so losing it would pin the key and
+ * reinstate the 24h-cached-failure wedge this exists to break.
+ */
+export function payoutFailureFields(
+  metadata: PaymentMetadata | null | undefined,
+  message: string | null | undefined,
+  nowIso: string,
+): PaymentMetadata {
+  const prior = Number((metadata ?? {}).payout_attempts);
   return {
-    ...existing,
     payout_pending: true,
-    payout_last_error: message,
+    // Stored as given. release-escrow's payoutError is `string | null` and a
+    // null there is honest — it means no message was captured — so it is not
+    // dressed up as one. The timestamp and counter still advance either way,
+    // which is what the retry actually depends on.
+    payout_last_error: message ?? null,
     payout_last_attempt_at: nowIso,
     payout_attempts: Number.isFinite(prior) && prior > 0 ? prior + 1 : 1,
   };

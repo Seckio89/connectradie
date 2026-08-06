@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
-import { createReleasePayout } from "../_shared/instantPayout.ts";
+import { createReleasePayout, releasePayoutIdempotencyKey } from "../_shared/instantPayout.ts";
 import { expirePendingVariations } from "../_shared/expireVariations.ts";
 import { clearPayoutFailure, markPayoutFailed, type PaymentMetadata } from "../_shared/payoutFailure.ts";
 
@@ -351,9 +351,11 @@ Deno.serve(async (req: Request) => {
               gst: String(totalGst),
               flow: "destination",
             },
-            // Deterministic key shared with release-escrow so a cron run racing a
-            // client release can't create two payouts for one payment.
-            idempotencyKeyBase: `release_payout_${payment.id}`,
+            // Shared with release-escrow so a cron run racing a client release
+            // can't create two payouts for one payment — but discriminated by
+            // the failure count, or Stripe replays a cached failure for 24h
+            // while this retries every 6. See releasePayoutIdempotencyKey.
+            idempotencyKeyBase: releasePayoutIdempotencyKey(payment.id, existingMetadata),
           });
           const payout = outcome.payout;
 
