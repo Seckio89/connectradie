@@ -1,9 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
-// Kept for the `Stripe.Checkout.SessionCreateParams.LineItem` type below. The
-// Stripe *client* this file used to construct is gone — only the namespace is
-// still referenced, and eslint's no-unused-vars does not see a type-only use.
-import Stripe from "npm:stripe@14.21.0";
 import { hasServiceRole } from "../_shared/serviceAuth.ts";
 
 const corsHeaders = {
@@ -47,15 +43,16 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // No STRIPE_SECRET_KEY check: this function makes no Stripe calls. It writes
+    // recurring_invoices rows at pending_approval and stops there — charging is
+    // charge-becs-invoice and approve-invoice, which guard their own Stripe use.
+    // The old gate here would have failed invoice generation over a dependency
+    // this function does not have.
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return errorJson("Server configuration error", 500);
-    }
-    if (!stripeSecretKey) {
-      return errorJson("Stripe not configured", 500);
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -335,67 +332,11 @@ Deno.serve(async (req: Request) => {
         dueDate.setUTCDate(dueDate.getUTCDate() + 7);
         const dueDateStr = fmt(dueDate);
 
-        const processingFee = 0;
-
-        // Build month label
-        const periodStartDate = new Date(billingPeriodStart + "T00:00:00");
-        const monthLabel = periodStartDate.toLocaleDateString("en-AU", {
-          month: "long",
-          year: "numeric",
-        });
-
+        // tradeLabel is NOT part of the removed Stripe block — the two
+        // notification messages below both interpolate it.
         const tradeLabel = (job.trade_category as string)
           .replace(/_/g, " ")
           .replace(/\b\w/g, (c: string) => c.toUpperCase());
-
-        // Build Stripe line items
-        const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
-          {
-            price_data: {
-              currency: "aud",
-              product_data: {
-                name: `${tradeLabel} — ${monthLabel} (${completedSessions.length} sessions)`,
-              },
-              unit_amount: Math.round(subtotal * 100),
-            },
-            quantity: 1,
-          },
-        ];
-
-        if (extrasTotal > 0) {
-          lineItems.push({
-            price_data: {
-              currency: "aud",
-              product_data: {
-                name: `Extra sessions (${extraSessions.length})`,
-              },
-              unit_amount: Math.round(extrasTotal * 100),
-            },
-            quantity: 1,
-          });
-        }
-
-        if (suppliesTotal > 0) {
-          lineItems.push({
-            price_data: {
-              currency: "aud",
-              product_data: { name: "Supplies & Materials" },
-              unit_amount: Math.round(suppliesTotal * 100),
-            },
-            quantity: 1,
-          });
-        }
-
-        if (processingFee > 0) {
-          lineItems.push({
-            price_data: {
-              currency: "aud",
-              product_data: { name: "Secure Processing Fee" },
-              unit_amount: processingFee,
-            },
-            quantity: 1,
-          });
-        }
 
         // Can this invoice be auto-debited after a notice window? Requires an active
         // BECS mandate on the job AND a fully-onboarded tradie to receive the funds.
