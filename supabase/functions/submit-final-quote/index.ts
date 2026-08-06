@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import { paidVisitFeeCents } from "../_shared/siteVisitFee.ts";
 import type { Update } from "../_shared/dbTypes.ts";
 
 /*
@@ -122,7 +123,7 @@ Deno.serve(async (req: Request) => {
     const { data: quote, error: quoteError } = await supabase
       .from("quotes")
       .select(
-        "id, job_id, tradie_id, status, requires_site_inspection, price_min, price_max, site_visit_completed_at",
+        "id, job_id, tradie_id, status, requires_site_inspection, price_min, price_max, site_visit_completed_at, call_out_fee_cents, site_visit_fee_status",
       )
       .eq("id", quoteId)
       .maybeSingle();
@@ -148,6 +149,21 @@ Deno.serve(async (req: Request) => {
       return errorJson(
         "This quote is in 'site_visit_completed' status but has no completion timestamp. Contact support.",
         409,
+      );
+    }
+
+    // 2b. A final at or below the PAID call-out fee is unpayable, not just odd:
+    // accept-and-pay credits the fee against the final (charge = final − fee),
+    // so this final would leave $0 or less to collect — and the $0 checkout
+    // fails AFTER acceptance has already flipped the quote and job, stranding
+    // the job accepted-but-unpaid. Seen live: $20 fee, $1 final. Reject with
+    // the fix, per the interface-copy rules.
+    const feeFloorCents = paidVisitFeeCents(quote);
+    if (feeFloorCents > 0 && Math.round(finalPrice * 100) <= feeFloorCents) {
+      const feeDollars = (feeFloorCents / 100).toFixed(2);
+      return errorJson(
+        `Your final price must be more than the $${feeDollars} site visit fee the client already paid — that fee comes off their final bill. Enter a price above $${feeDollars}.`,
+        400,
       );
     }
 

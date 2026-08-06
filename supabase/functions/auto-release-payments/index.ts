@@ -2,15 +2,71 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
-import { createReleasePayout } from "../_shared/instantPayout.ts";
+import { availableAudCents, canFallBackToStandard, createReleasePayout, releasePayoutIdempotencyKey } from "../_shared/instantPayout.ts";
 import { expirePendingVariations } from "../_shared/expireVariations.ts";
+import { clearPayoutFailure, markPayoutFailed, type PaymentMetadata } from "../_shared/payoutFailure.ts";
 
 const formatAud = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+
+/**
+ * The narrow slice of the Supabase client recordPayoutFailure needs.
+ *
+ * Structural rather than the `SupabaseLike = any` alias the _shared helpers
+ * use: that alias carries a `deno-lint-ignore`, which ESLint does not honour,
+ * so it lands as a fresh `no-explicit-any` error in a repo already carrying a
+ * 91-error backlog. Naming the two calls actually made costs three lines and
+ * keeps both linters quiet.
+ */
+interface PaymentRowUpdater {
+  from(table: string): {
+    update(values: { metadata: PaymentMetadata }): {
+      eq(column: string, value: string): PromiseLike<unknown>;
+    };
+  };
+}
 
 function requireEnv(key: string): string {
   const val = Deno.env.get(key);
   if (!val) throw new Error(`Missing required env var: ${key}`);
   return val;
+}
+
+/**
+ * Write the reason a payout attempt failed onto the payment row.
+ *
+ * Every failure below used to go only into `errors[]` — an array returned in
+ * the HTTP response of a CRON invocation, which by definition nobody reads —
+ * and a console line. The row itself was untouched, so a payment could be
+ * retried every six hours for days while still displaying the first error
+ * release-escrow wrote, with no way to tell the two apart. See payoutFailure.ts.
+ *
+ * Best-effort by contract, like recordInstantPayoutFee: this is bookkeeping
+ * ABOUT a failure, and it must never itself throw and skip the `continue` that
+ * lets the remaining jobs in the batch run.
+ */
+async function recordPayoutFailure(
+  supabase: PaymentRowUpdater,
+  paymentId: string,
+  metadata: Record<string, unknown> | null | undefined,
+  message: string,
+  // The counter advances the idempotency key, so it may only count failures
+  // where Stripe DEFINITELY created nothing. An ambiguous failure (network
+  // drop, timeout) retried under a new key could pay the tradie twice —
+  // callers that just caught a Stripe error must pass canFallBackToStandard.
+  // Sites that failed BEFORE any Stripe call default to true: no request was
+  // made, so no payout can exist and a fresh key is harmless.
+  countAttempt = true,
+): Promise<void> {
+  try {
+    await supabase
+      .from("payments")
+      .update({
+        metadata: markPayoutFailed(metadata, message, new Date().toISOString(), { countAttempt }),
+      })
+      .eq("id", paymentId);
+  } catch (err) {
+    console.error(`Could not record payout failure for payment ${paymentId}:`, err);
+  }
 }
 
 const corsHeaders = {
@@ -138,6 +194,7 @@ Deno.serve(async (req: Request) => {
 
     let released = 0;
     let totalAmount = 0;
+    let skippedAwaitingFunds = 0;
     const errors: string[] = [];
 
     // Fetch every releasable job_funding payment for these jobs in one query.
@@ -203,8 +260,16 @@ Deno.serve(async (req: Request) => {
         payment.metadata?.flow === "destination" ||
         payment.metadata?.routing === "destination";
 
-      if (!payment.stripe_payment_intent_id) {
-        errors.push(`Job ${job.id}: payment has no Stripe payment intent`);
+      // Only the LEGACY branch needs a PaymentIntent — it resolves one to a
+      // source charge further down. A destination charge pays out from the
+      // tradie's connected account and never reads it, and a zero-total
+      // Checkout session creates no PI at all, so applying this to both
+      // branches left those jobs erroring here on every 6-hourly tick with no
+      // way out. Matches the same split in release-escrow.
+      if (!isDestinationCharge && !payment.stripe_payment_intent_id) {
+        const msg = "payment has no Stripe payment intent";
+        errors.push(`Job ${job.id}: ${msg}`);
+        await recordPayoutFailure(supabase, payment.id, existingMetadata, msg);
         continue;
       }
 
@@ -248,8 +313,14 @@ Deno.serve(async (req: Request) => {
       const totalBase = payment.amount + childTotal;
       const totalTransferAmount = totalBase - totalPlatformFee;
 
-      if (totalTransferAmount <= 0) {
-        errors.push(`Job ${job.id}: transfer amount is zero or negative after platform fee deduction`);
+      // Zero is survivable on a destination charge and only there: nothing was
+      // ever charged, so there is nothing to move and no failure to retry. The
+      // legacy branch still rejects it, because stripe.transfers.create refuses
+      // a zero amount.
+      if (totalTransferAmount < 0 || (totalTransferAmount === 0 && !isDestinationCharge)) {
+        const msg = "transfer amount is zero or negative after platform fee deduction";
+        errors.push(`Job ${job.id}: ${msg}`);
+        await recordPayoutFailure(supabase, payment.id, existingMetadata, msg);
         continue;
       }
 
@@ -266,8 +337,63 @@ Deno.serve(async (req: Request) => {
         !tradieProfile?.stripe_connect_account_id ||
         !tradieProfile.stripe_connect_onboarding_complete
       ) {
-        errors.push(
-          `Job ${job.id}: tradie ${job.tradie_id} has no Connect account or incomplete onboarding`,
+        const msg = `tradie ${job.tradie_id} has no Connect account or incomplete onboarding`;
+        errors.push(`Job ${job.id}: ${msg}`);
+        await recordPayoutFailure(supabase, payment.id, existingMetadata, msg);
+        continue;
+      }
+
+      // ── ZERO-CHARGE RELEASE ──────────────────────────────────────────
+      // Nothing was ever collected, so there is no balance to move and no payout
+      // to create. Close the row out so the cron stops rescanning it every six
+      // hours forever, and skip the notifications below — every one of them
+      // promises money arriving at a bank, which would be a lie here. Kept ahead
+      // of the destination branch so none of that copy has to learn about an
+      // amount that never moves.
+      //
+      // #246 stopped new rows of this shape being written (accept-and-pay
+      // refuses a sub-50¢ charge before mutating anything). It could not fix the
+      // ones already in the table — this is what closes those out. Mirrors
+      // release-escrow's isZeroPayout branch; the two must agree, since either
+      // can win the race.
+      if (isDestinationCharge && totalTransferAmount + totalGst === 0) {
+        const releasedAt = new Date().toISOString();
+        // Same "drop pending_increase" as the branches below, written as a
+        // delete rather than a rest-destructure so it does not add another
+        // no-unused-vars error to the repo's lint backlog.
+        const cleanMetadata = { ...existingMetadata } as Record<string, unknown>;
+        delete cleanMetadata.pending_increase;
+
+        const { error: zeroUpdateError } = await supabase
+          .from("payments")
+          .update({
+            status: "released",
+            metadata: {
+              ...cleanMetadata,
+              payout_amount: 0,
+              platform_fee_deducted: totalPlatformFee,
+              released_at: releasedAt,
+              auto_released: true,
+              zero_charge_release: true,
+              flow: "destination",
+            },
+          })
+          .eq("id", payment.id);
+
+        if (zeroUpdateError) {
+          errors.push(`Job ${job.id}: failed to close zero-charge payment — ${zeroUpdateError.message}`);
+          continue;
+        }
+
+        try {
+          await expirePendingVariations(supabase, payment.job_id);
+        } catch (expireErr) {
+          console.error("Failed to expire variations after zero-charge release:", expireErr);
+        }
+
+        released++;
+        console.info(
+          `Auto-released (zero charge) job ${job.id} — nothing was owed, no payout created.`,
         );
         continue;
       }
@@ -280,6 +406,43 @@ Deno.serve(async (req: Request) => {
         // Pay out base + GST − platform fee (what actually landed in the balance).
         // MUST match release-escrow's amount — shared idempotency key.
         const destinationPayoutCents = totalTransferAmount + totalGst;
+
+        // Pre-flight: only attempt when the funds are actually AVAILABLE — the
+        // same guard the dispute-split sweep below has always had, for the same
+        // reason. On AU cards the destination charge stays PENDING for ~2
+        // business days while release opens 5 hours after completion, so the
+        // first ticks after a job finishes routinely find an empty available
+        // balance; firing anyway just re-logs "insufficient funds" every six
+        // hours and buries real failures under settlement-timing noise.
+        //
+        // A skip is stamped on the row (timestamp + reason) so it stays
+        // readable, but it must NOT advance payout_attempts: no payout was
+        // attempted, so the idempotency key has to stay put — see
+        // releasePayoutIdempotencyKey. Checked against the standard amount
+        // even for instant-preference tradies (instant draws amount + fee from
+        // the same balance); at worst a skip delays one tick, and settlement
+        // resolves it. If the balance LOOKUP itself fails, fall through to the
+        // normal attempt rather than wedging the release on an API blip.
+        try {
+          const bal = await stripe.balance.retrieve({
+            stripeAccount: tradieProfile.stripe_connect_account_id,
+          });
+          const availableAud = availableAudCents(bal);
+          if (availableAud < destinationPayoutCents) {
+            const msg =
+              `payout skipped: ${formatAud(availableAud)} available of ${formatAud(destinationPayoutCents)} needed — funds still settling`;
+            console.info(`Job ${job.id}: ${msg}`);
+            skippedAwaitingFunds++;
+            await recordPayoutFailure(supabase, payment.id, existingMetadata, msg, false);
+            continue;
+          }
+        } catch (balErr) {
+          console.warn(
+            `Balance pre-flight failed for job ${job.id} — attempting payout anyway:`,
+            balErr,
+          );
+        }
+
         try {
           // Honours tradie_details.payout_speed_preference. The decision is a
           // pure function of the preference and the amount, so a client release
@@ -300,15 +463,22 @@ Deno.serve(async (req: Request) => {
               gst: String(totalGst),
               flow: "destination",
             },
-            // Deterministic key shared with release-escrow so a cron run racing a
-            // client release can't create two payouts for one payment.
-            idempotencyKeyBase: `release_payout_${payment.id}`,
+            // Shared with release-escrow so a cron run racing a client release
+            // can't create two payouts for one payment — but discriminated by
+            // the failure count, or Stripe replays a cached failure for 24h
+            // while this retries every 6. See releasePayoutIdempotencyKey.
+            idempotencyKeyBase: releasePayoutIdempotencyKey(payment.id, existingMetadata),
           });
           const payout = outcome.payout;
 
           // Update main payment metadata with payout info. Drop pending_increase.
           const releasedAt = new Date().toISOString();
-          const { pending_increase: _droppedIncrease, ...cleanMetadata } = existingMetadata as Record<string, unknown>;
+          const { pending_increase: _droppedIncrease, ...withIncreaseDropped } = existingMetadata as Record<string, unknown>;
+          // Drop any failure recorded by an earlier attempt. Without this the row
+          // lands 'released' still carrying payout_pending: true, and NOTHING
+          // clears it — payout-reconciliation only scans rows still at
+          // 'completed', so it cannot even see the ones it would want to flag.
+          const cleanMetadata = clearPayoutFailure(withIncreaseDropped);
           await supabase
             .from("payments")
             .update({
@@ -509,6 +679,21 @@ Deno.serve(async (req: Request) => {
             : "Stripe payout failed";
           errors.push(`Job ${job.id}: ${msg}`);
           console.error(`Stripe payout failed for job ${job.id}:`, stripeErr);
+          // The row stays 'completed' so the next tick retries — but until now it
+          // also stayed SILENT, which is how two live payments sat unpaid for
+          // days looking exactly like ones nobody had attempted.
+          //
+          // canFallBackToStandard: only a DETERMINISTIC rejection advances the
+          // counter (and so the key). An ambiguous error may mean the payout
+          // was actually created — the retry must replay the SAME key so
+          // Stripe returns it instead of creating a second one.
+          await recordPayoutFailure(
+            supabase,
+            payment.id,
+            existingMetadata,
+            msg,
+            canFallBackToStandard(stripeErr),
+          );
         }
 
         // Skip the legacy transfer path below
@@ -551,10 +736,13 @@ Deno.serve(async (req: Request) => {
           const msg = lookupErr instanceof Error ? lookupErr.message : "unknown";
           errors.push(`Job ${job.id}: PI lookup failed (${msg}) — will retry next tick`);
           console.error(`Job ${job.id}: failed to resolve PI to charge:`, lookupErr);
+          await recordPayoutFailure(supabase, payment.id, existingMetadata, `PI lookup failed: ${msg}`);
           continue;
         }
         if (!sourceChargeId) {
-          errors.push(`Job ${job.id}: PaymentIntent has no latest_charge yet — will retry next tick`);
+          const msg = "PaymentIntent has no latest_charge yet";
+          errors.push(`Job ${job.id}: ${msg} — will retry next tick`);
+          await recordPayoutFailure(supabase, payment.id, existingMetadata, msg);
           continue;
         }
       }
@@ -587,7 +775,10 @@ Deno.serve(async (req: Request) => {
         // gets the original quote. Without this the stale flag keeps surfacing
         // a "Pay Difference" CTA even after the release.
         const releasedAt = new Date().toISOString();
-        const { pending_increase: _droppedIncrease, ...cleanMetadata } = existingMetadata as Record<string, unknown>;
+        const { pending_increase: _droppedIncrease, ...withIncreaseDropped } = existingMetadata as Record<string, unknown>;
+        // See the destination path: a row that failed earlier must not land
+        // 'released' still flagged payout_pending.
+        const cleanMetadata = clearPayoutFailure(withIncreaseDropped);
         await supabase
           .from("payments")
           .update({
@@ -764,6 +955,18 @@ Deno.serve(async (req: Request) => {
           : "Stripe transfer failed";
         errors.push(`Job ${job.id}: ${msg}`);
         console.error(`Stripe transfer failed for job ${job.id}:`, stripeErr);
+        // Same discrimination as the destination path: an ambiguous transfer
+        // failure must not advance the counter. The legacy transfer key is a
+        // fixed string the counter never touches, but the counter feeds the
+        // DESTINATION key — and metadata.flow is data, not a constraint, so a
+        // row must never carry a counter its own history can't justify.
+        await recordPayoutFailure(
+          supabase,
+          payment.id,
+          existingMetadata,
+          msg,
+          canFallBackToStandard(stripeErr),
+        );
       }
     }
 
@@ -835,7 +1038,10 @@ Deno.serve(async (req: Request) => {
             { stripeAccount: acct, idempotencyKey: `dispute_split_payout_${disputeId}` },
           );
 
-          const { payout_pending: _cleared, payout_last_error: _err, ...restMeta } = sm;
+          // Was an inline destructure of two keys; markPayoutFailed now writes
+          // four, and a hand-rolled strip here would silently leave the new ones
+          // behind on a row it just paid out.
+          const restMeta = clearPayoutFailure(sm);
           await supabase
             .from("payments")
             .update({
@@ -853,6 +1059,7 @@ Deno.serve(async (req: Request) => {
           const m = splitErr instanceof Error ? splitErr.message : String(splitErr);
           console.error(`Split payout retry failed for payment ${row.id}:`, m);
           errors.push(`Split payout ${row.id}: ${m}`);
+          await recordPayoutFailure(supabase, row.id, sm, m, canFallBackToStandard(splitErr));
         }
       }
     } catch (sweepErr) {
@@ -864,6 +1071,7 @@ Deno.serve(async (req: Request) => {
       released,
       total_amount: totalAmount,
       total_amount_dollars: `$${(totalAmount / 100).toFixed(2)}`,
+      skipped_awaiting_funds: skippedAwaitingFunds,
       split_payouts_completed: splitsCompleted,
       errors: errors.length > 0 ? errors : undefined,
     });

@@ -252,10 +252,20 @@ function SubmitFinalQuoteModal({ isOpen, quote, onClose, onDone }: SubmitFinalQu
   const messageRequired = exceedsAdvisory;
   const messageOk = !messageRequired || message.trim().length >= 10;
 
+  // A final at or below the PAID call-out fee is unpayable: the fee is credited
+  // against the final at acceptance, so nothing (or less) would be left to
+  // charge. submit-final-quote rejects it server-side; mirroring it here means
+  // the tradie sees the fix while typing instead of after submitting.
+  const paidFeeCents = quote.site_visit_fee_status === 'paid' && Number(quote.call_out_fee_cents) > 0
+    ? Number(quote.call_out_fee_cents)
+    : 0;
+  const belowPaidFee = isValidPrice && paidFeeCents > 0
+    && Math.round(finalPriceNum * 100) <= paidFeeCents;
+
   const todayIso = new Date().toISOString().slice(0, 10);
   const validityOk = !!finalValidUntil && finalValidUntil >= todayIso;
 
-  const canSubmit = isValidPrice && validityOk && messageOk && !submitting;
+  const canSubmit = isValidPrice && !belowPaidFee && validityOk && messageOk && !submitting;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -318,6 +328,15 @@ function SubmitFinalQuoteModal({ isOpen, quote, onClose, onDone }: SubmitFinalQu
             className="w-full pl-7 pr-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal"
           />
         </div>
+
+        {/* Final must clear the paid call-out fee — it's credited at acceptance */}
+        {belowPaidFee && (
+          <div className="mt-3 p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-sm text-ct-rose">
+            Your final price must be more than the ${(paidFeeCents / 100).toFixed(2)} site visit fee
+            the client already paid — that fee comes off their final bill. Enter a price above
+            ${(paidFeeCents / 100).toFixed(2)}.
+          </div>
+        )}
 
         {/* ACL advisory */}
         {exceedsAdvisory && (
