@@ -4,7 +4,7 @@ import { Star, CheckCircle2, ChevronRight, MapPin, Loader2, ArrowLeft } from 'lu
 import { supabase } from '../lib/supabase';
 import { proseInputProps } from '../lib/proseInput';
 import { useAuth } from '../contexts/AuthContext';
-import { releaseEscrow } from '../lib/stripePayments';
+import { releaseEscrow, humanizePaymentError } from '../lib/stripePayments';
 import { isReleaseActioned } from '../lib/paymentRelease';
 import DashboardLayout from '../components/DashboardLayout';
 
@@ -58,6 +58,7 @@ export default function LeaveReview() {
   const [submitted, setSubmitted] = useState(false);
   const [paymentReleased, setPaymentReleased] = useState(false);
   const [alreadyReleased, setAlreadyReleased] = useState(false);
+  const [releaseError, setReleaseError] = useState('');
 
   useEffect(() => {
     if (!jobId || !user) return;
@@ -165,27 +166,11 @@ export default function LeaveReview() {
         selectedTags.length > 0 ? `[Tags: ${selectedTags.join(', ')}]` : '',
       ].filter(Boolean).join('\n');
 
-      // Release escrow payment if not already released
-      if (!alreadyReleased) {
-        const { data: payment } = await supabase
-          .from('payments')
-          .select('id, metadata')
-          .eq('job_id', job.id)
-          .eq('payment_type', 'job_funding')
-          .eq('status', 'completed')
-          .maybeSingle();
-        if (payment) {
-          const meta = payment.metadata as Record<string, unknown> | null;
-          // Only release if the client hasn't already actioned it. Without this,
-          // submitting a review on an approved-but-still-settling payout called
-          // release-escrow a SECOND time.
-          if (!isReleaseActioned({ metadata: meta })) {
-            await releaseEscrow(payment.id);
-            setPaymentReleased(true);
-          }
-        }
-      }
-
+      // The review goes in FIRST, and the release is not allowed to take it down
+      // with it. These ran the other way around, so any escrow error — a $0 job
+      // with no Stripe payment intent was the one that surfaced it — threw before
+      // the insert and silently discarded feedback the client had already
+      // written. Their rating is not collateral for a payment problem.
       const { error: insertError } = await supabase
         .from('reviews')
         .insert({
@@ -197,6 +182,37 @@ export default function LeaveReview() {
         });
 
       if (insertError) throw insertError;
+
+      // Release escrow payment if not already released
+      if (!alreadyReleased) {
+        try {
+          const { data: payment } = await supabase
+            .from('payments')
+            .select('id, metadata')
+            .eq('job_id', job.id)
+            .eq('payment_type', 'job_funding')
+            .eq('status', 'completed')
+            .maybeSingle();
+          if (payment) {
+            const meta = payment.metadata as Record<string, unknown> | null;
+            // Only release if the client hasn't already actioned it. Without this,
+            // submitting a review on an approved-but-still-settling payout called
+            // release-escrow a SECOND time.
+            if (!isReleaseActioned({ metadata: meta })) {
+              await releaseEscrow(payment.id);
+              setPaymentReleased(true);
+            }
+          }
+        } catch (releaseErr: unknown) {
+          // Non-fatal: the review is already saved. Say what failed and where to
+          // retry rather than pretending the payment went out.
+          setReleaseError(
+            humanizePaymentError(
+              releaseErr instanceof Error ? releaseErr.message : null,
+            ),
+          );
+        }
+      }
 
       setSubmitted(true);
     } catch (err: unknown) {
@@ -265,6 +281,15 @@ export default function LeaveReview() {
               ))}
               <span className="ml-2 text-sm font-medium text-ct-mute-2">{RATING_LABELS[rating]}</span>
             </div>
+
+            {releaseError && (
+              <div className="p-3 mb-6 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm text-left">
+                <p className="text-sm text-ct-rose font-medium mb-1">Payment wasn't released</p>
+                <p className="text-xs text-ct-mute-2">
+                  {releaseError} Your review is saved — release the payment from Payments when you're ready.
+                </p>
+              </div>
+            )}
 
             <div className="flex gap-3">
               <Link

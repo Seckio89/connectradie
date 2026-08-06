@@ -9,6 +9,7 @@
 // node:assert rather than jsr:@std/assert so this runs with no network access.
 import { strictEqual as assertEquals } from "node:assert/strict";
 import {
+  availableAudCents,
   classifyInstantFailure,
   computeInstantPayout,
   instantFailureMessage,
@@ -240,4 +241,43 @@ Deno.test("never falls back on a network or unknown error", () => {
   assertEquals(canFallBackToStandard({ raw: { type: "api_error" } }), false);
   assertEquals(canFallBackToStandard(null), false);
   assertEquals(canFallBackToStandard(undefined), false);
+});
+
+// ── availableAudCents ────────────────────────────────────────────────────────
+// The release pre-flight: a wrong extraction here either skips a payable payout
+// forever or fires blindly — the exact behaviour the guard exists to stop.
+
+Deno.test("sums only the AUD buckets", () => {
+  assertEquals(
+    availableAudCents({
+      available: [
+        { currency: "aud", amount: 5000 },
+        { currency: "usd", amount: 9999 },
+        { currency: "aud", amount: 1250 },
+      ],
+    }),
+    6250,
+  );
+});
+
+Deno.test("no AUD bucket, empty or missing available all read as $0", () => {
+  assertEquals(availableAudCents({ available: [{ currency: "usd", amount: 9999 }] }), 0);
+  assertEquals(availableAudCents({ available: [] }), 0);
+  assertEquals(availableAudCents({}), 0);
+  assertEquals(availableAudCents(null), 0);
+  assertEquals(availableAudCents(undefined), 0);
+});
+
+Deno.test("a malformed bucket cannot poison the sum", () => {
+  assertEquals(
+    availableAudCents({
+      available: [
+        { currency: "aud", amount: 5000 },
+        { currency: "aud" }, // no amount
+        null,
+        { currency: "aud", amount: Number.NaN },
+      ],
+    }),
+    5000,
+  );
 });
