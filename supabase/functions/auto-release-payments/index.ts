@@ -260,7 +260,13 @@ Deno.serve(async (req: Request) => {
         payment.metadata?.flow === "destination" ||
         payment.metadata?.routing === "destination";
 
-      if (!payment.stripe_payment_intent_id) {
+      // Only the LEGACY branch needs a PaymentIntent — it resolves one to a
+      // source charge further down. A destination charge pays out from the
+      // tradie's connected account and never reads it, and a zero-total
+      // Checkout session creates no PI at all, so applying this to both
+      // branches left those jobs erroring here on every 6-hourly tick with no
+      // way out. Matches the same split in release-escrow.
+      if (!isDestinationCharge && !payment.stripe_payment_intent_id) {
         const msg = "payment has no Stripe payment intent";
         errors.push(`Job ${job.id}: ${msg}`);
         await recordPayoutFailure(supabase, payment.id, existingMetadata, msg);
@@ -307,7 +313,11 @@ Deno.serve(async (req: Request) => {
       const totalBase = payment.amount + childTotal;
       const totalTransferAmount = totalBase - totalPlatformFee;
 
-      if (totalTransferAmount <= 0) {
+      // Zero is survivable on a destination charge and only there: nothing was
+      // ever charged, so there is nothing to move and no failure to retry. The
+      // legacy branch still rejects it, because stripe.transfers.create refuses
+      // a zero amount.
+      if (totalTransferAmount < 0 || (totalTransferAmount === 0 && !isDestinationCharge)) {
         const msg = "transfer amount is zero or negative after platform fee deduction";
         errors.push(`Job ${job.id}: ${msg}`);
         await recordPayoutFailure(supabase, payment.id, existingMetadata, msg);
@@ -330,6 +340,61 @@ Deno.serve(async (req: Request) => {
         const msg = `tradie ${job.tradie_id} has no Connect account or incomplete onboarding`;
         errors.push(`Job ${job.id}: ${msg}`);
         await recordPayoutFailure(supabase, payment.id, existingMetadata, msg);
+        continue;
+      }
+
+      // ── ZERO-CHARGE RELEASE ──────────────────────────────────────────
+      // Nothing was ever collected, so there is no balance to move and no payout
+      // to create. Close the row out so the cron stops rescanning it every six
+      // hours forever, and skip the notifications below — every one of them
+      // promises money arriving at a bank, which would be a lie here. Kept ahead
+      // of the destination branch so none of that copy has to learn about an
+      // amount that never moves.
+      //
+      // #246 stopped new rows of this shape being written (accept-and-pay
+      // refuses a sub-50¢ charge before mutating anything). It could not fix the
+      // ones already in the table — this is what closes those out. Mirrors
+      // release-escrow's isZeroPayout branch; the two must agree, since either
+      // can win the race.
+      if (isDestinationCharge && totalTransferAmount + totalGst === 0) {
+        const releasedAt = new Date().toISOString();
+        // Same "drop pending_increase" as the branches below, written as a
+        // delete rather than a rest-destructure so it does not add another
+        // no-unused-vars error to the repo's lint backlog.
+        const cleanMetadata = { ...existingMetadata } as Record<string, unknown>;
+        delete cleanMetadata.pending_increase;
+
+        const { error: zeroUpdateError } = await supabase
+          .from("payments")
+          .update({
+            status: "released",
+            metadata: {
+              ...cleanMetadata,
+              payout_amount: 0,
+              platform_fee_deducted: totalPlatformFee,
+              released_at: releasedAt,
+              auto_released: true,
+              zero_charge_release: true,
+              flow: "destination",
+            },
+          })
+          .eq("id", payment.id);
+
+        if (zeroUpdateError) {
+          errors.push(`Job ${job.id}: failed to close zero-charge payment — ${zeroUpdateError.message}`);
+          continue;
+        }
+
+        try {
+          await expirePendingVariations(supabase, payment.job_id);
+        } catch (expireErr) {
+          console.error("Failed to expire variations after zero-charge release:", expireErr);
+        }
+
+        released++;
+        console.info(
+          `Auto-released (zero charge) job ${job.id} — nothing was owed, no payout created.`,
+        );
         continue;
       }
 

@@ -112,12 +112,13 @@ export const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    if (!payment.stripe_payment_intent_id) {
-      return errorJson(
-        "Payment does not have a Stripe payment intent",
-        400
-      );
-    }
+    // NOTE: the "payment has a Stripe PaymentIntent" check deliberately lives in
+    // the LEGACY branch further down, not here. Only that branch reads the PI
+    // (to resolve source_transaction); a destination charge releases via a payout
+    // on the tradie's connected account and never touches it. Checking it up here
+    // rejected destination charges that have no PI — a zero-total Checkout
+    // session creates none — leaving the client unable to release AND unable to
+    // leave a review, with the cron equally stuck. Do not move it back.
 
     // Verify user is the client on the associated job
     const { data: job, error: jobError } = await supabase
@@ -224,7 +225,7 @@ export const handler = async (req: Request): Promise<Response> => {
     const platformFeeCents = totalPlatformFee;
     const transferAmount = totalBase - platformFeeCents;
 
-    if (transferAmount <= 0) {
+    if (transferAmount < 0) {
       return errorJson("Transfer amount must be positive after platform fee deduction", 400);
     }
 
@@ -257,37 +258,58 @@ export const handler = async (req: Request): Promise<Response> => {
       // MUST match auto-release-payments' amount exactly — they share the idempotency
       // key, so a differing amount would make Stripe reject the racing retry.
       const destinationPayoutCents = transferAmount + totalGst;
+
+      // Zero to pay out: nothing was ever charged, so nothing is sitting in the
+      // tradie's balance waiting to move. Stripe rejects a $0 payout, and there
+      // is nothing for it to do anyway — release it directly. Everything below
+      // (variation lapsing, fee ledger, child rows) still runs.
+      //
+      // #246 closed the route that MINTS these rows: accept-and-pay now refuses
+      // any sub-50¢ charge before it mutates anything, and submit-final-quote
+      // blocks a final at or below the paid call-out fee that produced it. What
+      // it could not do is reach backwards. Rows already written this way are
+      // sitting at 'completed' with a NULL payment intent, unreleasable from
+      // here and unreleasable by the cron, and a client who cannot release also
+      // cannot leave a review. This is the only thing that lets them out.
+      const isZeroPayout = destinationPayoutCents === 0;
+
       try {
-        // Honours tradie_details.payout_speed_preference. The instant/standard
-        // decision is a pure function of the preference and the amount (see
-        // _shared/instantPayout.ts), so the cron racing this call reaches the
-        // same answer and the shared idempotency key stays valid.
-        const outcome = await createReleasePayout({
-          stripe,
-          supabase,
-          tradieId: job.tradie_id,
-          connectAccountId: tradieProfile.stripe_connect_account_id,
-          amountCents: destinationPayoutCents,
-          metadata: {
-            payment_id: paymentId,
-            job_id: payment.job_id,
-            client_id: user.id,
-            tradie_id: job.tradie_id,
-            platform_fee: String(platformFeeCents),
-            gst: String(totalGst),
-            flow: "destination",
-          },
-          // Shared with auto-release-payments so a client release racing the
-          // cron can't create two payouts for one payment. Both derive the key
-          // from the SAME persisted failure count, so racing callers still
-          // collide while a later retry gets a fresh key instead of replaying
-          // Stripe's 24h-cached failure. See releasePayoutIdempotencyKey.
-          idempotencyKeyBase: releasePayoutIdempotencyKey(paymentId, existingMetadata),
-        });
-        payoutId = outcome.payout.id;
-        payoutAmount = outcome.payout.amount;
-        payoutMethod = outcome.method;
-        instantFeeCents = outcome.feeCents;
+        if (isZeroPayout) {
+          console.info(
+            `Payment ${paymentId} releases with no payout — nothing was charged (zero-charge job).`,
+          );
+        } else {
+          // Honours tradie_details.payout_speed_preference. The instant/standard
+          // decision is a pure function of the preference and the amount (see
+          // _shared/instantPayout.ts), so the cron racing this call reaches the
+          // same answer and the shared idempotency key stays valid.
+          const outcome = await createReleasePayout({
+            stripe,
+            supabase,
+            tradieId: job.tradie_id,
+            connectAccountId: tradieProfile.stripe_connect_account_id,
+            amountCents: destinationPayoutCents,
+            metadata: {
+              payment_id: paymentId,
+              job_id: payment.job_id,
+              client_id: user.id,
+              tradie_id: job.tradie_id,
+              platform_fee: String(platformFeeCents),
+              gst: String(totalGst),
+              flow: "destination",
+            },
+            // Shared with auto-release-payments so a client release racing the
+            // cron can't create two payouts for one payment. Both derive the key
+            // from the SAME persisted failure count, so racing callers still
+            // collide while a later retry gets a fresh key instead of replaying
+            // Stripe's 24h-cached failure. See releasePayoutIdempotencyKey.
+            idempotencyKeyBase: releasePayoutIdempotencyKey(paymentId, existingMetadata),
+          });
+          payoutId = outcome.payout.id;
+          payoutAmount = outcome.payout.amount;
+          payoutMethod = outcome.method;
+          instantFeeCents = outcome.feeCents;
+        }
       } catch (payoutErr) {
         payoutError = payoutErr instanceof Error ? payoutErr.message : String(payoutErr);
         payoutErrorDeterministic = canFallBackToStandard(payoutErr);
@@ -311,14 +333,24 @@ export const handler = async (req: Request): Promise<Response> => {
       // in the tradie's balance forever — auto-release-payments only rescans
       // 'completed'. On failure keep status 'completed' + payout_pending so the cron
       // retries; record the homeowner's approval either way.
-      const newStatus = payoutId ? "released" : "completed";
+      //
+      // A zero payout is terminal, not pending: there is no money in the balance
+      // for a later retry to find, so leaving it 'completed' would have the cron
+      // rescan it forever.
+      const newStatus = (payoutId || isZeroPayout) ? "released" : "completed";
       const { error: metaUpdateError } = await supabase
         .from("payments")
         .update({
           status: newStatus,
           metadata: {
             ...cleanMetadata,
-            ...(payoutId
+            ...(isZeroPayout
+              ? {
+                released_at: releasedAt,
+                payout_amount: 0,
+                zero_charge_release: true,
+              }
+              : payoutId
               ? {
                 payout_id: payoutId,
                 payout_amount: payoutAmount,
@@ -388,7 +420,7 @@ export const handler = async (req: Request): Promise<Response> => {
 
       // Mark the summed child price_adjustment rows released too (only once the
       // payout landed) so reconciliation/reporting stays consistent.
-      if (payoutId) {
+      if (payoutId || isZeroPayout) {
         for (const addl of (additionalPayments || [])) {
           const am = (addl.metadata || {}) as Record<string, unknown>;
           await supabase
@@ -401,7 +433,11 @@ export const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({
           success: true,
-          ...(payoutId ? { payoutId } : { note: "Payment released. Payout will process via the tradie's normal schedule." }),
+          ...(payoutId
+            ? { payoutId }
+            : isZeroPayout
+            ? { note: "Payment released. Nothing was owed on this job, so there is no payout." }
+            : { note: "Payment released. Payout will process via the tradie's normal schedule." }),
           ...(metaUpdateError ? { warning: "Release completed but record update failed." } : {}),
         }),
         {
@@ -414,6 +450,20 @@ export const handler = async (req: Request): Promise<Response> => {
     // ── LEGACY CUSTODIAL FLOW (existing) ───────────────────────────────
     // Platform collected funds into its own Stripe balance; we now transfer
     // them to the tradie's Connect account via stripe.transfers.create().
+
+    // Both guards below belong to THIS branch only — see the note at the top of
+    // the handler. The PI is read a few lines down to resolve source_transaction,
+    // and stripe.transfers.create rejects a zero amount outright.
+    if (!payment.stripe_payment_intent_id) {
+      return errorJson(
+        "Payment does not have a Stripe payment intent",
+        400
+      );
+    }
+
+    if (transferAmount === 0) {
+      return errorJson("Transfer amount must be positive after platform fee deduction", 400);
+    }
 
     // Create a transfer to the tradie's Connect account.
     //
