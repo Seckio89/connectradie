@@ -78,7 +78,7 @@ Deno.serve(async (req: Request) => {
 
     // Rate limit: 10 requests per minute per phone number
     const rateLimitKey = `${normalised}-send-sms`;
-    const { allowed, remaining } = await checkRateLimit(rateLimitKey, 10, 60000);
+    const { allowed } = await checkRateLimit(rateLimitKey, 10, 60000);
     if (!allowed) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),

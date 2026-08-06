@@ -24,6 +24,7 @@
 
 // Matches the alias in feeContext.ts. Edge functions construct their client
 // untyped, and `npm run typecheck` does not cover this directory.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseLike = any;
 
 export interface PriceAdjustmentContext {

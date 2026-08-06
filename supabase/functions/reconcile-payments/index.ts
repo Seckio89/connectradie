@@ -285,7 +285,6 @@ Deno.serve(async (req: Request) => {
     // row to 'completed' without applying those effects would hide the wedge
     // rather than fix it, so this calls the same applyPriceAdjustment the
     // webhook does.
-    let adjustmentsRecovered = 0;
     const { data: strandedAdjustments, error: strandedErr } = await supabase
       .from("payments")
       .select("id, status, job_id, stripe_checkout_session_id, metadata")
@@ -352,7 +351,6 @@ Deno.serve(async (req: Request) => {
         });
 
         mismatchesFixed++;
-        adjustmentsRecovered++;
         details.push({
           payment_id: adj.id,
           stripe_payment_intent_id: piId,

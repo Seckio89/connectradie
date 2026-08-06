@@ -165,7 +165,7 @@ const ELECTRICIAN: TradeContent = {
 
 const CARPENTER: TradeContent = {
   intro:
-    "Carpenters in {{suburb}} handle structural timber work, finishing carpentry, decks, pergolas, doors, and built-ins. While general carpentry doesn\'t require a state licence in {{state}}, structural work that\'s part of a build over a certain value usually falls under a builder\'s licence. The carpenters listed here are ABN-verified, insured, and paid through Stripe escrow.",
+    "Carpenters in {{suburb}} handle structural timber work, finishing carpentry, decks, pergolas, doors, and built-ins. While general carpentry doesn't require a state licence in {{state}}, structural work that's part of a build over a certain value usually falls under a builder's licence. The carpenters listed here are ABN-verified, insured, and paid through Stripe escrow.",
   whatTheyDo: [
     'Decking — install, repair, re-stain',
     'Pergolas, patios, and outdoor structures',
@@ -185,7 +185,7 @@ const CARPENTER: TradeContent = {
     { job: 'Built-in wardrobe', low: 1800, high: 4500, unit: 'per linear m' },
   ],
   licenseNote:
-    "General carpentry work in {{state}} doesn\'t require a state contractor\'s licence, but jobs that involve structural changes, alterations to load-bearing elements, or full builds over the state\'s value threshold (usually $5,000–$10,000) require a builder\'s licence. Carpenters offering bigger jobs on ConnecTradie will have the appropriate licence on file.",
+    "General carpentry work in {{state}} doesn't require a state contractor's licence, but jobs that involve structural changes, alterations to load-bearing elements, or full builds over the state's value threshold (usually $5,000–$10,000) require a builder's licence. Carpenters offering bigger jobs on ConnecTradie will have the appropriate licence on file.",
   faqs: [
     {
       q: 'How much does a carpenter cost in {{suburb}}?',
@@ -219,7 +219,7 @@ const CARPENTER: TradeContent = {
 
 const BUILDER: TradeContent = {
   intro:
-    "Builders in {{suburb}} handle extensions, renovations, new builds, granny flats, and major structural work. Every builder taking on residential work over the state value threshold in {{state}} must hold a current builder\'s licence and home indemnity insurance — both verified by ConnecTradie before they can quote.",
+    "Builders in {{suburb}} handle extensions, renovations, new builds, granny flats, and major structural work. Every builder taking on residential work over the state value threshold in {{state}} must hold a current builder's licence and home indemnity insurance — both verified by ConnecTradie before they can quote.",
   whatTheyDo: [
     'New home construction',
     'Extensions and additions',
@@ -239,7 +239,7 @@ const BUILDER: TradeContent = {
     { job: 'Bathroom renovation', low: 18000, high: 35000, unit: 'per job' },
   ],
   licenseNote:
-    "All builders on ConnecTradie hold a current {{state}} builder\'s licence and home indemnity / home warranty insurance — verified before quote submission. For any residential job over the state threshold (typically $5,000–$20,000), this is legally mandatory. Building unlicensed in {{state}} carries fines of $11,000+ for individuals.",
+    "All builders on ConnecTradie hold a current {{state}} builder's licence and home indemnity / home warranty insurance — verified before quote submission. For any residential job over the state threshold (typically $5,000–$20,000), this is legally mandatory. Building unlicensed in {{state}} carries fines of $11,000+ for individuals.",
   faqs: [
     {
       q: 'How much does a renovation cost per m² in {{suburb}}?',
@@ -273,7 +273,7 @@ const BUILDER: TradeContent = {
 
 const PAINTER: TradeContent = {
   intro:
-    "Painters in {{suburb}} cover everything from a single feature wall to full interior and exterior repaints, weatherboard work, and commercial premises. While general painting doesn\'t require a state licence in {{state}}, working with lead paint or at height above 2m brings additional safety requirements. The painters listed here are ABN-verified and insured.",
+    "Painters in {{suburb}} cover everything from a single feature wall to full interior and exterior repaints, weatherboard work, and commercial premises. While general painting doesn't require a state licence in {{state}}, working with lead paint or at height above 2m brings additional safety requirements. The painters listed here are ABN-verified and insured.",
   whatTheyDo: [
     'Interior painting — full house or selected rooms',
     'Exterior painting — render, weatherboard, brick',
@@ -293,7 +293,7 @@ const PAINTER: TradeContent = {
     { job: 'Feature wall (high-quality paint)', low: 280, high: 600, unit: 'per wall' },
   ],
   licenseNote:
-    "Painting in {{state}} doesn\'t require a state contractor\'s licence for most jobs, but tradies working on heritage-listed buildings, in commercial premises, or at height above 2 metres need additional safety tickets. Lead paint removal (relevant in {{suburb}} homes built before 1970) requires a specific certification — ask before they start.",
+    "Painting in {{state}} doesn't require a state contractor's licence for most jobs, but tradies working on heritage-listed buildings, in commercial premises, or at height above 2 metres need additional safety tickets. Lead paint removal (relevant in {{suburb}} homes built before 1970) requires a specific certification — ask before they start.",
   faqs: [
     {
       q: 'How much does a 3-bedroom repaint cost in {{suburb}}?',
@@ -327,7 +327,7 @@ const PAINTER: TradeContent = {
 
 const CLEANER: TradeContent = {
   intro:
-    "Cleaners in {{suburb}} cover regular house cleaning, end-of-lease bond cleans, deep cleans, office work, carpet shampoo, and window cleaning. Cleaning doesn\'t require a state licence, but for bond cleans the cleaner should follow the {{state}} REINSW / REIV-aligned checklist so the property passes inspection. The cleaners on ConnecTradie are ABN-verified and insured.",
+    "Cleaners in {{suburb}} cover regular house cleaning, end-of-lease bond cleans, deep cleans, office work, carpet shampoo, and window cleaning. Cleaning doesn't require a state licence, but for bond cleans the cleaner should follow the {{state}} REINSW / REIV-aligned checklist so the property passes inspection. The cleaners on ConnecTradie are ABN-verified and insured.",
   whatTheyDo: [
     'Regular house cleaning — weekly, fortnightly, monthly',
     'End-of-lease / bond cleans with checklist',
@@ -348,7 +348,7 @@ const CLEANER: TradeContent = {
     { job: 'Office regular clean', low: 35, high: 75, unit: 'per hour' },
   ],
   licenseNote:
-    "Cleaning doesn\'t require a state contractor\'s licence in {{state}}, but reputable cleaners carry public liability insurance ($5M+) and provide an ABN. For bond cleans, ask whether they guarantee the bond — most professionals will return free if anything fails inspection.",
+    "Cleaning doesn't require a state contractor's licence in {{state}}, but reputable cleaners carry public liability insurance ($5M+) and provide an ABN. For bond cleans, ask whether they guarantee the bond — most professionals will return free if anything fails inspection.",
   faqs: [
     {
       q: 'How much does a regular house clean cost in {{suburb}}?',
@@ -458,7 +458,7 @@ const TILER: TradeContent = {
     { job: 'Outdoor paving (stone or porcelain)', low: 90, high: 160, unit: 'per m²' },
   ],
   licenseNote:
-    "Tilers in {{state}} don\'t need a contractor\'s licence for the tiling itself in most cases, but waterproofing wet areas requires a separate waterproofing certification. Always confirm your tiler holds the waterproofing ticket — otherwise the job needs a separate trade and the warranty stack gets messy.",
+    "Tilers in {{state}} don't need a contractor's licence for the tiling itself in most cases, but waterproofing wet areas requires a separate waterproofing certification. Always confirm your tiler holds the waterproofing ticket — otherwise the job needs a separate trade and the warranty stack gets messy.",
   faqs: [
     {
       q: 'How much does it cost to tile a bathroom in {{suburb}}?',
@@ -492,7 +492,7 @@ const TILER: TradeContent = {
 
 const LANDSCAPER: TradeContent = {
   intro:
-    "Landscapers in {{suburb}} cover garden design, retaining walls, paving, turf, irrigation, and ongoing maintenance. While general landscaping doesn\'t require a state licence in {{state}}, retaining walls over a certain height and any irrigation work that connects to mains water do require licensed trades. The landscapers on ConnecTradie are ABN-verified and insured.",
+    "Landscapers in {{suburb}} cover garden design, retaining walls, paving, turf, irrigation, and ongoing maintenance. While general landscaping doesn't require a state licence in {{state}}, retaining walls over a certain height and any irrigation work that connects to mains water do require licensed trades. The landscapers on ConnecTradie are ABN-verified and insured.",
   whatTheyDo: [
     'Garden design and complete makeovers',
     'Retaining walls (timber, concrete, stone)',
@@ -514,7 +514,7 @@ const LANDSCAPER: TradeContent = {
     { job: 'Mulch supply and spread', low: 95, high: 160, unit: 'per m³ delivered' },
   ],
   licenseNote:
-    "General landscaping in {{state}} doesn\'t require a state contractor\'s licence, but retaining walls over a certain height (usually 1m, sometimes 600mm depending on council) need a licensed builder, and irrigation work that connects to mains needs a licensed plumber. Larger landscape projects over the state value threshold need a builder\'s licence.",
+    "General landscaping in {{state}} doesn't require a state contractor's licence, but retaining walls over a certain height (usually 1m, sometimes 600mm depending on council) need a licensed builder, and irrigation work that connects to mains needs a licensed plumber. Larger landscape projects over the state value threshold need a builder's licence.",
   faqs: [
     {
       q: 'How much does it cost to landscape a backyard in {{suburb}}?',
@@ -548,7 +548,7 @@ const LANDSCAPER: TradeContent = {
 
 const HANDYMAN: TradeContent = {
   intro:
-    "Handymen in {{suburb}} cover the wide middle ground between DIY and licensed trade work — furniture assembly, shelving, minor repairs, gate fixes, door adjustments, gutter cleaning, and general property maintenance. Handymen can\'t do licensed work (plumbing, electrical, gas, structural building), but they\'re usually the most cost-effective option for everything else.",
+    "Handymen in {{suburb}} cover the wide middle ground between DIY and licensed trade work — furniture assembly, shelving, minor repairs, gate fixes, door adjustments, gutter cleaning, and general property maintenance. Handymen can't do licensed work (plumbing, electrical, gas, structural building), but they're usually the most cost-effective option for everything else.",
   whatTheyDo: [
     'Furniture assembly (IKEA, Kmart, custom)',
     'Shelving, picture hanging, wall mounts',
@@ -570,7 +570,7 @@ const HANDYMAN: TradeContent = {
     { job: 'Property maintenance day rate', low: 450, high: 700, unit: 'per day' },
   ],
   licenseNote:
-    "Handymen don\'t need a contractor\'s licence for general repairs and maintenance in {{state}}, but they legally can\'t perform plumbing, electrical, gas, structural building, or asbestos work — these all need licensed trades. If your handyman offers to do any of these, decline and book a licensed tradie. ConnecTradie\'s verification gate prevents this on the platform.",
+    "Handymen don't need a contractor's licence for general repairs and maintenance in {{state}}, but they legally can't perform plumbing, electrical, gas, structural building, or asbestos work — these all need licensed trades. If your handyman offers to do any of these, decline and book a licensed tradie. ConnecTradie's verification gate prevents this on the platform.",
   faqs: [
     {
       q: 'What does a handyman charge in {{suburb}}?',
@@ -625,7 +625,7 @@ const AIR_CONDITIONING: TradeContent = {
     { job: 'Old system removal and disposal', low: 180, high: 380, unit: 'per system' },
   ],
   licenseNote:
-    "AC installers in {{state}} must hold a current electrical contractor\'s licence (for the connection) and an ARCtick refrigerant handling licence (for the gas). Both are mandatory and both are verified on ConnecTradie before they can quote. Unlicensed AC work is illegal, voids insurance, and is a leading cause of refrigerant leaks in older Australian homes.",
+    "AC installers in {{state}} must hold a current electrical contractor's licence (for the connection) and an ARCtick refrigerant handling licence (for the gas). Both are mandatory and both are verified on ConnecTradie before they can quote. Unlicensed AC work is illegal, voids insurance, and is a leading cause of refrigerant leaks in older Australian homes.",
   faqs: [
     {
       q: 'How much does it cost to install a split system in {{suburb}}?',
@@ -659,7 +659,7 @@ const AIR_CONDITIONING: TradeContent = {
 
 const BATHROOM_RENOVATOR: TradeContent = {
   intro:
-    "Bathroom renovators in {{suburb}} handle the full scope — demolition, plumbing rough-in, waterproofing, electrical, tiling, fitting, finishing. A full bathroom renovation involves four licensed trades (builder, plumber, electrician, waterproofer), and the lead renovator coordinates them. In {{state}}, structural bathroom work requires a builder\'s licence and home indemnity insurance.",
+    "Bathroom renovators in {{suburb}} handle the full scope — demolition, plumbing rough-in, waterproofing, electrical, tiling, fitting, finishing. A full bathroom renovation involves four licensed trades (builder, plumber, electrician, waterproofer), and the lead renovator coordinates them. In {{state}}, structural bathroom work requires a builder's licence and home indemnity insurance.",
   whatTheyDo: [
     'Full bathroom renovation, project-managed',
     'Ensuite, powder room, and laundry combo',
@@ -679,7 +679,7 @@ const BATHROOM_RENOVATOR: TradeContent = {
     { job: 'Custom vanity (stone benchtop)', low: 2200, high: 5500, unit: 'per vanity' },
   ],
   licenseNote:
-    "Bathroom renovators in {{state}} need a builder\'s licence (for structural and waterproofing oversight) plus home indemnity / warranty insurance for any job above the state value threshold (usually $5,000–$20,000). Plumbing, electrical, and waterproofing within the job each need their own licensed sub-trade — the renovator coordinates them. ConnecTradie verifies the lead\'s builder\'s licence; sub-trades are checked when assigned.",
+    "Bathroom renovators in {{state}} need a builder's licence (for structural and waterproofing oversight) plus home indemnity / warranty insurance for any job above the state value threshold (usually $5,000–$20,000). Plumbing, electrical, and waterproofing within the job each need their own licensed sub-trade — the renovator coordinates them. ConnecTradie verifies the lead's builder's licence; sub-trades are checked when assigned.",
   faqs: [
     {
       q: 'How much does a bathroom renovation cost in {{suburb}}?',
@@ -713,7 +713,7 @@ const BATHROOM_RENOVATOR: TradeContent = {
 
 const FALLBACK_CONTENT: TradeContent = {
   intro:
-    "Skilled {{tradeLabelPlural}} in {{suburb}}, all ABN-verified and paid through Stripe-secured payment — funds release only when you approve the work. Every tradie\'s licence and insurance is checked before they can submit a quote.",
+    "Skilled {{tradeLabelPlural}} in {{suburb}}, all ABN-verified and paid through Stripe-secured payment — funds release only when you approve the work. Every tradie's licence and insurance is checked before they can submit a quote.",
   whatTheyDo: [
     'Quote on jobs in {{suburb}} and surrounding suburbs',
     'Work to a written, fixed-price scope where possible',
@@ -726,7 +726,7 @@ const FALLBACK_CONTENT: TradeContent = {
     { job: 'Call-out fee (typical)', low: 90, high: 180, unit: 'per visit' },
   ],
   licenseNote:
-    "If this trade requires a state contractor\'s licence in {{state}}, every tradie listed here has had it verified before being allowed to quote. Where no licence is required, we verify ABN and public liability insurance instead.",
+    "If this trade requires a state contractor's licence in {{state}}, every tradie listed here has had it verified before being allowed to quote. Where no licence is required, we verify ABN and public liability insurance instead.",
   faqs: [
     {
       q: 'How much does this trade cost in {{suburb}}?',

@@ -25,7 +25,6 @@ export default function BookingRequestModal({
   isOpen,
   onClose,
   messageId,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   conversationId: _conversationId,
   onReply,
 }: BookingRequestModalProps) {
