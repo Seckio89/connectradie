@@ -9,7 +9,6 @@ import {
   Star,
   MapPin,
   Camera,
-  ArrowUpRight,
   ArrowDownRight,
   Loader2,
   Lightbulb,
@@ -240,7 +239,9 @@ export default function PerformanceInsights() {
       if (avgRating > 0 && avgRating < 4.0) {
         areas.push({
           icon: ArrowDownRight,
-          title: 'Rating Below Average',
+          // Named after what the threshold actually tests. It was "Rating Below
+          // Average", but no average is consulted — the gate is a flat < 4.0.
+          title: 'Rating Under 4 Stars',
           description: `Your average rating is ${avgRating.toFixed(1)} stars. Focus on communication and punctuality to improve client satisfaction.`,
           severity: 'high',
         });
@@ -304,18 +305,27 @@ export default function PerformanceInsights() {
               <h1 className="text-3xl font-bold text-ct-paper">Performance Insights</h1>
               <ProBadge size="md" />
             </div>
-            <p className="text-ct-mute">Win rate, response time, conversion, and revenue trends — track every metric that matters.</p>
+            {/* "and revenue trends" went with the trend arrows: nothing on this
+                page compares a period to the one before it. */}
+            <p className="text-ct-mute">Win rate, response time, profile views and revenue — track every metric that matters.</p>
           </div>
 
           <div className="bg-ct-surface rounded-ct-md shadow-sm p-6 mb-6">
             <h2 className="text-base font-semibold text-ct-paper mb-3">What you get with Pro Insights</h2>
             <ul className="space-y-2.5">
               {[
-                'Quote win rate with trend indicators',
-                'Average response time — how fast you quote vs the average',
+                // Every figure on this page is computed from the tradie's own
+                // rows — quotes, jobs, reviews and views are each filtered to
+                // user.id, and nothing here queries a peer set. This list used
+                // to promise "how fast you quote vs the average" and "total
+                // revenue ranked against the trade", neither of which exists,
+                // on the screen that sells the Pro subscription. Describe what
+                // is delivered; if benchmarking is built later, sell it then.
+                'Quote win rate across every quote you have sent',
+                'Average response time — how fast you get quotes out',
                 'Profile views from homeowners (weekly)',
                 'Average job value across your completed work',
-                'Total revenue ranked against the trade',
+                'Total revenue from quotes you have won',
                 'Personalised focus areas to win more work',
               ].map(item => (
                 <li key={item} className="flex items-start gap-2.5 text-sm text-ct-mute-2">
@@ -375,7 +385,6 @@ export default function PerformanceInsights() {
                   : ''
               }
               color="sky"
-              trend={health && health.quoteWinRate >= 40 ? 'up' : health && health.quoteWinRate > 0 ? 'down' : undefined}
             />
             <HealthCard
               icon={DollarSign}
@@ -394,7 +403,6 @@ export default function PerformanceInsights() {
               value={health ? `${health.profileViews}` : '--'}
               detail="Homeowners who viewed your profile this week"
               color="amber"
-              trend={health && health.profileViews >= 10 ? 'up' : undefined}
             />
             <HealthCard
               icon={Award}
@@ -410,15 +418,6 @@ export default function PerformanceInsights() {
               }
               detail="Time from job posted to your quote — faster wins more leads"
               color="sky"
-              trend={
-                health && health.avgResponseTimeHours != null
-                  ? health.avgResponseTimeHours <= 4
-                    ? 'up'
-                    : health.avgResponseTimeHours <= 24
-                      ? undefined
-                      : 'down'
-                  : undefined
-              }
             />
           </div>
 
@@ -547,14 +546,12 @@ function HealthCard({
   value,
   detail,
   color,
-  trend,
 }: {
   icon: typeof Target;
   label: string;
   value: string;
   detail: string;
   color: 'sky' | 'green' | 'amber';
-  trend?: 'up' | 'down';
 }) {
   // amber was bg-ct-amber/[0.13]/text-ct-amber, but tailwind.config aliases warm, green,
   // emerald and teal onto the SAME #06D6A0 ramp — so "Profile Views" and "Average
@@ -584,22 +581,6 @@ function HealthCard({
         <div className={`w-10 h-10 ${c.iconBg} rounded-ct-md flex items-center justify-center flex-shrink-0`}>
           <Icon className={`w-5 h-5 ${c.iconText}`} />
         </div>
-        {trend && (
-          <div
-            className={`flex items-center gap-1 whitespace-nowrap flex-shrink-0 text-xs font-medium px-3 py-1 rounded-full ${
-              trend === 'up'
-                ? 'bg-ct-teal/[0.14] text-ct-teal'
-                : 'bg-ct-rose/[0.13] text-ct-rose'
-            }`}
-          >
-            {trend === 'up' ? (
-              <ArrowUpRight className="w-3 h-3" />
-            ) : (
-              <ArrowDownRight className="w-3 h-3" />
-            )}
-            {trend === 'up' ? 'Strong' : 'Needs work'}
-          </div>
-        )}
       </div>
       <p className="text-sm font-medium text-ct-mute-2 mb-1">{label}</p>
       <p className="text-3xl font-bold text-ct-paper mb-1">{value}</p>
