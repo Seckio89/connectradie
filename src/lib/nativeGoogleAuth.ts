@@ -91,6 +91,16 @@ export async function signInWithGoogleNative(): Promise<void> {
     // initialize is safe to call repeatedly; ignore re-init noise.
   }
 
+  // The plugin caches the last-used Google account and hands it back without
+  // showing the picker, so a user with more than one account can never switch.
+  // There's no `prompt` option on the native side — clearing the plugin's own
+  // session (not the Supabase one) is what makes the chooser appear again.
+  try {
+    await GoogleAuth.signOut();
+  } catch {
+    // No cached account to clear — that's the state we wanted anyway.
+  }
+
   const result = await GoogleAuth.signIn();
   const idToken = result?.authentication?.idToken;
   if (!idToken) throw new Error('Google did not return an ID token');
