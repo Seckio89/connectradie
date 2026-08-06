@@ -489,7 +489,7 @@ export default function PerformanceInsights() {
                               key={s}
                               className={`w-4 h-4 ${
                                 s <= Math.round(strengths.avgRating)
-                                  ? 'text-ct-amber fill-yellow-400'
+                                  ? 'text-ct-amber fill-ct-amber'
                                   : 'text-ct-paper'
                               }`}
                             />

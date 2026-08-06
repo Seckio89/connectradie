@@ -227,7 +227,7 @@ export default function BookingRequestModal({
               onClick={() => setActiveTab('details')}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors min-h-[44px] ${
                 activeTab === 'details'
-                  ? 'text-ct-amber border-b-2 border-ct-teal/30 bg-ct-surface'
+                  ? 'text-ct-paper border-b-2 border-ct-teal bg-ct-surface'
                   : 'text-ct-mute-2 hover:text-ct-paper'
               }`}
             >
@@ -237,7 +237,7 @@ export default function BookingRequestModal({
               onClick={() => setActiveTab('availability')}
               className={`flex-1 px-4 py-3 text-sm font-medium transition-colors min-h-[44px] ${
                 activeTab === 'availability'
-                  ? 'text-ct-amber border-b-2 border-ct-teal/30 bg-ct-surface'
+                  ? 'text-ct-paper border-b-2 border-ct-teal bg-ct-surface'
                   : 'text-ct-mute-2 hover:text-ct-paper'
               }`}
             >

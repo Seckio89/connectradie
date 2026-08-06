@@ -2029,7 +2029,7 @@ export default function TradieDashboard() {
                     )}
                     </>
                   ) : (
-                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-teal/30 text-ct-amber text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-amber/[0.13] transition-colors min-h-[44px]">
+                    <button onClick={() => setShowSubscriptionModal(true)} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-teal/30 text-ct-teal text-[10px] sm:text-sm font-medium rounded-ct-md hover:bg-ct-teal/[0.14] transition-colors min-h-[44px]">
                       <Calendar className="w-4 h-4" /><span className="hidden sm:inline">Google Calendar</span><span className="sm:hidden">Calendar</span><span className="text-xs font-bold bg-ct-amber/[0.13] text-ct-amber px-1.5 py-0.5 rounded-ct-xs">PRO</span>
                     </button>
                   )}
@@ -2270,9 +2270,15 @@ export default function TradieDashboard() {
                     })}
                   </div>
 
+                  {/* The grid renders four states — selected, today, available,
+                      booked — but the legend only ever named two, so a solid teal
+                      selected day read as an undocumented third meaning next to
+                      the teal-ringed "Available" key. All four are listed now. */}
                   <div className="mt-4 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-sm text-ct-mute-2">
                     <div className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Available</span></div>
                     <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-rose/[0.13] border-2 border-ct-rose rounded-ct-xs flex-shrink-0" /><span className="font-medium">Booked</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-ct-paper rounded-ct-xs flex-shrink-0" /><span className="font-medium">Today</span></div>
+                    <div className="flex items-center gap-2"><span className="w-4 h-4 bg-ct-teal rounded-ct-xs flex-shrink-0" /><span className="font-medium">Selected</span></div>
                   </div>
                 </>
               )}
@@ -2338,9 +2344,9 @@ export default function TradieDashboard() {
                 )}
 
                 {!selectedDay && slots.filter((s) => new Date(s.start_time) > new Date()).length === 0 && (
-                  <div className="text-center py-6 bg-ct-amber/[0.13] rounded-ct-sm border border-ct-amber/[0.34]">
-                    <p className="text-ct-teal text-sm font-medium mb-2">No upcoming availability</p>
-                    <p className="text-ct-paper text-xs">Add slots to your calendar so clients can book you</p>
+                  <div className="text-center py-6 bg-ct-surface-2 rounded-ct-sm border border-dashed border-ct-line">
+                    <p className="text-ct-paper text-sm font-medium mb-2">No upcoming availability</p>
+                    <p className="text-ct-mute-2 text-xs">Add slots to your calendar so clients can book you</p>
                   </div>
                 )}
               </div>
@@ -2433,7 +2439,7 @@ export default function TradieDashboard() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2.5">
                 <div className="p-1.5 bg-ct-amber/[0.13] rounded-ct-sm">
-                  <Star className="w-4 h-4 text-ct-amber fill-yellow-400" />
+                  <Star className="w-4 h-4 text-ct-amber fill-ct-amber" />
                 </div>
                 <h3 className="text-base font-semibold text-ct-paper">Recent reviews</h3>
               </div>
@@ -2455,7 +2461,7 @@ export default function TradieDashboard() {
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
-                          className={`w-3 h-3 ${i < review.rating ? 'fill-yellow-400 text-ct-amber' : 'text-ct-paper'}`}
+                          className={`w-3 h-3 ${i < review.rating ? 'fill-ct-amber text-ct-amber' : 'text-ct-paper'}`}
                         />
                       ))}
                     </div>

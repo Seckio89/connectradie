@@ -669,7 +669,7 @@ export default function Search() {
                         'All'
                       ) : (
                         <div className="flex items-center justify-center gap-1">
-                          <Star className="w-3.5 h-3.5 fill-yellow-400 text-ct-amber" />
+                          <Star className="w-3.5 h-3.5 fill-ct-amber text-ct-amber" />
                           <span>{rating}+</span>
                         </div>
                       )}

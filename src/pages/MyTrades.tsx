@@ -134,7 +134,7 @@ export default function MyTrades() {
               onClick={() => setFilter('all')}
               className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 filter === 'all'
-                  ? 'border-ct-teal text-ct-amber'
+                  ? 'border-ct-teal text-ct-paper'
                   : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
               }`}
             >
@@ -144,7 +144,7 @@ export default function MyTrades() {
               onClick={() => setFilter('available')}
               className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 filter === 'available'
-                  ? 'border-ct-teal text-ct-amber'
+                  ? 'border-ct-teal text-ct-paper'
                   : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
               }`}
             >
@@ -154,7 +154,7 @@ export default function MyTrades() {
               onClick={() => setFilter('verified')}
               className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 filter === 'verified'
-                  ? 'border-ct-teal text-ct-amber'
+                  ? 'border-ct-teal text-ct-paper'
                   : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
               }`}
             >
@@ -166,7 +166,7 @@ export default function MyTrades() {
                 onClick={() => setFilter(cat!)}
                 className={`py-3 text-sm font-semibold whitespace-nowrap border-b-2 capitalize transition-colors ${
                   filter === cat
-                    ? 'border-ct-teal text-ct-amber'
+                    ? 'border-ct-teal text-ct-paper'
                     : 'border-transparent text-ct-mute hover:text-ct-mute-2 hover:border-ct-line'
                 }`}
               >

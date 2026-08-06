@@ -755,7 +755,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 -mb-px text-xs sm:text-sm font-medium transition-colors whitespace-nowrap border-b-2 ${
                   activeTab === tab.key
-                    ? 'border-ct-teal text-ct-amber'
+                    ? 'border-ct-teal text-ct-paper'
                     : 'border-transparent text-ct-mute hover:text-ct-mute-2'
                 }`}
               >
@@ -764,7 +764,7 @@ export default function Team({ embedded = false }: { embedded?: boolean }) {
                 <span className="sm:hidden">{tab.label === 'Role Permissions' ? 'Roles' : tab.label === 'Manually Added' ? 'Manual' : tab.label === 'Active Team' ? 'Active' : tab.label === 'Team Calendar' ? 'Calendar' : tab.label === 'Site Activity' ? 'Sites' : tab.label === 'My Hours' ? 'Hours' : tab.label}</span>
                 {tab.count > 0 && (
                   <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
-                    activeTab === tab.key ? 'bg-ct-amber/[0.13] text-ct-amber' : 'bg-ct-surface-2 text-ct-mute-2'
+                    activeTab === tab.key ? 'bg-ct-teal/[0.14] text-ct-teal' : 'bg-ct-surface-2 text-ct-mute-2'
                   }`}>
                     {tab.count}
                   </span>

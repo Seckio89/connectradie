@@ -135,7 +135,7 @@ export default function TradieCard({ tradie, onChat, onViewCalendar, onSave, isS
                 key={i}
                 className={`w-3.5 h-3.5 ${
                   i < Math.round(rating.average_rating)
-                    ? 'fill-yellow-400 text-ct-amber'
+                    ? 'fill-ct-amber text-ct-amber'
                     : 'text-ct-paper'
                 }`}
               />
