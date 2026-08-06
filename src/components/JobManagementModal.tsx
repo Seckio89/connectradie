@@ -301,7 +301,7 @@ export default function JobManagementModal({
     const body = (job?.description || '').replace(/^\[[^\]]+\]\s*/, '').trim();
     const lines = body
       .split(/\r?\n/)
-      .map((l) => l.replace(/^\s*[•\-\*]\s*/, '').trim())
+      .map((l) => l.replace(/^\s*[•\-*]\s*/, '').trim())
       .filter((l) => l.length > 0 && l.length <= 120);
     const taskLines = lines.filter((l) => /^[A-Z0-9]/i.test(l));
     if (taskLines.length >= 2) return taskLines.slice(0, 8);
@@ -1209,7 +1209,7 @@ export default function JobManagementModal({
                           onClick={() => {
                             setSelectedPrompts(prev => {
                               const next = new Set(prev);
-                              next.has(prompt) ? next.delete(prompt) : next.add(prompt);
+                              if (next.has(prompt)) next.delete(prompt); else next.add(prompt);
                               return next;
                             });
                           }}

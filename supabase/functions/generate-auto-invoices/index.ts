@@ -1,9 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { hasServiceRole } from "../_shared/serviceAuth.ts";
-import Stripe from "npm:stripe@14.21.0";
-import { resolveTradieTier } from "../_shared/pricing.ts";
-import { resolveChargeFee } from "../_shared/feeContext.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -58,7 +55,6 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
     // Caller has already passed Supabase JWT verification (verify_jwt=true).
     // Defence-in-depth: also require the bearer be a JWT (starts with 'ey').
@@ -259,18 +255,6 @@ Deno.serve(async (req: Request) => {
         )
       );
 
-      // Pre-fetched to avoid N+1 queries — bulk-fetch tradie subscription tiers
-      const { data: allTradieDetails } = await supabase
-        .from("tradie_details")
-        .select("profile_id, subscription_tier")
-        .in("profile_id", eligibleTradieIds);
-
-      const tradieDetailMap = new Map<string, string | null>(
-        (allTradieDetails ?? []).map((t: { profile_id: string; subscription_tier: string | null }) =>
-          [t.profile_id, t.subscription_tier]
-        )
-      );
-
       // Pre-fetched to avoid N+1 queries — bulk-fetch homeowner profiles
       const { data: allHomeowners } = await supabase
         .from("profiles")
@@ -281,17 +265,6 @@ Deno.serve(async (req: Request) => {
         (allHomeowners ?? []).map((p: { id: string; email: string; full_name: string; stripe_connect_onboarding_complete: boolean; platform_fee_override_bps: number | null }) =>
           [p.id, p]
         )
-      );
-
-      // Pre-fetched to avoid N+1 queries — bulk-fetch Stripe customer IDs
-      const { data: allStripeSubs } = await supabase
-        .from("stripe_subscriptions")
-        .select("profile_id, stripe_customer_id")
-        .in("profile_id", eligibleClientIds);
-
-      const stripeCustomerMap = new Map<string, string>(
-        (allStripeSubs ?? []).filter((s: { stripe_customer_id: string | null }) => s.stripe_customer_id)
-          .map((s: { profile_id: string; stripe_customer_id: string }) => [s.profile_id, s.stripe_customer_id])
       );
 
       // Pre-fetched to avoid N+1 queries — bulk-fetch active BECS mandates for eligible jobs
@@ -358,29 +331,7 @@ Deno.serve(async (req: Request) => {
         dueDate.setUTCDate(dueDate.getUTCDate() + 7);
         const dueDateStr = fmt(dueDate);
 
-        // Look up tradie subscription tier (O(1) lookup)
-        const tradieSubscriptionTier = resolveTradieTier(tradieDetailMap.get(job.tradie_id as string) ?? undefined);
-        const tradieFeeOverrideBps = profileMap.get(job.tradie_id as string)?.platform_fee_override_bps ?? null;
-
-        const totalCents = Math.round(total * 100);
-        // Pricing v2.1: an invoice has no labour/materials split, so the whole
-        // total is treated as labour. Repeat-client rate still applies to a
-        // genuine pair.
-        const fee = await resolveChargeFee(supabase, {
-          amountCents: totalCents,
-          tier: tradieSubscriptionTier,
-          overrideBps: tradieFeeOverrideBps,
-          tradieId: job.tradie_id as string,
-          clientId: job.client_id as string,
-        });
-        const platformFeeCents = fee.applicationFeeAmount;
         const processingFee = 0;
-
-        // Get homeowner info for Stripe (O(1) lookup)
-        const homeowner = profileMap.get(job.client_id as string);
-
-        // Check for existing Stripe customer (O(1) lookup)
-        const customerId: string | undefined = stripeCustomerMap.get(job.client_id as string);
 
         // Build month label
         const periodStartDate = new Date(billingPeriodStart + "T00:00:00");
@@ -441,8 +392,6 @@ Deno.serve(async (req: Request) => {
             quantity: 1,
           });
         }
-
-        const siteUrl = Deno.env.get("SITE_URL") || "https://connectradie.com";
 
         // Can this invoice be auto-debited after a notice window? Requires an active
         // BECS mandate on the job AND a fully-onboarded tradie to receive the funds.

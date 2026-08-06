@@ -26,6 +26,7 @@ import { isRepeatClientPair } from "./repeatClient.ts";
 
 /** Minimal structural type — avoids importing the Supabase SDK here. */
 // deno-lint-ignore no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseLike = any;
 
 export interface ChargeFeeInput {

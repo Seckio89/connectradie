@@ -291,7 +291,7 @@ for (const persona of ['client', 'tradie'] as const) {
   });
 }
 
-test.afterAll(async ({}, testInfo) => {
+test.afterAll(async (_fixtures, testInfo) => {
   if (!findings.length) return;
   mkdirSync('audit-findings/nav', { recursive: true });
   writeFileSync(

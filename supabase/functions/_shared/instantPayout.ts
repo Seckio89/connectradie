@@ -311,6 +311,7 @@ export function canFallBackToStandard(err: unknown): boolean {
  * different rates for the same tradie.
  */
 // deno-lint-ignore no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseLike = any;
 
 export async function resolveInstantFeeConfig(
@@ -405,6 +406,7 @@ export async function isPlatformInstantDown(supabase: SupabaseLike, nowMs: numbe
 
 export interface CreateReleasePayoutArgs {
   // deno-lint-ignore no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   stripe: any;
   supabase: SupabaseLike;
   tradieId: string;
@@ -420,6 +422,7 @@ export interface CreateReleasePayoutArgs {
 
 export interface ReleasePayoutOutcome {
   // deno-lint-ignore no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payout: any;
   method: "standard" | "instant";
   /** The instant fee Stripe collects. 0 for standard payouts. */

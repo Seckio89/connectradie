@@ -91,6 +91,7 @@ export default function Schedule() {
             {/* HIDDEN until the Google Calendar import issue is fixed. The
                 /calendar-import route still works for direct testing — just
                 restore this Link to re-expose the entry point. */}
+            {/* eslint-disable-next-line no-constant-binary-expression */}
             {false && (
               <Link
                 to="/calendar-import"
