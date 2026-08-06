@@ -145,6 +145,23 @@ jobs:
       # here rather than in its own job because both are cheap, credential-free
       # migration checks.
       - run: npm run check:migrations
+      # TEMPORARY — remove before merging. Diagnoses why
+      # secrets.SUPABASE_ACCESS_TOKEN resolves empty in the Drift job even after
+      # being saved and renamed. Lives here rather than in Drift because that
+      # job is push-only, so its output would only appear AFTER merging the
+      # debug to master; DB Columns runs on pull_request, and secrets are
+      # available to same-repo PR runs, so this answers on the PR itself.
+      #
+      # Booleans only. `secrets.X != ''` evaluates to true/false — no secret
+      # value is ever interpolated into the log.
+      - name: TEMP secret probe
+        env:
+          HAS_SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' }}
+          HAS_ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN != '' }}
+          HAS_SUPABASE_TOKEN: ${{ secrets.SUPABASE_TOKEN != '' }}
+          HAS_SUPABASE_PAT: ${{ secrets.SUPABASE_PAT != '' }}
+          HAS_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        run: env | grep -E '^HAS_' | sort
 
   ink-contrast:
     name: Ink Contrast
