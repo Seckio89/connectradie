@@ -4,6 +4,7 @@ import Stripe from "npm:stripe@14.21.0";
 import { calculateGstCents, resolveTradieTier } from "../_shared/pricing.ts";
 import { resolveChargeFee } from "../_shared/feeContext.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import { paidVisitFeeCents } from "../_shared/siteVisitFee.ts";
 import type { Insert, Update } from "../_shared/dbTypes.ts";
 
 const corsHeaders = {
@@ -312,6 +313,25 @@ export const handler = async (req: Request): Promise<Response> => {
 
     // Convert dollars to cents — charge/fees use the amount collected now (chargeDollars).
     const baseAmountCents = Math.round(chargeDollars * 100);
+
+    // Refuse an unpayable amount BEFORE any mutation. Stripe rejects a payment
+    // session below 50¢ AUD (and any $0 line item) — but that rejection used to
+    // land only at session creation, AFTER the quote and job had already been
+    // flipped to accepted, stranding the job accepted-but-unpaid. The realistic
+    // route here is a final quote at or below the credited call-out fee
+    // (Math.max(0, …) above silently clamps the shortfall): submit-final-quote
+    // now blocks those at submission, so this guards rows that predate that
+    // check and any writer that bypasses it.
+    if (baseAmountCents < 50) {
+      const creditedFeeCents = job.flow_version === 2 ? paidVisitFeeCents(quote) : 0;
+      return errorJson(
+        creditedFeeCents > 0
+          ? `After crediting the $${(creditedFeeCents / 100).toFixed(2)} site visit fee you already paid, there's nothing left to charge on this quote. The tradie needs to submit a final quote above the site visit fee.`
+          : "This quote's amount is below the minimum that can be charged. The tradie needs to submit a corrected quote.",
+        400,
+      );
+    }
+
     const tradieIsGstRegistered = tradieProfile?.is_gst_registered === true;
     const gst = tradieIsGstRegistered ? calculateGstCents(baseAmountCents) : 0;
 

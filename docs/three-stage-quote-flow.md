@@ -190,6 +190,27 @@ Implementation: a Postgres trigger (post-MVP) or, for MVP, enforced in edge
 functions and UI. To "edit" a submitted final, the tradie withdraws (T12) and
 creates a new quote.
 
+### 5.8 Site-visit call-out fee
+
+The tradie sets `quotes.call_out_fee_cents` on any estimate that requires a
+site inspection. The client pays it at booking via `book-site-visit` (routed
+straight to the tradie as a destination charge), and it is **credited against
+the final price** at `accept-and-pay` (`charge = final − fee`).
+
+- **$0 means free.** A fee of 0 books the visit immediately with no Stripe
+  checkout (`book-site-visit` skips payment when `feeCents <= 0`). The UI must
+  never rewrite an entered 0 — a falsy-zero fallback here once silently charged
+  clients $20–$40 for visits the tradie priced at nothing.
+- **Non-zero fees are clamped to $20–$100 in the UI.** The DB CHECK stays
+  deliberately lenient (0–$200) so the band can be tuned without a migration.
+- **A final quote must exceed a *paid* call-out fee.** Because the fee is
+  credited, a final at or below it leaves ≤ $0 to collect; `accept-and-pay`
+  would then fail at Stripe *after* flipping the quote and job to accepted.
+  `submit-final-quote` rejects such finals with a fix-it message, the tradie UI
+  mirrors the check, and `accept-and-pay` refuses any sub-50¢ charge before
+  mutating anything (defence in depth for pre-existing rows). The shared
+  definition of "paid fee" lives in `_shared/siteVisitFee.ts`.
+
 ---
 
 ## 6. Field invariants per state
