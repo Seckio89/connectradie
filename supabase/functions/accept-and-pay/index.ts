@@ -361,7 +361,9 @@ export const handler = async (req: Request): Promise<Response> => {
     // revert hard-coded 'pending', which would corrupt a v2 quote whose
     // original status was 'final_submitted'.)
     const originalQuoteStatus = quote.status as string;
-    let cascadedSiblings: { id: string; previousStatus: string }[] = [];
+    // tradieId is carried so the cascade notification below can reach the losing
+    // tradies from a single list, whichever path did the declining.
+    let cascadedSiblings: { id: string; previousStatus: string; tradieId: string }[] = [];
 
     // Only accept the quote and assign the tradie if not already done
     if (!alreadyAccepted) {
@@ -382,7 +384,7 @@ export const handler = async (req: Request): Promise<Response> => {
       if (job.flow_version !== 2) {
         const { data: triggerSiblings } = await supabase
           .from("quotes")
-          .select("id, status")
+          .select("id, tradie_id, status")
           .eq("job_id", quote.job_id)
           .neq("id", quoteId)
           .eq("status", "pending");
@@ -391,6 +393,7 @@ export const handler = async (req: Request): Promise<Response> => {
           cascadedSiblings = triggerSiblings.map((s) => ({
             id: s.id as string,
             previousStatus: s.status as string,
+            tradieId: s.tradie_id as string,
           }));
         }
       }
@@ -500,9 +503,9 @@ export const handler = async (req: Request): Promise<Response> => {
 
       // Cascade-decline (state machine §5.1): on flow_version=2 jobs, when one
       // quote is accepted, every other non-terminal quote on the same job is
-      // marked 'declined' and the affected tradies are notified. Capture the
-      // sibling IDs + previous statuses so we can revert cleanly if the
-      // payment-record insert below fails.
+      // marked 'declined'. Capture the sibling IDs, previous statuses and tradie
+      // IDs so we can revert cleanly if the payment-record insert below fails,
+      // and so the shared notification block after it can reach those tradies.
       if (job.flow_version === 2) {
         const { data: siblings } = await supabase
           .from("quotes")
@@ -520,6 +523,7 @@ export const handler = async (req: Request): Promise<Response> => {
           cascadedSiblings = siblings.map((s) => ({
             id: s.id as string,
             previousStatus: s.status as string,
+            tradieId: s.tradie_id as string,
           }));
           const siblingIds = cascadedSiblings.map((s) => s.id);
           // Label the loss, don't just set the status. A cascade decline means
@@ -540,26 +544,9 @@ export const handler = async (req: Request): Promise<Response> => {
             console.warn("accept-and-pay: cascade-decline update failed", cascadeError);
             // Do not fail the acceptance — the cascade is a side effect.
           }
-
-          // Notify the declined tradies — best effort
-          try {
-            // The callback-return annotation is the load-bearing one — `.map()`
-            // infers through a naked generic and erases object-literal freshness.
-            const notifs: Insert<"notifications">[] = siblings.map((s): Insert<"notifications"> => ({
-              user_id: s.tradie_id as string,
-              type: "quote_declined_cascade",
-              title: "Quote not selected",
-              message: "Thanks for quoting — the client went with another tradie this time.",
-              job_id: quote.job_id,
-              metadata: { quote_id: s.id, reason: "cascade_decline" },
-              read: false,
-            }));
-            await supabase.from("notifications").insert(notifs);
-          } catch {
-            // Non-critical
-          }
         }
       }
+
     }
 
     // Create payment record
@@ -650,6 +637,46 @@ export const handler = async (req: Request): Promise<Response> => {
         }
       }
       return errorJson("Failed to create payment record", 500);
+    }
+
+    // Notify the tradies whose quotes were cascade-declined — best effort.
+    //
+    // Driven off cascadedSiblings so it covers BOTH cascade paths. It used to
+    // live inside the v2 block, so on flow_version=1 — where the trigger does
+    // the declining — a losing tradie was never told. Their quote just went
+    // quiet: no notification, and the job drops off the open list they were
+    // watching. That is the majority of live jobs, and silence is exactly what
+    // a tradie sees while a client is still deciding, so nothing distinguished
+    // "you lost" from "still waiting".
+    //
+    // Deliberately placed AFTER the payment record is durable, not next to the
+    // cascade itself. Everything above this point can still be rolled back by
+    // the insertError path, which restores the siblings to pending — and a
+    // "quote not selected" notice for a job that is still open, still visible
+    // and still winnable is worse than no notice at all. Nothing after this
+    // point reverts the acceptance: a Stripe session failure leaves the quote
+    // accepted for checkout resumption, which is why this sits here rather than
+    // after the session call. On a resumed checkout cascadedSiblings is empty
+    // (it is only populated under !alreadyAccepted), so nobody is told twice.
+    if (cascadedSiblings.length > 0) {
+      try {
+        // The callback-return annotation is the load-bearing one — `.map()`
+        // infers through a naked generic and erases object-literal freshness.
+        const notifs: Insert<"notifications">[] = cascadedSiblings.map(
+          (s): Insert<"notifications"> => ({
+            user_id: s.tradieId,
+            type: "quote_declined_cascade",
+            title: "Quote not selected",
+            message: "Thanks for quoting — the client went with another tradie this time.",
+            job_id: quote.job_id,
+            metadata: { quote_id: s.id, reason: "cascade_decline" },
+            read: false,
+          }),
+        );
+        await supabase.from("notifications").insert(notifs);
+      } catch {
+        // Non-critical
+      }
     }
 
     // Build line items
