@@ -270,6 +270,8 @@ jobs:
     continue-on-error: true
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # Not a secret — the production ref is already in this file and CLAUDE.md.
+      DRIFT_PROD_REF: uoqygmizupdpanplpvor
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -277,6 +279,15 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Ledger drift needs only the token and the PRODUCTION ref, so it runs as
+      # soon as the secret is set — unlike the two below, which also need
+      # DRIFT_REBUILD_REF, a second project replayed from the migrations. It is
+      # deliberately not gated on the token: the script exits 0 with a notice
+      # when there isn't one, so "no token" stays visible instead of the step
+      # silently disappearing, which is how the two below went unnoticed for
+      # months.
+      - name: Ledger drift
+        run: npm run check:ledger
       - name: Schema drift
         if: ${{ env.SUPABASE_ACCESS_TOKEN != '' }}
         run: npm run check:drift

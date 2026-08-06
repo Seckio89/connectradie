@@ -13,6 +13,8 @@
     "check:columns": "node scripts/check-db-columns.mjs",
     "check:migrations": "node scripts/check-migration-stamps.mjs",
     "check:migrations:baseline": "node scripts/check-migration-stamps.mjs --update",
+    "check:ledger": "node scripts/check-ledger-drift.mjs",
+    "check:ledger:baseline": "node scripts/check-ledger-drift.mjs --update",
     "check:secrets": "node scripts/check-secrets.mjs",
     "check:secrets:history": "node scripts/check-secrets.mjs --history",
     "check:sinks": "node scripts/check-sinks.mjs",
