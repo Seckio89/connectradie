@@ -37,7 +37,7 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { user, profile, updateProfile, updateTradieDetails } = useAuth();
+  const { user, profile, signOut, updateProfile, updateTradieDetails } = useAuth();
   const navigate = useNavigate();
 
   const tradeCategories = tradeType === 'construction'
@@ -63,6 +63,15 @@ export default function Onboarding() {
   const handleAddressChange = (value: string, _coords?: { lat: number; lng: number }, details?: AddressDetails) => {
     setAddress(value);
     setAddressDetails(details || null);
+  };
+
+  // Google sign-in can attach the account to whichever Google session the browser
+  // already held, so the role step names the email being used and offers a way
+  // out. Without it there is no point in the flow where a wrong account is
+  // visible, let alone correctable.
+  const handleUseDifferentAccount = async () => {
+    await signOut();
+    navigate('/login');
   };
 
   const handleRoleSelect = (role: 'client' | 'tradie') => {
@@ -266,9 +275,22 @@ export default function Onboarding() {
               <h2 className="text-2xl font-bold text-ct-paper text-center mb-2">
                 Welcome to Connec<span className="text-ct-teal">Tradie</span>!
               </h2>
-              <p className="text-ct-mute-2 text-center mb-8">
+              <p className="text-ct-mute-2 text-center mb-4">
                 How will you be using Connec<span className="text-ct-teal">Tradie</span>?
               </p>
+
+              {(profile?.email || user?.email) && (
+                <p className="text-sm text-ct-mute-2 text-center mb-8">
+                  Signed in as {profile?.email || user?.email}.{' '}
+                  <button
+                    type="button"
+                    onClick={handleUseDifferentAccount}
+                    className="text-ct-teal hover:underline font-medium"
+                  >
+                    Use a different account
+                  </button>
+                </p>
+              )}
 
               <div className="grid gap-4">
                 <button
