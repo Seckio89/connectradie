@@ -365,6 +365,36 @@ export const handler = async (req: Request): Promise<Response> => {
 
     // Only accept the quote and assign the tradie if not already done
     if (!alreadyAccepted) {
+      // On flow_version=1 the cascade-decline is performed by the
+      // handle_quote_acceptance trigger, which fires on the quote UPDATE below
+      // — not by the cascade block further down, which is v2-only. So capture
+      // the siblings the trigger is about to decline BEFORE that update runs.
+      // Without this, cascadedSiblings stays empty on the v1 path and the
+      // payment-failure revert below has no record of them: a failed
+      // acceptance reverts the chosen quote but strands every competing quote
+      // on the job as 'declined', with the loss labels the trigger stamped.
+      //
+      // The filter mirrors the trigger's WHERE clause exactly — same job, not
+      // this quote, status 'pending' — so it captures precisely the rows the
+      // trigger will touch, no more. v2 is excluded because its accept goes
+      // final_submitted -> accepted, so the trigger's OLD.status = 'pending'
+      // guard never fires there and the explicit block owns the cascade.
+      if (job.flow_version !== 2) {
+        const { data: triggerSiblings } = await supabase
+          .from("quotes")
+          .select("id, status")
+          .eq("job_id", quote.job_id)
+          .neq("id", quoteId)
+          .eq("status", "pending");
+
+        if (triggerSiblings && triggerSiblings.length > 0) {
+          cascadedSiblings = triggerSiblings.map((s) => ({
+            id: s.id as string,
+            previousStatus: s.status as string,
+          }));
+        }
+      }
+
       // Mark the call-out fee as credited (it was deducted from the charge above).
       const creditFee = quote.site_visit_fee_status === "paid" && Number(quote.call_out_fee_cents) > 0;
       // Annotated so every key is column-checked — see ../_shared/dbTypes.ts.
