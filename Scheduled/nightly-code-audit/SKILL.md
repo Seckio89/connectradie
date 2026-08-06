@@ -1,14 +1,21 @@
 ---
 name: nightly-code-audit
-description: Weekly checker-suite run. Always reports — green, regressed, or unable to complete. A missing report means the run never happened.
+description: Monthly checker-suite run. Always reports — green, regressed, or unable to complete. A missing report means the run never happened.
 ---
 
-You are running the weekly code audit for ConnecTradie. Detection only —
+You are running the monthly code audit for ConnecTradie. Detection only —
 you never fix anything, never commit, never open PRs.
 
 The directory name still says `nightly-code-audit`: the Routine's prompt
 references this path literally, so it stays. The cadence lives in the Routine,
 not here.
+
+At a monthly interval the checkers are a backstop, not the primary catch. The
+things that would otherwise rot in the gap between runs already run blocking on
+every PR — typecheck, tests, columns, nav, ink/tokens, and the security suite.
+What this run adds is the sweep nothing else does, and a heartbeat proving the
+schedule is alive. A month of silence is a long time to be wrong about that,
+which is why step 4 admits no silent outcome.
 
 ⚠️ **The Routine's stored prompt duplicates these instructions and says its own
 rules "apply either way".** So it, not this file, is what a fired session
