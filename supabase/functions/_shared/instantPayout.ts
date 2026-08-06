@@ -80,6 +80,27 @@ export function computeInstantPayout(input: InstantPayoutInput): InstantPayoutQu
   return { payoutBaseCents, feeCents, netCents, minBaseCents, eligible: reason === null, reason };
 }
 
+/** The one field of Stripe's balance response the pre-flight reads. */
+export interface StripeBalanceLike {
+  available?: Array<{ currency?: string; amount?: number } | null> | null;
+}
+
+/**
+ * Available AUD in a Stripe balance response, in cents.
+ *
+ * Same extraction the dispute-split sweep in auto-release-payments has always
+ * done inline. A missing or empty `available` array reads as $0 — for a
+ * pre-flight that only decides whether to ATTEMPT, "no AUD bucket" and "no
+ * money" mean the same thing: skip this tick and let settlement catch up.
+ * (A failed balance LOOKUP is different — callers fall through to the attempt
+ * on a thrown error rather than wedging a release on an API blip.)
+ */
+export function availableAudCents(balance: StripeBalanceLike | null | undefined): number {
+  return (balance?.available ?? [])
+    .filter((b) => b?.currency === "aud")
+    .reduce((s, b) => s + (Number(b?.amount) || 0), 0);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Stripe instant-payout failures
 //

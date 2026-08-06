@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import Stripe from "npm:stripe@14.21.0";
 import { frozenCents, recordFeeCharge } from "../_shared/feeContext.ts";
-import { canFallBackToStandard, createReleasePayout, releasePayoutIdempotencyKey } from "../_shared/instantPayout.ts";
+import { availableAudCents, canFallBackToStandard, createReleasePayout, releasePayoutIdempotencyKey } from "../_shared/instantPayout.ts";
 import { expirePendingVariations } from "../_shared/expireVariations.ts";
 import { clearPayoutFailure, markPayoutFailed, type PaymentMetadata } from "../_shared/payoutFailure.ts";
 
@@ -194,6 +194,7 @@ Deno.serve(async (req: Request) => {
 
     let released = 0;
     let totalAmount = 0;
+    let skippedAwaitingFunds = 0;
     const errors: string[] = [];
 
     // Fetch every releasable job_funding payment for these jobs in one query.
@@ -340,6 +341,43 @@ Deno.serve(async (req: Request) => {
         // Pay out base + GST − platform fee (what actually landed in the balance).
         // MUST match release-escrow's amount — shared idempotency key.
         const destinationPayoutCents = totalTransferAmount + totalGst;
+
+        // Pre-flight: only attempt when the funds are actually AVAILABLE — the
+        // same guard the dispute-split sweep below has always had, for the same
+        // reason. On AU cards the destination charge stays PENDING for ~2
+        // business days while release opens 5 hours after completion, so the
+        // first ticks after a job finishes routinely find an empty available
+        // balance; firing anyway just re-logs "insufficient funds" every six
+        // hours and buries real failures under settlement-timing noise.
+        //
+        // A skip is stamped on the row (timestamp + reason) so it stays
+        // readable, but it must NOT advance payout_attempts: no payout was
+        // attempted, so the idempotency key has to stay put — see
+        // releasePayoutIdempotencyKey. Checked against the standard amount
+        // even for instant-preference tradies (instant draws amount + fee from
+        // the same balance); at worst a skip delays one tick, and settlement
+        // resolves it. If the balance LOOKUP itself fails, fall through to the
+        // normal attempt rather than wedging the release on an API blip.
+        try {
+          const bal = await stripe.balance.retrieve({
+            stripeAccount: tradieProfile.stripe_connect_account_id,
+          });
+          const availableAud = availableAudCents(bal);
+          if (availableAud < destinationPayoutCents) {
+            const msg =
+              `payout skipped: ${formatAud(availableAud)} available of ${formatAud(destinationPayoutCents)} needed — funds still settling`;
+            console.info(`Job ${job.id}: ${msg}`);
+            skippedAwaitingFunds++;
+            await recordPayoutFailure(supabase, payment.id, existingMetadata, msg, false);
+            continue;
+          }
+        } catch (balErr) {
+          console.warn(
+            `Balance pre-flight failed for job ${job.id} — attempting payout anyway:`,
+            balErr,
+          );
+        }
+
         try {
           // Honours tradie_details.payout_speed_preference. The decision is a
           // pure function of the preference and the amount, so a client release
@@ -968,6 +1006,7 @@ Deno.serve(async (req: Request) => {
       released,
       total_amount: totalAmount,
       total_amount_dollars: `$${(totalAmount / 100).toFixed(2)}`,
+      skipped_awaiting_funds: skippedAwaitingFunds,
       split_payouts_completed: splitsCompleted,
       errors: errors.length > 0 ? errors : undefined,
     });
