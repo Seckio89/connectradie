@@ -3703,6 +3703,45 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_cost_snapshots: {
+        Row: {
+          basis: Json
+          created_at: string
+          id: string
+          quote_id: string
+          tradie_id: string
+        }
+        Insert: {
+          basis: Json
+          created_at?: string
+          id?: string
+          quote_id: string
+          tradie_id: string
+        }
+        Update: {
+          basis?: Json
+          created_at?: string
+          id?: string
+          quote_id?: string
+          tradie_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_cost_snapshots_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: true
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_cost_snapshots_tradie_id_fkey"
+            columns: ["tradie_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quote_templates: {
         Row: {
           conditions: string | null
@@ -5429,6 +5468,50 @@ export type Database = {
             foreignKeyName: "tradie_availability_tradie_id_fkey"
             columns: ["tradie_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tradie_cost_settings: {
+        Row: {
+          created_at: string
+          id: string
+          labour_burden_pct: number
+          minimum_job_value_cents: number
+          overhead_recovery_pct: number
+          profit_target_pct: number
+          staff_wage_cents: number
+          tradie_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          labour_burden_pct?: number
+          minimum_job_value_cents?: number
+          overhead_recovery_pct?: number
+          profit_target_pct?: number
+          staff_wage_cents?: number
+          tradie_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          labour_burden_pct?: number
+          minimum_job_value_cents?: number
+          overhead_recovery_pct?: number
+          profit_target_pct?: number
+          staff_wage_cents?: number
+          tradie_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tradie_cost_settings_tradie_id_fkey"
+            columns: ["tradie_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
