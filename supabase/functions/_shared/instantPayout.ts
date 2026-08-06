@@ -80,6 +80,27 @@ export function computeInstantPayout(input: InstantPayoutInput): InstantPayoutQu
   return { payoutBaseCents, feeCents, netCents, minBaseCents, eligible: reason === null, reason };
 }
 
+/** The one field of Stripe's balance response the pre-flight reads. */
+export interface StripeBalanceLike {
+  available?: Array<{ currency?: string; amount?: number } | null> | null;
+}
+
+/**
+ * Available AUD in a Stripe balance response, in cents.
+ *
+ * Same extraction the dispute-split sweep in auto-release-payments has always
+ * done inline. A missing or empty `available` array reads as $0 — for a
+ * pre-flight that only decides whether to ATTEMPT, "no AUD bucket" and "no
+ * money" mean the same thing: skip this tick and let settlement catch up.
+ * (A failed balance LOOKUP is different — callers fall through to the attempt
+ * on a thrown error rather than wedging a release on an API blip.)
+ */
+export function availableAudCents(balance: StripeBalanceLike | null | undefined): number {
+  return (balance?.available ?? [])
+    .filter((b) => b?.currency === "aud")
+    .reduce((s, b) => s + (Number(b?.amount) || 0), 0);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Stripe instant-payout failures
 //
@@ -162,6 +183,64 @@ export function isUnavailableFlagFresh(checkedAt: unknown, nowMs: number): boole
 // moments. Everything here is deterministic and both callers reach the same
 // answer.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The idempotency key for a release payout, per attempt.
+ *
+ * THE BUG THIS FIXES. The key used to be exactly `release_payout_<paymentId>`,
+ * fixed forever. Stripe stores the response for an idempotency key for 24
+ * HOURS — including failures — and replays it without re-contacting the payment
+ * rails. auto-release-payments retries every 6 hours. So once a payout failed,
+ * the next three ticks did not attempt anything at all: they replayed the
+ * stored error, whatever the balance had since become.
+ *
+ * Live consequence: two payments failed on 4 August for insufficient balance,
+ * the balance recovered the next day, and the money still did not move. Every
+ * tick "ran", returned 200, and changed nothing, because Stripe was handing
+ * back a cached failure. A transient error wedged a real payout for days.
+ *
+ * THE CONSTRAINT THAT MAKES THIS DELICATE. The key is deliberately shared
+ * between release-escrow and auto-release-payments so a homeowner clicking
+ * "release" while the cron runs cannot create two payouts for one payment.
+ * Varying the key by wall-clock time would reintroduce exactly that race at
+ * every bucket boundary — two callers either side of it would no longer
+ * collide, and the tradie could be paid twice.
+ *
+ * So the discriminator is PERSISTED STATE, not time: the failure counter on the
+ * payment row, maintained by markPayoutFailed in payoutFailure.ts.
+ *
+ *   • Two callers racing read the same row and compute the same key → they
+ *     collide, exactly as before. The double-payout protection is intact.
+ *   • A caller holding a stale read replays the other's cached FAILURE — and a
+ *     failure created no payout, so there is nothing to duplicate.
+ *   • The next tick reads the incremented counter, computes a new key, and
+ *     genuinely reaches Stripe.
+ *   • A payout that SUCCEEDS flips the row to 'released', and neither caller
+ *     selects it again.
+ *
+ * Attempt 0 deliberately yields the bare, unsuffixed key: a payment already
+ * in flight under the old scheme keeps the key it started with, so this change
+ * cannot orphan one mid-release.
+ *
+ * THE COUNTER'S CONTRACT (enforced at the recording sites, not here): it
+ * advances only on DETERMINISTIC rejections — canFallBackToStandard(err) true,
+ * meaning Stripe received the request and refused it, creating nothing. An
+ * AMBIGUOUS failure (network drop, timeout) may mean the payout was actually
+ * created and only the response was lost; advancing the key past one would
+ * make the retry create a SECOND payout. Keeping the key lets Stripe's replay
+ * resolve it either way: payout exists → replay returns it and the release
+ * completes; request never executed → the retry is effectively fresh. See
+ * PayoutFailureOptions.countAttempt in payoutFailure.ts.
+ */
+export function releasePayoutIdempotencyKey(
+  paymentId: string,
+  metadata: Record<string, unknown> | null | undefined,
+): string {
+  const base = `release_payout_${paymentId}`;
+  const attempts = Number((metadata ?? {}).payout_attempts);
+  if (!Number.isFinite(attempts) || attempts <= 0) return base;
+  return `${base}:r${Math.floor(attempts)}`;
+}
 
 export interface ReleasePayoutPlanInput {
   /** tradie_details.payout_speed_preference. Anything but "instant" → standard. */
