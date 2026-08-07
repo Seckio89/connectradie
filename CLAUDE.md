@@ -5,7 +5,7 @@ Escrow via Stripe Connect (Stripe holds funds, NOT us — AFSL compliance critic
 
 ## Stack
 - React 18 · TypeScript strict · Tailwind CSS · Vite
-- Supabase: PostgreSQL + 75 Edge Functions (Deno) + RLS
+- Supabase: PostgreSQL + 76 Edge Functions (Deno) + RLS
 - Stripe Connect escrow · Google Maps API · Sentry
 
 ## Key Directories
@@ -15,11 +15,11 @@ src/components/     # 90+ components
 src/hooks/          # useAvailabilitySlots, useDashboardJobs, useToast, etc.
 src/lib/            # Supabase client, notifications, analytics, email templates
 src/contexts/       # AuthContext.tsx
-supabase/functions/ # 75 Edge Functions
+supabase/functions/ # 76 Edge Functions
 supabase/migrations/# 70+ migrations — never edit existing, always add new
 ```
 
-## Edge Functions (75)
+## Edge Functions (76)
 accept-and-pay · access-pin · adjust-quote-price ·
 analyse-description-keywords · approve-invoice · approve-price-reduction ·
 approve-variation · auto-confirm-sessions · auto-release-payments ·
@@ -43,8 +43,8 @@ send-recurring-reminders · send-scheduled-notifications · send-sms ·
 setup-becs-payment · stripe-checkout · stripe-connect-account ·
 stripe-connect-onboarding · stripe-identity-verification ·
 stripe-payout-settings · stripe-webhook · submit-final-quote ·
-sync-google-calendar · verify-abn · verify-license · verify-payment ·
-worker-claim-profile · worker-invite
+sweep-connect-balance · sync-google-calendar · verify-abn · verify-license ·
+verify-payment · worker-claim-profile · worker-invite
 
 Shared helpers live in `supabase/functions/_shared/` (not a function).
 

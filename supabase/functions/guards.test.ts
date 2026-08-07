@@ -67,6 +67,9 @@ const AUTHED = [
   "pay-price-increase",
   "resolve-dispute-split",
   "create-payment-session",
+  // Cron-invoked, but it pays out every connected account's free balance —
+  // the last function on this list you would want reachable unauthenticated.
+  "sweep-connect-balance",
 ];
 
 for (const fn of AUTHED) {
