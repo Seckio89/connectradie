@@ -55,7 +55,7 @@ import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import ConfirmModal from '../components/ConfirmModal';
 import Modal from '../components/Modal';
 import DocumentPreviewModal from '../components/DocumentPreviewModal';
-import { printHtmlDocument } from '../lib/printableDocument';
+import { printHtmlDocument, pdfSafe } from '../lib/printableDocument';
 import { formatDate, checkLicenseExpired, friendlyError } from '../lib/utils';
 import { escapeHtml } from '../lib/escapeHtml';
 import { cancelRecurringJob } from '../lib/recurringJobs';
@@ -305,7 +305,7 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
   const [viewCompletedJob, setViewCompletedJob] = useState<LeadWithClient | null>(null);
   // Set when the print window isn't available (the app, or a blocked pop-up) —
   // the generated document is shown in-app instead of silently going nowhere.
-  const [previewDoc, setPreviewDoc] = useState<{ title: string; html: string } | null>(null);
+  const [previewDoc, setPreviewDoc] = useState<{ title: string; html: string; filename: string } | null>(null);
   const [withdrawQuoteTarget, setWithdrawQuoteTarget] = useState<LeadWithClient | null>(null);
   const [withdrawing, setWithdrawing] = useState(false);
 
@@ -932,7 +932,11 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 </body></html>`;
 
     if (!printHtmlDocument(html)) {
-      setPreviewDoc({ title: 'Payment statement', html });
+      setPreviewDoc({
+        title: 'Payment statement',
+        html,
+        filename: `Payment-statement-${pdfSafe(invoiceNumber)}.pdf`,
+      });
     }
   };
 
@@ -3525,7 +3529,11 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 </body></html>`;
 
           if (!printHtmlDocument(html)) {
-            setPreviewDoc({ title: 'Tax invoice', html });
+            setPreviewDoc({
+              title: 'Tax invoice',
+              html,
+              filename: `Tax-invoice-${pdfSafe(invoiceNum)}.pdf`,
+            });
           }
         };
 
@@ -3668,6 +3676,7 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           onClose={() => setPreviewDoc(null)}
           title={previewDoc.title}
           html={previewDoc.html}
+          filename={previewDoc.filename}
         />
       )}
 

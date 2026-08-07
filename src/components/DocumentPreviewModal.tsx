@@ -1,6 +1,8 @@
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { Loader2, Share2, X } from 'lucide-react';
 import Modal from './Modal';
 import { canPrintDocument } from '../lib/printableDocument';
+import { canShareDocument, shareDocumentAsPdf } from '../lib/shareDocument';
 
 interface DocumentPreviewModalProps {
   isOpen: boolean;
@@ -9,6 +11,8 @@ interface DocumentPreviewModalProps {
   title: string;
   /** A complete HTML document. Rendered in a sandboxed iframe, so it keeps its own styling. */
   html: string;
+  /** Filename for the shared PDF, extension included — e.g. "Payment-statement-INV-1234.pdf". */
+  filename: string;
 }
 
 /**
@@ -18,13 +22,37 @@ interface DocumentPreviewModalProps {
  * has no print path, and on the web when pop-ups are blocked. The document is
  * a self-contained light-theme HTML string, so it renders in an iframe rather
  * than in the dark app chrome.
+ *
+ * On the app it also offers Share, which renders the same document to a PDF
+ * and hands it to the system share sheet — the only route to Files, email or
+ * a printer from a phone.
  */
-export default function DocumentPreviewModal({ isOpen, onClose, title, html }: DocumentPreviewModalProps) {
+export default function DocumentPreviewModal({ isOpen, onClose, title, html, filename }: DocumentPreviewModalProps) {
+  const [sharing, setSharing] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+
   if (!isOpen) return null;
+
+  const shareable = canShareDocument();
 
   const note = canPrintDocument()
     ? 'Your browser blocked the print window. Allow pop-ups for ConnecTradie to print or save a copy, or read it here.'
-    : 'The app can’t print. Open ConnecTradie in a browser on any device to print or save a copy for your records.';
+    : shareable
+      ? 'The app can’t print directly. Share it to save a PDF to Files, email it, or send it to a printer.'
+      : 'The app can’t print. Open ConnecTradie in a browser on any device to print or save a copy for your records.';
+
+  const handleShare = async () => {
+    if (sharing) return;
+    setSharing(true);
+    setShareError(null);
+    try {
+      await shareDocumentAsPdf(html, filename, title);
+    } catch {
+      setShareError('The PDF couldn’t be created. Try again, or open ConnecTradie in a browser to print it.');
+    } finally {
+      setSharing(false);
+    }
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="3xl">
@@ -50,7 +78,21 @@ export default function DocumentPreviewModal({ isOpen, onClose, title, html }: D
           className="w-full h-[55vh] min-h-[320px] bg-white border border-ct-line rounded-ct-lg"
         />
 
-        <div className="flex justify-end mt-4">
+        {shareError && (
+          <p className="mt-3 text-sm text-ct-rose">{shareError}</p>
+        )}
+
+        <div className="flex items-center justify-end gap-2 mt-4">
+          {shareable && (
+            <button
+              onClick={handleShare}
+              disabled={sharing}
+              className="inline-flex items-center gap-2 px-5 py-2 border border-ct-line text-ct-mute-2 text-sm font-medium rounded-ct-sm hover:bg-ct-surface-2 transition-colors disabled:opacity-50"
+            >
+              {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+              {sharing ? 'Preparing PDF' : 'Share'}
+            </button>
+          )}
           <button
             onClick={onClose}
             className="inline-flex px-5 py-2 bg-ct-teal text-ct-ink text-sm font-semibold rounded-ct-sm hover:brightness-110 transition-colors"
