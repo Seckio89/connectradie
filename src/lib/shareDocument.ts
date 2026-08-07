@@ -8,9 +8,16 @@ import { documentToPdfFragment } from './printableDocument';
  *
  * Native only. The web already has the print dialog, which is a better path to
  * the same places (save as PDF, print) and needs no temp file.
+ *
+ * The plugin check matters because the app is a remote-loading shell: this
+ * code goes live on every installed version the moment the site deploys, but
+ * the Share/Filesystem plugins only exist in shells built after they were
+ * added. isPluginAvailable reads the native bridge's plugin registry, so old
+ * shells hide the button (and show the open-in-a-browser note) instead of
+ * offering a share that would throw "not implemented".
  */
 export function canShareDocument(): boolean {
-  return Capacitor.isNativePlatform();
+  return Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('Share');
 }
 
 function blobToBase64(blob: Blob): Promise<string> {
