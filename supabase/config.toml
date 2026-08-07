@@ -374,6 +374,15 @@ port = 54327
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 
+# ── verify_jwt pins ─────────────────────────────────────────────────────────
+# CI deploys (.github/workflows/deploy-edge-functions.yml) read THIS file. A
+# function with no entry here deploys at the CLI default of verify_jwt = true —
+# which is correct for most functions but breaks any endpoint whose callers
+# cannot present a Supabase JWT. Every production function with verify_jwt =
+# false is therefore pinned below; this list was reconciled against the live
+# project on 2026-08-07. If you create a function that must be public, pin it
+# here in the same commit or the next full CI deploy will flip it to 401.
+
 # Stripe calls this with a webhook signature, NOT a Supabase JWT — so JWT
 # verification MUST stay off or every webhook is rejected with 401 before the
 # function runs (the body itself validates the Stripe signature). Keeping this
@@ -403,6 +412,39 @@ verify_jwt = false
 # The function writes nothing to the database and only logs a fixed, truncated
 # set of fields, so being open costs a log line at worst.
 [functions.csp-report]
+verify_jwt = false
+
+# Does its own auth in-function: requires an Authorization header and resolves
+# the caller with auth.getUser before sending anything. Deployed with
+# verify_jwt = false in production; pinned so a CI deploy doesn't change how
+# its callers authenticate.
+[functions.send-email]
+verify_jwt = false
+
+# Driven by pg_cron with the service-role key, and enforces a real
+# service-role capability in-function via _shared/serviceAuth.hasServiceRole.
+# Production has verify_jwt = false (the in-function check is the gate);
+# pinned to match — flipping it to true is a behaviour change a deploy job
+# must never make silently.
+[functions.auto-release-payments]
+verify_jwt = false
+
+# Device location pings authenticate with X-Geofence-Token, not a Supabase
+# JWT — the function header says "deploy --no-verify-jwt" for exactly this
+# reason. verify_jwt = true would 401 every geofence crossing.
+[functions.geofence-event]
+verify_jwt = false
+
+# Serves off-app invoice recipients who have no Supabase session; ownership
+# of the invoice is verified in-function (see its header: "deploy
+# --no-verify-jwt"). No money moves — it sets a bookkeeping flag.
+[functions.mark-invoice-paid]
+verify_jwt = false
+
+# PIN gate for job access instructions. Viewers prove a PBKDF2-hashed PIN
+# (with lockout) instead of presenting a JWT, so the endpoint must be
+# reachable without one.
+[functions.access-pin]
 verify_jwt = false
 
 # ── Workforce & Compliance module ───────────────────────────────────────────

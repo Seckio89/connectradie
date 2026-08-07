@@ -55,7 +55,12 @@ npm run build                      # production build (vite does NOT type-check)
 npm run typecheck                  # type check — run after every change
 npm run test:run                   # vitest (add --no-file-parallelism if flaky)
 supabase functions serve           # local edge function test
-supabase functions deploy <name>   # deploy single function
+supabase functions deploy <name>   # manual deploy of a single function
+# Edge functions auto-deploy on merge to master (.github/workflows/
+# deploy-edge-functions.yml): changed functions only; a _shared/ or
+# config.toml change deploys all. Needs the SUPABASE_ACCESS_TOKEN repo
+# secret. verify_jwt comes from supabase/config.toml — pin any new
+# public function there or CI flips it to 401.
 supabase db push                   # apply migrations
 
 # Regenerate DB types after any migration (writes src/types/supabase.ts):
