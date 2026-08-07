@@ -1308,6 +1308,24 @@ export type Database = {
           },
         ]
       }
+      edge_rate_limits: {
+        Row: {
+          count: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       email_preferences: {
         Row: {
           category: string
@@ -2825,6 +2843,50 @@ export type Database = {
           {
             foreignKeyName: "payments_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payout_sweeps: {
+        Row: {
+          amount_cents: number
+          available_cents: number
+          created_at: string
+          id: string
+          payout_id: string
+          pending_cents: number
+          reserve_cents: number
+          stripe_account_id: string
+          tradie_profile_id: string
+        }
+        Insert: {
+          amount_cents: number
+          available_cents: number
+          created_at?: string
+          id?: string
+          payout_id: string
+          pending_cents: number
+          reserve_cents: number
+          stripe_account_id: string
+          tradie_profile_id: string
+        }
+        Update: {
+          amount_cents?: number
+          available_cents?: number
+          created_at?: string
+          id?: string
+          payout_id?: string
+          pending_cents?: number
+          reserve_cents?: number
+          stripe_account_id?: string
+          tradie_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payout_sweeps_tradie_profile_id_fkey"
+            columns: ["tradie_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -5476,6 +5538,7 @@ export type Database = {
       tradie_cost_settings: {
         Row: {
           created_at: string
+          default_margin_pct: number
           id: string
           labour_burden_pct: number
           minimum_job_value_cents: number
@@ -5487,6 +5550,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          default_margin_pct?: number
           id?: string
           labour_burden_pct?: number
           minimum_job_value_cents?: number
@@ -5498,6 +5562,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          default_margin_pct?: number
           id?: string
           labour_burden_pct?: number
           minimum_job_value_cents?: number
@@ -6133,6 +6198,13 @@ export type Database = {
         Args: { p_profile_id: string }
         Returns: string
       }
+      consume_rate_limit: {
+        Args: { p_key: string; p_max: number; p_window_seconds: number }
+        Returns: {
+          allowed: boolean
+          remaining: number
+        }[]
+      }
       create_notification: {
         Args: {
           p_channel?: string
@@ -6269,8 +6341,56 @@ export type Database = {
         Args: { conv_id: string; user_id: string }
         Returns: boolean
       }
+      is_service_role: { Args: never; Returns: boolean }
       is_tradie_verified: { Args: { p_user_id: string }; Returns: boolean }
+      job_has_fundable_escrow: { Args: { p_job_id: string }; Returns: boolean }
       job_has_platform_escrow: { Args: { p_job_id: string }; Returns: boolean }
+      list_public_tradies: {
+        Args: never
+        Returns: {
+          abn_verified: boolean
+          avatar_url: string
+          bio: string
+          call_out_fee: number
+          callout_fee_waived_on_proceed: boolean
+          cover_photo_url: string
+          declared_trades: string[]
+          full_name: string
+          has_phone: boolean
+          id: string
+          is_emergency_available: boolean
+          is_identity_verified: boolean
+          is_premium: boolean
+          license_verified: boolean
+          onboarding_completed: boolean
+          postcode: string
+          public_suburb: string
+          role: string
+          service_radius_km: number
+          show_callout_fee: boolean
+          stripe_connect_onboarding_complete: boolean
+          suburb: string
+          td_bio: string
+          td_business_name: string
+          td_contractor_type: string
+          td_default_call_out_fee_cents: number
+          td_emergency_available: boolean
+          td_hourly_rate: number
+          td_insurance_provider: string
+          td_is_insured: boolean
+          td_is_licensed: boolean
+          td_is_verified: boolean
+          td_profile_id: string
+          td_qualifications: string[]
+          td_service_radius_km: number
+          td_subscription_tier: string
+          td_trade_category: string
+          td_trade_type: string
+          team_size: string
+          verification_status: string
+          verified_trades: string[]
+        }[]
+      }
       notify_approaching_reminders: { Args: never; Returns: undefined }
       refresh_open_vacancy_employer_snapshot: {
         Args: { p_employer: string }
@@ -6295,6 +6415,7 @@ export type Database = {
           trade_category: string
         }[]
       }
+      shares_engagement_with: { Args: { p_other: string }; Returns: boolean }
       submit_custom_task: {
         Args: { p_task_name: string; p_trade_context?: string }
         Returns: undefined

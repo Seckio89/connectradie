@@ -21,7 +21,7 @@ import PropertyPreview from './PropertyPreview';
 import { TIER_PRICING, calculatePlatformFee, getChargedTier } from '../lib/subscription';
 import {
   submitCustomTask, getApprovedCustomTasks, getAreaPriceRange, type AreaPriceRange,
-  getCostBasis, saveCostBasis,
+  getQuotingDefaults, saveCostBasis, saveDefaultMarginPct, DEFAULT_MARGIN_PCT,
 } from '../lib/pricingHelper';
 import CostBasisFields from './CostBasisFields';
 import MarginCheckPanel from './MarginCheckPanel';
@@ -266,7 +266,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   // each worker for the full time (hours × crew); 'combined' bills the crew's
   // shared total (hours only, not multiplied). Tradie picks per quote.
   const [hoursMode, setHoursMode] = useState<'perCleaner' | 'combined'>('perCleaner');
-  const [marginPct, setMarginPct] = useState('15');
+  const [marginPct, setMarginPct] = useState(String(DEFAULT_MARGIN_PCT));
   const [markupPct, setMarkupPct] = useState('20');
   const [callOut, setCallOut] = useState('');
 
@@ -319,11 +319,16 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   // connection the fetch can land after they've typed a wage, and the saved
   // values must not overwrite what is on screen.
   const costTouchedRef = useRef(false);
+  const marginTouchedRef = useRef(false);
   useEffect(() => {
     if (!user?.id) return;
     let live = true;
-    getCostBasis(user.id)
-      .then((b) => { if (live && !costTouchedRef.current) setCostBasis(b); })
+    getQuotingDefaults(user.id)
+      .then(({ basis, marginPct: saved }) => {
+        if (!live) return;
+        if (!costTouchedRef.current) setCostBasis(basis);
+        if (!marginTouchedRef.current) setMarginPct(String(saved));
+      })
       .catch(() => { /* advisory only */ });
     return () => { live = false; };
   }, [user?.id]);
@@ -331,6 +336,11 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const editCostBasis = useCallback((next: CostBasis) => {
     costTouchedRef.current = true;
     setCostBasis(next);
+  }, []);
+
+  const editMarginPct = useCallback((next: string) => {
+    marginTouchedRef.current = true;
+    setMarginPct(next);
   }, []);
 
   // Auto travel distance from the tradie's base to the client.
@@ -639,6 +649,16 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
   const applyResult = () => {
     if (!result || !priced) return;
+
+    // Remember the margin they actually quoted at, so the next quote opens on it.
+    // Applying is the commit point on purpose: saving on every keystroke would
+    // turn a one-off mate's-rates experiment into their standing default.
+    // Fire-and-forget — a failed preference write must not block the apply.
+    if (user?.id && marginTouchedRef.current) {
+      const pct = Number(marginPct);
+      if (Number.isFinite(pct)) void saveDefaultMarginPct(user.id, pct);
+    }
+
     const dur = durationLabel(Number(durHours) || 0, Number(durMins) || 0);
 
     // Client-visible scope: availability is genuinely useful to the client;
@@ -963,8 +983,8 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                   </div>
                   <div>
                     <label className="block text-[0.6875rem] text-ct-mute mb-0.5">Margin %</label>
-                    <input type="number" min="0" value={marginPct} onChange={(e) => setMarginPct(e.target.value)} className={`w-full ${numInput}`} />
-                    <p className={rateHint}>Added on top of everything — hours, materials and call-out. Leave at 0 if your rate already includes your profit.</p>
+                    <input type="number" min="0" value={marginPct} onChange={(e) => editMarginPct(e.target.value)} className={`w-full ${numInput}`} />
+                    <p className={rateHint}>Added on top of everything — hours, materials and call-out. Leave at 0 if your rate already includes your profit. Whatever you use here is remembered for your next quote.</p>
                   </div>
                   <div>
                     <label className="block text-[0.6875rem] text-ct-mute mb-0.5">Materials markup %</label>
