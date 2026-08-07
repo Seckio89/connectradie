@@ -624,7 +624,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
         {TRADES.map((t) => (
           <button key={t} type="button" onClick={() => { setTrade(t); setQuantities({}); }}
             className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-              trade === t ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
+              trade === t ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
             }`}>{t}</button>
         ))}
       </div>
@@ -667,7 +667,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             {PROPERTY_TYPES.map((p) => (
               <button key={p} type="button" onClick={() => { setProperty(p); setQuantities({}); }}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                  property === p ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
+                  property === p ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                 }`}>{p}</button>
             ))}
           </div>
@@ -692,7 +692,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                 {EOL_EXTRAS.map((x) => (
                   <button key={x} type="button" onClick={() => toggleEolExtra(x)}
                     className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                      eolExtras.has(x) ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
+                      eolExtras.has(x) ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                     }`}>{x}</button>
                 ))}
               </div>
@@ -705,7 +705,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             {CONDITIONS.map((c) => (
               <button key={c} type="button" onClick={() => setCondition(condition === c ? '' : c)}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium border capitalize transition-colors ${
-                  condition === c ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
+                  condition === c ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                 }`}>{c}</button>
             ))}
           </div>
@@ -716,7 +716,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             {ACCESS.map((a) => (
               <button key={a} type="button" onClick={() => toggleAccess(a)}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                  access.has(a) ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
+                  access.has(a) ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                 }`}>{a}</button>
             ))}
           </div>
@@ -753,11 +753,11 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               {Number(workers) > 1 && (
                 <div className="inline-flex rounded-ct-sm border border-ct-line overflow-hidden text-xs">
                   <button type="button" onClick={() => setHoursMode('perCleaner')}
-                    className={`px-2.5 py-2 font-medium transition-colors ${hoursMode === 'perCleaner' ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface text-ct-mute-2 hover:bg-ct-surface-2'}`}>
+                    className={`px-2.5 py-2 font-medium transition-colors ${hoursMode === 'perCleaner' ? 'bg-ct-teal/[0.14] text-ct-teal' : 'bg-ct-surface text-ct-mute-2 hover:bg-ct-surface-2'}`}>
                     Hours each
                   </button>
                   <button type="button" onClick={() => setHoursMode('combined')}
-                    className={`px-2.5 py-2 font-medium border-l border-ct-line transition-colors ${hoursMode === 'combined' ? 'bg-ct-surface-2 text-ct-mute-2' : 'bg-ct-surface text-ct-mute-2 hover:bg-ct-surface-2'}`}>
+                    className={`px-2.5 py-2 font-medium border-l border-ct-line transition-colors ${hoursMode === 'combined' ? 'bg-ct-teal/[0.14] text-ct-teal' : 'bg-ct-surface text-ct-mute-2 hover:bg-ct-surface-2'}`}>
                     Combined total
                   </button>
                 </div>
@@ -779,7 +779,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               {DAYS.map((d) => (
                 <button key={d} type="button" onClick={() => toggleDay(d)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    preferredDays.has(d) ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
+                    preferredDays.has(d) ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                   }`}>{d}</button>
               ))}
             </div>
@@ -790,7 +790,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             <button type="button" onClick={() => setMultiVisit((v) => !v)}
               className="flex items-center justify-between w-full text-left">
               <span className="text-[0.6875rem] text-ct-mute">This job needs multiple visits</span>
-              <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${multiVisit ? 'bg-ct-surface-2' : 'bg-ct-line'}`}>
+              <span className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${multiVisit ? 'bg-ct-teal' : 'bg-ct-line'}`}>
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-ct-surface transition-transform ${multiVisit ? 'translate-x-4' : 'translate-x-0.5'}`} />
               </span>
             </button>
