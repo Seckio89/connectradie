@@ -93,7 +93,7 @@ export default function MarginCheckPanel({ check, className = '' }: MarginCheckP
       {open && (
         <div className="px-3 pb-3 border-t border-ct-line-soft/40 pt-2">
           <Row label={`Wage + on-costs, per hour`} value={money(check.loadedHourlyCents)} />
-          <Row label="Labour on this job" value={money(check.labourCostCents)} />
+          <Row label="Labor on this job" value={money(check.labourCostCents)} />
           {check.materialsCostCents > 0 && <Row label="Materials at cost" value={money(check.materialsCostCents)} />}
           <Row label="Direct cost" value={money(check.directCostCents)} strong />
           <Row label="With overhead recovered" value={money(check.withOverheadCents)} />

@@ -61,7 +61,7 @@ function Field({
           </span>
         )}
       </div>
-      <p className="mt-1 text-[0.6875rem] leading-snug text-ct-mute">{hint}</p>
+      <p className="mt-1 text-[0.6875rem] leading-snug text-ct-mute-2">{hint}</p>
     </div>
   );
 }
@@ -72,7 +72,7 @@ export default function CostBasisFields({ value, onChange, compact = false }: Co
   return (
     <div className="space-y-4">
       {!compact && (
-        <p className="text-xs text-ct-mute leading-relaxed">
+        <p className="text-xs text-ct-mute-2 leading-relaxed">
           What a job costs you to deliver. Fill this in and every quote shows whether it clears your
           costs — nothing is shared with clients, and nothing here changes what you charge.
         </p>
@@ -110,9 +110,9 @@ export default function CostBasisFields({ value, onChange, compact = false }: Co
       </Field>
 
       <Field
-        label="Labour burden"
+        label="Wage on-costs"
         suffix="%"
-        hint="On-costs on top of the wage: superannuation, workers' compensation, payroll tax, annual and sick leave, leave loading. Around 30% is typical for an employer; lower if you're solo."
+        hint="What you pay on top of the wage: superannuation, workers' compensation, payroll tax, annual and sick leave, leave loading. Around 30% is typical for an employer; lower if you're solo."
       >
         <input
           type="number"

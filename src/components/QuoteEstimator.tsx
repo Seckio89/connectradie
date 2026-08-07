@@ -203,7 +203,7 @@ function computePrice(hours: number, materialsCost: number, e: Economics, client
   const travel = e.callOutFee > 0 && e.travelKm > 0 ? Math.round(e.travelKm * 0.6) : 0;
   const callOut = e.callOutFee > 0 ? e.callOutFee + travel : 0;
   const items: { label: string; amount: number; detail?: string }[] = [
-    { label: 'Labour', amount: labour, detail: `${hours} h × ${money(e.hourlyRate)}/h${e.workers > 1 ? ` × ${e.workers}` : ''}` },
+    { label: 'Labor', amount: labour, detail: `${hours} h × ${money(e.hourlyRate)}/h${e.workers > 1 ? ` × ${e.workers}` : ''}` },
   ];
   if (materials > 0) items.push({ label: 'Materials', amount: materials, detail: `+${e.materialsMarkupPct}% markup` });
   if (callOut > 0) items.push({ label: 'Call-out', amount: callOut, detail: e.travelKm > 0 ? `incl. ~${Math.round(e.travelKm)} km` : undefined });
@@ -766,8 +766,8 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             {Number(workers) > 1 && (
               <p className="text-[0.6875rem] text-ct-mute mt-1">
                 {hoursMode === 'combined'
-                  ? `${workers} workers share the hours — labour billed as the combined time, not multiplied.`
-                  : `Each of the ${workers} workers is on site for the full time — labour = hours × ${workers}.`}
+                  ? `${workers} workers share the hours — labor billed as the combined time, not multiplied.`
+                  : `Each of the ${workers} workers is on site for the full time — labor = hours × ${workers}.`}
               </p>
             )}
           </div>
@@ -909,7 +909,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               <span>
                 {hasCostBasis(costBasis)
                   ? `Your costs · ${money(costBasis.staffWageCents / 100)}/h wage + ${costBasis.labourBurdenPct}%`
-                  : 'Set your cost basis to see whether a quote clears your costs'}
+                  : 'Advanced quoting'}
               </span>
               <ChevronDown className={`w-4 h-4 text-ct-mute transition-transform ${costOpen ? 'rotate-180' : ''}`} />
             </button>
