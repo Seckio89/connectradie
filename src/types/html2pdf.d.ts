@@ -12,6 +12,9 @@ declare module 'html2pdf.js' {
     set(options: Html2PdfOptions): Html2PdfInstance;
     from(element: HTMLElement | string): Html2PdfInstance;
     save(): Promise<void>;
+    // A string source is wrapped in a div and rendered like any element, so
+    // 'blob' is the only output overload the app needs alongside save().
+    outputPdf(type: 'blob'): Promise<Blob>;
   }
 
   function html2pdf(): Html2PdfInstance;
