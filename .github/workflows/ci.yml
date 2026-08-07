@@ -145,6 +145,12 @@ jobs:
       # here rather than in its own job because both are cheap, credential-free
       # migration checks.
       - run: npm run check:migrations
+      # Same job for the same reason — filesystem only, no credentials. A cron
+      # scheduled with the dead `app.settings.service_role_key` GUC posts an
+      # empty bearer token and 401s, while pg_net still records the run as
+      # "succeeded". Eight migrations do it; they are grandfathered and
+      # superseded by 20260807051518. This stops a ninth.
+      - run: npm run check:cron-auth
 
   ink-contrast:
     name: Ink Contrast
