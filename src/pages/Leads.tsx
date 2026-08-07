@@ -54,6 +54,8 @@ import QuoteComparisonView from '../components/QuoteComparisonView';
 import SectionErrorBoundary from '../components/SectionErrorBoundary';
 import ConfirmModal from '../components/ConfirmModal';
 import Modal from '../components/Modal';
+import DocumentPreviewModal from '../components/DocumentPreviewModal';
+import { printHtmlDocument } from '../lib/printableDocument';
 import { formatDate, checkLicenseExpired, friendlyError } from '../lib/utils';
 import { escapeHtml } from '../lib/escapeHtml';
 import { cancelRecurringJob } from '../lib/recurringJobs';
@@ -301,6 +303,9 @@ export default function Leads({ embedded = false, initialFilter }: { embedded?: 
   const [pendingIncreases, setPendingIncreases] = useState<Record<string, { paymentId: string; amount: number; originalAmount: number; finalAmount: number; variationId: string | null }>>({});
   const [paidIncreaseJobIds, setPaidIncreaseJobIds] = useState<Set<string>>(new Set());
   const [viewCompletedJob, setViewCompletedJob] = useState<LeadWithClient | null>(null);
+  // Set when the print window isn't available (the app, or a blocked pop-up) —
+  // the generated document is shown in-app instead of silently going nowhere.
+  const [previewDoc, setPreviewDoc] = useState<{ title: string; html: string } | null>(null);
   const [withdrawQuoteTarget, setWithdrawQuoteTarget] = useState<LeadWithClient | null>(null);
   const [withdrawing, setWithdrawing] = useState(false);
 
@@ -926,11 +931,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 </div>
 </body></html>`;
 
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(html);
-      win.document.close();
-      win.setTimeout(() => { win.print(); }, 400);
+    if (!printHtmlDocument(html)) {
+      setPreviewDoc({ title: 'Payment statement', html });
     }
   };
 
@@ -3522,11 +3524,8 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
 </div>
 </body></html>`;
 
-          const win = window.open('', '_blank');
-          if (win) {
-            win.document.write(html);
-            win.document.close();
-            win.setTimeout(() => { win.print(); }, 400);
+          if (!printHtmlDocument(html)) {
+            setPreviewDoc({ title: 'Tax invoice', html });
           }
         };
 
@@ -3662,6 +3661,15 @@ table td:last-child{text-align:right;font-weight:500;font-variant-numeric:tabula
           </Modal>
         );
       })()}
+
+      {previewDoc && (
+        <DocumentPreviewModal
+          isOpen
+          onClose={() => setPreviewDoc(null)}
+          title={previewDoc.title}
+          html={previewDoc.html}
+        />
+      )}
 
       {cancelJobTarget && (
         <CancelJobModal
