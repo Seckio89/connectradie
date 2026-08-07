@@ -92,15 +92,27 @@ export default function RecommendedTradies() {
 
         // 3. Pull eligible tradies — onboarded + can receive payment. Pull a
         // wider set than 4 so the client-side ranker has something to work with.
+        // public_tradie_profiles, not profiles: these are strangers to the
+        // caller, and the profiles SELECT policy is now scoped to
+        // self/admin/counterparty. The view LEFT joins tradie_details and
+        // flattens it to td_*, which is re-nested below; td_profile_id is not
+        // null restores the `!inner` this replaced. Columns are named
+        // explicitly rather than `*` so no new column can silently join the
+        // recommendation payload.
         let query = supabase
-          .from('profiles')
-          .select('*, tradie_details!inner(*)')
-          .eq('role', 'tradie')
+          .from('public_tradie_profiles')
+          .select(`
+            id, full_name, avatar_url, postcode, suburb, public_suburb,
+            is_premium, verification_status, verified_trades, declared_trades,
+            license_verified, abn_verified, is_identity_verified,
+            td_profile_id, td_business_name, td_trade_category, td_subscription_tier, td_is_verified
+          `)
+          .not('td_profile_id', 'is', null)
           .eq('stripe_connect_onboarding_complete', true)
           .limit(40);
 
         if (targetTrades.length > 0) {
-          query = query.in('tradie_details.trade_category', targetTrades);
+          query = query.in('td_trade_category', targetTrades);
         }
 
         const { data: candidates } = await query;
@@ -109,9 +121,17 @@ export default function RecommendedTradies() {
           return;
         }
 
-        const candidateList = (candidates as unknown as TradieWithDetails[]).filter(
-          (t) => t.tradie_details && !excludeIds.has(t.id),
-        );
+        const candidateList = (candidates as Record<string, unknown>[])
+          .filter((t) => !!t.id && !excludeIds.has(t.id as string))
+          .map((t) => ({
+            ...t,
+            tradie_details: {
+              business_name: t.td_business_name,
+              trade_category: t.td_trade_category,
+              subscription_tier: t.td_subscription_tier,
+              is_verified: t.td_is_verified,
+            },
+          })) as unknown as TradieWithDetails[];
 
         // 4. Pull ratings for these candidates only.
         const ids = candidateList.map((t) => t.id);

@@ -5934,6 +5934,52 @@ export type Database = {
       }
     }
     Views: {
+      public_tradie_profiles: {
+        Row: {
+          abn_verified: boolean | null
+          avatar_url: string | null
+          bio: string | null
+          call_out_fee: number | null
+          callout_fee_waived_on_proceed: boolean | null
+          cover_photo_url: string | null
+          declared_trades: string[] | null
+          full_name: string | null
+          has_phone: boolean | null
+          id: string | null
+          is_emergency_available: boolean | null
+          is_identity_verified: boolean | null
+          is_premium: boolean | null
+          license_verified: boolean | null
+          onboarding_completed: boolean | null
+          postcode: string | null
+          public_suburb: string | null
+          role: string | null
+          service_radius_km: number | null
+          show_callout_fee: boolean | null
+          stripe_connect_onboarding_complete: boolean | null
+          suburb: string | null
+          td_bio: string | null
+          td_business_name: string | null
+          td_contractor_type: string | null
+          td_default_call_out_fee_cents: number | null
+          td_emergency_available: boolean | null
+          td_hourly_rate: number | null
+          td_insurance_provider: string | null
+          td_is_insured: boolean | null
+          td_is_licensed: boolean | null
+          td_is_verified: boolean | null
+          td_profile_id: string | null
+          td_qualifications: string[] | null
+          td_service_radius_km: number | null
+          td_subscription_tier: string | null
+          td_trade_category: string | null
+          td_trade_type: string | null
+          team_size: string | null
+          verification_status: string | null
+          verified_trades: string[] | null
+        }
+        Relationships: []
+      }
       public_vacancies: {
         Row: {
           closing_date: string | null

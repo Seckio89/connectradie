@@ -94,13 +94,15 @@ export default function FindTradies() {
         String(Number(resolved.suburb.postcode) - 1).padStart(4, '0'),
       ];
 
-      // profiles holds the location/verification columns (suburb, postcode,
-      // license_verified, abn_verified, is_premium, is_identity_verified,
-      // avatar_url). tradie_details holds the trade_category filter only.
+      // Reads public_tradie_profiles, not profiles: since the profiles SELECT
+      // policy was scoped to self/admin/counterparty, a browsing client has no
+      // relationship to these tradies and would get zero rows from the table.
+      // The view is the stranger-safe surface and already inner-joins
+      // tradie_details, so trade_category arrives flat as td_trade_category.
       // tradie_ratings is a separate view keyed by tradie_id — fetched in a
       // follow-up query because PostgREST doesn't auto-detect view FKs.
       const { data, error } = await supabase
-        .from('profiles')
+        .from('public_tradie_profiles')
         .select(`
           id,
           full_name,
@@ -112,13 +114,10 @@ export default function FindTradies() {
           license_verified,
           abn_verified,
           is_identity_verified,
-          tradie_details!inner (
-            trade_category
-          )
+          td_trade_category
         `)
-        .eq('role', 'tradie')
         .eq('onboarding_completed', true)
-        .eq('tradie_details.trade_category', resolved.tradeSlug)
+        .eq('td_trade_category', resolved.tradeSlug)
         .in('postcode', postcodes)
         .limit(20);
 
@@ -132,7 +131,9 @@ export default function FindTradies() {
       }
 
       // Fan-out ratings lookup. Best-effort — if it fails, render without ratings.
-      const tradieIds = data.map((r) => r.id);
+      // View columns are all nullable in the generated types, so drop any row
+      // without an id before it reaches the ratings lookup or the map below.
+      const tradieIds = data.flatMap((r) => (r.id ? [r.id] : []));
       const { data: ratings } = await supabase
         .from('tradie_ratings')
         .select('tradie_id, average_rating, total_reviews')
@@ -145,15 +146,12 @@ export default function FindTradies() {
 
       const mapped: PublicTradieSummary[] = data
         .map((row) => {
-          // tradie_details may come back as array or single object — only used
-          // to confirm the inner join matched the trade.
-          const td = Array.isArray(row.tradie_details) ? row.tradie_details[0] : row.tradie_details;
-          if (!td) return null;
+          if (!row.id) return null;
           const rating = ratingsByTradie.get(row.id);
           return {
             id: row.id,
             full_name: row.full_name ?? 'Tradie',
-            trade_category: (td.trade_category as string) ?? null,
+            trade_category: row.td_trade_category ?? null,
             postcode: row.postcode ?? null,
             suburb: row.suburb ?? null,
             average_rating: rating?.average_rating ?? null,
