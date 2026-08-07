@@ -88,6 +88,8 @@ export interface MarginCheck {
   netToTradieCents: number;
   /** netToTradie − minViable. Negative means the job loses money. */
   cushionCents: number;
+  /** Billable labour hours (hours × workers). 0 when no hours are set. */
+  labourHoursTotal: number;
   status: MarginStatus;
 }
 
@@ -134,7 +136,8 @@ export function checkMargin(input: MarginCheckInput): MarginCheck | null {
   const materialsCostCents = Math.round(Math.max(0, input.materialsCostCents));
 
   const loadedHourlyCents = Math.round(wage * (1 + burden / 100));
-  const labourCostCents = Math.round(hours * workers * loadedHourlyCents);
+  const labourHoursTotal = hours * workers;
+  const labourCostCents = Math.round(labourHoursTotal * loadedHourlyCents);
   const directCostCents = labourCostCents + materialsCostCents;
   const withOverheadCents = Math.round(directCostCents * (1 + overhead / 100));
 
@@ -166,6 +169,7 @@ export function checkMargin(input: MarginCheckInput): MarginCheck | null {
     minimumApplied,
     netToTradieCents,
     cushionCents,
+    labourHoursTotal,
     status,
   };
 }
@@ -239,10 +243,45 @@ export function marginStatusLabel(status: MarginStatus): string {
 export function marginStatusHint(check: MarginCheck): string {
   switch (check.status) {
     case 'below':
-      return 'This quote does not cover your wage, overhead and profit target. Raise the price, cut the hours, or pass on the job.';
+      return 'This job pays you less than it costs you to do. Charge more per hour, allow fewer hours, or let this one go.';
     case 'thin':
-      return 'This quote clears your costs, but there is little room if the job runs over.';
+      return 'This job pays for itself, with little left over. If it runs long, you start losing money.';
     case 'healthy':
-      return 'This quote covers your costs, overhead and profit target.';
+      return 'This job pays your wage, your overheads and your profit target.';
   }
+}
+
+/**
+ * The lowest price that would clear the cost floor — the number to put in front
+ * of a tradie staring at a 'below' verdict, instead of "charge more".
+ *
+ * Raising the price also raises the commission, so the answer is not simply
+ * `minViable + currentFee`: the extra revenue is itself taxed. That makes this a
+ * fixed point rather than a formula. It converges in three or four passes, and
+ * iterating rather than inverting means the fee's cap and repeat-client tiers are
+ * handled by whatever `feeCentsFor` actually does — no fee logic is duplicated here.
+ *
+ * Fee-agnostic by design, like the rest of this module: the caller supplies the
+ * fee function (see calculatePlatformFee in ./subscription).
+ *
+ * Rounds UP to the cent. A price a cent under the floor does not clear the floor,
+ * and this number is quoted as a minimum ("quote $X or more").
+ */
+export function priceToClearCostsCents(
+  minViableCents: number,
+  materialsCostCents: number,
+  feeCentsFor: (labourCents: number) => number,
+): number {
+  const floor = Math.max(0, minViableCents);
+  const materials = Math.max(0, materialsCostCents);
+
+  let price = floor;
+  for (let i = 0; i < 6; i++) {
+    // Commission is charged on labour only, so materials come out of the base first.
+    const fee = Math.max(0, feeCentsFor(Math.max(0, price - materials)));
+    const next = floor + fee;
+    if (Math.abs(next - price) < 1) return Math.ceil(next);
+    price = next;
+  }
+  return Math.ceil(price);
 }

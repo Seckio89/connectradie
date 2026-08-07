@@ -10,7 +10,7 @@
 // a site visit rather than guessing.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, Loader2, Camera, X, AlertTriangle, Check, Info, ChevronDown, HelpCircle, Lock, Package, BarChart3, Plus, Send, Video } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -25,7 +25,7 @@ import {
 } from '../lib/pricingHelper';
 import CostBasisFields from './CostBasisFields';
 import MarginCheckPanel from './MarginCheckPanel';
-import { checkMargin, hasCostBasis, COST_BASIS_DEFAULTS } from '../lib/costModel';
+import { checkMargin, hasCostBasis, priceToClearCostsCents, COST_BASIS_DEFAULTS } from '../lib/costModel';
 import type { CostBasis } from '../lib/costModel';
 
 interface QuoteEstimatorProps {
@@ -115,6 +115,12 @@ const CONF_CHIP: Record<string, string> = {
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('en-AU')}`;
 
+// Travel added on top of the call-out fee, per km from the tradie's base to the
+// client. Named rather than inline so the breakdown line can quote the rate back
+// — a call-out that reads $54 when the field says $50 is otherwise unexplainable.
+// Not tradie-configurable yet; when it becomes a setting, this is the default.
+const TRAVEL_RATE_PER_KM = 0.6;
+
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -200,13 +206,23 @@ function computePrice(hours: number, materialsCost: number, e: Economics, client
   const materials = clientSupplies ? 0 : materialsCost * (1 + e.materialsMarkupPct / 100);
   // No call-out fee set → no call-out component at all (including the
   // distance-based travel part) — the line disappears from the breakdown.
-  const travel = e.callOutFee > 0 && e.travelKm > 0 ? Math.round(e.travelKm * 0.6) : 0;
+  const travel = e.callOutFee > 0 && e.travelKm > 0 ? Math.round(e.travelKm * TRAVEL_RATE_PER_KM) : 0;
   const callOut = e.callOutFee > 0 ? e.callOutFee + travel : 0;
   const items: { label: string; amount: number; detail?: string }[] = [
     { label: 'Labor', amount: labour, detail: `${hours} h × ${money(e.hourlyRate)}/h${e.workers > 1 ? ` × ${e.workers}` : ''}` },
   ];
   if (materials > 0) items.push({ label: 'Materials', amount: materials, detail: `+${e.materialsMarkupPct}% markup` });
-  if (callOut > 0) items.push({ label: 'Call-out', amount: callOut, detail: e.travelKm > 0 ? `incl. ~${Math.round(e.travelKm)} km` : undefined });
+  // Name both parts: the flat fee as entered, then the travel that was added to
+  // it, with the per-km rate spelled out. "incl. ~6 km" left the extra $4 a mystery.
+  if (callOut > 0) {
+    items.push({
+      label: 'Call-out',
+      amount: callOut,
+      detail: travel > 0
+        ? `${money(e.callOutFee)} fee + ${money(travel)} travel · ~${Math.round(e.travelKm)} km × $${TRAVEL_RATE_PER_KM.toFixed(2)}/km`
+        : undefined,
+    });
+  }
   const base = labour + materials + callOut;
   const margin = base * (e.marginPct / 100);
   if (margin > 0) items.push({ label: 'Margin', amount: margin, detail: `${e.marginPct}%` });
@@ -275,8 +291,20 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const [aiBlocked, setAiBlocked] = useState(false);
   const [buyingPack, setBuyingPack] = useState(false);
 
-  // Prefill economics from the tradie's profile once loaded.
+  // Prefill economics from the tradie's profile — ONCE, and never again.
+  //
+  // `profile` and `tradieDetails` are fresh object literals out of AuthContext's
+  // fetchProfile, so their identity changes on every refreshProfile() and on most
+  // auth events. Re-running this on those changes overwrote whatever the tradie
+  // had typed mid-quote — the "my numbers keep reverting" bug. It also raced the
+  // first async arrival of tradieDetails, wiping anything entered before it
+  // landed. Deps stay on the objects; the ref is what makes it once-only.
+  const prefilledRef = useRef(false);
   useEffect(() => {
+    if (prefilledRef.current) return;
+    // Wait for real data — an early null render must not burn the one prefill.
+    if (!tradieDetails && !profile) return;
+    prefilledRef.current = true;
     if (tradieDetails?.hourly_rate) setRate(String(tradieDetails.hourly_rate));
     if (profile?.call_out_fee) setCallOut(String(profile.call_out_fee));
     // != null, not truthy: a saved default of 0 means this tradie offers free
@@ -286,14 +314,24 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
   // Load the tradie's cost basis. Failure is silent: no basis simply means no
   // margin verdict, which is the correct resting state rather than an error.
+  //
+  // Applied only if the tradie hasn't already started editing: on a slow
+  // connection the fetch can land after they've typed a wage, and the saved
+  // values must not overwrite what is on screen.
+  const costTouchedRef = useRef(false);
   useEffect(() => {
     if (!user?.id) return;
     let live = true;
     getCostBasis(user.id)
-      .then((b) => { if (live) setCostBasis(b); })
+      .then((b) => { if (live && !costTouchedRef.current) setCostBasis(b); })
       .catch(() => { /* advisory only */ });
     return () => { live = false; };
   }, [user?.id]);
+
+  const editCostBasis = useCallback((next: CostBasis) => {
+    costTouchedRef.current = true;
+    setCostBasis(next);
+  }, []);
 
   // Auto travel distance from the tradie's base to the client.
   const travelKm = useMemo(() => {
@@ -549,24 +587,42 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   // Two adjustments the headline total doesn't make: GST comes out (it is the
   // ATO's, not income), and platform commission comes off the labour (it is
   // charged on labour only under v2.1). What's left is what the tradie banks.
-  const marginCheck = useMemo(() => {
-    if (!priced || !hasCostBasis(costBasis)) return null;
+  const { marginCheck, targetPriceCents } = useMemo(() => {
+    const none = { marginCheck: null, targetPriceCents: null };
+    if (!priced || !hasCostBasis(costBasis)) return none;
     const materialsPortion = clientSupplies ? 0 : priced.mats;
     const labourPortion = Math.max(0, priced.perVisitSubtotal - materialsPortion);
-    const feeDollars = calculatePlatformFee(
-      labourPortion,
-      getChargedTier(tradieDetails?.subscription_tier),
-      profile?.platform_fee_override_bps,
+    const feeCentsFor = (labourCents: number) => Math.round(
+      calculatePlatformFee(
+        labourCents / 100,
+        getChargedTier(tradieDetails?.subscription_tier),
+        profile?.platform_fee_override_bps,
+      ) * 100,
     );
-    return checkMargin({
+    const check = checkMargin({
       hours: priced.hours,
       workers: priced.labourWorkers,
       materialsCostCents: Math.round(materialsPortion * 100),
       quotedExGstCents: Math.round(priced.perVisitSubtotal * 100),
-      platformFeeCents: Math.round(feeDollars * 100),
+      platformFeeCents: feeCentsFor(Math.round(labourPortion * 100)),
       basis: costBasis,
     });
+    if (!check) return none;
+    // Only worth computing when there is something to fix.
+    const target = check.status === 'healthy'
+      ? null
+      : priceToClearCostsCents(check.minViableCents, check.materialsCostCents, feeCentsFor);
+    return { marginCheck: check, targetPriceCents: target };
   }, [priced, costBasis, clientSupplies, tradieDetails?.subscription_tier, profile?.platform_fee_override_bps]);
+
+  // What you charge per hour vs what that hour costs you in wages. Shown only
+  // when both are set — with no wage there is nothing to compare against.
+  const chargeVsPay = useMemo(() => {
+    const charge = Number(rate);
+    const pay = costBasis.staffWageCents / 100;
+    if (!Number.isFinite(charge) || charge <= 0 || pay <= 0) return null;
+    return { charge, pay, gap: charge - pay };
+  }, [rate, costBasis.staffWageCents]);
 
   const persistCostBasis = async () => {
     if (!user?.id) return;
@@ -603,6 +659,8 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
 
   const fields = trade ? fieldsFor(trade, property) : [];
   const numInput = 'px-3 py-2 border border-ct-line rounded-ct-sm text-sm focus:outline-none focus:ring-2 focus:ring-ct-teal';
+  // Matches the hint styling in CostBasisFields, so the two panels read alike.
+  const rateHint = 'mt-1 text-[0.6875rem] leading-snug text-ct-mute-2';
 
   return (
     <div className="border border-ct-line bg-ct-surface-2/40 rounded-ct-md p-4 space-y-3">
@@ -891,13 +949,54 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
               <ChevronDown className={`w-4 h-4 text-ct-mute transition-transform ${econOpen ? 'rotate-180' : ''}`} />
             </button>
             {econOpen && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 px-3 pb-3">
-                <div><label className="block text-[0.6875rem] text-ct-mute mb-0.5">Rate $/h</label><input type="number" min="0" value={rate} onChange={(e) => setRate(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div><label className="block text-[0.6875rem] text-ct-mute mb-0.5">Workers</label><input type="number" min="1" value={workers} onChange={(e) => setWorkers(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div><label className="block text-[0.6875rem] text-ct-mute mb-0.5">Margin %</label><input type="number" min="0" value={marginPct} onChange={(e) => setMarginPct(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div><label className="block text-[0.6875rem] text-ct-mute mb-0.5">Materials markup %</label><input type="number" min="0" value={markupPct} onChange={(e) => setMarkupPct(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div><label className="block text-[0.6875rem] text-ct-mute mb-0.5">Call-out $</label><input type="number" min="0" value={callOut} onChange={(e) => setCallOut(e.target.value)} className={`w-full ${numInput}`} /></div>
-                <div className="flex items-end text-[0.6875rem] text-ct-mute pb-2">GST: {profile?.is_gst_registered ? 'registered' : 'not registered'}</div>
+              <div className="px-3 pb-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-[0.6875rem] text-ct-mute mb-0.5">Rate $/h</label>
+                    <input type="number" min="0" value={rate} onChange={(e) => setRate(e.target.value)} className={`w-full ${numInput}`} />
+                    <p className={rateHint}>What you charge the client for each hour on site. Not what you pay anyone — that's your wage, under Advanced quoting.</p>
+                  </div>
+                  <div>
+                    <label className="block text-[0.6875rem] text-ct-mute mb-0.5">Workers</label>
+                    <input type="number" min="1" value={workers} onChange={(e) => setWorkers(e.target.value)} className={`w-full ${numInput}`} />
+                    <p className={rateHint}>How many people are on site.</p>
+                  </div>
+                  <div>
+                    <label className="block text-[0.6875rem] text-ct-mute mb-0.5">Margin %</label>
+                    <input type="number" min="0" value={marginPct} onChange={(e) => setMarginPct(e.target.value)} className={`w-full ${numInput}`} />
+                    <p className={rateHint}>Added on top of everything — hours, materials and call-out. Leave at 0 if your rate already includes your profit.</p>
+                  </div>
+                  <div>
+                    <label className="block text-[0.6875rem] text-ct-mute mb-0.5">Materials markup %</label>
+                    <input type="number" min="0" value={markupPct} onChange={(e) => setMarkupPct(e.target.value)} className={`w-full ${numInput}`} />
+                    <p className={rateHint}>Added to what the materials cost you.</p>
+                  </div>
+                  <div>
+                    <label className="block text-[0.6875rem] text-ct-mute mb-0.5">Call-out $</label>
+                    <input type="number" min="0" value={callOut} onChange={(e) => setCallOut(e.target.value)} className={`w-full ${numInput}`} />
+                    <p className={rateHint}>
+                      A flat fee on every job. We add ${TRAVEL_RATE_PER_KM.toFixed(2)} per km from your base to the client
+                      {travelKm > 0 ? ` — ~${travelKm} km here, so ${money(Math.round(travelKm * TRAVEL_RATE_PER_KM))} on top.` : '.'}
+                    </p>
+                  </div>
+                  <div className="flex items-start text-[0.6875rem] text-ct-mute pt-4">GST: {profile?.is_gst_registered ? 'registered' : 'not registered'}</div>
+                </div>
+
+                {/* Charge-out vs what you pay. These are two independent numbers and
+                    tradies conflate them constantly — the gap is where the money is,
+                    and the margin % is applied after it, not instead of it. */}
+                {chargeVsPay && (
+                  <div className="mt-3 rounded-ct-sm bg-ct-teal/[0.14] border border-ct-teal/30 px-3 py-2">
+                    <p className="text-xs text-ct-mute-2">
+                      You charge <span className="font-medium text-ct-teal font-ct-mono">{money(chargeVsPay.charge)}/h</span>
+                      {' · '}you pay <span className="font-medium text-ct-teal font-ct-mono">{money(chargeVsPay.pay)}/h</span>
+                      {' · '}<span className="font-medium text-ct-teal font-ct-mono">{money(chargeVsPay.gap)}/h</span> gap
+                    </p>
+                    <p className="mt-1 text-[0.6875rem] leading-snug text-ct-mute-2">
+                      That gap covers on-costs, overhead and your profit. The margin % is added on top of it, not instead of it.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -915,7 +1014,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
             </button>
             {costOpen && (
               <div className="px-3 pb-3 space-y-3">
-                <CostBasisFields value={costBasis} onChange={setCostBasis} />
+                <CostBasisFields value={costBasis} onChange={editCostBasis} />
                 <button type="button" onClick={persistCostBasis} disabled={costSaving}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-ct-surface-2 border border-ct-line text-ct-paper text-xs font-medium rounded-ct-sm hover:bg-ct-line transition-colors disabled:opacity-60">
                   {costSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : costSaved ? <Check className="w-3 h-3 text-ct-teal" /> : null}
@@ -1056,7 +1155,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
           </div>
 
           {/* Advisory only — never gates the Use button below. */}
-          <MarginCheckPanel check={marginCheck} />
+          <MarginCheckPanel check={marginCheck} targetPriceCents={targetPriceCents} />
           {marginCheck && visits > 1 && (
             <p className="text-[0.625rem] leading-snug text-ct-mute">Graded per visit.</p>
           )}

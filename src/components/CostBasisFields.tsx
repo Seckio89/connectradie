@@ -83,8 +83,9 @@ export default function CostBasisFields({ value, onChange, compact = false }: Co
         suffix="$/hr"
         hint={
           <>
-            What you actually pay per hour on the tools — your own drawing if you work solo. Your
-            award or agreement sets the floor; see{' '}
+            What you <em className="not-italic font-medium text-ct-paper">pay</em> per hour on the tools — your own
+            drawing if you work solo. This is not what you charge the client; that's your rate, and the gap
+            between the two is where your profit comes from. Your award or agreement sets the floor; see{' '}
             <a
               href="https://www.fairwork.gov.au/pay-and-wages"
               target="_blank"
