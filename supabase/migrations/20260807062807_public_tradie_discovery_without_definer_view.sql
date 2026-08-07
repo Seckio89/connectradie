@@ -1,7 +1,7 @@
 -- Migration: public_tradie_discovery_without_definer_view
 -- Type: Security follow-up to 20260807052156 (site security assessment 2026-08-07)
--- Applied to production 2026-08-07 via MCP apply_migration; this file matches the
--- stamped version so `db push` never re-runs it.
+-- Applied to production 2026-08-07 via MCP apply_migration (version 20260807062807);
+-- this file matches the stamped version so `db push` never re-runs it.
 --
 -- 20260807052156 scoped `profiles` SELECT to self / admin / counterparty. That is
 -- correct and stays. It left two problems, both fixed here.
