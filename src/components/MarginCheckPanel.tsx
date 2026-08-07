@@ -21,6 +21,11 @@ import type { MarginCheck, MarginStatus } from '../lib/costModel';
 
 interface MarginCheckPanelProps {
   check: MarginCheck | null;
+  /**
+   * Lowest price that would clear the cost floor, from priceToClearCostsCents.
+   * Optional: callers without a fee context simply get no target line.
+   */
+  targetPriceCents?: number | null;
   className?: string;
 }
 
@@ -52,7 +57,7 @@ function Row({ label, value, strong = false }: { label: string; value: string; s
   );
 }
 
-export default function MarginCheckPanel({ check, className = '' }: MarginCheckPanelProps) {
+export default function MarginCheckPanel({ check, targetPriceCents, className = '' }: MarginCheckPanelProps) {
   const { profile } = useAuth();
   const [open, setOpen] = useState(false);
 
@@ -62,6 +67,15 @@ export default function MarginCheckPanel({ check, className = '' }: MarginCheckP
 
   const tone = TONE[check.status];
   const { Icon } = tone;
+
+  // Per-hour framing: the same verdict divided by the hours, which is the unit a
+  // tradie prices in. Guarded on hours because a materials-only job divides by 0.
+  const perHour = check.labourHoursTotal > 0
+    ? {
+        brings: Math.round(check.netToTradieCents / check.labourHoursTotal),
+        needs: Math.round(check.minViableCents / check.labourHoursTotal),
+      }
+    : null;
 
   return (
     <div className={`border rounded-ct-md ${tone.wrap} ${className}`}>
@@ -78,6 +92,34 @@ export default function MarginCheckPanel({ check, className = '' }: MarginCheckP
             <p className="mt-1 text-[0.6875rem] leading-snug text-ct-mute-2">{marginStatusHint(check)}</p>
           </div>
         </div>
+
+        {/* What to actually change. A verdict without a number to aim at leaves the
+            tradie to work out the fix themselves, which is the part they came here
+            for. Shown only when something needs fixing.
+
+            No tinted fill in here: the panel wrap already carries one, and a second
+            dim layer composites under AA (see the tint-compounding note in
+            CLAUDE.md). A rule and plain text, like the breakdown below. */}
+        {check.status !== 'healthy' && (targetPriceCents != null || perHour != null) && (
+          <div className="mt-2.5 pt-2.5 border-t border-ct-line-soft/40 space-y-1.5">
+            <p className="font-ct-mono text-[0.625rem] font-medium uppercase tracking-[0.12em] text-ct-mute-2">
+              What would fix it
+            </p>
+            {targetPriceCents != null && (
+              <p className="text-[0.6875rem] leading-snug text-ct-mute-2">
+                Quote <span className={`font-medium font-ct-mono ${tone.text}`}>{money(targetPriceCents)}</span> or
+                more and this job clears your costs.
+              </p>
+            )}
+            {perHour != null && (
+              <p className="text-[0.6875rem] leading-snug text-ct-mute-2">
+                Each hour brings in <span className="font-medium font-ct-mono text-ct-paper">{money(perHour.brings)}</span>
+                {' '}— it needs to bring in <span className="font-medium font-ct-mono text-ct-paper">{money(perHour.needs)}</span>.
+                {' '}Charge more per hour, or allow fewer hours.
+              </p>
+            )}
+          </div>
+        )}
 
         <button
           type="button"
