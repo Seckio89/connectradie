@@ -11,7 +11,7 @@ from the actual project config, not generic boilerplate.
 | App name | ConnecTradie |
 | WebView loads | `https://connectradie.com/login` (remote — `capacitor.config.ts` `server.url`) |
 | minSdk / targetSdk / compileSdk | 24 / 36 / 36 |
-| Current versionCode / versionName | `1` / `1.0` (`android/app/build.gradle`) |
+| Current versionCode / versionName | `2` / `1.1` (`android/app/build.gradle`) |
 | Google Web OAuth client (serverClientId) | `491568884460-unfmph1ckhu227ut9kh5b6cbgui028se.apps.googleusercontent.com` |
 
 > Because the app loads the **remote** site, most product changes ship via the
@@ -22,7 +22,7 @@ from the actual project config, not generic boilerplate.
 ---
 
 ## 1. Versioning
-- [ ] Bump `versionCode` (integer, **must increase every upload**) and `versionName` in `android/app/build.gradle`. First release can stay `versionCode 1` / `1.0`.
+- [ ] Bump `versionCode` (integer, **must increase every upload**) and `versionName` in `android/app/build.gradle`. Currently `versionCode 2` / `1.1` (bumped 2026-08-07 for the Share/Filesystem plugin release, PR #270).
 
 ## 2. Release signing ✅ GRADLE WIRED — supply the keystore
 `android/app/build.gradle` now has a release `signingConfig` that loads credentials from `android/keystore.properties` (git-ignored) and falls back to debug signing when that file is absent (commit `8e512ac`). Remaining is the local, per-developer setup:
@@ -76,9 +76,17 @@ The WebView loads `connectradie.com`, which will serve the new CSP.
 - [ ] Test a release build against the site **while CSP is in report-only** and watch for violations from Capacitor's injected bridge. If any, add the `capacitor:` scheme to `script-src`/`connect-src` in `vercel.json` **before** the CSP is switched to enforcing — otherwise the app white-screens.
 - [ ] Confirm Stripe Checkout still returns into the app (the `allowNavigation` allow-list in `capacitor.config.ts` handles this).
 
-## 8. Build the release artifact ✅ SIGNED AAB BUILT
-- [x] ✅ **Signed AAB built 2026-07-12** — `android/app/build/outputs/bundle/release/app-release.aab` (~22 MB), signed with the upload key (SHA-1 `6C:D4:68:…:3D`, Owner `CN=William Magson, O=Connectradie pty ltd`, valid to 2053). Verified via `keytool -printcert -jarfile` — NOT debug-signed. Build: `npm run build && npx cap sync android && cd android && ./gradlew bundleRelease` (JAVA_HOME=Android Studio jbr). **This .aab is ready to upload to Play.** (versionCode 1 — bump for every later upload.)
-- [ ] Install the equivalent signed build on a physical device and smoke-test: launch/splash, Google sign-in, a Stripe payment round-trip, push (if enabled), and a geofence ENTER/EXIT.
+## 8. Build the release artifact ⚠️ REBUILD REQUIRED (versionCode 2)
+The 2026-07-12 AAB (versionCode 1) is **stale**: it predates the
+`@capacitor/filesystem` + `@capacitor/share` plugins added for invoice Share
+(PRs #267/#270). Because the app loads the remote site, the Share UI is
+already live — `canShareDocument()` hides it on shells without the plugin, so
+old installs see the "open in a browser" note until they get this build.
+- [ ] Rebuild: `git pull && npm ci && npm run build && npx cap sync android && cd android && ./gradlew bundleRelease` (JAVA_HOME=Android Studio jbr). The `cap sync` step is **not optional** — it regenerates the git-ignored `android/app/src/main/assets/capacitor.plugins.json`, the registry the native bridge reads at startup; without it the new plugins won't load even in a fresh build.
+- [ ] Verify the AAB is upload-key-signed via `keytool -printcert -jarfile` (Owner `CN=William Magson, O=Connectradie pty ltd`) — an absent `android/keystore.properties` silently falls back to debug signing.
+- [ ] Install the equivalent signed build on a physical device and smoke-test: launch/splash, Google sign-in, a Stripe payment round-trip, **Export Invoice → Share → PDF lands in Files/email**, and a geofence ENTER/EXIT.
+
+Reference — previous release: signed AAB built 2026-07-12 (versionCode 1, ~22 MB, upload key SHA-1 `6C:D4:68:…:3D`, valid to 2053).
 
 ## 9. Play Console store listing & policies
 - [ ] Store listing: title, short + full description, feature graphic, phone/tablet screenshots, app icon.
