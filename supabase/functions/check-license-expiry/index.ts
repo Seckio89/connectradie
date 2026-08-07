@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { hasServiceRole } from "../_shared/serviceAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
@@ -41,25 +42,32 @@ Deno.serve(async (req: Request) => {
     const token = authHeader.slice(7);
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // The daily pg_cron tick presents the SERVICE-ROLE key, which is not a user
+    // JWT — auth.getUser rejects it, so the getUser-then-admin path below 401'd
+    // every scheduled run this function ever had. Probe for a real service-role
+    // capability first (same check as credential-expiry-sweep, its sibling
+    // sweep); a signed-in admin calling by hand still passes via getUser.
+    if (!(await hasServiceRole(authHeader, supabaseUrl))) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
-    const { data: callerProfile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
+      const { data: callerProfile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
 
-    if (callerProfile?.role !== "admin") {
-      return new Response(
-        JSON.stringify({ error: "Forbidden: admin access required" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      if (callerProfile?.role !== "admin") {
+        return new Response(
+          JSON.stringify({ error: "Forbidden: admin access required" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const today = new Date().toISOString().split("T")[0];
