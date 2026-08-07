@@ -343,6 +343,8 @@
     "20260806092759_backfill_quote_trade_category_and_price_floor.sql",
     "20260806111049_fix_role_first_claim_and_team_reinvite.sql",
     "20260807053007_scope_profiles_reads_and_guard_definer_rpcs.sql",
-    "20260807062807_public_tradie_discovery_without_definer_view.sql"
+    "20260807062807_public_tradie_discovery_without_definer_view.sql",
+    "20260807074531_public_tradie_profiles_left_join_details.sql",
+    "20260807223551_add_default_margin_pct.sql"
   ]
 }
