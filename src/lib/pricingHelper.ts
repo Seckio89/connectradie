@@ -137,26 +137,74 @@ export async function deleteQuoteTemplate(id: string): Promise<{ ok: boolean }> 
 // RLS is owner-only, so these calls return nothing for anyone but the tradie.
 
 /**
+ * Margin % a quote gets when the tradie has never saved one. Matches the value
+ * the estimator hardcoded before the column existed, so nothing moves for anyone
+ * who has not touched it.
+ *
+ * Charge-side, so it lives here and NOT in CostBasis: costModel prices what a job
+ * COSTS and must stay ignorant of what the tradie charges on top.
+ */
+export const DEFAULT_MARGIN_PCT = 15;
+
+export interface QuotingDefaults {
+  basis: CostBasis;
+  /** Charge-side margin %, remembered from the last quote the tradie applied. */
+  marginPct: number;
+}
+
+/**
+ * Everything the estimator prefills, in one round trip. The margin shares
+ * tradie_cost_settings with the cost basis because that table is owner-only;
+ * tradie_details, where hourly_rate lives, is readable by every authenticated
+ * user and would hand clients the tradie's markup.
+ */
+export async function getQuotingDefaults(tradieId: string): Promise<QuotingDefaults> {
+  const { data, error } = await supabase
+    .from('tradie_cost_settings')
+    .select('staff_wage_cents, labour_burden_pct, overhead_recovery_pct, profit_target_pct, minimum_job_value_cents, default_margin_pct')
+    .eq('tradie_id', tradieId)
+    .maybeSingle();
+
+  if (error || !data) return { basis: COST_BASIS_DEFAULTS, marginPct: DEFAULT_MARGIN_PCT };
+
+  return {
+    basis: {
+      staffWageCents: data.staff_wage_cents ?? COST_BASIS_DEFAULTS.staffWageCents,
+      labourBurdenPct: data.labour_burden_pct ?? COST_BASIS_DEFAULTS.labourBurdenPct,
+      overheadRecoveryPct: data.overhead_recovery_pct ?? COST_BASIS_DEFAULTS.overheadRecoveryPct,
+      profitTargetPct: data.profit_target_pct ?? COST_BASIS_DEFAULTS.profitTargetPct,
+      minimumJobValueCents: data.minimum_job_value_cents ?? COST_BASIS_DEFAULTS.minimumJobValueCents,
+    },
+    // ?? not ||: 0 is a legitimate saved margin (an hourly rate that already
+    // carries the profit), and must not fall through to 15.
+    marginPct: data.default_margin_pct ?? DEFAULT_MARGIN_PCT,
+  };
+}
+
+/**
  * The tradie's cost basis, or the defaults when they haven't set one. Never
  * returns null on a miss: a fresh tradie gets workable percentages and a wage of
  * 0, and a wage of 0 is what keeps the margin check switched off.
  */
 export async function getCostBasis(tradieId: string): Promise<CostBasis> {
-  const { data, error } = await supabase
-    .from('tradie_cost_settings')
-    .select('staff_wage_cents, labour_burden_pct, overhead_recovery_pct, profit_target_pct, minimum_job_value_cents')
-    .eq('tradie_id', tradieId)
-    .maybeSingle();
+  return (await getQuotingDefaults(tradieId)).basis;
+}
 
-  if (error || !data) return COST_BASIS_DEFAULTS;
-
-  return {
-    staffWageCents: data.staff_wage_cents ?? COST_BASIS_DEFAULTS.staffWageCents,
-    labourBurdenPct: data.labour_burden_pct ?? COST_BASIS_DEFAULTS.labourBurdenPct,
-    overheadRecoveryPct: data.overhead_recovery_pct ?? COST_BASIS_DEFAULTS.overheadRecoveryPct,
-    profitTargetPct: data.profit_target_pct ?? COST_BASIS_DEFAULTS.profitTargetPct,
-    minimumJobValueCents: data.minimum_job_value_cents ?? COST_BASIS_DEFAULTS.minimumJobValueCents,
-  };
+/**
+ * Remember the margin the tradie just quoted at, without disturbing their cost
+ * basis. The upsert names only this column, so an existing row keeps every other
+ * value and a first-time row takes the table's own defaults for the rest.
+ *
+ * Best-effort by design: this fires as a side effect of applying an estimate, and
+ * a failed preference write must never interrupt that.
+ */
+export async function saveDefaultMarginPct(tradieId: string, marginPct: number): Promise<{ ok: boolean }> {
+  if (!Number.isFinite(marginPct)) return { ok: false };
+  const { error } = await supabase.from('tradie_cost_settings').upsert(
+    { tradie_id: tradieId, default_margin_pct: Math.min(200, Math.max(0, marginPct)) },
+    { onConflict: 'tradie_id' },
+  );
+  return { ok: !error };
 }
 
 /** Upsert the cost basis. One row per tradie, keyed on the UNIQUE tradie_id. */

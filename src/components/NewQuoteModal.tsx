@@ -532,13 +532,13 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                         type="button"
                         onClick={() => setSelectedSiteId(s.id)}
                         className={`w-full flex items-start gap-2.5 text-left rounded-ct-md border px-3 py-2.5 transition-colors ${
-                          selectedSiteId === s.id ? 'border-ct-line bg-ct-surface-2' : 'border-ct-line bg-ct-surface hover:bg-ct-surface-2'
+                          selectedSiteId === s.id ? 'border-ct-teal/40 bg-ct-surface-2' : 'border-ct-line bg-ct-surface hover:bg-ct-surface-2'
                         }`}
                       >
                         <span className={`mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
                           selectedSiteId === s.id ? 'border-ct-teal' : 'border-ct-line'
                         }`}>
-                          {selectedSiteId === s.id && <span className="w-2 h-2 rounded-full bg-ct-surface-2" />}
+                          {selectedSiteId === s.id && <span className="w-2 h-2 rounded-full bg-ct-teal" />}
                         </span>
                         <span className="min-w-0">
                           <span className="text-sm font-medium text-ct-paper">{s.site_name}</span>
@@ -799,7 +799,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                         {FREQUENCIES.map((f) => (
                           <button key={f.key} type="button" onClick={() => setFrequency(f.key)}
                             className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                              frequency === f.key ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
+                              frequency === f.key ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                             }`}>{f.label}</button>
                         ))}
                       </div>
@@ -852,7 +852,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                         {([['per_visit', 'Per visit'], ['per_cycle', `Per ${freqLabel.toLowerCase()} cycle`]] as const).map(([key, label]) => (
                           <button key={key} type="button" onClick={() => setPriceBasis(key)}
                             className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                              priceBasis === key ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
+                              priceBasis === key ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                             }`}>{label}</button>
                         ))}
                       </div>
@@ -871,7 +871,7 @@ export default function NewQuoteModal({ isOpen, onClose, onSent, tradieId, conta
                       {(['client', 'tradie_billed'] as const).map((c) => (
                         <button key={c} type="button" onClick={() => setConsumables(c)}
                           className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                            consumables === c ? 'bg-ct-surface-2 border-ct-line text-ct-mute-2' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
+                            consumables === c ? 'bg-ct-teal/[0.14] border-ct-teal/30 text-ct-teal' : 'bg-ct-surface border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'
                           }`}>{c === 'client' ? 'Client supplies' : 'I supply & bill'}</button>
                       ))}
                     </div>

@@ -24,9 +24,15 @@ interface CostBasisFieldsProps {
   compact?: boolean;
 }
 
-const inputClass =
+/**
+ * Exported so neighbouring quoting fields (e.g. the default margin in
+ * CostBasisSettingsCard) match these exactly instead of re-deriving the classes.
+ */
+export const costFieldInputClass =
   'w-full px-3 py-2 bg-ct-surface border border-ct-line rounded-ct-md text-sm text-ct-paper font-ct-mono ' +
   'focus:outline-none focus:ring-2 focus:ring-ct-teal placeholder:text-ct-mute';
+
+const inputClass = costFieldInputClass;
 
 /** Dollars in the field, cents in the model — the DB stores cents throughout. */
 const centsToInput = (cents: number): string => (cents > 0 ? String(cents / 100) : '');
@@ -39,7 +45,8 @@ const inputToPct = (v: string, fallback: number): number => {
   return Number.isFinite(n) && n >= 0 ? Math.min(n, 200) : fallback;
 };
 
-function Field({
+/** Label + input + hint, exported for the same reason as costFieldInputClass. */
+export function CostField({
   label,
   hint,
   suffix,
@@ -61,7 +68,7 @@ function Field({
           </span>
         )}
       </div>
-      <p className="mt-1 text-[0.6875rem] leading-snug text-ct-mute">{hint}</p>
+      <p className="mt-1 text-[0.6875rem] leading-snug text-ct-mute-2">{hint}</p>
     </div>
   );
 }
@@ -72,19 +79,20 @@ export default function CostBasisFields({ value, onChange, compact = false }: Co
   return (
     <div className="space-y-4">
       {!compact && (
-        <p className="text-xs text-ct-mute leading-relaxed">
+        <p className="text-xs text-ct-mute-2 leading-relaxed">
           What a job costs you to deliver. Fill this in and every quote shows whether it clears your
           costs — nothing is shared with clients, and nothing here changes what you charge.
         </p>
       )}
 
-      <Field
+      <CostField
         label="Base hourly wage"
         suffix="$/hr"
         hint={
           <>
-            What you actually pay per hour on the tools — your own drawing if you work solo. Your
-            award or agreement sets the floor; see{' '}
+            What you <em className="not-italic font-medium text-ct-paper">pay</em> per hour on the tools — your own
+            drawing if you work solo. This is not what you charge the client; that's your rate, and the gap
+            between the two is where your profit comes from. Your award or agreement sets the floor; see{' '}
             <a
               href="https://www.fairwork.gov.au/pay-and-wages"
               target="_blank"
@@ -107,12 +115,12 @@ export default function CostBasisFields({ value, onChange, compact = false }: Co
           value={centsToInput(value.staffWageCents)}
           onChange={(e) => set({ staffWageCents: inputToCents(e.target.value) })}
         />
-      </Field>
+      </CostField>
 
-      <Field
-        label="Labour burden"
+      <CostField
+        label="Wage on-costs"
         suffix="%"
-        hint="On-costs on top of the wage: superannuation, workers' compensation, payroll tax, annual and sick leave, leave loading. Around 30% is typical for an employer; lower if you're solo."
+        hint="What you pay on top of the wage: superannuation, workers' compensation, payroll tax, annual and sick leave, leave loading. Around 30% is typical for an employer; lower if you're solo."
       >
         <input
           type="number"
@@ -124,9 +132,9 @@ export default function CostBasisFields({ value, onChange, compact = false }: Co
           value={value.labourBurdenPct}
           onChange={(e) => set({ labourBurdenPct: inputToPct(e.target.value, COST_BASIS_DEFAULTS.labourBurdenPct) })}
         />
-      </Field>
+      </CostField>
 
-      <Field
+      <CostField
         label="Overhead recovery"
         suffix="%"
         hint="The share of insurance, vehicle, fuel, software, licensing and admin this job needs to carry."
@@ -143,9 +151,9 @@ export default function CostBasisFields({ value, onChange, compact = false }: Co
             set({ overheadRecoveryPct: inputToPct(e.target.value, COST_BASIS_DEFAULTS.overheadRecoveryPct) })
           }
         />
-      </Field>
+      </CostField>
 
-      <Field
+      <CostField
         label="Profit target"
         suffix="%"
         hint="Owner pay, profit and money to grow on, over and above wage and overhead."
@@ -160,9 +168,9 @@ export default function CostBasisFields({ value, onChange, compact = false }: Co
           value={value.profitTargetPct}
           onChange={(e) => set({ profitTargetPct: inputToPct(e.target.value, COST_BASIS_DEFAULTS.profitTargetPct) })}
         />
-      </Field>
+      </CostField>
 
-      <Field
+      <CostField
         label="Minimum job value"
         suffix="$"
         hint="The least you'll take on any job, however small. Leave blank for no minimum."
@@ -177,7 +185,7 @@ export default function CostBasisFields({ value, onChange, compact = false }: Co
           value={centsToInput(value.minimumJobValueCents)}
           onChange={(e) => set({ minimumJobValueCents: inputToCents(e.target.value) })}
         />
-      </Field>
+      </CostField>
     </div>
   );
 }

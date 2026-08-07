@@ -9,6 +9,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { MapPin, Plus, Pencil, Trash2, Star, Loader2, KeyRound, Mail, Phone } from 'lucide-react';
 import Modal from './Modal';
+import ConfirmModal from './ConfirmModal';
 import AddressAutocomplete from './AddressAutocomplete';
 import { listClientSites, createClientSite, updateClientSite, deleteClientSite, setDefaultSite, type SiteInput } from '../lib/clientSites';
 import type { ClientSite } from '../types/database';
@@ -141,6 +142,8 @@ export default function ClientSitesSection({ contactId, onChanged }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ClientSite | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirmSite, setConfirmSite] = useState<ClientSite | null>(null);
+  const [deleteError, setDeleteError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -159,10 +162,18 @@ export default function ClientSitesSection({ contactId, onChanged }: Props) {
     changed();
   };
 
-  const remove = async (site: ClientSite) => {
+  const remove = async () => {
+    if (!confirmSite) return;
+    const site = confirmSite;
+    setConfirmSite(null);
     setBusyId(site.id);
-    await deleteClientSite(site.id);
+    setDeleteError('');
+    const r = await deleteClientSite(site.id);
     setBusyId(null);
+    if (!r.ok) {
+      setDeleteError(`Could not delete ${site.site_name}. Check your connection and try again.`);
+      return;
+    }
     changed();
   };
 
@@ -236,17 +247,29 @@ export default function ClientSitesSection({ contactId, onChanged }: Props) {
                     className="p-2 text-ct-mute hover:text-ct-mute-2 rounded-ct-sm transition-colors">
                     <Pencil className="w-4 h-4" />
                   </button>
-                  {sites.length > 1 && (
-                    <button onClick={() => remove(s)} disabled={busyId === s.id} aria-label={`Delete ${s.site_name}`}
-                      className="p-2 text-ct-mute hover:text-ct-rose rounded-ct-sm transition-colors">
-                      {busyId === s.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                    </button>
-                  )}
+                  <button onClick={() => setConfirmSite(s)} disabled={busyId === s.id} aria-label={`Delete ${s.site_name}`}
+                    title="Delete location"
+                    className="p-2 text-ct-mute hover:text-ct-rose rounded-ct-sm transition-colors">
+                    {busyId === s.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {deleteError && <p className="text-sm text-ct-rose mt-2">{deleteError}</p>}
+
+      {confirmSite && (
+        <ConfirmModal
+          title="Delete location"
+          message={`This removes ${confirmSite.site_name} from this client's locations. Quotes and jobs you've already created keep the details that were copied onto them.`}
+          confirmText="Delete location"
+          type="danger"
+          onConfirm={remove}
+          onCancel={() => setConfirmSite(null)}
+        />
       )}
 
       <SiteModal isOpen={modalOpen} onClose={() => setModalOpen(false)} contactId={contactId} site={editing} onSaved={changed} />
