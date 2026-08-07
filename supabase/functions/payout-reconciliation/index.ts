@@ -74,12 +74,23 @@ Deno.serve(async (req: Request) => {
       .limit(100);
 
     // 3. Drift — 'released' but nothing recorded actually moving the money.
+    //
+    // Excludes zero-charge releases. When nothing was owed, both release paths
+    // (auto-release-payments, release-escrow) close the row out with
+    // zero_charge_release and payout_amount 0 and create no payout, because
+    // Stripe rejects a zero payout outright. Those rows are correct and would
+    // otherwise be reported every day forever.
+    //
+    // Pending dispute splits are deliberately NOT excluded. They are also
+    // 'released' with no payout_id, but they genuinely await a payout — that is
+    // exactly the drift worth seeing.
     const { data: driftPayments } = await supabase
       .from("payments")
       .select("id, job_id, amount, status, metadata")
       .eq("status", "released")
       .eq("metadata->>flow", "destination")
       .is("metadata->>payout_id", null)
+      .is("metadata->>zero_charge_release", null)
       .limit(100);
 
     const held = heldInvoices ?? [];

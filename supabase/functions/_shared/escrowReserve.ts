@@ -9,9 +9,14 @@
 // the homeowner approves release — and a later refund would then reverse
 // against an empty balance, pushing the account negative.
 //
+// It also reserves one thing that is not escrow: a dispute-split remainder the
+// tradie is owed but has not been paid yet (see isPendingSplitPayout). Both are
+// the same question for a caller — how much of this balance is not free to send.
+//
 // Mirrors src/lib/paymentRelease.ts (`isDestinationRouted`,
 // `creditedToBalanceCents`). Deno can't import from src/, so the two copies are
-// kept deliberately identical — change both.
+// kept deliberately identical — change both. The split logic has no src/
+// counterpart: nothing client-side computes a payable balance.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface EscrowRow {
@@ -76,9 +81,55 @@ export function creditedToBalanceCents(row: EscrowRow): number {
 }
 
 /**
- * Sum the escrow still held for a tradie. Takes the union of however many
- * queries the caller ran (rows anchor on the job for off-app payments and on
- * metadata.tradie_id for in-app ones) and de-duplicates by payment id.
+ * Same semantics as `frozenCents` in feeContext.ts, deliberately duplicated
+ * rather than imported: this module has no imports, and three functions bundle
+ * it. Importing feeContext would drag pricing.ts and repeatClient.ts into all
+ * three deploys for a seven-line number parse.
+ *
+ * Anything unparseable reads as 0. For a reserve, under-reserving is the unsafe
+ * direction — but a NaN is worse than either, because it propagates through the
+ * sweep's arithmetic and turns the whole balance into a payout.
+ */
+function splitCents(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value)) return Math.round(value);
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return Math.round(parsed);
+  }
+  return 0;
+}
+
+/**
+ * A dispute split that has refunded the client but not yet paid the tradie.
+ *
+ * resolve-dispute-split runs two legs — refund the client, then pay the tradie
+ * the remainder. When leg 2 cannot pay immediately (the normal case: on AU cards
+ * the charge is still settling, so the function pre-flights the balance and
+ * defers) it writes the row as status='released' with `split_payout_cents` and
+ * NO `payout_id`, deliberately, so the cron cannot pay the full amount. The
+ * remainder then waits in the tradie's balance for the split sweep in
+ * auto-release-payments to complete it under the dispute's idempotency key.
+ *
+ * That money is spoken for. It is not escrow — the client's share has already
+ * been refunded — but it is not free balance either, and anything that pays out
+ * the raw available balance would pre-empt a specific pending payout. The split
+ * sweep would then find an empty balance and skip forever, leaving the row
+ * permanently `payout_pending` with no way to tell whether the tradie was paid.
+ */
+export function isPendingSplitPayout(row: EscrowRow): boolean {
+  const meta = row.metadata ?? null;
+  if (!meta) return false;
+  return meta.split_payout_cents !== undefined &&
+    meta.split_payout_cents !== null &&
+    !meta.payout_id;
+}
+
+/**
+ * Sum what a tradie's Connect balance holds that is not theirs to take: client
+ * escrow, plus any dispute-split remainder still awaiting its payout. Takes the
+ * union of however many queries the caller ran (rows anchor on the job for
+ * off-app payments and on metadata.tradie_id for in-app ones) and de-duplicates
+ * by payment id.
  */
 export function sumEscrowReserveCents(rows: EscrowRow[]): number {
   const seen = new Set<string>();
@@ -88,6 +139,14 @@ export function sumEscrowReserveCents(rows: EscrowRow[]): number {
       if (seen.has(row.id)) continue;
       seen.add(row.id);
     }
+    // MUST come first. A pending split is destination-routed and still held, so
+    // the escrow branch below would reserve creditedToBalanceCents — the FULL
+    // pre-split amount, over-reserving by the share already refunded to the
+    // client and blocking the tradie from money that is genuinely theirs.
+    if (isPendingSplitPayout(row)) {
+      total += splitCents(row.metadata?.split_payout_cents);
+      continue;
+    }
     if (!isDestinationRouted(row) || !isStillHeld(row)) continue;
     total += creditedToBalanceCents(row);
   }
@@ -95,7 +154,8 @@ export function sumEscrowReserveCents(rows: EscrowRow[]): number {
 }
 
 /**
- * Runs the two anchor queries and returns the tradie's held escrow.
+ * Runs the anchor queries and returns what the tradie's balance is holding for
+ * someone else — client escrow, plus any pending dispute-split remainder.
  *
  * Rows anchor differently depending on who paid: accept-and-pay and
  * pay-price-increase stamp metadata.tradie_id, while public-quote and
@@ -103,14 +163,19 @@ export function sumEscrowReserveCents(rows: EscrowRow[]): number {
  * tradie_id and are only reachable through the job. Missing either anchor leaves
  * client escrow unreserved and payable.
  *
- * THROWS if either query fails. Callers must not treat an error as "no escrow
- * held" — that is how you pay out client funds.
+ * The third query catches pending dispute splits, which the first two cannot:
+ * they sit at status='released', not 'completed'. It anchors on the job only —
+ * a split always has one, since a dispute is raised against a job — and the
+ * union de-duplicates anything a second anchor would have repeated.
+ *
+ * THROWS if any query fails. Callers must not treat an error as "nothing held"
+ * — that is how you pay out someone else's funds.
  */
 export async function fetchEscrowReserveCents(
   supabase: SupabaseLike,
   tradieId: string,
 ): Promise<number> {
-  const [jobAnchored, metaAnchored] = await Promise.all([
+  const [jobAnchored, metaAnchored, pendingSplits] = await Promise.all([
     supabase
       .from("payments")
       .select("id, amount, metadata, jobs!inner(tradie_id)")
@@ -121,16 +186,23 @@ export async function fetchEscrowReserveCents(
       .select("id, amount, metadata")
       .eq("metadata->>tradie_id", tradieId)
       .eq("status", "completed"),
+    supabase
+      .from("payments")
+      .select("id, amount, metadata, jobs!inner(tradie_id)")
+      .eq("jobs.tradie_id", tradieId)
+      .eq("status", "released")
+      .not("metadata->>split_payout_cents", "is", null)
+      .is("metadata->>payout_id", null),
   ]);
 
-  if (jobAnchored.error || metaAnchored.error) {
-    throw new Error(
-      `escrow reserve query failed: ${JSON.stringify(jobAnchored.error ?? metaAnchored.error)}`,
-    );
+  const failure = jobAnchored.error ?? metaAnchored.error ?? pendingSplits.error;
+  if (failure) {
+    throw new Error(`escrow reserve query failed: ${JSON.stringify(failure)}`);
   }
 
   return sumEscrowReserveCents([
     ...((jobAnchored.data ?? []) as EscrowRow[]),
     ...((metaAnchored.data ?? []) as EscrowRow[]),
+    ...((pendingSplits.data ?? []) as EscrowRow[]),
   ]);
 }

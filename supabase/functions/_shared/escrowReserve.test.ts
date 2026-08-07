@@ -72,6 +72,8 @@ function stubClient(results: Array<{ data?: unknown[]; error?: unknown }>) {
       const builder: Record<string, unknown> = {
         select(cols: string) { calls.push(cols); return builder; },
         eq() { return builder; },
+        not() { return builder; },
+        is() { return builder; },
         then(resolve: (v: unknown) => unknown) { return Promise.resolve(result).then(resolve); },
       };
       return builder;
@@ -98,10 +100,11 @@ Deno.test("catches escrow only the job anchor can see", async () => {
   assertEquals(await fetchEscrowReserveCents(client, "t1"), 9_490);
 });
 
-Deno.test("throws when either query fails — never reports zero", async () => {
+Deno.test("throws when any query fails — never reports zero", async () => {
   for (const results of [
-    [{ error: { message: "boom" } }, { data: [] }],
-    [{ data: [] }, { error: { message: "boom" } }],
+    [{ error: { message: "boom" } }, { data: [] }, { data: [] }],
+    [{ data: [] }, { error: { message: "boom" } }, { data: [] }],
+    [{ data: [] }, { data: [] }, { error: { message: "boom" } }],
   ]) {
     let threw = false;
     try {
@@ -113,9 +116,80 @@ Deno.test("throws when either query fails — never reports zero", async () => {
   }
 });
 
-Deno.test("queries the job anchor and the metadata anchor", async () => {
-  const client = stubClient([{ data: [] }, { data: [] }]);
+Deno.test("queries the job anchor, the metadata anchor and pending splits", async () => {
+  const client = stubClient([{ data: [] }, { data: [] }, { data: [] }]);
   await fetchEscrowReserveCents(client, "t1");
-  assertEquals(client.calls.length, 2);
+  assertEquals(client.calls.length, 3);
   assertEquals(client.calls[0].includes("jobs!inner(tradie_id)"), true);
+  assertEquals(client.calls[2].includes("jobs!inner(tradie_id)"), true);
+});
+
+// ── Pending dispute splits ───────────────────────────────────────────────────
+// resolve-dispute-split refunds the client, then defers the tradie's remainder
+// when the funds have not settled — status='released', split_payout_cents set,
+// no payout_id. That remainder is already promised to a specific payout, so
+// sweep-connect-balance and instant-payout must not treat it as free balance.
+
+Deno.test("reserves a dispute-split remainder awaiting its payout", () => {
+  const rows = [{
+    id: "a",
+    amount: 10_000,
+    metadata: {
+      flow: "destination",
+      platform_fee: 510,
+      gst: "0",
+      split_dispute_id: "d1",
+      split_refund_cents: 6_000,
+      split_payout_cents: 3_490,
+      payout_pending: true,
+    },
+  }];
+  // The remainder owed, NOT creditedToBalanceCents (9,490) — the client's
+  // $60 share has already been refunded out of the balance.
+  assertEquals(sumEscrowReserveCents(rows), 3_490);
+});
+
+Deno.test("drops a split once its payout exists", () => {
+  const rows = [{
+    id: "a",
+    amount: 10_000,
+    metadata: {
+      flow: "destination",
+      platform_fee: 510,
+      gst: "0",
+      split_payout_cents: 3_490,
+      payout_id: "po_1",
+    },
+  }];
+  assertEquals(sumEscrowReserveCents(rows), 0);
+});
+
+Deno.test("counts a pending split alongside held escrow", () => {
+  const rows = [
+    { id: "a", amount: 7_000, metadata: { flow: "destination", platform_fee: 0, gst: "0" } },
+    { id: "b", amount: 10_000, metadata: { flow: "destination", platform_fee: 510, gst: "0", split_payout_cents: 3_490 } },
+  ];
+  assertEquals(sumEscrowReserveCents(rows), 10_490);
+});
+
+Deno.test("a string or unusable split amount never yields NaN", () => {
+  // resolve-dispute-split writes a number, but metadata is untyped JSON and a
+  // NaN here would propagate into the sweep's arithmetic and pay out the lot.
+  assertEquals(
+    sumEscrowReserveCents([{ id: "a", amount: 10_000, metadata: { split_payout_cents: "3490" } }]),
+    3_490,
+  );
+  assertEquals(
+    sumEscrowReserveCents([{ id: "a", amount: 10_000, metadata: { split_payout_cents: "abc" } }]),
+    0,
+  );
+});
+
+Deno.test("fetch reserves a split the completed-status anchors cannot see", async () => {
+  const client = stubClient([
+    { data: [] },
+    { data: [] },
+    { data: [{ id: "a", amount: 10_000, metadata: { flow: "destination", platform_fee: 510, gst: "0", split_payout_cents: 3_490 } }] },
+  ]);
+  assertEquals(await fetchEscrowReserveCents(client, "t1"), 3_490);
 });

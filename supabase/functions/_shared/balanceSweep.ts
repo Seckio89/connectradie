@@ -96,6 +96,13 @@ export interface SweepPlan {
  *    is exactly the shape the reserve counts. So a sweep cannot take the funds
  *    a pending release is about to claim.
  *
+ *    And it covers a dispute-split remainder awaiting its payout, which sits at
+ *    status 'released' and so is invisible to the two 'completed' anchors — the
+ *    reserve runs a third query for exactly that shape. Sweeping it would
+ *    pre-empt a payout that already has its own idempotency key, and the split
+ *    sweep in auto-release-payments would then find an empty balance and skip
+ *    forever.
+ *
  * 2. A negative pending balance — a refund or reversal that has not settled
  *    yet. Stripe will happily pay out the full available amount and let the
  *    negative land afterwards, leaving the tradie's account in debit. Netting
