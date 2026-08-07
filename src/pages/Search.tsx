@@ -207,22 +207,27 @@ export default function Search() {
     setLoading(true);
     const currentPage = reset ? 0 : page;
 
+    // public_tradie_profiles, not profiles: browsing reads strangers, and the
+    // profiles SELECT policy is now scoped to self/admin/counterparty. The view
+    // already inner-joins tradie_details (so the old `.not(...is null)` guard is
+    // built in) and flattens it to td_* columns, which are re-nested below.
     const query = supabase
-      .from('profiles')
+      .from('public_tradie_profiles')
       .select(`
         id, full_name, public_suburb, has_phone, postcode, avatar_url,
         is_premium, role, verified_trades, declared_trades,
         verification_status, call_out_fee, show_callout_fee, callout_fee_waived_on_proceed,
         is_emergency_available,
-        tradie_details (*)
+        td_business_name, td_trade_category, td_trade_type, td_contractor_type,
+        td_bio, td_subscription_tier, td_is_verified, td_is_insured, td_is_licensed,
+        td_hourly_rate, td_emergency_available, td_insurance_provider,
+        td_qualifications, td_service_radius_km, td_default_call_out_fee_cents
       `)
-      .eq('role', 'tradie')
-      .not('tradie_details', 'is', null)
       .order('is_premium', { ascending: false })
       .range(currentPage * TRADIES_PER_PAGE, (currentPage + 1) * TRADIES_PER_PAGE - 1);
 
     if (tradeFilter) {
-      query.eq('tradie_details.trade_category', tradeFilter);
+      query.eq('td_trade_category', tradeFilter);
     }
 
     if (postcodeQuery.trim()) {
@@ -285,7 +290,25 @@ export default function Search() {
         const hasSlots = tradiesWithAnySlots.has(id);
         return {
           ...tradie,
-          tradie_details: tradie.tradie_details,
+          // Re-nest the flat td_* columns under the shape the rest of this file
+          // (and TradieCard) already reads, so no render code had to change.
+          tradie_details: {
+            business_name: tradie.td_business_name,
+            trade_category: tradie.td_trade_category,
+            trade_type: tradie.td_trade_type,
+            contractor_type: tradie.td_contractor_type,
+            bio: tradie.td_bio,
+            subscription_tier: tradie.td_subscription_tier,
+            is_verified: tradie.td_is_verified,
+            is_insured: tradie.td_is_insured,
+            is_licensed: tradie.td_is_licensed,
+            hourly_rate: tradie.td_hourly_rate,
+            emergency_available: tradie.td_emergency_available,
+            insurance_provider: tradie.td_insurance_provider,
+            qualifications: tradie.td_qualifications,
+            service_radius_km: tradie.td_service_radius_km,
+            default_call_out_fee_cents: tradie.td_default_call_out_fee_cents,
+          },
           // undefined = never set up availability, 0 = has slots but none available this week
           availability_hours: hasSlots ? (slotsByTradie[id] || 0) : undefined,
         } as TradieWithDetails;

@@ -66,8 +66,12 @@ export default function PublicTradieProfile() {
     setLoading(true);
 
     const [profileResult, ratingResult, portfolioResult, jobsResult] = await Promise.all([
+      // public_tradie_profiles, not profiles: this page is viewed by people with
+      // no relationship to the tradie, and the profiles SELECT policy is now
+      // scoped to self/admin/counterparty. tradie_details arrives flat as td_*
+      // and is re-nested below into the `details` shape this page renders from.
       supabase
-        .from('profiles')
+        .from('public_tradie_profiles')
         .select(`
           id, full_name, public_suburb, has_phone, postcode, avatar_url,
           is_premium, role, verified_trades, declared_trades,
@@ -75,10 +79,12 @@ export default function PublicTradieProfile() {
           is_emergency_available, team_size, call_out_fee,
           show_callout_fee, callout_fee_waived_on_proceed,
           cover_photo_url,
-          tradie_details (*)
+          td_business_name, td_trade_category, td_trade_type, td_contractor_type,
+          td_bio, td_subscription_tier, td_is_verified, td_is_insured, td_is_licensed,
+          td_hourly_rate, td_emergency_available, td_insurance_provider,
+          td_qualifications, td_service_radius_km, td_default_call_out_fee_cents
         `)
         .eq('id', id)
-        .eq('role', 'tradie')
         .maybeSingle(),
       getTradieRating(id),
       supabase
@@ -99,7 +105,28 @@ export default function PublicTradieProfile() {
       return;
     }
 
-    setTradie(profileResult.data as TradieWithDetails);
+    // Re-nest the flat td_* columns so `details` below keeps its existing shape.
+    const row = profileResult.data as Record<string, unknown>;
+    setTradie({
+      ...row,
+      tradie_details: {
+        business_name: row.td_business_name,
+        trade_category: row.td_trade_category,
+        trade_type: row.td_trade_type,
+        contractor_type: row.td_contractor_type,
+        bio: row.td_bio,
+        subscription_tier: row.td_subscription_tier,
+        is_verified: row.td_is_verified,
+        is_insured: row.td_is_insured,
+        is_licensed: row.td_is_licensed,
+        hourly_rate: row.td_hourly_rate,
+        emergency_available: row.td_emergency_available,
+        insurance_provider: row.td_insurance_provider,
+        qualifications: row.td_qualifications,
+        service_radius_km: row.td_service_radius_km,
+        default_call_out_fee_cents: row.td_default_call_out_fee_cents,
+      },
+    } as TradieWithDetails);
     setRating(ratingResult);
     setPortfolio(portfolioResult.data || []);
     setCompletedJobs(jobsResult.count || 0);
