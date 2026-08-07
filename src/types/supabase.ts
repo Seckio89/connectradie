@@ -5968,6 +5968,7 @@ export type Database = {
           td_is_insured: boolean | null
           td_is_licensed: boolean | null
           td_is_verified: boolean | null
+          td_profile_id: string | null
           td_qualifications: string[] | null
           td_service_radius_km: number | null
           td_subscription_tier: string | null

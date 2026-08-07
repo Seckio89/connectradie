@@ -209,8 +209,10 @@ export default function Search() {
 
     // public_tradie_profiles, not profiles: browsing reads strangers, and the
     // profiles SELECT policy is now scoped to self/admin/counterparty. The view
-    // already inner-joins tradie_details (so the old `.not(...is null)` guard is
-    // built in) and flattens it to td_* columns, which are re-nested below.
+    // LEFT joins tradie_details and flattens it to td_* columns, which are
+    // re-nested below. td_profile_id is not null is the listing predicate —
+    // the literal equivalent of the `.not('tradie_details','is',null)` guard
+    // this replaced.
     const query = supabase
       .from('public_tradie_profiles')
       .select(`
@@ -218,11 +220,12 @@ export default function Search() {
         is_premium, role, verified_trades, declared_trades,
         verification_status, call_out_fee, show_callout_fee, callout_fee_waived_on_proceed,
         is_emergency_available,
-        td_business_name, td_trade_category, td_trade_type, td_contractor_type,
+        td_profile_id, td_business_name, td_trade_category, td_trade_type, td_contractor_type,
         td_bio, td_subscription_tier, td_is_verified, td_is_insured, td_is_licensed,
         td_hourly_rate, td_emergency_available, td_insurance_provider,
         td_qualifications, td_service_radius_km, td_default_call_out_fee_cents
       `)
+      .not('td_profile_id', 'is', null)
       .order('is_premium', { ascending: false })
       .range(currentPage * TRADIES_PER_PAGE, (currentPage + 1) * TRADIES_PER_PAGE - 1);
 

@@ -94,8 +94,9 @@ export default function RecommendedTradies() {
         // wider set than 4 so the client-side ranker has something to work with.
         // public_tradie_profiles, not profiles: these are strangers to the
         // caller, and the profiles SELECT policy is now scoped to
-        // self/admin/counterparty. The view inner-joins tradie_details and
-        // flattens it to td_*, which is re-nested below. Columns are named
+        // self/admin/counterparty. The view LEFT joins tradie_details and
+        // flattens it to td_*, which is re-nested below; td_profile_id is not
+        // null restores the `!inner` this replaced. Columns are named
         // explicitly rather than `*` so no new column can silently join the
         // recommendation payload.
         let query = supabase
@@ -104,8 +105,9 @@ export default function RecommendedTradies() {
             id, full_name, avatar_url, postcode, suburb, public_suburb,
             is_premium, verification_status, verified_trades, declared_trades,
             license_verified, abn_verified, is_identity_verified,
-            td_business_name, td_trade_category, td_subscription_tier, td_is_verified
+            td_profile_id, td_business_name, td_trade_category, td_subscription_tier, td_is_verified
           `)
+          .not('td_profile_id', 'is', null)
           .eq('stripe_connect_onboarding_complete', true)
           .limit(40);
 
