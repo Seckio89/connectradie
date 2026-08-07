@@ -2969,50 +2969,6 @@ export type Database = {
         }
         Relationships: []
       }
-      payout_sweeps: {
-        Row: {
-          amount_cents: number
-          available_cents: number
-          created_at: string
-          id: string
-          payout_id: string
-          pending_cents: number
-          reserve_cents: number
-          stripe_account_id: string
-          tradie_profile_id: string
-        }
-        Insert: {
-          amount_cents: number
-          available_cents: number
-          created_at?: string
-          id?: string
-          payout_id: string
-          pending_cents: number
-          reserve_cents: number
-          stripe_account_id: string
-          tradie_profile_id: string
-        }
-        Update: {
-          amount_cents?: number
-          available_cents?: number
-          created_at?: string
-          id?: string
-          payout_id?: string
-          pending_cents?: number
-          reserve_cents?: number
-          stripe_account_id?: string
-          tradie_profile_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payout_sweeps_tradie_profile_id_fkey"
-            columns: ["tradie_profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       platform_fee_charges: {
         Row: {
           charged_at: string
