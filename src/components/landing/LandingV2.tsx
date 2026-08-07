@@ -145,9 +145,16 @@ export default function LandingV2() {
             <a href="#tradies" className="py-1.5 border-b border-transparent hover:text-ct-paper hover:border-ct-teal transition-colors">For tradies</a>
             <a href="#managers" className="py-1.5 border-b border-transparent hover:text-ct-paper hover:border-ct-teal transition-colors">Property managers</a>
           </div>
-          <Link to={postJobHref} className={cx(buttonClasses('primary', 'sm'), 'ml-auto md:ml-0 whitespace-nowrap')}>
-            Post a job
-          </Link>
+          <div className="ml-auto md:ml-0 flex items-center gap-5">
+            {!user && (
+              <Link to="/login" className="py-1.5 text-sm text-ct-mute-2 border-b border-transparent hover:text-ct-paper hover:border-ct-teal transition-colors whitespace-nowrap">
+                Sign in
+              </Link>
+            )}
+            <Link to={postJobHref} className={cx(buttonClasses('primary', 'sm'), 'whitespace-nowrap')}>
+              Post a job
+            </Link>
+          </div>
         </div>
       </nav>
 
