@@ -140,7 +140,7 @@ export default function MarginCheckPanel({ check, targetPriceCents, className = 
           <Row label="Direct cost" value={money(check.directCostCents)} strong />
           <Row label="With overhead recovered" value={money(check.withOverheadCents)} />
           <Row
-            label={check.minimumApplied ? 'Your minimum job value' : 'With profit target — minimum viable'}
+            label={check.minimumApplied ? 'Your minimum job value' : 'With your profit — minimum viable'}
             value={money(check.minViableCents)}
             strong
           />

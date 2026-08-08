@@ -155,7 +155,7 @@ export default function QuotingRatesCard() {
             <CostField
               label="Default margin"
               suffix="%"
-              hint="Added on top of everything — hours, materials and call-out. Leave at 0 if your hourly rate already carries your profit."
+              hint="Added on top of everything — hours, materials and call-out. This is the one that raises what the client pays; the profit figure on Your costs only sets the bar the margin check measures against. Leave at 0 if your hourly rate already carries your profit."
             >
               <input
                 type="number"

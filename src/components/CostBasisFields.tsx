@@ -154,9 +154,9 @@ export default function CostBasisFields({ value, onChange, compact = false }: Co
       </CostField>
 
       <CostField
-        label="Profit target"
+        label="Profit you need to clear"
         suffix="%"
-        hint="Owner pay, profit and money to grow on, over and above wage and overhead."
+        hint="Owner pay, profit and money to grow on, over and above wage and overhead. This does not change your quote — it sets the bar a job has to beat before it counts as clearing your costs. The Margin % under Your rates is the one that's actually added to the price."
       >
         <input
           type="number"
