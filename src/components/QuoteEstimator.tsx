@@ -21,7 +21,8 @@ import PropertyPreview from './PropertyPreview';
 import { TIER_PRICING, calculatePlatformFee, getChargedTier } from '../lib/subscription';
 import {
   submitCustomTask, getApprovedCustomTasks, getAreaPriceRange, type AreaPriceRange,
-  getQuotingDefaults, saveCostBasis, saveDefaultMarginPct, DEFAULT_MARGIN_PCT,
+  getQuotingDefaults, saveCostBasis, saveQuotingRates,
+  DEFAULT_MARGIN_PCT, DEFAULT_MATERIALS_MARKUP_PCT,
 } from '../lib/pricingHelper';
 import CostBasisFields from './CostBasisFields';
 import MarginCheckPanel from './MarginCheckPanel';
@@ -267,7 +268,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   // shared total (hours only, not multiplied). Tradie picks per quote.
   const [hoursMode, setHoursMode] = useState<'perCleaner' | 'combined'>('perCleaner');
   const [marginPct, setMarginPct] = useState(String(DEFAULT_MARGIN_PCT));
-  const [markupPct, setMarkupPct] = useState('20');
+  const [markupPct, setMarkupPct] = useState(String(DEFAULT_MATERIALS_MARKUP_PCT));
   const [callOut, setCallOut] = useState('');
 
   const [history, setHistory] = useState<{ price: number; title: string; date: string | null }[]>([]);
@@ -319,15 +320,18 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   // connection the fetch can land after they've typed a wage, and the saved
   // values must not overwrite what is on screen.
   const costTouchedRef = useRef(false);
-  const marginTouchedRef = useRef(false);
+  const ratesTouchedRef = useRef(false);
   useEffect(() => {
     if (!user?.id) return;
     let live = true;
     getQuotingDefaults(user.id)
-      .then(({ basis, marginPct: saved }) => {
+      .then(({ basis, marginPct: savedMargin, materialsMarkupPct: savedMarkup }) => {
         if (!live) return;
         if (!costTouchedRef.current) setCostBasis(basis);
-        if (!marginTouchedRef.current) setMarginPct(String(saved));
+        if (!ratesTouchedRef.current) {
+          setMarginPct(String(savedMargin));
+          setMarkupPct(String(savedMarkup));
+        }
       })
       .catch(() => { /* advisory only */ });
     return () => { live = false; };
@@ -339,8 +343,13 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   }, []);
 
   const editMarginPct = useCallback((next: string) => {
-    marginTouchedRef.current = true;
+    ratesTouchedRef.current = true;
     setMarginPct(next);
+  }, []);
+
+  const editMarkupPct = useCallback((next: string) => {
+    ratesTouchedRef.current = true;
+    setMarkupPct(next);
   }, []);
 
   // Auto travel distance from the tradie's base to the client.
@@ -650,13 +659,16 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
   const applyResult = () => {
     if (!result || !priced) return;
 
-    // Remember the margin they actually quoted at, so the next quote opens on it.
+    // Remember the rates they actually quoted at, so the next quote opens on them.
     // Applying is the commit point on purpose: saving on every keystroke would
     // turn a one-off mate's-rates experiment into their standing default.
     // Fire-and-forget — a failed preference write must not block the apply.
-    if (user?.id && marginTouchedRef.current) {
-      const pct = Number(marginPct);
-      if (Number.isFinite(pct)) void saveDefaultMarginPct(user.id, pct);
+    if (user?.id && ratesTouchedRef.current) {
+      const margin = Number(marginPct);
+      const markup = Number(markupPct);
+      if (Number.isFinite(margin) && Number.isFinite(markup)) {
+        void saveQuotingRates(user.id, { marginPct: margin, materialsMarkupPct: markup });
+      }
     }
 
     const dur = durationLabel(Number(durHours) || 0, Number(durMins) || 0);
@@ -988,8 +1000,8 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                   </div>
                   <div>
                     <label className="block text-[0.6875rem] text-ct-mute mb-0.5">Materials markup %</label>
-                    <input type="number" min="0" value={markupPct} onChange={(e) => setMarkupPct(e.target.value)} className={`w-full ${numInput}`} />
-                    <p className={rateHint}>Added to what the materials cost you.</p>
+                    <input type="number" min="0" value={markupPct} onChange={(e) => editMarkupPct(e.target.value)} className={`w-full ${numInput}`} />
+                    <p className={rateHint}>Added to what the materials cost you. Remembered for your next quote, like the margin.</p>
                   </div>
                   <div>
                     <label className="block text-[0.6875rem] text-ct-mute mb-0.5">Call-out $</label>
