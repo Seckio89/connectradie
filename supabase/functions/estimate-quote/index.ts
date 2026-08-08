@@ -106,6 +106,17 @@ interface Estimate {
   assumptions: string[];
   sharpeningQuestions: string[];
   note?: string;
+  /**
+   * Why the AI path was skipped, when it was. Present ONLY on a fallback, so the
+   * client can say so plainly instead of leaving the tradie to infer it from a
+   * one-word "estimate" badge. A silent fallback reads as a working AI estimate
+   * that simply lacked confidence — which is exactly the wrong conclusion.
+   *
+   * no_api_key — ANTHROPIC_API_KEY is not set on this function (a deploy/config
+   *              problem; the AI has never run).
+   * ai_error   — the key is set but the call failed (see the logged error).
+   */
+  fallbackReason?: "no_api_key" | "ai_error";
 }
 
 // Physical estimate the AI/heuristic produces; money is computed from it.
@@ -461,14 +472,24 @@ Deno.serve(async (req: Request) => {
 
     let work: WorkEstimate;
     let source: "ai" | "estimate" = "estimate";
+    let fallbackReason: Estimate["fallbackReason"];
     if (apiKey) {
       try { work = await aiWork(body, apiKey); source = "ai"; }
-      catch (aiErr) { console.warn("estimate-quote: AI path failed, heuristic fallback", aiErr); work = heuristicWork(body); }
+      catch (aiErr) {
+        // error, not warn: this is a degraded estimate reaching a real tradie,
+        // and it was previously indistinguishable from a working AI run.
+        console.error("estimate-quote: AI path failed, heuristic fallback", aiErr);
+        fallbackReason = "ai_error";
+        work = heuristicWork(body);
+      }
     } else {
+      console.error("estimate-quote: ANTHROPIC_API_KEY is not set — every estimate is falling back to the heuristic");
+      fallbackReason = "no_api_key";
       work = heuristicWork(body);
     }
 
     const result = priceFrom(work, e, body, source);
+    if (fallbackReason) result.fallbackReason = fallbackReason;
 
     // Record this run in the audit ledger (best-effort). Every AI estimate is
     // logged here regardless of funding source.
