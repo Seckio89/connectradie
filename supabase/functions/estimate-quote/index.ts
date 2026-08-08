@@ -491,20 +491,32 @@ Deno.serve(async (req: Request) => {
     const result = priceFrom(work, e, body, source);
     if (fallbackReason) result.fallbackReason = fallbackReason;
 
-    // Record this run in the audit ledger (best-effort). Every AI estimate is
-    // logged here regardless of funding source.
-    try {
-      await supabase.from("ai_estimate_usage").insert({
-        profile_id: user.id,
-        used_photos: Array.isArray(body.images) && body.images.length > 0,
-      });
-    } catch (recErr) {
-      console.warn("estimate-quote: usage record failed", recErr);
+    // Charge for the AI, and only for the AI.
+    //
+    // Everything below used to run unconditionally — after the try/catch above
+    // had already swallowed an AI failure. So a heuristic fallback still spent a
+    // monthly credit AND a paid pack credit, and the client still counted down.
+    // A free tradie could burn all ten of the month's credits on heuristic output
+    // and then be locked out, having never once received an AI estimate. The
+    // heuristic costs us nothing to run, and is not what the credit is sold for.
+    const aiRan = source === "ai";
+
+    // This ledger IS the meter — the monthly allowance is a COUNT of these rows
+    // (see the gate above), so an extra row is a spent credit, not just a note.
+    if (aiRan) {
+      try {
+        await supabase.from("ai_estimate_usage").insert({
+          profile_id: user.id,
+          used_photos: Array.isArray(body.images) && body.images.length > 0,
+        });
+      } catch (recErr) {
+        console.warn("estimate-quote: usage record failed", recErr);
+      }
     }
 
-    // Only draw down a bonus pack credit once the estimate actually succeeded,
-    // and only when the month's free allowance is spent. Atomic + race-safe.
-    if (usageLimit != null && fundedBy === "pack") {
+    // Pack credits are bought with real money, so the bar is the same: the AI
+    // actually ran, and the month's free allowance is already spent.
+    if (aiRan && usageLimit != null && fundedBy === "pack") {
       try {
         const { data: consumed } = await supabase.rpc("consume_estimate_pack_credit", { p_profile_id: user.id });
         if (consumed) packRemaining = Math.max(0, packRemaining - 1);
@@ -518,7 +530,8 @@ Deno.serve(async (req: Request) => {
       : {
           unlimited: false,
           limit: usageLimit,
-          monthlyRemaining: Math.max(0, usageLimit - (usageUsed + 1)),
+          // Don't count a credit that wasn't spent — the UI renders this directly.
+          monthlyRemaining: Math.max(0, usageLimit - (usageUsed + (aiRan ? 1 : 0))),
           packRemaining,
         };
 
