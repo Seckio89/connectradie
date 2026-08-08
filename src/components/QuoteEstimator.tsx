@@ -998,7 +998,7 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
                   <div>
                     <label className="block text-[0.6875rem] text-ct-mute mb-0.5">Margin %</label>
                     <input type="number" min="0" value={marginPct} onChange={(e) => editMarginPct(e.target.value)} className={`w-full ${numInput}`} />
-                    <p className={rateHint}>Added on top of everything — hours, materials and call-out. Leave at 0 if your rate already includes your profit. Whatever you use here is remembered for your next quote.</p>
+                    <p className={rateHint}>Added on top of everything — hours, materials and call-out. This is the one that raises what the client pays; the profit figure under Your costs only sets the bar the check measures against. Leave at 0 if your rate already includes your profit. Whatever you use here is remembered for your next quote.</p>
                   </div>
                   <div>
                     <label className="block text-[0.6875rem] text-ct-mute mb-0.5">Materials markup %</label>

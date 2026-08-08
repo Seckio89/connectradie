@@ -247,7 +247,7 @@ export function marginStatusHint(check: MarginCheck): string {
     case 'thin':
       return 'This job pays for itself, with little left over. If it runs long, you start losing money.';
     case 'healthy':
-      return 'This job pays your wage, your overheads and your profit target.';
+      return 'This job pays your wage, your overheads and the profit you set out to make.';
   }
 }
 
