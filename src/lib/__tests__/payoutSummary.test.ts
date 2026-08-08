@@ -111,7 +111,7 @@ describe('buildPayoutSummary', () => {
 
     expect(s.awaitingClient).toBe(0);
     expect(s.transit.amount).toBe(9_000);
-    expect(s.transit.title).toBe('Ready to pay out');
+    expect(s.transit.title).toBe('On its way to your bank');
   });
 
   it('adds GST to the balance credit and never returns a negative row', () => {
@@ -152,16 +152,19 @@ describe('transit row wording', () => {
 
     expect(s.transit.amount).toBe(450);
     expect(s.transit.title).toBe('On its way to your bank');
-    expect(s.transit.detail).toBe('$3.50 cleared and waiting · $1.00 still clearing');
+    expect(s.transit.detail).toBe('$3.50 cleared, going out on the next payout run · $1.00 still clearing');
     // The old title must not appear alongside a "still clearing" detail.
     expect(s.transit.title).not.toBe('Ready to pay out');
   });
 
-  it('still says "Ready to pay out" when the whole amount is cleared', () => {
+  it('says a cleared manual-schedule balance is moving, because the sweep moves it', () => {
+    // It used to read "Ready to pay out / Cleared and waiting — not sent to
+    // your bank yet": true at the time, and an instruction the tradie had no
+    // way to follow. sweep-connect-balance sends it.
     const s = buildPayoutSummary({ ...base, availableCents: 450 });
 
-    expect(s.transit.title).toBe('Ready to pay out');
-    expect(s.transit.detail).toBe('Cleared and waiting — not sent to your bank yet');
+    expect(s.transit.title).toBe('On its way to your bank');
+    expect(s.transit.detail).toBe('Cleared — going out on the next payout run');
   });
 
   it('every figure in the detail is accounted for on a mixed scheduled account', () => {

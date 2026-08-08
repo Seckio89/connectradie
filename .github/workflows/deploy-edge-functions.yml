@@ -1,0 +1,179 @@
+name: Deploy Edge Functions
+
+# Merging to master now deploys edge functions. Before this existed, merging a
+# PR deployed NOTHING — there was no job and no SUPABASE_ACCESS_TOKEN secret —
+# so every function change needed a manual deploy, and #268 shipped a fix to a
+# shared module (_shared/escrowReserve.ts) that ran in production in two
+# versions until someone noticed and redeployed the other two consumers by
+# hand. A money-path helper must not depend on somebody remembering.
+#
+# Scope rules:
+#   • A change under a function's own directory deploys just that function.
+#   • A change to _shared/, supabase/config.toml, or this workflow deploys ALL
+#     functions — _shared is bundled into every consumer at deploy time, so a
+#     partial deploy is exactly the two-versions-in-production failure above.
+#   • workflow_dispatch takes a space-separated list of names, or "all".
+#
+# verify_jwt comes from supabase/config.toml. Functions not listed there
+# deploy at the CLI default of true; every production function that needs
+# false is pinned there — see the "verify_jwt pins" section. Do not pass
+# --no-verify-jwt here.
+#
+# Deploys never DELETE: removing a function's directory leaves the deployed
+# copy live until someone runs `supabase functions delete <name>`. The
+# `check:edge-drift` step in ci.yml surfaces that drift once this same secret
+# is set.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "supabase/functions/**"
+      - "supabase/config.toml"
+      - ".github/workflows/deploy-edge-functions.yml"
+  workflow_dispatch:
+    inputs:
+      functions:
+        description: 'Space-separated function names to deploy, or "all"'
+        required: false
+        default: "all"
+
+# One deploy at a time, in order. Two merges racing could interleave per-
+# function deploys and leave production a mix of both commits; queueing keeps
+# each deploy atomic. Never cancel a deploy mid-flight — half-deployed is the
+# worst state.
+concurrency:
+  group: deploy-edge-functions
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      # Not a secret — the production ref is already in ci.yml and CLAUDE.md.
+      PROJECT_REF: uoqygmizupdpanplpvor
+    steps:
+      # Fail LOUDLY without the token — no continue-on-error, no silent skip.
+      # A deploy job that quietly does nothing recreates the exact gap it
+      # exists to close, with a green checkmark on top. (The informational
+      # drift job in ci.yml skips instead; that one only reports.)
+      - name: Require SUPABASE_ACCESS_TOKEN
+        if: ${{ env.SUPABASE_ACCESS_TOKEN == '' }}
+        run: |
+          echo "::error::SUPABASE_ACCESS_TOKEN is not set, so this merge did NOT deploy edge functions. Create a personal access token at https://supabase.com/dashboard/account/tokens and add it as a repository Actions secret named SUPABASE_ACCESS_TOKEN, then re-run this workflow."
+          exit 1
+
+      - uses: actions/checkout@v4
+        with:
+          # The plan step diffs against the pre-push head to find changed
+          # functions, which needs more than the default single commit.
+          fetch-depth: 0
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Work out what to deploy
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED: ${{ inputs.functions }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          emit() { echo "mode=$1" >> "$GITHUB_OUTPUT"; echo "list=${2:-}" >> "$GITHUB_OUTPUT"; }
+
+          # Only directories that exist with an entrypoint are deployable —
+          # this also drops functions whose directory this push deleted.
+          deployable() {
+            while read -r name; do
+              [ -n "$name" ] || continue
+              if [ -f "supabase/functions/$name/index.ts" ]; then
+                echo "$name"
+              else
+                echo "::warning::Skipping '$name' — no supabase/functions/$name/index.ts" >&2
+              fi
+            done
+          }
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ -z "$REQUESTED" ] || [ "$REQUESTED" = "all" ]; then
+              emit all
+            else
+              LIST=$(echo "$REQUESTED" | tr ' ' '\n' | deployable | tr '\n' ' ')
+              [ -n "${LIST// /}" ] || { echo "::error::None of the requested functions exist in supabase/functions/"; exit 1; }
+              emit list "$LIST"
+            fi
+            exit 0
+          fi
+
+          # Force-push or missing base (e.g. first push) → can't scope the
+          # diff, deploy everything. Over-deploying is idempotent; under-
+          # deploying is the two-versions failure.
+          if [ -z "$BEFORE_SHA" ] || ! git cat-file -e "$BEFORE_SHA" 2>/dev/null; then
+            echo "Base commit unavailable — deploying all functions."
+            emit all
+            exit 0
+          fi
+
+          CHANGED=$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA")
+
+          if echo "$CHANGED" | grep -qE '^supabase/functions/_shared/|^supabase/config\.toml$|^\.github/workflows/deploy-edge-functions\.yml$'; then
+            echo "_shared, config.toml or this workflow changed — deploying all functions."
+            emit all
+            exit 0
+          fi
+
+          LIST=$(echo "$CHANGED" \
+            | grep -oE '^supabase/functions/[^/]+/' \
+            | sed -E 's#^supabase/functions/([^/]+)/#\1#' \
+            | sort -u \
+            | deployable \
+            | tr '\n' ' ')
+
+          if [ -z "${LIST// /}" ]; then
+            echo "No deployable function changed (e.g. tests or a deleted directory)."
+            emit none
+          else
+            emit list "$LIST"
+          fi
+
+      - name: Deploy
+        if: ${{ steps.plan.outputs.mode != 'none' }}
+        env:
+          MODE: ${{ steps.plan.outputs.mode }}
+          LIST: ${{ steps.plan.outputs.list }}
+        run: |
+          set -euo pipefail
+          # --use-api bundles remotely (same path the dashboard uses) — no
+          # Docker pull, and identical output to the manual deploys done to
+          # date. Per-function verify_jwt is read from supabase/config.toml.
+          if [ "$MODE" = "all" ]; then
+            echo "Deploying ALL functions"
+            supabase functions deploy --project-ref "$PROJECT_REF" --use-api
+          else
+            echo "Deploying: $LIST"
+            for fn in $LIST; do
+              echo "── $fn ──"
+              supabase functions deploy "$fn" --project-ref "$PROJECT_REF" --use-api
+            done
+          fi
+
+      - name: Summary
+        if: ${{ always() && steps.plan.outputs.mode }}
+        env:
+          MODE: ${{ steps.plan.outputs.mode }}
+          LIST: ${{ steps.plan.outputs.list }}
+        run: |
+          {
+            echo "## Edge function deploy"
+            case "$MODE" in
+              all)  echo "Deployed **all** functions to \`$PROJECT_REF\`." ;;
+              none) echo "Nothing to deploy — no function directory changed." ;;
+              *)    echo "Deployed to \`$PROJECT_REF\`:"; for fn in $LIST; do echo "- \`$fn\`"; done ;;
+            esac
+          } >> "$GITHUB_STEP_SUMMARY"

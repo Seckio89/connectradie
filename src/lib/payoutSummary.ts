@@ -154,22 +154,26 @@ function transitCopy(args: {
   }
 
   if (freeAvailable > 0) {
-    // Only title the row "Ready to pay out" when the WHOLE amount is ready.
-    // With money in both states it read "$4.50 — Ready to pay out / Cleared and
-    // waiting · $1.00 still clearing", claiming $4.50 was cleared and
-    // contradicting itself in the next breath. Name each part instead.
+    // Money in both states gets both named. It used to read "$4.50 — Ready to
+    // pay out / Cleared and waiting · $1.00 still clearing", claiming $4.50 was
+    // cleared and contradicting itself in the next breath.
     if (freeClearing > 0) {
       return {
         title: 'On its way to your bank',
         detail: `${fmt(freeAvailable)} ${
-          isManualSchedule ? 'cleared and waiting' : 'cleared, on your next payout'
+          isManualSchedule ? 'cleared, going out on the next payout run' : 'cleared, on your next payout'
         } · ${fmt(freeClearing)} still clearing`,
       };
     }
+    // A manual-schedule account used to read "Ready to pay out / Cleared and
+    // waiting — not sent to your bank yet", which put the ball in the tradie's
+    // court over money they had no way to move: standard payouts are free, the
+    // instant button is gated below a minimum, and nothing else would send it.
+    // sweep-connect-balance now does, every six hours, so say so.
     return {
-      title: isManualSchedule ? 'Ready to pay out' : 'Scheduled for your next payout',
+      title: isManualSchedule ? 'On its way to your bank' : 'Scheduled for your next payout',
       detail: isManualSchedule
-        ? 'Cleared and waiting — not sent to your bank yet'
+        ? 'Cleared — going out on the next payout run'
         : 'Will be sent on your next scheduled payout',
     };
   }

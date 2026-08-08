@@ -67,7 +67,15 @@ for (const f of files) {
   if (!seen.has(v)) seen.set(v, []);
   seen.get(v).push(f);
 }
-const highest = files.length ? files[files.length - 1].slice(0, 14) : '0';
+// Rule 3 orders new migrations against HISTORY, not against each other. Taking
+// the highest version on disk broke the moment a change added two migrations:
+// the earlier of the two sorts below the later one, which is exactly what it
+// should do, and the check called it a problem. Comparing against the highest
+// GRANDFATHERED version keeps the property that matters — every new migration
+// replays after everything already applied — while letting a change add more
+// than one. Uniqueness between the new arrivals is rule 2's job.
+const existing = files.filter((f) => baseline.has(f));
+const highest = existing.length ? existing[existing.length - 1].slice(0, 14) : '0';
 
 const problems = [];
 
@@ -124,7 +132,7 @@ for (const f of files) {
   // 3. A new migration sorting below an existing one replays in the wrong
   //    order on a rebuild, and is skipped entirely on a database already past
   //    that point.
-  if (v < highest && !seen.get(highest).includes(f)) {
+  if (v < highest && !(seen.get(highest) ?? []).includes(f)) {
     problems.push({
       file: f,
       why: `version ${v} sorts below the newest existing migration (${highest})`,

@@ -5,7 +5,7 @@ Escrow via Stripe Connect (Stripe holds funds, NOT us — AFSL compliance critic
 
 ## Stack
 - React 18 · TypeScript strict · Tailwind CSS · Vite
-- Supabase: PostgreSQL + 75 Edge Functions (Deno) + RLS
+- Supabase: PostgreSQL + 76 Edge Functions (Deno) + RLS
 - Stripe Connect escrow · Google Maps API · Sentry
 
 ## Key Directories
@@ -15,11 +15,11 @@ src/components/     # 90+ components
 src/hooks/          # useAvailabilitySlots, useDashboardJobs, useToast, etc.
 src/lib/            # Supabase client, notifications, analytics, email templates
 src/contexts/       # AuthContext.tsx
-supabase/functions/ # 75 Edge Functions
+supabase/functions/ # 76 Edge Functions
 supabase/migrations/# 70+ migrations — never edit existing, always add new
 ```
 
-## Edge Functions (75)
+## Edge Functions (76)
 accept-and-pay · access-pin · adjust-quote-price ·
 analyse-description-keywords · approve-invoice · approve-price-reduction ·
 approve-variation · auto-confirm-sessions · auto-release-payments ·
@@ -43,8 +43,8 @@ send-recurring-reminders · send-scheduled-notifications · send-sms ·
 setup-becs-payment · stripe-checkout · stripe-connect-account ·
 stripe-connect-onboarding · stripe-identity-verification ·
 stripe-payout-settings · stripe-webhook · submit-final-quote ·
-sync-google-calendar · verify-abn · verify-license · verify-payment ·
-worker-claim-profile · worker-invite
+sweep-connect-balance · sync-google-calendar · verify-abn · verify-license ·
+verify-payment · worker-claim-profile · worker-invite
 
 Shared helpers live in `supabase/functions/_shared/` (not a function).
 
@@ -55,7 +55,12 @@ npm run build                      # production build (vite does NOT type-check)
 npm run typecheck                  # type check — run after every change
 npm run test:run                   # vitest (add --no-file-parallelism if flaky)
 supabase functions serve           # local edge function test
-supabase functions deploy <name>   # deploy single function
+supabase functions deploy <name>   # manual deploy of a single function
+# Edge functions auto-deploy on merge to master (.github/workflows/
+# deploy-edge-functions.yml): changed functions only; a _shared/ or
+# config.toml change deploys all. Needs the SUPABASE_ACCESS_TOKEN repo
+# secret. verify_jwt comes from supabase/config.toml — pin any new
+# public function there or CI flips it to 401.
 supabase db push                   # apply migrations
 
 # Regenerate DB types after any migration (writes src/types/supabase.ts):
