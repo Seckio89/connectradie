@@ -40,6 +40,8 @@ interface QuoteEstimatorProps {
 
 interface WorkEstimate {
   source: 'ai' | 'estimate';
+  /** Set only when the AI was skipped — see the field's note in the edge function. */
+  fallbackReason?: 'no_api_key' | 'ai_error';
   hours: number;
   materialsCost: number;
   confidence: 'low' | 'medium' | 'high';
@@ -1130,10 +1132,34 @@ export default function QuoteEstimator({ onApply, contact }: QuoteEstimatorProps
       {/* Result — editable line items */}
       {result && priced && (
         <div className="bg-ct-surface border border-ct-line rounded-ct-sm p-3 space-y-2">
+          {/* The AI didn't run. Say so: a silent fallback looks identical to a
+              working AI estimate that merely lacked confidence, which sends the
+              tradie off adding quantities that can never lift it past medium.
+              Amber — this is a state a person needs to know about, not a failure
+              of the quote itself. Body text is ct-mute-2: ct-mute fails AA over
+              a dim tint on a card. */}
+          {result.source !== 'ai' && (
+            <div className="flex items-start gap-2 rounded-ct-sm bg-ct-amber/[0.13] border border-ct-amber/30 px-3 py-2">
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-ct-amber" />
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-ct-amber">Priced from your rates, not the AI</p>
+                <p className="mt-0.5 text-[0.6875rem] leading-snug text-ct-mute-2">
+                  The AI estimator didn't run, so these hours come from standard time-per-room figures
+                  rather than your photos, notes and past quotes. The money is still built from your own
+                  rates — but treat the hours as a rough guide, and note that confidence can't get past
+                  medium this way.
+                  {result.fallbackReason === 'no_api_key'
+                    ? ' This one is a setup problem on our end, not something you can fix from here.'
+                    : ' It may just be a hiccup — try Estimate again in a moment.'}
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5">
               <span className={`px-2 py-0.5 rounded-full text-[0.6875rem] font-medium ${CONF_CHIP[result.confidence]}`}>{result.confidence} confidence</span>
-              <span className="text-[0.6875rem] text-ct-mute">{result.source === 'ai' ? 'AI' : 'estimate'}</span>
+              <span className="text-[0.6875rem] text-ct-mute">{result.source === 'ai' ? 'AI' : 'from your rates'}</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-ct-mute">
               <span>Hours{visits > 1 ? '/visit' : ''}</span>

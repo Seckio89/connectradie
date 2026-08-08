@@ -8,9 +8,11 @@
     "npm:@capacitor/browser@^8.0.3": "8.0.4_@capacitor+core@8.4.2",
     "npm:@capacitor/cli@^8.4.0": "8.4.2",
     "npm:@capacitor/core@^8.4.0": "8.4.2",
+    "npm:@capacitor/filesystem@^8.1.2": "8.1.2_@capacitor+core@8.4.2",
     "npm:@capacitor/haptics@^8.0.2": "8.0.2_@capacitor+core@8.4.2",
     "npm:@capacitor/keyboard@^8.0.3": "8.0.5_@capacitor+core@8.4.2",
     "npm:@capacitor/push-notifications@^8.1.1": "8.1.2_@capacitor+core@8.4.2",
+    "npm:@capacitor/share@^8.0.1": "8.0.1_@capacitor+core@8.4.2",
     "npm:@capacitor/splash-screen@^8.0.1": "8.0.2_@capacitor+core@8.4.2",
     "npm:@capacitor/status-bar@^8.0.2": "8.0.3_@capacitor+core@8.4.2",
     "npm:@codetrix-studio/capacitor-google-auth@^3.4.0-rc.4": "3.4.0-rc.4_@capacitor+core@8.4.2",
@@ -298,6 +300,13 @@
         "tslib"
       ]
     },
+    "@capacitor/filesystem@8.1.2_@capacitor+core@8.4.2": {
+      "integrity": "sha512-doaaMfGoFR2hWU6aV6u83I+5ZsGyJVq+Gz4r9lMpJzUKMm1eMu0hLnFdV1aXZlU9FlK/RndFrVD8oRZfNOqWgQ==",
+      "dependencies": [
+        "@capacitor/core",
+        "@capacitor/synapse"
+      ]
+    },
     "@capacitor/haptics@8.0.2_@capacitor+core@8.4.2": {
       "integrity": "sha512-c2hZzRR5Fk1tbTvhG1jhh2XBAf3EhnIerMIb2sl7Mt41Gxx1fhBJFDa0/BI1IbY4loVepyyuqNC9820/GZuoWQ==",
       "dependencies": [
@@ -316,6 +325,12 @@
         "@capacitor/core"
       ]
     },
+    "@capacitor/share@8.0.1_@capacitor+core@8.4.2": {
+      "integrity": "sha512-3cSBKBCJVon54rKDROP2rqGyeGks4pBh9TbaEk9S375Kbek/ZHe72N50zIa0Vn9Eac/SuhwgehO/mmA4CsUOiw==",
+      "dependencies": [
+        "@capacitor/core"
+      ]
+    },
     "@capacitor/splash-screen@8.0.2_@capacitor+core@8.4.2": {
       "integrity": "sha512-0C6rYScr13WfAE9nPl4ScOQynmjFv9NT3Th+RZkD4ezYHmER6mcl1/lDYsv7jg3Rj3FOvLrlTlmNkUrr83kZzQ==",
       "dependencies": [
@@ -327,6 +342,9 @@
       "dependencies": [
         "@capacitor/core"
       ]
+    },
+    "@capacitor/synapse@1.0.4": {
+      "integrity": "sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw=="
     },
     "@codetrix-studio/capacitor-google-auth@3.4.0-rc.4_@capacitor+core@8.4.2": {
       "integrity": "sha512-d548/xKrbMHHbzMYSWnlgZCLZYo2zzY7Onrh3x8ujojrb7atkNK68I6su5WgmaBt4E+R4gxBsWams4554aOFjA==",
@@ -3709,9 +3727,11 @@
         "npm:@capacitor/browser@^8.0.3",
         "npm:@capacitor/cli@^8.4.0",
         "npm:@capacitor/core@^8.4.0",
+        "npm:@capacitor/filesystem@^8.1.2",
         "npm:@capacitor/haptics@^8.0.2",
         "npm:@capacitor/keyboard@^8.0.3",
         "npm:@capacitor/push-notifications@^8.1.1",
+        "npm:@capacitor/share@^8.0.1",
         "npm:@capacitor/splash-screen@^8.0.1",
         "npm:@capacitor/status-bar@^8.0.2",
         "npm:@codetrix-studio/capacitor-google-auth@^3.4.0-rc.4",
