@@ -146,10 +146,21 @@ export async function deleteQuoteTemplate(id: string): Promise<{ ok: boolean }> 
  */
 export const DEFAULT_MARGIN_PCT = 15;
 
+/** Same story as DEFAULT_MARGIN_PCT: the estimator's previous hardcoded value. */
+export const DEFAULT_MATERIALS_MARKUP_PCT = 20;
+
 export interface QuotingDefaults {
   basis: CostBasis;
   /** Charge-side margin %, remembered from the last quote the tradie applied. */
   marginPct: number;
+  /** Charge-side materials markup %, remembered the same way. */
+  materialsMarkupPct: number;
+}
+
+/** The charge-side defaults, edited together on the Quoting rates card. */
+export interface QuotingRates {
+  marginPct: number;
+  materialsMarkupPct: number;
 }
 
 /**
@@ -161,11 +172,17 @@ export interface QuotingDefaults {
 export async function getQuotingDefaults(tradieId: string): Promise<QuotingDefaults> {
   const { data, error } = await supabase
     .from('tradie_cost_settings')
-    .select('staff_wage_cents, labour_burden_pct, overhead_recovery_pct, profit_target_pct, minimum_job_value_cents, default_margin_pct')
+    .select('staff_wage_cents, labour_burden_pct, overhead_recovery_pct, profit_target_pct, minimum_job_value_cents, default_margin_pct, default_materials_markup_pct')
     .eq('tradie_id', tradieId)
     .maybeSingle();
 
-  if (error || !data) return { basis: COST_BASIS_DEFAULTS, marginPct: DEFAULT_MARGIN_PCT };
+  if (error || !data) {
+    return {
+      basis: COST_BASIS_DEFAULTS,
+      marginPct: DEFAULT_MARGIN_PCT,
+      materialsMarkupPct: DEFAULT_MATERIALS_MARKUP_PCT,
+    };
+  }
 
   return {
     basis: {
@@ -175,9 +192,11 @@ export async function getQuotingDefaults(tradieId: string): Promise<QuotingDefau
       profitTargetPct: data.profit_target_pct ?? COST_BASIS_DEFAULTS.profitTargetPct,
       minimumJobValueCents: data.minimum_job_value_cents ?? COST_BASIS_DEFAULTS.minimumJobValueCents,
     },
-    // ?? not ||: 0 is a legitimate saved margin (an hourly rate that already
-    // carries the profit), and must not fall through to 15.
+    // ?? not ||: 0 is a legitimate saved value for both (an hourly rate that
+    // already carries the profit; materials passed through at cost), and must
+    // not fall through to the defaults.
     marginPct: data.default_margin_pct ?? DEFAULT_MARGIN_PCT,
+    materialsMarkupPct: data.default_materials_markup_pct ?? DEFAULT_MATERIALS_MARKUP_PCT,
   };
 }
 
@@ -201,10 +220,34 @@ export async function getCostBasis(tradieId: string): Promise<CostBasis> {
 export async function saveDefaultMarginPct(tradieId: string, marginPct: number): Promise<{ ok: boolean }> {
   if (!Number.isFinite(marginPct)) return { ok: false };
   const { error } = await supabase.from('tradie_cost_settings').upsert(
-    { tradie_id: tradieId, default_margin_pct: Math.min(200, Math.max(0, marginPct)) },
+    { tradie_id: tradieId, default_margin_pct: clampPct(marginPct) },
     { onConflict: 'tradie_id' },
   );
   return { ok: !error };
+}
+
+const clampPct = (n: number): number => Math.min(200, Math.max(0, n));
+
+/**
+ * Save both charge-side rates together, for the Quoting rates card. Same partial
+ * upsert as saveDefaultMarginPct: naming only these columns leaves the cost basis
+ * on an existing row untouched, and lets a first-time row take the table's own
+ * defaults for the rest.
+ */
+export async function saveQuotingRates(tradieId: string, rates: QuotingRates): Promise<{ ok: boolean; error?: string }> {
+  if (!Number.isFinite(rates.marginPct) || !Number.isFinite(rates.materialsMarkupPct)) {
+    return { ok: false, error: 'Enter both percentages as numbers.' };
+  }
+  const { error } = await supabase.from('tradie_cost_settings').upsert(
+    {
+      tradie_id: tradieId,
+      default_margin_pct: clampPct(rates.marginPct),
+      default_materials_markup_pct: clampPct(rates.materialsMarkupPct),
+    },
+    { onConflict: 'tradie_id' },
+  );
+  if (error) return { ok: false, error: 'Could not save your rates. Check the figures and try again.' };
+  return { ok: true };
 }
 
 /** Upsert the cost basis. One row per tradie, keyed on the UNIQUE tradie_id. */

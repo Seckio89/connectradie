@@ -22,6 +22,7 @@ import type { Update } from '../types/database';
 import { ALL_TRADES, TOP_10_TRADES, normalizeTradeName, AUSTRALIAN_STATES, getLicensingRequirements, isLicenseRequiredForTrade, type AustralianState } from '../lib/licensingRequirements';
 import SearchableSelect from './SearchableSelect';
 import CostBasisSettingsCard from './CostBasisSettingsCard';
+import QuotingRatesCard from './QuotingRatesCard';
 
 type TeamSize = 'Solo' | 'Small Team (2-5)' | 'Large Team (6+)';
 
@@ -85,9 +86,8 @@ export default function TradieProfessionalSettings() {
   const [autoCompleteSessions, setAutoCompleteSessions] = useState(true);
   const [teamSize, setTeamSize] = useState<TeamSize | ''>('');
   const [timezone, setTimezone] = useState('Australia/Sydney');
-  const [callOutFee, setCallOutFee] = useState('');
-  const [showCalloutFee, setShowCalloutFee] = useState(true);
-  const [calloutFeeWaived, setCalloutFeeWaived] = useState(false);
+  // call_out_fee and its two visibility flags used to be held here and written
+  // back on save with no input to change them. QuotingRatesCard owns the fee now.
   const [bio, setBio] = useState('');
   const [isGstRegistered, setIsGstRegistered] = useState(false);
 
@@ -131,9 +131,6 @@ export default function TradieProfessionalSettings() {
       setAutoCompleteSessions(profile.auto_complete_sessions ?? true);
       setTeamSize((profile.team_size as TeamSize) || '');
       setTimezone(profile.timezone || 'Australia/Sydney');
-      setCallOutFee(profile.call_out_fee ? String(profile.call_out_fee) : '');
-      setShowCalloutFee(profile.show_callout_fee ?? true);
-      setCalloutFeeWaived(profile.callout_fee_waived_on_proceed ?? false);
       setBio(profile.bio || '');
       setIsGstRegistered(profile.is_gst_registered || false);
     }
@@ -199,9 +196,12 @@ export default function TradieProfessionalSettings() {
       auto_complete_sessions: autoCompleteSessions,
       team_size: teamSize || null,
       timezone: timezone || 'Australia/Sydney',
-      call_out_fee: callOutFee ? parseInt(callOutFee, 10) : null,
-      show_callout_fee: showCalloutFee,
-      callout_fee_waived_on_proceed: calloutFeeWaived,
+      // call_out_fee is owned by QuotingRatesCard below. It used to be written
+      // back here from state loaded on mount, with no input anywhere to change
+      // it — so saving this form after editing the fee would have restored the
+      // stale value. Two writers, one of them blind; this form is no longer one.
+      // show_callout_fee / callout_fee_waived_on_proceed have no editor either,
+      // and are left untouched rather than round-tripped for the same reason.
       bio: bio || null,
       is_gst_registered: isGstRegistered,
     };
@@ -661,6 +661,8 @@ export default function TradieProfessionalSettings() {
           </div>
         </div>
       </div>
+
+      <QuotingRatesCard />
 
       <CostBasisSettingsCard />
 

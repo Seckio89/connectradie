@@ -5539,6 +5539,7 @@ export type Database = {
         Row: {
           created_at: string
           default_margin_pct: number
+          default_materials_markup_pct: number
           id: string
           labour_burden_pct: number
           minimum_job_value_cents: number
@@ -5551,6 +5552,7 @@ export type Database = {
         Insert: {
           created_at?: string
           default_margin_pct?: number
+          default_materials_markup_pct?: number
           id?: string
           labour_burden_pct?: number
           minimum_job_value_cents?: number
@@ -5563,6 +5565,7 @@ export type Database = {
         Update: {
           created_at?: string
           default_margin_pct?: number
+          default_materials_markup_pct?: number
           id?: string
           labour_burden_pct?: number
           minimum_job_value_cents?: number
