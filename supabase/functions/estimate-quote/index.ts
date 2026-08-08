@@ -468,7 +468,9 @@ Deno.serve(async (req: Request) => {
     }
 
     const e = econ(body.economics);
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+    // Trim: a key pasted into the dashboard with a stray newline makes fetch()
+    // throw on the header value for every request — invisible in the secrets UI.
+    const apiKey = Deno.env.get("ANTHROPIC_API_KEY")?.trim() || undefined;
 
     let work: WorkEstimate;
     let source: "ai" | "estimate" = "estimate";
