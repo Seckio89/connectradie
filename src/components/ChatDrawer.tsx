@@ -8,6 +8,7 @@ import { proseInputProps } from '../lib/proseInput';
 import AddressAutocomplete from './AddressAutocomplete';
 import { redactContactInfo, shouldAllowContactSharing } from '../lib/redaction';
 import { redactName } from '../lib/contactGating';
+import { bookingRefusalMessage, type SlotClaimResult } from '../lib/slotBooking';
 
 interface ChatDrawerProps {
   isOpen: boolean;
@@ -38,6 +39,9 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
   const [estimatedDuration, setEstimatedDuration] = useState('');
   const [uploadingImages, setUploadingImages] = useState(false);
   const [jobImages, setJobImages] = useState<string[]>([]);
+  // Why a booking request was turned down. There was no error surface here at
+  // all before: the slot was never claimed, so nothing could refuse it.
+  const [bookingError, setBookingError] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [locationAddress, setLocationAddress] = useState('');
@@ -327,9 +331,25 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
     }
 
     setSending(true);
+    setBookingError('');
 
     let jobId = null;
     if (isBookingRequest && selectedSlotId && selectedTime) {
+      // Claim the slot before anything else is created. It is the scarce thing,
+      // and claiming it first is what turns a second client away instead of
+      // letting both of them book the same window. This path previously set
+      // jobs.slot_id and never marked the slot at all.
+      const { data: claimData, error: claimError } = await supabase
+        .rpc('book_availability_slot', { p_slot_id: selectedSlotId });
+
+      const claim = claimData as SlotClaimResult | null;
+      if (claimError || !claim?.ok) {
+        setBookingError(bookingRefusalMessage(claim?.reason));
+        setShowSlotPicker(true);
+        setSending(false);
+        return;
+      }
+
       let projectId: string | null = null;
 
       const { data: existingProject } = await supabase
@@ -386,6 +406,13 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
 
       if (jobData) {
         jobId = (jobData as unknown as { id: string }).id;
+      } else {
+        // No job means the claim has nothing behind it. Hand the time back
+        // rather than leaving it booked against a booking that does not exist.
+        await supabase.rpc('release_availability_slot', { p_slot_id: selectedSlotId });
+        setBookingError('That booking could not be created. Try again.');
+        setSending(false);
+        return;
       }
     }
 
@@ -691,6 +718,12 @@ export default function ChatDrawer({ isOpen, onClose, tradie }: ChatDrawerProps)
                     </div>
                   </div>
                 </div>
+
+                {bookingError && (
+                  <div className="bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm p-3 mb-3">
+                    <p className="text-sm text-ct-rose">{bookingError}</p>
+                  </div>
+                )}
 
                 {availableSlots.length === 0 ? (
                   <div className="bg-ct-amber/[0.13] border border-ct-amber/[0.34] rounded-ct-sm p-4">

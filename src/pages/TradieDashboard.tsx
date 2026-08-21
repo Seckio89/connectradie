@@ -118,6 +118,78 @@ function getStatusColor(status: string | null) {
   }
 }
 
+/** What sync-google-calendar reports back about a completed sync. */
+type CalendarSyncResult = {
+  conflictsChecked?: boolean;
+  conflictReason?: string;
+  calendarsChecked?: number;
+  conflictCount?: number;
+  slotsBlocked?: number;
+  slotsCleared?: number;
+  jobsExported?: number;
+};
+
+/**
+ * Turn a sync result into a sentence that matches what actually happened.
+ *
+ * The previous message read `${result.slotsRemoved} conflicting slot(s)
+ * removed`, and the function returned that field as a hardcoded 0 — so it
+ * always claimed nothing was found, however many clashes there were. Nothing
+ * is "removed" now either: a clashing slot is blocked and comes back on its
+ * own when the Google event goes away.
+ */
+function describeSyncResult(result: CalendarSyncResult): string {
+  if (result.conflictsChecked === false) {
+    return "Calendar synced, but we could not read your calendars to check for clashes. Reconnect Google Calendar and sync again.";
+  }
+
+  const blocked = result.slotsBlocked ?? 0;
+  const cleared = result.slotsCleared ?? 0;
+  const clashing = result.conflictCount ?? 0;
+  const calendars = result.calendarsChecked ?? 0;
+  const s = (n: number) => (n === 1 ? '' : 's');
+
+  const checked = calendars > 0
+    ? `Checked ${calendars} calendar${s(calendars)}.`
+    : 'Calendar synced.';
+
+  const parts: string[] = [];
+  if (blocked > 0) {
+    parts.push(`${blocked} slot${s(blocked)} blocked — you are busy in Google Calendar then.`);
+  }
+  if (cleared > 0) {
+    parts.push(`${cleared} slot${s(cleared)} open again.`);
+  }
+  if (parts.length === 0) {
+    // Already-blocked clashes are not news, but silence would read as "no
+    // clashes", which is a different thing.
+    parts.push(
+      clashing > 0
+        ? `${clashing} slot${s(clashing)} still clash${clashing === 1 ? 'es' : ''} with your calendar and stay blocked.`
+        : 'No clashes with your calendar.'
+    );
+  }
+
+  return `${checked} ${parts.join(' ')}`;
+}
+
+/**
+ * What a slot's state should be called on screen.
+ *
+ * "blocked" covers two different situations that need different words: the
+ * tradie blocked the time themselves, or the calendar sync blocked it because
+ * they are committed elsewhere in Google. Only the second one carries
+ * `external_conflict_at`, and only the second one will clear itself once the
+ * Google event goes away — so saying "blocked" for both leaves the tradie with
+ * no way to tell why their availability disappeared.
+ */
+function slotLabel(slot: AvailabilitySlot, short = false): string {
+  if (slot.status === 'available') return short ? 'Avail' : 'Available';
+  if (slot.status === 'booked') return short ? 'Bkd' : 'Booked';
+  if (slot.external_conflict_at) return short ? 'Busy' : 'Busy in Google Calendar';
+  return short ? 'Blkd' : 'Blocked';
+}
+
 /** Shape of the "new leads" query: a job row plus the joined client name. */
 type LeadWithClientName = Job & { profiles: { full_name: string } | null };
 
@@ -752,7 +824,10 @@ export default function TradieDashboard() {
         const result = await response.json();
 
         if (result.success) {
-          showToast(`Calendar synced! ${result.slotsRemoved} conflicting slot(s) removed.`);
+          // This used to read `result.slotsRemoved`, which the function returned
+          // as a hardcoded 0 — so every sync announced "0 conflicting slot(s)
+          // removed" whatever it found. Say what actually happened instead.
+          showToast(describeSyncResult(result), !result.conflictsChecked);
           fetchSlots();
         } else {
           showToast(result.error || 'Sync failed', true);
@@ -2101,7 +2176,7 @@ export default function TradieDashboard() {
                               <div className="flex-1 flex gap-1 p-1">
                                 {slotsInHour.map(s => (
                                   <div key={s.id} className={`flex-1 rounded-ct-xs px-2 py-1 text-xs font-medium ${s.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30' : s.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34]' : 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line'}`}>
-                                    {s.status === 'available' ? 'Available' : s.status === 'booked' ? 'Booked' : s.status}
+                                    {slotLabel(s)}
                                   </div>
                                 ))}
                               </div>
@@ -2169,7 +2244,7 @@ export default function TradieDashboard() {
                                       <div key={d.toISOString()} className="border-r border-ct-line-soft last:border-r-0 p-0.5 min-h-[32px]">
                                         {slotsInHour.map(s => (
                                           <div key={s.id} className={`rounded-ct-xs px-1 py-0.5 text-xs font-medium truncate ${s.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal' : s.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
-                                            {s.status === 'available' ? 'Avail' : 'Bkd'}
+                                            {slotLabel(s, true)}
                                           </div>
                                         ))}
                                       </div>
@@ -2331,7 +2406,7 @@ export default function TradieDashboard() {
                       )}
                     </div>
                     <span className={`mt-2 inline-block text-xs px-3 py-1 rounded-full font-medium ${slot.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal' : slot.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
-                      {slot.status}
+                      {slotLabel(slot)}
                     </span>
                   </div>
                 ))}

@@ -130,6 +130,32 @@ interface TeamMember {
   role: string;
   trade_specialty: string | null;
   status: string;
+  /** Set by the Google Calendar import — the colour that member's calendar had in Google. */
+  color: string | null;
+}
+
+/**
+ * An event pulled in from one of the tradie's Google calendars.
+ *
+ * These are NOT jobs, deliberately: a job is a client-owned record with a
+ * lifecycle and money attached, and an imported visit is neither. They live in
+ * their own table and render as a distinct, non-clickable chip so nothing on
+ * this screen can be mistaken for work booked through ConnecTradie.
+ *
+ * Until now nothing read this table at all. The import wrote rows, reported
+ * "Imported N events", and those events appeared nowhere in the app — which is
+ * why the entry point to /calendar-import was hidden behind `false &&`.
+ */
+interface ImportedVisit {
+  id: string;
+  title: string;
+  starts_at: string;
+  ends_at: string | null;
+  all_day: boolean;
+  location: string | null;
+  color: string | null;
+  source_calendar: string | null;
+  team_member_id: string | null;
 }
 
 interface JobAssignment {
@@ -359,6 +385,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
   const [filterMember, setFilterMember] = useState<string>('all');
   const [showOnlyConflicts, setShowOnlyConflicts] = useState(false);
   const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
+  const [importedVisits, setImportedVisits] = useState<ImportedVisit[]>([]);
   const [dismissedConflicts, setDismissedConflicts] = useState<Set<string>>(new Set());
   const [conflictMenuJob, setConflictMenuJob] = useState<string | null>(null);
   const [rescheduleJob, setRescheduleJob] = useState<CalendarJob | null>(null);
@@ -432,13 +459,13 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
       jobsQuery.eq('client_id', user.id);
     }
 
-    const [jobsRes, membersRes, assignmentsRes, slotsRes] = await Promise.all([
+    const [jobsRes, membersRes, assignmentsRes, slotsRes, visitsRes] = await Promise.all([
       jobsQuery,
 
       isTradie
         ? supabase
             .from('business_team_members')
-            .select('id, invite_name, role, trade_specialty, status')
+            .select('id, invite_name, role, trade_specialty, status, color')
             .eq('business_owner_id', user.id)
             .eq('status', 'active')
         : Promise.resolve({ data: [] as TeamMember[], error: null }),
@@ -460,6 +487,17 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
             .gte('start_time', start.toISOString())
             .lte('start_time', end.toISOString())
         : Promise.resolve({ data: [] as AvailabilitySlot[], error: null }),
+
+      // Events brought in from Google. Owner-scoped by RLS as well as here.
+      isTradie
+        ? supabase
+            .from('imported_calendar_visits')
+            .select('id, title, starts_at, ends_at, all_day, location, color, source_calendar, team_member_id')
+            .eq('business_owner_id', user.id)
+            .gte('starts_at', start.toISOString())
+            .lte('starts_at', end.toISOString())
+            .order('starts_at', { ascending: true })
+        : Promise.resolve({ data: [] as ImportedVisit[], error: null }),
     ]);
 
     // Fetch recurring sessions and convert to pseudo-jobs for the calendar
@@ -557,6 +595,12 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
     setTeamMembers(membersRes.data || []);
     setAssignments((assignmentsRes.data as JobAssignment[]) || []);
     setAvailabilitySlots((slotsRes.data || []) as AvailabilitySlot[]);
+    if (visitsRes.error) {
+      // Non-fatal: the rest of the calendar is still correct without them. Say
+      // so in the console rather than silently showing a day as clear.
+      console.error('Failed to load imported calendar visits:', visitsRes.error.message);
+    }
+    setImportedVisits((visitsRes.data || []) as ImportedVisit[]);
 
     // Persisted "Ignore conflict" choices, so a dismissed conflict pair does not
     // reappear on reload. Only the client side surfaces conflicts.
@@ -1152,6 +1196,68 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
   const formatSlotTime = (iso: string) =>
     new Date(iso).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
 
+  const getVisitsForDate = (date: Date): ImportedVisit[] => {
+    const dateStr = toLocalDateStr(date);
+    return importedVisits.filter(v => toLocalDateStr(new Date(v.starts_at)) === dateStr);
+  };
+
+  /**
+   * The colour Google had for this event, falling back to the colour the import
+   * saved against the team member the calendar was mapped to. Both are real
+   * colour values persisted from Google rather than design tokens, which is why
+   * they are applied inline — same as the calendar picker in CalendarImport.
+   */
+  const visitColor = (visit: ImportedVisit): string | null =>
+    visit.color
+    ?? (visit.team_member_id
+      ? teamMembers.find(m => m.id === visit.team_member_id)?.color ?? null
+      : null);
+
+  /**
+   * Imported events for one day.
+   *
+   * Rendered as a flat, non-interactive strip, visually separate from job
+   * cards: these came from the tradie's own Google calendar and are not work
+   * booked through ConnecTradie. Nothing here opens a job modal, because there
+   * is no job behind it.
+   */
+  const renderImportedVisits = (date: Date, compact = false) => {
+    const visits = getVisitsForDate(date);
+    if (visits.length === 0) return null;
+
+    return (
+      <div className={compact ? 'space-y-0.5' : 'space-y-1'}>
+        {visits.map(visit => {
+          const color = visitColor(visit);
+          const member = visit.team_member_id
+            ? teamMembers.find(m => m.id === visit.team_member_id)
+            : undefined;
+          const when = visit.all_day
+            ? 'All day'
+            : formatSlotTime(visit.starts_at);
+          return (
+            <div
+              key={visit.id}
+              title={`${visit.title || 'Untitled'} · ${when}${member ? ` · ${member.invite_name}` : ''}${visit.source_calendar ? ` · from ${visit.source_calendar}` : ''}`}
+              className="flex items-center gap-1.5 rounded-ct-xs border border-dashed border-ct-line bg-ct-surface-2/60 px-1.5 py-1 min-w-0"
+            >
+              <span
+                className="w-1.5 h-1.5 rounded-full flex-shrink-0 border border-black/5"
+                style={color ? { background: color } : undefined}
+              />
+              <span className="text-[0.625rem] font-medium text-ct-mute-2 truncate min-w-0">
+                {visit.title || 'Untitled'}
+              </span>
+              {!compact && (
+                <span className="text-[0.625rem] text-ct-mute flex-shrink-0 font-ct-mono">{when}</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const navigate = (dir: number) => {
     const d = new Date(currentDate);
     if (view === 'week') d.setDate(d.getDate() + dir * 7);
@@ -1319,6 +1425,13 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                     </div>
                     <div className="flex-1 p-1.5 space-y-1.5 overflow-y-auto max-h-[600px]">
                       {entries.length === 0 ? (
+                        getVisitsForDate(day).length > 0 ? (
+                          // A day carrying only imported events is not an empty
+                          // day — saying "No jobs" over the top of them would be
+                          // the same lie the import told by writing rows nothing
+                          // ever read.
+                          renderImportedVisits(day)
+                        ) : (
                         <div className="h-full flex items-center justify-center py-4">
                           {hasAvailable ? (
                             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-teal">
@@ -1328,6 +1441,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                             <span className="text-xs text-ct-mute">No jobs</span>
                           )}
                         </div>
+                        )
                       ) : (
                         entries.map(({ job, assignments: jobAssignments, conflictWarning, conflictsWith }) => {
                           const { category, title } = parseJobDescription(job.description);
@@ -1476,6 +1590,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                           );
                         })
                       )}
+                      {entries.length > 0 && renderImportedVisits(day)}
                     </div>
                   </div>
                 );
@@ -1537,7 +1652,11 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                       </div>
 
                       {jobCount === 0 ? (
-                        <p className="text-xs text-ct-mute mt-1">Nothing booked for this day</p>
+                        getVisitsForDate(day).length > 0 ? (
+                          <div className="mt-2">{renderImportedVisits(day)}</div>
+                        ) : (
+                          <p className="text-xs text-ct-mute mt-1">Nothing booked for this day</p>
+                        )
                       ) : (
                         <div className="mt-2 space-y-1.5">
                           {entries.map(({ job, assignments: jobAssignments, conflictWarning }) => {
@@ -1620,6 +1739,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                               </button>
                             );
                           })}
+                          {renderImportedVisits(day)}
                         </div>
                       )}
                     </div>
@@ -1633,6 +1753,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                   <div className="flex items-center gap-5 text-xs text-ct-mute">
                     <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-ct-teal" />Available</span>
                     <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-ct-surface-2" />Scheduled job</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-ct-xs border border-dashed border-ct-line" />From Google Calendar</span>
                   </div>
                   <Link
                     to="/dashboard"
@@ -1696,6 +1817,7 @@ export default function SiteCalendar({ embedded = false, defaultCollapsed = fals
                           {entries.length > 3 && (
                             <p className="text-xs text-ct-mute pl-1">+{entries.length - 3} more</p>
                           )}
+                          {renderImportedVisits(day, true)}
                         </div>
                       </div>
                     );

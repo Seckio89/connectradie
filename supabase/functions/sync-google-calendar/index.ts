@@ -2,20 +2,13 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
 import { parseGoogleTokenError } from "../_shared/googleTokenError.ts";
+import { planConflictChanges } from "../_shared/calendarConflicts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
-
-interface CalendarEvent {
-  id: string;
-  summary: string;
-  start: { dateTime?: string; date?: string };
-  end: { dateTime?: string; date?: string };
-  status: string;
-}
 
 interface TokenResponse {
   access_token: string;
@@ -159,12 +152,15 @@ Deno.serve(async (req: Request) => {
       accessToken = tokens.access_token;
       const newExpiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
-      // Update stored tokens
+      // Update stored tokens. Google normally returns no refresh_token on a
+      // refresh, and overwriting the stored one with null would leave the row
+      // unrefreshable — so only write it when one actually came back.
       await supabaseClient
         .from("calendar_integrations")
         .update({
           access_token: accessToken,
           token_expires_at: newExpiresAt.toISOString(),
+          ...(tokens.refresh_token ? { refresh_token: tokens.refresh_token } : {}),
         })
         .eq("id", integration.id);
     }
@@ -328,59 +324,206 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Fetch events from Google Calendar (next 30 days)
+    // The window every read and export below shares.
     const timeMin = new Date().toISOString();
     const timeMax = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const eventsUrl = new URL(`https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events`);
-    eventsUrl.searchParams.set("timeMin", timeMin);
-    eventsUrl.searchParams.set("timeMax", timeMax);
-    eventsUrl.searchParams.set("singleEvents", "true");
-    eventsUrl.searchParams.set("orderBy", "startTime");
+    // ── CONFLICTS: make a clashing slot unbookable, without deleting it ──
+    //
+    // Read across ALL the tradie's calendars, not just the one the integration
+    // is bound to (calendar_id is always the literal "primary"), because a
+    // tradie whose real commitments live on a second calendar would otherwise
+    // look free. calendar.readonly already covers this; no new scope.
+    //
+    // Via FreeBusy rather than events.list per calendar, for three reasons:
+    //
+    //  1. Two API calls total (calendarList + freeBusy, batched 50 ids at a
+    //     time) regardless of how many calendars they have, against 1+N.
+    //  2. It returns busy INTERVALS and no titles. availability_slots is
+    //     SELECT-readable by every authenticated user, so a design that handled
+    //     event summaries at all would be one mistake away from publishing a
+    //     tradie's private calendar to every client. We never receive them.
+    //  3. FreeBusy ignores events marked transparent, and the availability
+    //     blocks we export carry transparency:"transparent". So the events WE
+    //     push cannot come back to us as busy. That is what killed this feature
+    //     on 2026-06-13 — the export's own "✅ Available — ConnecTradie" blocks
+    //     read back as conflicts and the sync deleted the tradie's entire
+    //     availability. Here it is impossible by construction rather than
+    //     suppressed by matching on a title the tradie can edit.
+    //
+    // Exported JOB events are opaque and do read as busy. That is correct — a
+    // booked job is a real commitment.
+    //
+    // Nothing here deletes a slot. See the migration for why that line is not
+    // one this system crosses.
 
-    const eventsResponse = await fetch(eventsUrl.toString(), {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    // Birthdays and public holidays are all-day noise that would mark whole
+    // days busy. Everything else the tradie keeps is fair game.
+    const SKIP_CALENDAR_SUFFIXES = [
+      "#holiday@group.v.calendar.google.com",
+      "#contacts@group.v.calendar.google.com",
+    ];
+    const FREEBUSY_BATCH = 50;
 
-    if (!eventsResponse.ok) {
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch calendar events" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const busyIntervals: { start: number; end: number }[] = [];
+    let calendarsChecked = 0;
+    let conflictsChecked = true;
+    let conflictReason = "";
+
+    try {
+      // 1. Every calendar this account can see.
+      const calendarIds: string[] = [];
+      let calPageToken: string | undefined;
+      let calPages = 0;
+      do {
+        const calUrl = new URL("https://www.googleapis.com/calendar/v3/users/me/calendarList");
+        calUrl.searchParams.set("maxResults", "250");
+        if (calPageToken) calUrl.searchParams.set("pageToken", calPageToken);
+
+        const calRes = await fetch(calUrl.toString(), {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!calRes.ok) {
+          throw new Error(`calendarList ${calRes.status}: ${(await calRes.text()).slice(0, 200)}`);
         }
-      );
+        const calData = await calRes.json();
+        for (const cal of calData.items ?? []) {
+          const id = cal?.id;
+          if (typeof id !== "string") continue;
+          if (SKIP_CALENDAR_SUFFIXES.some((suffix) => id.endsWith(suffix))) continue;
+          // `selected` is the tradie's own "show me this one" tick in Google.
+          // Respect it, but never drop the primary calendar on its strength.
+          if (cal.primary !== true && cal.selected === false) continue;
+          calendarIds.push(id);
+        }
+        calPageToken = calData.nextPageToken;
+        calPages++;
+      } while (calPageToken && calPages < 10);
+
+      // 2. Their busy intervals, in batches — freeBusy takes at most 50 ids.
+      for (let i = 0; i < calendarIds.length; i += FREEBUSY_BATCH) {
+        const batch = calendarIds.slice(i, i + FREEBUSY_BATCH);
+        const fbRes = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ timeMin, timeMax, items: batch.map((id) => ({ id })) }),
+        });
+        if (!fbRes.ok) {
+          throw new Error(`freeBusy ${fbRes.status}: ${(await fbRes.text()).slice(0, 200)}`);
+        }
+        const fbData = await fbRes.json();
+        for (const [calId, entry] of Object.entries(fbData.calendars ?? {})) {
+          const cal = entry as { busy?: { start: string; end: string }[]; errors?: unknown[] };
+          // A single unreadable calendar must not sink the whole check — but
+          // say so, because a silently skipped calendar is a missed conflict.
+          if (cal.errors?.length) {
+            console.warn(`freeBusy: skipped calendar ${calId}`, JSON.stringify(cal.errors).slice(0, 200));
+            continue;
+          }
+          calendarsChecked++;
+          for (const b of cal.busy ?? []) {
+            const start = new Date(b.start).getTime();
+            const end = new Date(b.end).getTime();
+            if (Number.isNaN(start) || Number.isNaN(end)) continue;
+            busyIntervals.push({ start, end });
+          }
+        }
+      }
+    } catch (e) {
+      // Non-fatal, deliberately. A 403 here means calendar.readonly has not been
+      // granted (likely while Google verification is still pending), and the
+      // export half of this sync still works. Killing the whole request would
+      // take a working feature down with a pending one. The caller is told the
+      // conflict check did not run rather than being left to assume it passed.
+      conflictsChecked = false;
+      conflictReason = e instanceof Error ? e.message : "unknown";
+      console.error("Conflict check failed (export continues):", conflictReason);
     }
 
-    const eventsData = await eventsResponse.json();
-    const events: CalendarEvent[] = eventsData.items || [];
-
-    // Get existing availability slots for the next 30 days
-    const { data: existingSlots } = await supabaseClient
-      .from("availability_slots")
-      .select("*")
-      .eq("tradie_id", user.id)
-      .gte("start_time", timeMin)
-      .lte("start_time", timeMax)
-      .eq("status", "available");
-
-    // Count conflicts (informational only — no longer deletes slots automatically)
     let conflictCount = 0;
-    if (existingSlots) {
-      for (const slot of existingSlots) {
-        const slotStart = new Date(slot.start_time);
-        const slotEnd = new Date(slot.end_time);
-        for (const event of events) {
-          if (!event.start.dateTime || !event.end.dateTime) continue;
-          if (event.summary?.includes("ConnecTradie") || event.summary?.startsWith("✅ Available") || event.summary?.startsWith("🔧")) continue;
-          const eventStart = new Date(event.start.dateTime);
-          const eventEnd = new Date(event.end.dateTime);
-          if (eventStart < slotEnd && eventEnd > slotStart) {
-            conflictCount++;
-            break;
-          }
+    let slotsBlocked = 0;
+    let slotsCleared = 0;
+
+    if (conflictsChecked) {
+      // Every slot in the window, in whatever state — deliberately unfiltered.
+      //
+      // planConflictChanges needs all three groups: open slots that might newly
+      // clash, slots we blocked that might now be released, and booked slots,
+      // whose clashes are counted and reported but never acted on. Filtering to
+      // the first two here would make conflictCount disagree with what the
+      // tradie can see, and a status filter is a place to get a rule wrong
+      // twice. The window is 30 days of one tradie's slots; reading all of them
+      // costs nothing.
+      const { data: slotRows, error: slotErr } = await supabaseClient
+        .from("availability_slots")
+        .select("id, start_time, end_time, status, calendar_event_id, external_conflict_at")
+        .eq("tradie_id", user.id)
+        .gte("start_time", timeMin)
+        .lte("start_time", timeMax);
+
+      if (slotErr) {
+        conflictsChecked = false;
+        conflictReason = slotErr.message;
+        console.error("Conflict check: could not read slots:", slotErr.message);
+      } else {
+        // The decision itself lives in _shared/calendarConflicts.ts so it can be
+        // executed by a test — supabase/functions/ is outside `npm run
+        // typecheck` and Deno's checker cannot reach jsr from CI's sandbox, so
+        // inlining it here would leave the one rule that must not be wrong with
+        // no coverage at all. See the file header for the 2026-06-13 incident
+        // these rules exist to prevent repeating.
+        const { conflictCount: clashing, toBlock, toRelease, toUnstamp } =
+          planConflictChanges(slotRows ?? [], busyIntervals);
+        conflictCount = clashing;
+
+        // A slot we had advertised in Google leaves a green "Available" block
+        // sitting on top of a real commitment once we block it here. Remove the
+        // event — strictly by the id we stored, never by scanning, exactly as
+        // the unsync path does. Deleting OUR event is the safe direction; it is
+        // the reverse (Google deciding a slot dies) that broke this in June.
+        const pointersCleared: string[] = [];
+        for (const slot of toBlock) {
+          if (!slot.calendar_event_id) continue;
+          if (await deleteGoogleEvent(slot.calendar_event_id)) pointersCleared.push(slot.id);
+        }
+
+        if (toBlock.length > 0) {
+          const { error } = await supabaseClient
+            .from("availability_slots")
+            .update({ status: "blocked", external_conflict_at: new Date().toISOString() })
+            .in("id", toBlock.map((s) => s.id));
+          if (error) console.error("Failed to block conflicting slots:", error.message);
+          else slotsBlocked = toBlock.length;
+        }
+
+        if (pointersCleared.length > 0) {
+          const { error } = await supabaseClient
+            .from("availability_slots")
+            .update({ calendar_event_id: null })
+            .in("id", pointersCleared);
+          if (error) console.error("Failed to clear calendar_event_id on blocked slots:", error.message);
+        }
+
+        if (toRelease.length > 0) {
+          const { error } = await supabaseClient
+            .from("availability_slots")
+            .update({ status: "available", external_conflict_at: null })
+            .in("id", toRelease);
+          if (error) console.error("Failed to release cleared slots:", error.message);
+          else slotsCleared = toRelease.length;
+        }
+
+        if (toUnstamp.length > 0) {
+          // Stamp is stale but the slot has moved on (booked, or manually
+          // blocked since). Drop the stamp without touching its state.
+          const { error } = await supabaseClient
+            .from("availability_slots")
+            .update({ external_conflict_at: null })
+            .in("id", toUnstamp);
+          if (error) console.error("Failed to clear stale conflict stamps:", error.message);
         }
       }
     }
@@ -574,9 +717,17 @@ Deno.serve(async (req: Request) => {
       JSON.stringify({
         success: true,
         message: "Calendar synced successfully",
-        eventsFound: events.length,
-        slotsRemoved: 0,
+        // `slotsRemoved` is deliberately gone rather than kept at 0. It was a
+        // hardcoded literal that the dashboard still rendered as "N conflicting
+        // slot(s) removed", so every sync claimed to have removed nothing while
+        // conflictCount went unread. Removing the field forces the caller to be
+        // updated rather than to keep printing a number that means nothing.
+        conflictsChecked,
+        conflictReason: conflictsChecked ? undefined : conflictReason,
+        calendarsChecked,
         conflictCount,
+        slotsBlocked,
+        slotsCleared,
         jobsExported,
       }),
       {
