@@ -20,6 +20,39 @@ interface Mapping { selected: boolean; teamMemberId: string | null; color: strin
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
+/**
+ * Get the reason out of a functions.invoke() failure.
+ *
+ * `supabase.functions.invoke` turns any non-2xx into a FunctionsHttpError and
+ * does NOT parse the body, so `data` is null exactly when the function had
+ * something useful to say. Checking `data?.error` alone therefore threw away
+ * every message that mattered — the 403 that means calendar.readonly has not
+ * been granted, and the 429 from the 5-calls-a-minute limit — and replaced them
+ * with a generic string naming no cause. The body has to be read off the
+ * Response attached to the error.
+ */
+async function functionErrorMessage(fnErr: unknown, data: { error?: string } | null): Promise<string | null> {
+  if (data?.error) return data.error;
+  if (!fnErr) return null;
+
+  const res = (fnErr as { context?: unknown }).context;
+  if (res instanceof Response) {
+    try {
+      const body = await res.clone().json();
+      if (body && typeof body.error === 'string') return body.error;
+    } catch {
+      // Not JSON (a gateway error page, say). Fall through to the status.
+    }
+    if (res.status === 429) return 'Too many attempts. Wait a minute and try again.';
+    if (res.status === 401 || res.status === 403) {
+      return 'Google would not allow this. Reconnect Google Calendar and grant calendar access.';
+    }
+    return `Google Calendar request failed (${res.status}).`;
+  }
+
+  return fnErr instanceof Error ? fnErr.message : null;
+}
+
 export default function CalendarImport() {
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -87,7 +120,10 @@ export default function CalendarImport() {
     try {
       const { data, error: fnErr } = await supabase.functions.invoke('google-calendar-import', { body: { action: 'calendars' } });
       if (fnErr || data?.error) {
-        setError(data?.error || 'Could not list calendars. Reconnect Google and grant calendar access.');
+        setError(
+          (await functionErrorMessage(fnErr, data))
+          || 'Could not list calendars. Reconnect Google and grant calendar access.'
+        );
         return;
       }
       // Dedup: Google can return the same calendar more than once (e.g.
@@ -118,7 +154,10 @@ export default function CalendarImport() {
     try {
       const payload = chosen.map((c) => ({ id: c.id, summary: map[c.id].summary, color: map[c.id].color, teamMemberId: map[c.id].teamMemberId }));
       const { data, error: fnErr } = await supabase.functions.invoke('google-calendar-import', { body: { action: 'import', calendars: payload } });
-      if (fnErr || data?.error) { setError(data?.error || 'Import failed.'); return; }
+      if (fnErr || data?.error) {
+        setError((await functionErrorMessage(fnErr, data)) || 'Import failed.');
+        return;
+      }
       setResult(data);
       // Persist each mapped member's colour so the schedule can tell them apart.
       await Promise.all(chosen.filter((c) => map[c.id].teamMemberId).map((c) =>

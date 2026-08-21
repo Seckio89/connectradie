@@ -88,18 +88,17 @@ export default function Schedule() {
                 );
               })}
             </div>
-            {/* HIDDEN until the Google Calendar import issue is fixed. The
-                /calendar-import route still works for direct testing — just
-                restore this Link to re-expose the entry point. */}
-            {/* eslint-disable-next-line no-constant-binary-expression */}
-            {false && (
-              <Link
-                to="/calendar-import"
-                className="inline-flex items-center gap-2 px-4 py-2 border border-ct-line rounded-ct-sm text-sm font-medium text-ct-mute-2 hover:bg-ct-surface-2 whitespace-nowrap"
-              >
-                <CalendarDays className="w-4 h-4 text-ct-mute-2" /> Import from Google Calendar
-              </Link>
-            )}
+            {/* Hidden behind `false &&` until now. The reason was real: the
+                import wrote rows to imported_calendar_visits that NOTHING in
+                src/ ever read, so a tradie could finish the whole flow, see
+                "Imported 47 events", and find them nowhere. They render on the
+                calendar below now, so the entry point is worth having. */}
+            <Link
+              to="/calendar-import"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-ct-line rounded-ct-sm text-sm font-medium text-ct-mute-2 hover:bg-ct-surface-2 whitespace-nowrap"
+            >
+              <CalendarDays className="w-4 h-4 text-ct-mute-2" /> Import from Google Calendar
+            </Link>
           </div>
         )}
 
