@@ -268,6 +268,7 @@ export type Database = {
           calendar_event_id: string | null
           created_at: string
           end_time: string
+          external_conflict_at: string | null
           id: string
           start_time: string
           status: string | null
@@ -278,6 +279,7 @@ export type Database = {
           calendar_event_id?: string | null
           created_at?: string
           end_time: string
+          external_conflict_at?: string | null
           id?: string
           start_time: string
           status?: string | null
@@ -288,6 +290,7 @@ export type Database = {
           calendar_event_id?: string | null
           created_at?: string
           end_time?: string
+          external_conflict_at?: string | null
           id?: string
           start_time?: string
           status?: string | null

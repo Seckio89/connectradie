@@ -160,6 +160,13 @@ export type AvailabilitySlot = {
   status: SlotStatus;
   booked_by: string | null;
   created_at: string;
+  /**
+   * Set by sync-google-calendar when this slot was blocked because it clashes
+   * with a commitment on one of the tradie's Google calendars. It is what tells
+   * a sync-block apart from the tradie's own manual block, so the UI can say
+   * WHY a slot is unavailable rather than just showing "blocked".
+   */
+  external_conflict_at: string | null;
 }
 
 export type BudgetType = 'request_quote' | 'fixed_budget' | 'hourly_rate';
