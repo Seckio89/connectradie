@@ -6193,6 +6193,7 @@ export type Database = {
         }
       }
       auto_complete_ended_projects: { Args: never; Returns: undefined }
+      book_availability_slot: { Args: { p_slot_id: string }; Returns: Json }
       can_access_worker_credential: { Args: { path: string }; Returns: boolean }
       can_read_job_attachment: { Args: { path: string }; Returns: boolean }
       can_view_job_tracking: {
@@ -6402,6 +6403,7 @@ export type Database = {
         Args: { p_employer: string }
         Returns: undefined
       }
+      release_availability_slot: { Args: { p_slot_id: string }; Returns: Json }
       resolve_dispute: {
         Args: {
           p_ai_suggestion?: Json

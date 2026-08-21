@@ -10,6 +10,7 @@ import { NOTIFICATION_TYPES } from '../lib/notificationTypes';
 import AddressAutocomplete from './AddressAutocomplete';
 import { getJobHints } from '../lib/jobDescriptionHints';
 import { redactName } from '../lib/contactGating';
+import { bookingRefusalMessage, type SlotClaimResult } from '../lib/slotBooking';
 
 interface AvailabilityCalendarProps {
   isOpen: boolean;
@@ -216,12 +217,38 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
       const scheduledTime = new Date(slotDate);
       scheduledTime.setHours(startHour, startMin, 0, 0);
 
+      // Claim the slot BEFORE creating the job. The slot is the scarce thing —
+      // claiming it first means a second client racing for the same time is
+      // turned away rather than both of them ending up with a job.
+      //
+      // This replaces a direct `.update({ status: 'booked' })` that could never
+      // have worked: it ran as the client, and the UPDATE policy on
+      // availability_slots is `tradie_id = auth.uid()`. It matched zero rows,
+      // PostgREST does not error on zero rows, nothing checked, and the page
+      // reported success anyway — so the slot stayed open for the next client.
+      const { data: claimData, error: claimError } = await supabase
+        .rpc('book_availability_slot', { p_slot_id: selectedSlot.id });
+
+      if (claimError) throw claimError;
+      const claim = claimData as SlotClaimResult | null;
+      if (!claim?.ok) {
+        setUploadError(bookingRefusalMessage(claim?.reason));
+        // The list this client is looking at is now known to be stale — the
+        // slot they picked is not bookable. Re-read so the calendar stops
+        // offering it, rather than letting them tap it again.
+        setSelectedSlot(null);
+        await fetchSlots();
+        setBookingLoading(false);
+        return;
+      }
+
       // Create job with image URLs and custom time
       const { data: jobData, error: jobError } = await supabase
         .from('jobs')
         .insert({
           client_id: user.id,
           tradie_id: tradie.id,
+          slot_id: selectedSlot.id,
           description: `${bookingDescription}\n\nRequested time: ${customStartTime} - ${customEndTime}`,
           status: 'pending',
           scheduled_time: scheduledTime.toISOString(),
@@ -235,7 +262,12 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
         .select()
         .single();
 
-      if (jobError) throw jobError;
+      // Hand the slot back if the job did not get created — otherwise the claim
+      // outlives the booking it was for and the time is lost to everyone.
+      if (jobError) {
+        await supabase.rpc('release_availability_slot', { p_slot_id: selectedSlot.id });
+        throw jobError;
+      }
 
       if (jobData) {
         await sendNotification({
@@ -255,11 +287,6 @@ export default function AvailabilityCalendar({ isOpen, onClose, tradie, onSelect
           },
         });
       }
-
-      await supabase
-        .from('availability_slots')
-        .update({ status: 'booked', booked_by: user.id })
-        .eq('id', selectedSlot.id);
 
       setBookingSuccess(true);
       setTimeout(() => {
