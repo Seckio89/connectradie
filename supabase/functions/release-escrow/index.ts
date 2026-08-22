@@ -142,6 +142,85 @@ export const handler = async (req: Request): Promise<Response> => {
       return errorJson("No tradie assigned to this job", 400);
     }
 
+    // A live dispute freezes payout — the SAME rule auto-release-payments
+    // enforces (it excludes jobs with a disputes.blocks_release=true row). The
+    // client-clicked release path skipped this entirely, so escrow could be paid
+    // out in full while a dispute was open — including a Stripe chargeback, which
+    // charge.dispute.created writes as a blocking disputes row precisely to
+    // freeze payout. `blocks_release` is a GENERATED column and is the ONLY
+    // freeze decider; never enumerate dispute statuses here.
+    const { data: blockingDisputes, error: disputeError } = await supabase
+      .from("disputes")
+      .select("id")
+      .eq("job_id", payment.job_id)
+      .eq("blocks_release", true)
+      .limit(1);
+
+    if (disputeError) {
+      // Fail CLOSED: if we cannot confirm there is no blocking dispute, do not
+      // move money. A transient read failure must never open the freeze.
+      console.error(
+        "Failed to check dispute state before release. Payment ID:",
+        paymentId,
+        disputeError,
+      );
+      return errorJson(
+        "We couldn't verify this job's dispute status. Please try again in a moment.",
+        503,
+      );
+    }
+
+    if (blockingDisputes && blockingDisputes.length > 0) {
+      return errorJson(
+        "This payment is on hold while a dispute is open. It can't be released until the dispute is resolved.",
+        409,
+      );
+    }
+
+    // Re-read the payment's live status AFTER the dispute check, then use this
+    // fresh row for every guard below. This ordering is load-bearing:
+    // resolve-dispute-split moves the money, flips the payment to 'released',
+    // and only THEN clears disputes.blocks_release (last). auto-release-payments
+    // is safe against that split because it reads blocks_release BEFORE it reads
+    // payment.status. This handler read status at the top (before the dispute
+    // check) off a snapshot it never refreshed — so a split committing between
+    // that snapshot and the dispute check could leave blocks_release=false while
+    // the stale snapshot still said 'completed', and the handler would mint a
+    // SECOND full payout under release_payout_<id> (a different key from the
+    // split's dispute_split_payout_<disputeId>, so Stripe won't collapse it).
+    // Reading status here, after the blocks_release check, closes that race: once
+    // blocks_release reads false the split has already flipped status to
+    // 'released', which this read now sees.
+    const { data: freshPayment, error: freshError } = await supabase
+      .from("payments")
+      .select("status, metadata")
+      .eq("id", paymentId)
+      .maybeSingle();
+
+    if (freshError || !freshPayment) {
+      console.error(
+        "Failed to re-read payment state before release. Payment ID:",
+        paymentId,
+        freshError,
+      );
+      return errorJson(
+        "We couldn't confirm this payment's state. Please try again in a moment.",
+        503,
+      );
+    }
+
+    if (freshPayment.status !== "completed") {
+      return errorJson(
+        "This payment is no longer awaiting release — it may already be released or under dispute resolution.",
+        409,
+      );
+    }
+
+    // From here down, trust the fresh row over the top-of-handler snapshot: a
+    // split (or a racing release) may have written release/split markers into
+    // metadata, and the already-released guard below must see them.
+    payment.metadata = freshPayment.metadata;
+
     // Get the tradie's Stripe Connect account
     const { data: tradieProfile, error: tradieError } = await supabase
       .from("profiles")
