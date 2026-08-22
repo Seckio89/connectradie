@@ -84,10 +84,11 @@ Deno.serve(async (req: Request) => {
       return errorJson("No active BECS payment method found", 404);
     }
 
-    // Look up invoice
+    // Look up invoice. `status` and `stripe_payment_intent_id` gate whether this
+    // invoice may be charged at all; `recurring_job_id` binds it to the mandate.
     const { data: invoice, error: invErr } = await supabase
       .from("recurring_invoices")
-      .select("id, total, homeowner_id, tradie_id, billing_period_start, billing_period_end")
+      .select("id, status, stripe_payment_intent_id, recurring_job_id, total, homeowner_id, tradie_id, billing_period_start, billing_period_end")
       .eq("id", invoiceId)
       .maybeSingle();
 
@@ -100,6 +101,44 @@ Deno.serve(async (req: Request) => {
     if (!isServiceCaller && callerUser &&
         callerUser.id !== invoice.tradie_id && callerUser.id !== invoice.homeowner_id) {
       return errorJson("Forbidden", 403);
+    }
+
+    // Bind the mandate to THIS invoice. The saved payment method above was loaded
+    // purely by the caller-supplied recurringJobId, and the ownership gate only
+    // checks the INVOICE — so without this a caller could pass their own invoice
+    // together with a DIFFERENT recurring job's id and debit that victim's bank
+    // account (funds routing to the caller's Connect account). The invoice's own
+    // recurring_job_id is the source of truth.
+    if (invoice.recurring_job_id !== recurringJobId) {
+      return errorJson(
+        "The payment method does not belong to this invoice's recurring job.",
+        403,
+      );
+    }
+
+    // Do NOT debit a non-chargeable invoice. The load above previously never
+    // checked status, so a disputed, cancelled, or already-paid invoice could be
+    // bank-debited by a direct call (the cron's status filter lived only in the
+    // caller). And because the Stripe idempotency key below expires after ~24h, a
+    // re-invocation of an already-charged invoice past that window mints a SECOND
+    // real debit. Reject an invoice that already carries a PaymentIntent, and
+    // allow only states that owe money with no charge in flight. 'processing' is
+    // included because generate-recurring-invoice sets it just before calling
+    // (with a null PaymentIntent), and the PI guard blocks the re-charge case.
+    if (invoice.stripe_payment_intent_id) {
+      return errorJson("This invoice has already been charged.", 409);
+    }
+    const CHARGEABLE_STATUSES = new Set([
+      "pending_approval",
+      "sent",
+      "overdue",
+      "processing",
+    ]);
+    if (!CHARGEABLE_STATUSES.has(invoice.status)) {
+      return errorJson(
+        `This invoice can't be charged while it is '${invoice.status}'.`,
+        409,
+      );
     }
 
     const totalCents = Math.round(Number(invoice.total) * 100);
