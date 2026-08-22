@@ -349,7 +349,24 @@ export const handler = async (req: Request): Promise<Response> => {
       .eq("id", payment.id);
 
     if (updateError) {
-      console.error("dispute split: payment record update failed after money moved", payment.id, updateError);
+      // The money has moved (refund + tradie remainder) but we could NOT stamp
+      // the payment as 'released'. Do NOT fall through to resolve_dispute below:
+      // clearing blocks_release while this row is still 'completed' is exactly
+      // the state that lets release-escrow and the auto-release cron pay the FULL
+      // amount a SECOND time — both gate on "blocks_release false AND status
+      // completed". Fail closed: leave the dispute frozen for manual
+      // reconciliation rather than risk a double payout. (release-escrow's own
+      // re-read guard depends on this function committing 'released' before it
+      // ever clears the freeze.)
+      console.error(
+        "CRITICAL: dispute split moved money but could not mark the payment released. Leaving the dispute FROZEN to prevent a double payout — manual reconciliation required.",
+        JSON.stringify({ disputeId, paymentId: payment.id, tradieId }),
+        updateError,
+      );
+      return errorJson(
+        "The split was paid but the payment record could not be updated. The dispute has been left open to prevent a double payout — please reconcile this payment manually.",
+        500,
+      );
     }
 
     // §7A: commission for tax-invoicing, scaled to the released portion.
