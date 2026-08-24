@@ -77,10 +77,11 @@ Deno.serve(async (req: Request) => {
     if (type === 'recurring_invoice' && checkoutSessionId && invoiceId) {
       const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
 
-      // Verify the invoice belongs to this user
+      // Verify the invoice belongs to this user. `total` funds the amount check
+      // below; `stripe_payment_intent_id` is read so we never clobber a real one.
       const { data: invoice } = await supabase
         .from("recurring_invoices")
-        .select("id, status, homeowner_id, stripe_checkout_session_id")
+        .select("id, status, homeowner_id, stripe_checkout_session_id, stripe_payment_intent_id, total")
         .eq("id", invoiceId)
         .maybeSingle();
 
@@ -95,31 +96,122 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Check Stripe checkout session
-      const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
+      // The session that proves payment MUST be the one we minted for THIS
+      // invoice. This guard used to be conditional on a stored id existing
+      // (`if (invoice.stripe_checkout_session_id && ...)`), so an invoice whose
+      // stored id is NULL — the normal state for a BECS invoice, which never
+      // creates a Checkout session at all — accepted ANY paid session the caller
+      // passed, with no amount check. The invoice's own homeowner could buy
+      // something cheap (a $4.99 estimate pack), hand that session id back here,
+      // and clear an arbitrarily large invoice: the tradie sees "paid" and is
+      // never transferred the money.
+      //
+      // Every legitimate Checkout path stores the session id on the invoice when
+      // it creates the session, and the only in-app caller (PaymentHistory's
+      // reconcileSentInvoices) reads that stored id straight off the row before
+      // passing it back — so requiring it breaks no real flow.
+      if (!invoice.stripe_checkout_session_id) {
+        return new Response(
+          JSON.stringify({
+            paid: false,
+            message:
+              "There's no checkout session to verify for this invoice. If it's paid by direct debit, the confirmation arrives automatically.",
+          }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
-      // Verify this checkout session actually belongs to this invoice
-      if (invoice.stripe_checkout_session_id && invoice.stripe_checkout_session_id !== checkoutSessionId) {
+      if (invoice.stripe_checkout_session_id !== checkoutSessionId) {
         return new Response(
           JSON.stringify({ paid: false, message: "Checkout session does not match this invoice" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
+      // Retrieve the STORED session id, not the caller-supplied one. The equality
+      // check above already makes them identical; reading from the invoice keeps
+      // the trusted value the single source of truth for what gets inspected.
+      const session = await stripe.checkout.sessions.retrieve(invoice.stripe_checkout_session_id);
+
       if (session.payment_status === 'paid') {
+        // Defence in depth: confirm the session actually covers this invoice.
+        // generate-recurring-invoice builds THREE independently-rounded line items
+        // (subtotal, extras, supplies — the processing-fee line is an integer cent
+        // passthrough, not a rounding), and the stored total is itself rounded, so
+        // amount_total can legitimately sit up to 2 cents below expected. Tolerate
+        // exactly that; reject a real shortfall. If a fourth genuinely-rounded line
+        // item is ever added there, widen this tolerance to match.
+        const expectedCents = Math.round(Number(invoice.total) * 100);
+        const paidCents = session.amount_total ?? 0;
+        const currency = (session.currency ?? "aud").toLowerCase();
+
+        // Guard the comparison itself: `paidCents < NaN` is false, so a
+        // non-numeric total would sail through. Fail closed instead.
+        if (!Number.isFinite(expectedCents) || currency !== "aud" || paidCents < expectedCents - 2) {
+          console.error(
+            `verify-payment: session ${session.id} does not cover invoice ${invoiceId} — paid ${paidCents} ${currency} vs expected ${expectedCents} aud`,
+          );
+          return new Response(
+            JSON.stringify({ paid: false, message: "That payment doesn't match this invoice's amount." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
         const paymentIntentId = typeof session.payment_intent === 'string'
           ? session.payment_intent
           : null;
 
-        await supabase
+        // Never overwrite an existing PaymentIntent id. A BECS invoice already
+        // carries the real off-session PI, and auto-release-recurring-payouts
+        // resolves the charge — and keys its transfer idempotency — from it, so
+        // replacing it with a Checkout session's PI would strand the payout.
+        const { data: updated, error: updateError } = await supabase
           .from("recurring_invoices")
           .update({
             status: 'paid',
             paid_at: new Date().toISOString(),
-            stripe_payment_intent_id: paymentIntentId,
+            ...(invoice.stripe_payment_intent_id ? {} : { stripe_payment_intent_id: paymentIntentId }),
           })
           .eq("id", invoiceId)
-          .in("status", ["sent", "processing", "overdue"]);
+          .in("status", ["sent", "processing", "overdue"])
+          .select("id");
+
+        if (updateError) {
+          console.error("verify-payment: failed to mark recurring invoice paid", invoiceId, updateError);
+          return errorJson("We couldn't update this invoice. Please try again in a moment.", 500);
+        }
+
+        // Report honestly. The status filter above legitimately matches zero rows
+        // for a disputed or cancelled invoice, and the old code still answered
+        // "verified and marked as paid" — telling the client a state change
+        // happened when it did not.
+        //
+        // Zero rows is ambiguous though, so re-read before answering: the webhook
+        // may simply have won the race and already flipped the invoice to 'paid'
+        // between our read and this update. That is a success, not a conflict —
+        // reporting it as one would be its own kind of lie.
+        if (!updated || updated.length === 0) {
+          const { data: recheck } = await supabase
+            .from("recurring_invoices")
+            .select("status")
+            .eq("id", invoiceId)
+            .maybeSingle();
+
+          if (recheck?.status === "paid") {
+            return new Response(
+              JSON.stringify({ paid: true, message: "Invoice already paid" }),
+              { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+
+          return new Response(
+            JSON.stringify({
+              paid: false,
+              message: `This invoice can't be marked paid while it is '${recheck?.status ?? invoice.status}'.`,
+            }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
 
         console.info(`Recurring invoice ${invoiceId} verified as paid (fallback)`);
 
