@@ -19,12 +19,25 @@ Right now, people signing in with Google see a raw technical URL instead of
    (already in the repo: `oauth-consent-logo-120.png`), homepage
    `https://connectradie.com`, privacy `https://connectradie.com/privacy`,
    terms `https://connectradie.com/terms`.
-4. Press **Publish app**, then **Submit for verification**.
-5. If it asks why you need the *calendar* permission: consider removing the
-   calendar scope for now and submitting with basic scopes only — calendar is
-   a "sensitive scope" and slows review down a lot. (The calendar import
-   feature is parked anyway.) Ask Claude to walk you through it live if the
-   screens don't match this.
+4. Press **Publish app**. Do this even if you are not ready to submit for
+   verification — see the note below, it is doing more work than it looks.
+5. Then **Submit for verification**, separately.
+
+> **Press Publish app on its own, today.** While the publishing status is
+> "Testing", Google revokes every refresh token after 7 days, so Google Calendar
+> sync breaks about a week after each connect no matter what the code does —
+> that is what broke it on 20 August 2026. Publishing lifts that immediately.
+> Until verification finishes, users see a "Google hasn't verified this app"
+> warning during consent and there is a 100-user cap; both are fine pre-launch
+> and neither stops you filming the verification demo video.
+>
+> Do **not** drop the calendar scopes to speed up review. An earlier version of
+> this list suggested it, but `af884e6` deliberately made both
+> (`calendar.events` and `calendar.readonly`) do what the verification
+> justification claims, and the import feature is no longer parked. Removing
+> them now would mean re-submitting later anyway.
+
+Ask Claude to walk you through it live if the screens don't match this.
 
 ## 2. Stripe — flip from test money to real money (do this the day before launch)
 
