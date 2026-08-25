@@ -475,7 +475,12 @@ export type Database = {
           calendar_id: string | null
           created_at: string
           id: string
+          last_refresh_error: string | null
+          last_refresh_error_at: string | null
+          last_refresh_error_code: string | null
+          last_refresh_ok_at: string | null
           last_synced_at: string | null
+          needs_reconnect: boolean
           provider: string
           refresh_token: string | null
           sync_enabled: boolean | null
@@ -488,7 +493,12 @@ export type Database = {
           calendar_id?: string | null
           created_at?: string
           id?: string
+          last_refresh_error?: string | null
+          last_refresh_error_at?: string | null
+          last_refresh_error_code?: string | null
+          last_refresh_ok_at?: string | null
           last_synced_at?: string | null
+          needs_reconnect?: boolean
           provider: string
           refresh_token?: string | null
           sync_enabled?: boolean | null
@@ -501,7 +511,12 @@ export type Database = {
           calendar_id?: string | null
           created_at?: string
           id?: string
+          last_refresh_error?: string | null
+          last_refresh_error_at?: string | null
+          last_refresh_error_code?: string | null
+          last_refresh_ok_at?: string | null
           last_synced_at?: string | null
+          needs_reconnect?: boolean
           provider?: string
           refresh_token?: string | null
           sync_enabled?: boolean | null

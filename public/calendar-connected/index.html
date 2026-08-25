@@ -37,7 +37,9 @@
     expired: { ok:false, icon:'!',      title:'Sign-in expired',
                msg:'This Google sign-in link has expired. Return to the ConnecTradie app and tap Connect again.' },
     failed:  { ok:false, icon:'!',      title:'Couldn’t connect Google',
-               msg:'Something went wrong connecting Google. Return to the ConnecTradie app and try Connect again.' }
+               msg:'Google didn’t complete the connection. Return to the ConnecTradie app and tap Connect again.' },
+    noconsent: { ok:false, icon:'!',    title:'Connect again to finish',
+               msg:'Google didn’t return a renewable authorisation, so this connection would stop working within the hour. Remove ConnecTradie at myaccount.google.com/permissions, then tap Connect again.' }
   };
   var s = states[status] || states.ok;
   var accent = s.ok ? '#06D6A0' : '#E11D48';
