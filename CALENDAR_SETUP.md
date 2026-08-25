@@ -163,9 +163,24 @@ client on the platform.
 > ⚠️ **While the OAuth consent screen is in "Testing" publishing status, Google
 > expires refresh tokens after 7 days.** The symptom is `invalid_grant` on every
 > sync about a week after connecting, fixed by reconnecting — for another seven
-> days. There is nothing to fix in this repository; the app has to be published
-> and verified. Check **APIs & Services → OAuth consent screen → Publishing
-> status** before investigating anything else.
+> days. There is nothing to fix in this repository. Check **APIs & Services →
+> OAuth consent screen → Publishing status** before investigating anything else.
+>
+> **The fix is "Publish app" — NOT verification.** The 7-day expiry is tied to
+> the publishing *status*, so pressing **Publish app** lifts it the moment the
+> status becomes "In production". Verification is a separate, slower process
+> that only removes the unverified-app warning screen and the 100-user cap; the
+> integration works throughout it. An earlier version of this note said the app
+> had to be "published and verified", which reads as *wait weeks before the
+> feature can work* — it does not.
+>
+> Confirmed as the cause on 2026-08-25. The evidence: the stored refresh token
+> was complete and well-formed (103 chars, `1//0…`) and the expiry arithmetic
+> was correct to the second, but `updated_at` still equalled `created_at` and
+> `last_synced_at` was NULL — so nothing had ever refreshed successfully, while
+> the code path itself was a textbook RFC 6749 grant. Diagnosed three times
+> before that; the `last_refresh_error_code` / `needs_reconnect` columns exist so
+> the fourth time reads the answer off the row instead.
 
 ## Security Considerations
 

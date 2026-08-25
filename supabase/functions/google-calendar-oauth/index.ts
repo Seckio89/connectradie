@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
+import type { Insert } from "../_shared/dbTypes.ts";
 import { parseGoogleTokenError } from "../_shared/googleTokenError.ts";
 
 const corsHeaders = {
@@ -22,7 +23,7 @@ interface TokenResponse {
 // redirect to a static confirmation page on our own domain (Vercel serves it as
 // real HTML), which renders correctly and needs no auth.
 const APP_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com";
-function resultRedirect(status: "ok" | "expired" | "failed"): Response {
+function resultRedirect(status: "ok" | "expired" | "failed" | "noconsent"): Response {
   return Response.redirect(`${APP_ORIGIN}/calendar-connected?status=${status}`, 302);
 }
 
@@ -172,6 +173,9 @@ Deno.serve(async (req: Request) => {
       authUrl.searchParams.set("scope", "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.readonly");
       authUrl.searchParams.set("access_type", "offline");
       authUrl.searchParams.set("prompt", "consent");
+      // Carry forward anything the tradie has already granted, so a re-consent
+      // cannot come back NARROWER than the grant it replaces.
+      authUrl.searchParams.set("include_granted_scopes", "true");
       authUrl.searchParams.set("state", await signState(user!.id));
 
       return new Response(
@@ -315,24 +319,67 @@ Deno.serve(async (req: Request) => {
     // is primary for this account, so no extra scope is needed.
     const calendarId = "primary";
 
-    // Store integration in database
+    // verifyState is what proves who this callback belongs to, and it redirects
+    // on failure — so this is unreachable. Assert it as a guard rather than with
+    // `!`, because the row this identifies is the one holding the tradie's
+    // Google credentials, and a null here would upsert it onto nobody.
+    if (!callbackUserId) {
+      console.error("OAuth callback reached the token exchange with no verified user");
+      return resultRedirect("failed");
+    }
+
+    // ⚠️ THE REFRESH TOKEN IS THE WHOLE INTEGRATION. Without one, this row is
+    // good for exactly one hour and can never be renewed.
+    //
+    // This upsert used to write `refresh_token: tokens.refresh_token || null`.
+    // Google returns a refresh token on a FIRST consent, but a re-consent it
+    // decides to auto-approve can come back without one — and that `|| null`
+    // then wrote NULL over the working token already stored, bricking a healthy
+    // integration in one click. Keep what we have unless Google gives us better.
+    const { data: existing } = await supabaseClient
+      .from("calendar_integrations")
+      .select("refresh_token")
+      .eq("tradie_id", callbackUserId)
+      .eq("provider", "google")
+      .maybeSingle();
+
+    const newRefreshToken = tokens.refresh_token || null;
+    const keptRefreshToken = existing?.refresh_token ?? null;
+    const haveRefreshToken = Boolean(newRefreshToken || keptRefreshToken);
+
+    const payload: Insert<"calendar_integrations"> = {
+      tradie_id: callbackUserId,
+      provider: "google",
+      access_token: tokens.access_token,
+      token_expires_at: expiresAt.toISOString(),
+      calendar_id: calendarId,
+      sync_enabled: true,
+      last_synced_at: null,
+      // No refresh token anywhere means this connection cannot outlive the hour.
+      // Say so in the row rather than letting the next sync discover it.
+      needs_reconnect: !haveRefreshToken,
+      last_refresh_error_code: haveRefreshToken ? null : "no_refresh_token",
+      last_refresh_error: haveRefreshToken ? null : "Google returned no refresh token at consent",
+      last_refresh_error_at: haveRefreshToken ? null : new Date().toISOString(),
+      // Only write the key when we actually have a new one — omitting it leaves
+      // the stored token untouched on an update.
+      ...(newRefreshToken ? { refresh_token: newRefreshToken } : {}),
+    };
+
     const { error: dbError } = await supabaseClient
       .from("calendar_integrations")
-      .upsert({
-        tradie_id: callbackUserId,
-        provider: "google",
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token || null,
-        token_expires_at: expiresAt.toISOString(),
-        calendar_id: calendarId,
-        sync_enabled: true,
-        last_synced_at: null,
-      }, {
-        onConflict: "tradie_id,provider",
-      });
+      .upsert(payload, { onConflict: "tradie_id,provider" });
 
     if (dbError) {
+      console.error("Failed to store calendar integration", dbError.message);
       return resultRedirect("failed");
+    }
+
+    if (!haveRefreshToken) {
+      console.error(
+        `Google consent for ${callbackUserId} returned no refresh token and none was stored — the connection cannot be renewed`,
+      );
+      return resultRedirect("noconsent");
     }
 
     return resultRedirect("ok");

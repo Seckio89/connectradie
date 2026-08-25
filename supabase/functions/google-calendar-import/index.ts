@@ -2,7 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import type { Insert } from "../_shared/dbTypes.ts";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
-import { parseGoogleTokenError } from "../_shared/googleTokenError.ts";
+import { getGoogleAccessToken, type IntegrationPatch } from "../_shared/googleToken.ts";
+import { createGoogleSession, GoogleAuthExpired } from "../_shared/googleApi.ts";
 
 /*
   google-calendar-import — one-time Google Calendar → ConnecTradie import.
@@ -78,35 +79,47 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     if (!integration) return json({ error: "Connect Google Calendar first." }, 404);
 
-    let accessToken: string = integration.access_token;
-    if (new Date() >= new Date(integration.token_expires_at) && integration.refresh_token) {
-      const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
-      const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
-      if (!clientId || !clientSecret) return json({ error: "Google not configured" }, 500);
-      const res = await fetch("https://oauth2.googleapis.com/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          client_id: clientId, client_secret: clientSecret,
-          refresh_token: integration.refresh_token, grant_type: "refresh_token",
-        }),
-      });
-      if (!res.ok) {
-        // Response body only — the request above carries client_secret and
-        // refresh_token and must never be logged.
-        const { code, message, detail } = parseGoogleTokenError(await res.text());
-        console.error("Google token refresh failed", res.status, code, detail);
-        return json({ error: message, code, detail }, 401);
+    const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
+    const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
+    if (!clientId || !clientSecret) return json({ error: "Google not configured" }, 500);
+
+    const persistToken = async (patch: IntegrationPatch): Promise<void> => {
+      const { error } = await supabase
+        .from("calendar_integrations")
+        .update(patch)
+        .eq("id", integration.id);
+      if (error) {
+        console.error("calendar_integrations token write failed:", error.message);
+        return;
       }
-      const t = await res.json();
-      accessToken = t.access_token;
-      await supabase.from("calendar_integrations").update({
-        access_token: accessToken,
-        token_expires_at: new Date(Date.now() + t.expires_in * 1000).toISOString(),
-      }).eq("id", integration.id);
+      // Keep the in-memory row in step with what was just stored, so a second
+      // refresh in this same request uses a ROTATED token rather than the one it
+      // replaced — which Google would refuse as invalid_grant.
+      Object.assign(integration, patch);
+    };
+
+    const tokenFor = (force: boolean) =>
+      getGoogleAccessToken({ integration, clientId, clientSecret, persist: persistToken, force });
+
+    // Shared with sync-google-calendar. This function used to carry its own copy
+    // of the refresh grant which persisted ONLY the access token — so the first
+    // time Google rotated the refresh token, the new one was thrown away and the
+    // integration became unrenewable. One implementation, one behaviour.
+    const googleToken = await tokenFor(false);
+    if (!googleToken.ok) {
+      return json({
+        error: googleToken.message,
+        code: googleToken.code,
+        detail: googleToken.detail,
+        needsReconnect: googleToken.needsReconnect,
+      }, 401);
     }
 
-    const gFetch = (url: string) => fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const google = createGoogleSession({
+      accessToken: googleToken.accessToken,
+      refresh: () => tokenFor(true),
+    });
+    const gFetch = (url: string) => google.fetch(url);
 
     const body = await req.json().catch(() => ({}));
     const action = body.action as string;
@@ -200,6 +213,15 @@ Deno.serve(async (req: Request) => {
 
     return json({ error: "Unknown action" }, 400);
   } catch (err) {
+    // A dead grant is actionable; "Internal error" is not.
+    if (err instanceof GoogleAuthExpired) {
+      return json({
+        error: err.message,
+        code: err.code,
+        detail: err.detail,
+        needsReconnect: err.needsReconnect,
+      }, 401);
+    }
     console.error("google-calendar-import error", err);
     return json({ error: err instanceof Error ? err.message : "Internal error" }, 500);
   }

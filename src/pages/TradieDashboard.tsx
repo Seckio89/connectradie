@@ -36,6 +36,7 @@ import {
   FileText,
   Car,
   ArrowRight,
+  ShieldCheck,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getAuthHeaders } from '../lib/edgeFn';
@@ -43,7 +44,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { redactSensitiveInfo } from '../lib/redaction';
 import { checkLicenseExpired, formatDate } from '../lib/utils';
 import { extractSuburb } from '../lib/contactGating';
-import type { AvailabilitySlot, CalendarIntegration, Job } from '../types/database';
+import type { AvailabilitySlot, Job } from '../types/database';
 import DashboardLayout from '../components/DashboardLayout';
 import PayoutSummaryCard from '../components/PayoutSummaryCard';
 import BulkAvailabilityModal from '../components/BulkAvailabilityModal';
@@ -118,6 +119,28 @@ function getStatusColor(status: string | null) {
   }
 }
 
+/**
+ * The `calendar_integrations` columns this page reads.
+ *
+ * Deliberately NOT access_token or refresh_token. `select('*')` shipped a
+ * long-lived Google refresh token — valid past logout and past a password
+ * change — into the browser on every dashboard load, where any XSS or browser
+ * extension could read it. Nothing here has ever used either column.
+ */
+type CalendarConnection = {
+  id: string;
+  provider: string;
+  calendar_id: string | null;
+  sync_enabled: boolean | null;
+  last_synced_at: string | null;
+  needs_reconnect: boolean;
+  last_refresh_error_code: string | null;
+  last_refresh_ok_at: string | null;
+};
+
+const CALENDAR_CONNECTION_COLUMNS =
+  'id, provider, calendar_id, sync_enabled, last_synced_at, needs_reconnect, last_refresh_error_code, last_refresh_ok_at';
+
 /** What sync-google-calendar reports back about a completed sync. */
 type CalendarSyncResult = {
   conflictsChecked?: boolean;
@@ -127,6 +150,8 @@ type CalendarSyncResult = {
   slotsBlocked?: number;
   slotsCleared?: number;
   jobsExported?: number;
+  exportFailures?: number;
+  googleErrors?: number;
 };
 
 /**
@@ -154,6 +179,12 @@ function describeSyncResult(result: CalendarSyncResult): string {
     : 'Calendar synced.';
 
   const parts: string[] = [];
+  // A refused write used to be invisible: the function counted only successes,
+  // so a sync that pushed nothing still read as "no clashes".
+  const failures = result.exportFailures ?? 0;
+  if (failures > 0) {
+    parts.push(`${failures} event${s(failures)} could not be saved to Google.`);
+  }
   if (blocked > 0) {
     parts.push(`${blocked} slot${s(blocked)} blocked — you are busy in Google Calendar then.`);
   }
@@ -292,11 +323,12 @@ export default function TradieDashboard() {
   const [showConversationSettings, setShowConversationSettings] = useState(false);
 
   // Calendar integration
-  const [calendarIntegration, setCalendarIntegration] = useState<CalendarIntegration | null>(null);
+  const [calendarIntegration, setCalendarIntegration] = useState<CalendarConnection | null>(null);
   // Whether we actually know the connection state — null alone can't distinguish
   // "not connected" from "the lookup failed".
   const [calendarStatus, setCalendarStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [syncLoading, setSyncLoading] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
   const [unsyncLoading, setUnsyncLoading] = useState(false);
   const [showUnsyncConfirm, setShowUnsyncConfirm] = useState(false);
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
@@ -497,21 +529,21 @@ export default function TradieDashboard() {
   // round-trip instead of syncing, so no sync request was ever sent.
   // Returns the row so callers can act on the result without reading state that
   // has not re-rendered yet. Three outcomes, deliberately distinct:
-  //   CalendarIntegration → connected
+  //   CalendarConnection  → connected
   //   null                → confirmed not connected
   //   undefined           → the lookup itself failed; we do not know
-  const fetchCalendarIntegration = useCallback(async (): Promise<CalendarIntegration | null | undefined> => {
+  const fetchCalendarIntegration = useCallback(async (): Promise<CalendarConnection | null | undefined> => {
     if (!user) return undefined;
     setCalendarStatus('loading');
     try {
       const { data, error } = await supabase
         .from('calendar_integrations')
-        .select('*')
+        .select(CALENDAR_CONNECTION_COLUMNS)
         .eq('tradie_id', user.id)
         .eq('provider', 'google')
         .maybeSingle();
       if (error) throw error;
-      const integration = data as CalendarIntegration | null;
+      const integration = data as CalendarConnection | null;
       setCalendarIntegration(integration);
       setCalendarStatus('loaded');
       return integration;
@@ -748,6 +780,16 @@ export default function TradieDashboard() {
 
   // ─── Handlers ─────────────────────────────────────────────
 
+  // Two different faults with two different remedies, kept apart on purpose.
+  // needs_reconnect: the saved authorisation is dead and a fresh consent fixes
+  // it. invalid_client: GOOGLE_CLIENT_SECRET is wrong, and reconnecting fails
+  // identically — prompting for one would be a loop with no exit.
+  const calendarCredentialsFault =
+    calendarIntegration?.last_refresh_error_code === 'invalid_client' ||
+    calendarIntegration?.last_refresh_error_code === 'unauthorized_client';
+  const calendarNeedsReconnect =
+    Boolean(calendarIntegration?.needs_reconnect) && !calendarCredentialsFault;
+
   const handleSyncCalendar = useCallback(async () => {
     if (!user) return;
 
@@ -767,7 +809,10 @@ export default function TradieDashboard() {
     try {
       const headers = await getAuthHeaders();
 
-      if (!calendarIntegration) {
+      // `needs_reconnect` means Google has refused the saved authorisation and
+      // only a fresh consent mints a new one — so this button must start the
+      // consent flow, not post a sync that is guaranteed to fail the same way.
+      if (!calendarIntegration || calendarIntegration.needs_reconnect) {
         const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-oauth?action=initiate`;
         const response = await fetch(apiUrl, { headers });
         const result = await response.json();
@@ -798,13 +843,19 @@ export default function TradieDashboard() {
             if (authWindow.closed) {
               clearInterval(checkWindow);
               const integration = await fetchCalendarIntegration();
+              const connected = Boolean(integration && !integration.needs_reconnect);
               showToast(
-                integration
+                connected
                   ? 'Calendar connected successfully!'
-                  : integration === null
-                    ? 'Google Calendar was not connected. Try again, and make sure you allow calendar access.'
-                    : 'Could not check whether Google Calendar connected. Refresh and look at the calendar button.',
-                !integration
+                  : integration
+                    // The row exists but carries no renewable authorisation, so it
+                    // would stop working within the hour. Saying "connected" here
+                    // is what would send a reviewer into exactly that trap.
+                    ? 'Google connected without a renewable authorisation. Remove ConnecTradie at myaccount.google.com/permissions, then connect again.'
+                    : integration === null
+                      ? 'Google Calendar was not connected. Try again, and make sure you allow calendar access.'
+                      : 'Could not check whether Google Calendar connected. Refresh and look at the calendar button.',
+                !connected
               );
               setSyncLoading(false);
             }
@@ -827,18 +878,56 @@ export default function TradieDashboard() {
           // This used to read `result.slotsRemoved`, which the function returned
           // as a hardcoded 0 — so every sync announced "0 conflicting slot(s)
           // removed" whatever it found. Say what actually happened instead.
-          showToast(describeSyncResult(result), !result.conflictsChecked);
+          showToast(describeSyncResult(result), !result.conflictsChecked || (result.exportFailures ?? 0) > 0);
           fetchSlots();
         } else {
-          showToast(result.error || 'Sync failed', true);
+          // A dead authorisation comes back as a 401 naming the remedy. Re-read
+          // the row so the button can switch to Reconnect instead of offering a
+          // sync that will fail the same way every time.
+          showToast(result.error || 'Google rejected the sync. Try again in a moment.', true);
+          if (response.status === 401) await fetchCalendarIntegration();
         }
         setSyncLoading(false);
       }
     } catch {
-      showToast('Failed to sync calendar', true);
+      showToast('Could not reach the sync service. Check your connection and try again.', true);
       setSyncLoading(false);
     }
   }, [user, calendarIntegration, calendarStatus, fetchCalendarIntegration, fetchSlots, showToast]);
+
+  // Test connection — asks Google for a new access token right now.
+  //
+  // The refresh path could previously only be exercised by connecting, waiting
+  // out the access token's full hour and pressing Sync, so the one thing that
+  // kept breaking was the one thing nobody could check. This runs the exact
+  // grant that fails, in about a second.
+  const handleTestConnection = useCallback(async () => {
+    if (!user || !calendarIntegration) return;
+    setTestLoading(true);
+    try {
+      const headers = await getAuthHeaders();
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-google-calendar`;
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'refresh' }),
+      });
+      const result = await response.json();
+
+      if (result.ok) {
+        const minutes = Math.round((result.expiresInSeconds ?? 0) / 60);
+        showToast(`Connection is healthy — Google renewed access for another ${minutes} minutes.`);
+      } else {
+        showToast(result.error || 'Google refused to renew the connection.', true);
+      }
+      // Either way the row now records what happened, so re-read it.
+      await fetchCalendarIntegration();
+    } catch {
+      showToast('Could not reach the sync service. Check your connection and try again.', true);
+    } finally {
+      setTestLoading(false);
+    }
+  }, [user, calendarIntegration, fetchCalendarIntegration, showToast]);
 
   // Unsync — strips every event ConnecTradie pushed into Google back out again,
   // so the phone calendar returns to how it looked before syncing. The Google
@@ -2075,7 +2164,11 @@ export default function TradieDashboard() {
                   )}
                   {isProUser ? (
                     <>
-                    <button onClick={handleSyncCalendar} disabled={syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[0.625rem] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
+                    {/* Amber is "blocked on a person": the tradie has to re-consent.
+                        Rose is "failed": a wrong GOOGLE_CLIENT_SECRET, which no
+                        amount of reconnecting can fix — so that state offers no
+                        reconnect at all rather than looping them forever. */}
+                    <button onClick={handleSyncCalendar} disabled={syncLoading} className={`flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border text-[0.625rem] sm:text-sm font-medium rounded-ct-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] ${calendarNeedsReconnect ? 'border-ct-amber/30 text-ct-amber hover:bg-ct-amber/[0.13]' : 'border-ct-line text-ct-mute-2 hover:bg-ct-surface-2'}`}>
                       {/* Three states, not two. Offering "Connect" while the lookup
                           is unresolved told an already-connected tradie they were
                           disconnected, and sent them to Google consent instead of
@@ -2086,12 +2179,25 @@ export default function TradieDashboard() {
                         <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">Checking connection...</span><span className="sm:hidden">Sync</span></>
                       ) : calendarStatus === 'error' ? (
                         <><RefreshCw className="w-4 h-4" /><span className="hidden sm:inline">Check calendar connection</span><span className="sm:hidden">Retry</span></>
+                      ) : calendarNeedsReconnect ? (
+                        <><Calendar className="w-4 h-4" /><span className="hidden sm:inline">Reconnect Google Calendar</span><span className="sm:hidden">Reconnect</span></>
                       ) : calendarIntegration ? (
                         <><RefreshCw className="w-4 h-4" /><span className="hidden sm:inline">Sync Google Calendar</span><span className="sm:hidden">Sync</span></>
                       ) : (
                         <><Calendar className="w-4 h-4" /><span className="hidden sm:inline">Connect Google Calendar</span><span className="sm:hidden">Connect</span></>
                       )}
                     </button>
+                    {/* Proves the refresh grant works without waiting out the
+                        access token's hour — the check that used to be impossible. */}
+                    {calendarIntegration && (
+                      <button onClick={handleTestConnection} disabled={testLoading || syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[0.625rem] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
+                        {testLoading ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">Testing...</span><span className="sm:hidden">Test</span></>
+                        ) : (
+                          <><ShieldCheck className="w-4 h-4" /><span className="hidden sm:inline">Test connection</span><span className="sm:hidden">Test</span></>
+                        )}
+                      </button>
+                    )}
                     {/* Only offered once connected — nothing to strip out otherwise. */}
                     {calendarIntegration && (
                       <button onClick={() => setShowUnsyncConfirm(true)} disabled={unsyncLoading || syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[0.625rem] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
@@ -2136,6 +2242,16 @@ export default function TradieDashboard() {
                       </>
                     )}
                   </div>
+                  {calendarNeedsReconnect && (
+                    <p className="basis-full text-xs text-ct-mute-2 text-center sm:text-left">
+                      Google no longer accepts the saved authorisation. Reconnect to keep your calendar in sync.
+                    </p>
+                  )}
+                  {calendarCredentialsFault && (
+                    <p className="basis-full text-xs text-ct-rose text-center sm:text-left">
+                      Google rejected this app's credentials. Contact support — reconnecting won't fix it.
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -1,20 +1,15 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
-import { parseGoogleTokenError } from "../_shared/googleTokenError.ts";
 import { planConflictChanges } from "../_shared/calendarConflicts.ts";
+import { getGoogleAccessToken, type IntegrationPatch } from "../_shared/googleToken.ts";
+import { createGoogleSession, GoogleAuthExpired } from "../_shared/googleApi.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
-
-interface TokenResponse {
-  access_token: string;
-  expires_in: number;
-  refresh_token?: string;
-}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -93,104 +88,138 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    let accessToken = integration.access_token;
-
-    // Check if token needs refresh
-    const now = new Date();
-    const expiresAt = new Date(integration.token_expires_at);
-
-    if (now >= expiresAt && integration.refresh_token) {
-      // Refresh the token
-      const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
-      const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
-
-      if (!clientId || !clientSecret) {
-        return new Response(
-          JSON.stringify({ error: "Google Calendar not configured" }),
-          {
-            status: 500,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-
-      const refreshResponse = await fetch("https://oauth2.googleapis.com/token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          refresh_token: integration.refresh_token,
-          grant_type: "refresh_token",
-        }),
-      });
-
-      if (!refreshResponse.ok) {
-        // Response body only — the request above carries client_secret and
-        // refresh_token and must never be logged.
-        const { code, message, detail } = parseGoogleTokenError(
-          await refreshResponse.text()
-        );
-        console.error(
-          "Google token refresh failed",
-          refreshResponse.status,
-          code,
-          detail
-        );
-        return new Response(
-          JSON.stringify({ error: message, code, detail }),
-          {
-            status: 401,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
-        );
-      }
-
-      const tokens: TokenResponse = await refreshResponse.json();
-      accessToken = tokens.access_token;
-      const newExpiresAt = new Date(Date.now() + tokens.expires_in * 1000);
-
-      // Update stored tokens. Google normally returns no refresh_token on a
-      // refresh, and overwriting the stored one with null would leave the row
-      // unrefreshable — so only write it when one actually came back.
-      await supabaseClient
-        .from("calendar_integrations")
-        .update({
-          access_token: accessToken,
-          token_expires_at: newExpiresAt.toISOString(),
-          ...(tokens.refresh_token ? { refresh_token: tokens.refresh_token } : {}),
-        })
-        .eq("id", integration.id);
-    }
-
-    // Handle event deletion requests (from frontend when slots are removed)
+    // The body is read BEFORE any token work so `action=refresh` can exercise
+    // the refresh grant on its own.
     let body: Record<string, unknown> = {};
     try { body = await req.json(); } catch { /* no body — normal sync */ }
     const deleteEventIds = Array.isArray(body.deleteEventIds) ? body.deleteEventIds as string[] : [];
+
+    const persistToken = async (patch: IntegrationPatch): Promise<void> => {
+      const { error } = await supabaseClient
+        .from("calendar_integrations")
+        .update(patch)
+        .eq("id", integration.id);
+      if (error) {
+        console.error("calendar_integrations token write failed:", error.message);
+        return;
+      }
+      // Keep the in-memory row in step with what was just stored, so a second
+      // refresh in this same request uses a ROTATED token rather than the one it
+      // replaced — which Google would refuse as invalid_grant.
+      Object.assign(integration, patch);
+    };
+
+    const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
+    const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
+    if (!clientId || !clientSecret) {
+      return new Response(
+        JSON.stringify({ error: "Google Calendar not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const tokenFor = (force: boolean) =>
+      getGoogleAccessToken({ integration, clientId, clientSecret, persist: persistToken, force });
+
+    // ── action=refresh: prove the refresh grant works, in about a second ──
+    //
+    // Refresh could previously only be exercised by connecting, waiting out the
+    // access token's full hour, and pressing Sync — so the one thing that kept
+    // breaking was the one thing nobody could check. This forces the exact grant
+    // that fails and reports what Google said, touching neither the calendar nor
+    // last_synced_at. It returns no token material.
+    if (body.action === "refresh") {
+      const forced = await tokenFor(true);
+      if (!forced.ok) {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            error: forced.message,
+            code: forced.code,
+            detail: forced.detail,
+            needsReconnect: forced.needsReconnect,
+          }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          message: "Google renewed access.",
+          expiresInSeconds: forced.expiresInSeconds,
+          refreshTokenRotated: forced.refreshTokenRotated,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const googleToken = await tokenFor(false);
+    if (!googleToken.ok) {
+      return new Response(
+        JSON.stringify({
+          error: googleToken.message,
+          code: googleToken.code,
+          detail: googleToken.detail,
+          needsReconnect: googleToken.needsReconnect,
+        }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Every Google call below goes through this session: it renews once on a 401
+    // and THROWS GoogleAuthExpired if the renewed token is refused too. The throw
+    // is the point — an `if (res.ok)` with no else branch cannot swallow it.
+    const google = createGoogleSession({
+      accessToken: googleToken.accessToken,
+      refresh: () => tokenFor(true),
+    });
+
+    // A sync that wrote nothing must not report success. That is exactly how 215
+    // availability slots produced zero Google events without anyone noticing.
+    let googleErrors = 0;
 
     // A 404 from Google means the user already deleted it by hand — that is the
     // desired end state, so count it as removed rather than as a failure.
     const deleteGoogleEvent = async (eventId: string): Promise<boolean> => {
       try {
-        const delRes = await fetch(
+        const delRes = await google.fetch(
           `https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events/${eventId}`,
-          { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } }
+          { method: "DELETE" }
         );
-        return delRes.ok || delRes.status === 404;
-      } catch {
+        if (delRes.ok || delRes.status === 404) return true;
+        // Was a bare `return false`: a delete Google refused looked identical to
+        // one it was never asked to do, and the caller reported success either way.
+        console.error(`Google event delete failed for ${eventId}:`, delRes.status, (await delRes.text()).slice(0, 200));
+        googleErrors++;
+        return false;
+      } catch (e) {
+        if (e instanceof GoogleAuthExpired) throw e;
+        console.error(`Google event delete threw for ${eventId}:`, e);
+        googleErrors++;
         return false;
       }
     };
 
     if (deleteEventIds.length > 0) {
       let deleted = 0;
+      let failedDeletes = 0;
       for (const eventId of deleteEventIds) {
         if (await deleteGoogleEvent(eventId)) deleted++;
+        else failedDeletes++;
+      }
+      // useAvailabilitySlots fires this and discards the body, so the count only
+      // reaches anyone through the log — but a silent partial failure here leaves
+      // an event in Google for a slot that no longer exists.
+      if (failedDeletes > 0) {
+        console.error(`Deleted ${deleted} of ${deleteEventIds.length} calendar event(s); ${failedDeletes} failed`);
       }
       return new Response(
-        JSON.stringify({ success: true, message: `Deleted ${deleted} calendar event(s)`, deleted }),
+        JSON.stringify({
+          success: failedDeletes === 0,
+          message: `Deleted ${deleted} calendar event(s)`,
+          deleted,
+          failed: failedDeletes,
+        }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -289,9 +318,7 @@ Deno.serve(async (req: Request) => {
         listUrl.searchParams.set("maxResults", "250");
         if (pageToken) listUrl.searchParams.set("pageToken", pageToken);
 
-        const listRes = await fetch(listUrl.toString(), {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const listRes = await google.fetch(listUrl.toString());
         if (!listRes.ok) {
           console.error("Unsync: failed to list events", listRes.status, await listRes.text());
           break;
@@ -380,9 +407,7 @@ Deno.serve(async (req: Request) => {
         calUrl.searchParams.set("maxResults", "250");
         if (calPageToken) calUrl.searchParams.set("pageToken", calPageToken);
 
-        const calRes = await fetch(calUrl.toString(), {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        const calRes = await google.fetch(calUrl.toString());
         if (!calRes.ok) {
           throw new Error(`calendarList ${calRes.status}: ${(await calRes.text()).slice(0, 200)}`);
         }
@@ -403,12 +428,9 @@ Deno.serve(async (req: Request) => {
       // 2. Their busy intervals, in batches — freeBusy takes at most 50 ids.
       for (let i = 0; i < calendarIds.length; i += FREEBUSY_BATCH) {
         const batch = calendarIds.slice(i, i + FREEBUSY_BATCH);
-        const fbRes = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
+        const fbRes = await google.fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ timeMin, timeMax, items: batch.map((id) => ({ id })) }),
         });
         if (!fbRes.ok) {
@@ -433,6 +455,10 @@ Deno.serve(async (req: Request) => {
         }
       }
     } catch (e) {
+      // A dead grant is NOT the non-fatal case — it takes the export half down
+      // too, and reporting it as "we could not check for clashes" hides the one
+      // fault the tradie can act on.
+      if (e instanceof GoogleAuthExpired) throw e;
       // Non-fatal, deliberately. A 403 here means calendar.readonly has not been
       // granted (likely while Google verification is still pending), and the
       // export half of this sync still works. Killing the whole request would
@@ -532,6 +558,7 @@ Deno.serve(async (req: Request) => {
     // Fetch upcoming scheduled jobs for this tradie and create Google
     // Calendar events for any that don't already have a calendar_event_id.
     let jobsExported = 0;
+    let exportFailures = 0;
     try {
       // Idempotence guard, built once and used by BOTH export loops below.
       // jobs.calendar_event_id has never persisted either, so without this the
@@ -557,10 +584,14 @@ Deno.serve(async (req: Request) => {
           dedupUrl.searchParams.set("maxResults", "250");
           if (dedupToken) dedupUrl.searchParams.set("pageToken", dedupToken);
 
-          const dedupRes = await fetch(dedupUrl.toString(), {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-          if (!dedupRes.ok) break;
+          const dedupRes = await google.fetch(dedupUrl.toString());
+          if (!dedupRes.ok) {
+            // Breaking here silently means every slot looks un-exported and gets
+            // duplicated. Say so rather than filling the calendar twice over.
+            console.error("Dedup listing failed:", dedupRes.status, (await dedupRes.text()).slice(0, 200));
+            googleErrors++;
+            break;
+          }
           const dedupData = await dedupRes.json();
           for (const ev of dedupData.items || []) {
             const start = ev.start?.dateTime;
@@ -578,7 +609,9 @@ Deno.serve(async (req: Request) => {
           dedupPages++;
         } while (dedupToken && dedupPages < 10);
       } catch (e) {
+        if (e instanceof GoogleAuthExpired) throw e;
         console.error("Could not list existing events for dedup:", e);
+        googleErrors++;
       }
 
       const { data: upcomingJobs } = await supabaseClient
@@ -591,6 +624,7 @@ Deno.serve(async (req: Request) => {
         .is("calendar_event_id", null);
 
       let jobsSkipped = 0;
+      let jobsFailed = 0;
       for (const job of upcomingJobs || []) {
         try {
           const category = job.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, " ") || "";
@@ -617,14 +651,11 @@ Deno.serve(async (req: Request) => {
             extendedProperties: { private: { connectradie: "job" } },
           };
 
-          const createRes = await fetch(
+          const createRes = await google.fetch(
             `https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events`,
             {
               method: "POST",
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify(eventBody),
             }
           );
@@ -640,9 +671,18 @@ Deno.serve(async (req: Request) => {
               .eq("id", job.id);
             if (backErr) console.error(`calendar_event_id write-back failed for job ${job.id}:`, backErr.message, backErr.details, backErr.hint);
             jobsExported++;
+          } else {
+            // There was no else here at all. A rejected create fell straight
+            // through and the sync still answered success.
+            console.error(`Google event create failed for job ${job.id}:`, createRes.status, (await createRes.text()).slice(0, 200));
+            googleErrors++;
+            jobsFailed++;
           }
         } catch (e) {
+          if (e instanceof GoogleAuthExpired) throw e;
           console.error(`Failed to export job ${job.id} to Google Calendar:`, e);
+          googleErrors++;
+          jobsFailed++;
         }
       }
 
@@ -658,6 +698,7 @@ Deno.serve(async (req: Request) => {
 
       let slotsExported = 0;
       let slotsSkipped = 0;
+      let slotsFailed = 0;
       for (const slot of slotsToExport || []) {
         try {
           if (existingStarts.availability.has(new Date(slot.start_time).toISOString())) { slotsSkipped++; continue; }
@@ -671,14 +712,11 @@ Deno.serve(async (req: Request) => {
             extendedProperties: { private: { connectradie: "availability" } },
           };
 
-          const createRes = await fetch(
+          const createRes = await google.fetch(
             `https://www.googleapis.com/calendar/v3/calendars/${integration.calendar_id}/events`,
             {
               method: "POST",
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify(slotBody),
             }
           );
@@ -691,9 +729,16 @@ Deno.serve(async (req: Request) => {
               .eq("id", slot.id);
             if (backErr) console.error(`calendar_event_id write-back failed for slot ${slot.id}:`, backErr.message, backErr.details, backErr.hint);
             slotsExported++;
+          } else {
+            console.error(`Google event create failed for slot ${slot.id}:`, createRes.status, (await createRes.text()).slice(0, 200));
+            googleErrors++;
+            slotsFailed++;
           }
         } catch (e) {
+          if (e instanceof GoogleAuthExpired) throw e;
           console.error(`Failed to export slot ${slot.id}:`, e);
+          googleErrors++;
+          slotsFailed++;
         }
       }
 
@@ -701,8 +746,11 @@ Deno.serve(async (req: Request) => {
         console.log(`Export: skipped ${slotsSkipped} slot(s) and ${jobsSkipped} job(s) already present in Google`);
       }
       jobsExported += slotsExported;
+      exportFailures = jobsFailed + slotsFailed;
     } catch (exportErr) {
+      if (exportErr instanceof GoogleAuthExpired) throw exportErr;
       console.error("Export to Google Calendar failed:", exportErr);
+      googleErrors++;
     }
 
     // Update last synced timestamp
@@ -715,8 +763,12 @@ Deno.serve(async (req: Request) => {
 
     return new Response(
       JSON.stringify({
-        success: true,
-        message: "Calendar synced successfully",
+        // Conditional, not a literal. Before this, a sync whose every Google
+        // write was refused still answered "Calendar synced successfully".
+        success: googleErrors === 0,
+        message: googleErrors === 0
+          ? "Calendar synced successfully"
+          : "Calendar synced, but Google rejected some changes.",
         // `slotsRemoved` is deliberately gone rather than kept at 0. It was a
         // hardcoded literal that the dashboard still rendered as "N conflicting
         // slot(s) removed", so every sync claimed to have removed nothing while
@@ -729,6 +781,8 @@ Deno.serve(async (req: Request) => {
         slotsBlocked,
         slotsCleared,
         jobsExported,
+        exportFailures,
+        googleErrors,
       }),
       {
         status: 200,
@@ -736,6 +790,20 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (error) {
+    // The grant died mid-sync. Answer with the remedy rather than "Internal
+    // server error" — this is the one failure a tradie can actually act on, and
+    // it is precisely the one that used to disappear into a swallowed 401.
+    if (error instanceof GoogleAuthExpired) {
+      return new Response(
+        JSON.stringify({
+          error: error.message,
+          code: error.code,
+          detail: error.detail,
+          needsReconnect: error.needsReconnect,
+        }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     return new Response(
       JSON.stringify({
         error: "Internal server error",
