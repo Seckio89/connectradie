@@ -23,7 +23,10 @@ import {
 } from "./googleToken.ts";
 
 const CLIENT_ID = "client-id.apps.googleusercontent.com";
-const CLIENT_SECRET = "GOCSPX-do-not-log-me";
+// Placeholder-shaped on purpose: a fixture that looks like a real GOCSPX-…
+// secret trips check:secrets on every run. The leak assertion below only
+// needs a distinctive string to search for.
+const CLIENT_SECRET = "fake-client-secret-never-log-this";
 const STORED_REFRESH = "1//0-stored-refresh-token";
 
 const NOW = Date.parse("2026-08-25T08:00:00.000Z");
