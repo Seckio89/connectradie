@@ -470,6 +470,14 @@ verify_jwt = true
 [functions.credential-expiry-sweep]
 verify_jwt = true
 
+# refresh-calendar-tokens is the six-hourly Google Calendar credential
+# heartbeat, driven by pg_cron presenting the service-role key as a normal
+# Bearer token — so it satisfies verify_jwt = true and must NOT be flipped to
+# false. hasServiceRole additionally probes the presented key, so neither the
+# anon key nor a user JWT can trigger a fleet-wide sweep.
+[functions.refresh-calendar-tokens]
+verify_jwt = true
+
 # sweep-connect-balance pays out every connected account's free Connect balance,
 # so it is service-role only: hasServiceRole probes the presented key against an
 # admin-only API before it looks at a single balance. Like

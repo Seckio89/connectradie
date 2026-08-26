@@ -45,6 +45,7 @@ import { redactSensitiveInfo } from '../lib/redaction';
 import { checkLicenseExpired, formatDate } from '../lib/utils';
 import { extractSuburb } from '../lib/contactGating';
 import type { AvailabilitySlot, Job } from '../types/database';
+import { isNativeApp, openGoogleConsentNative } from '../lib/calendarConnect';
 import DashboardLayout from '../components/DashboardLayout';
 import PayoutSummaryCard from '../components/PayoutSummaryCard';
 import BulkAvailabilityModal from '../components/BulkAvailabilityModal';
@@ -818,6 +819,30 @@ export default function TradieDashboard() {
         const result = await response.json();
 
         if (result.authUrl) {
+          // Native app: consent opens in a Chrome Custom Tab, where window.open
+          // popup semantics (a live handle, authWindow.closed, the landing
+          // page's window.close()) do not exist. This branch never existed —
+          // the button relied on desktop popups and stranded app users on the
+          // confirmation page. The helper watches for the server-side callback
+          // landing and closes the tab itself. See src/lib/calendarConnect.ts.
+          if (isNativeApp()) {
+            const outcome = await openGoogleConsentNative({
+              authUrl: result.authUrl,
+              tradieId: user.id,
+              onSettled: fetchCalendarIntegration,
+            });
+            showToast(
+              outcome === 'connected'
+                ? 'Calendar connected successfully!'
+                : outcome === 'timeout'
+                  ? 'Could not confirm the connection. Check the calendar button — it may have connected anyway.'
+                  : 'Google sign-in was closed before it finished. Tap Connect to try again.',
+              outcome !== 'connected'
+            );
+            setSyncLoading(false);
+            return;
+          }
+
           const width = 600;
           const height = 700;
           const left = window.screenX + (window.outerWidth - width) / 2;
