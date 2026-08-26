@@ -2214,17 +2214,6 @@ export default function TradieDashboard() {
                         <><Calendar className="w-4 h-4" /><span className="hidden sm:inline">Connect Google Calendar</span><span className="sm:hidden">Connect</span></>
                       )}
                     </button>
-                    {/* Proves the refresh grant works without waiting out the
-                        access token's hour — the check that used to be impossible. */}
-                    {calendarIntegration && (
-                      <button onClick={handleTestConnection} disabled={testLoading || syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[0.625rem] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
-                        {testLoading ? (
-                          <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">Testing...</span><span className="sm:hidden">Test</span></>
-                        ) : (
-                          <><ShieldCheck className="w-4 h-4" /><span className="hidden sm:inline">Test connection</span><span className="sm:hidden">Test</span></>
-                        )}
-                      </button>
-                    )}
                     {/* Only offered once connected — nothing to strip out otherwise. */}
                     {calendarIntegration && (
                       <button onClick={() => setShowUnsyncConfirm(true)} disabled={unsyncLoading || syncLoading} className="flex-none flex items-center justify-center gap-1 sm:gap-2 px-3 sm:px-4 py-1 sm:py-2 border border-ct-line text-ct-mute-2 text-[0.625rem] sm:text-sm font-medium rounded-ct-md hover:bg-ct-surface-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]">
@@ -2252,6 +2241,21 @@ export default function TradieDashboard() {
                           <button onClick={handleRemoveDups} className="w-full px-4 py-2.5 text-left text-sm text-ct-mute-2 hover:bg-ct-surface-2 flex items-center gap-3">
                             <Copy className="w-4 h-4 text-ct-mute" />Remove duplicates
                           </button>
+                          {/* On-demand proof the Google authorisation still renews.
+                              Day to day the six-hourly heartbeat runs this same
+                              check automatically, so it lives here rather than in
+                              the primary row — support and the day-8 verification
+                              are its remaining jobs. */}
+                          {calendarIntegration && (
+                            <button
+                              onClick={() => { setShowManageMenu(false); handleTestConnection(); }}
+                              disabled={testLoading || syncLoading}
+                              className="w-full px-4 py-2.5 text-left text-sm text-ct-mute-2 hover:bg-ct-surface-2 disabled:opacity-50 flex items-center gap-3"
+                            >
+                              <ShieldCheck className="w-4 h-4 text-ct-mute" />
+                              {testLoading ? 'Testing connection...' : 'Test calendar connection'}
+                            </button>
+                          )}
                           <button onClick={() => setConfirmClearAll(true)} className="w-full px-4 py-2.5 text-left text-sm text-ct-rose hover:bg-ct-rose/[0.13] flex items-center gap-3">
                             <Trash2 className="w-4 h-4" />Clear all upcoming
                           </button>
