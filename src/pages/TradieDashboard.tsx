@@ -814,7 +814,9 @@ export default function TradieDashboard() {
       // only a fresh consent mints a new one — so this button must start the
       // consent flow, not post a sync that is guaranteed to fail the same way.
       if (!calendarIntegration || calendarIntegration.needs_reconnect) {
-        const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-oauth?action=initiate`;
+        // platform=app → signed into the OAuth state → the confirmation page may
+        // offer the Android intent straight back into the app.
+        const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-calendar-oauth?action=initiate${isNativeApp() ? '&platform=app' : ''}`;
         const response = await fetch(apiUrl, { headers });
         const result = await response.json();
 

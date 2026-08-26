@@ -83,6 +83,24 @@ export async function readConnectionMarker(tradieId: string): Promise<Connection
   }
 }
 
+/**
+ * Re-judge a finished watch against one final read of the row.
+ *
+ * The intent-return path (the confirmation page jumping straight back into the
+ * app) DESTROYS the Custom Tab, which fires browserFinished, which cancels the
+ * poll — on a connect that succeeded. Without this, that success would toast
+ * "Google sign-in was closed before it finished." A cancelled watch whose row
+ * turns out changed is a connected one.
+ */
+export function resolveOutcome(
+  outcome: PollOutcome,
+  before: ConnectionMarker,
+  after: ConnectionMarker,
+): PollOutcome {
+  if (outcome === 'cancelled' && connectionChanged(before, after)) return 'connected';
+  return outcome;
+}
+
 export interface PollDeps {
   readMarker: () => Promise<ConnectionMarker>;
   sleep: (ms: number) => Promise<void>;
@@ -157,7 +175,7 @@ export async function openGoogleConsentNative(opts: NativeConsentOptions): Promi
   try {
     await Browser.open({ url: opts.authUrl });
 
-    const outcome = await pollForConnection(
+    const polled = await pollForConnection(
       before,
       {
         readMarker: () => readConnectionMarker(opts.tradieId),
@@ -167,6 +185,17 @@ export async function openGoogleConsentNative(opts: NativeConsentOptions): Promi
       },
       opts.limits,
     );
+
+    // The tab may have been destroyed by the page's own intent-return the
+    // instant the callback landed — that reads as a dismissal here. One final
+    // read settles whether it was actually a success. Also worth knowing:
+    // while the Custom Tab is foregrounded the WebView is PAUSED
+    // (BridgeActivity.onPause), so this poll may not have run at all until the
+    // user was already on the way back — the intent-return on the page is the
+    // primary exit; this watcher is the confirmation and the fallback.
+    const outcome = polled === 'cancelled'
+      ? resolveOutcome(polled, before, await readConnectionMarker(opts.tradieId))
+      : polled;
 
     if (outcome === 'connected' && !dismissed) {
       try {
