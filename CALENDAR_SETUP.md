@@ -159,6 +159,13 @@ client on the platform.
 - Refresh tokens are stored in the database (see Security Considerations)
 - A refresh only overwrites the stored refresh token when Google returns a new
   one, so a refresh can never blank it
+- **The `refresh-calendar-tokens` cron exercises the refresh grant for every
+  enabled integration every six hours** — nobody has to press "Test connection"
+  to find out whether refresh still works. A failing grant is recorded on the
+  row (`needs_reconnect`, `last_refresh_error_code`), the dashboard flips to
+  "Reconnect Google Calendar" by itself, and the tradie gets one in-app
+  notification on the transition into dead. Rows already flagged are skipped —
+  only a reconnect revives a dead grant.
 
 > ⚠️ **While the OAuth consent screen is in "Testing" publishing status, Google
 > expires refresh tokens after 7 days.** The symptom is `invalid_grant` on every

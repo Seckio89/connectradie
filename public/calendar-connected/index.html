@@ -17,6 +17,8 @@
   p{font-size:14px;line-height:1.55;color:#475569;margin:0 0 22px}
   .btn{display:inline-block;background:#06D6A0;color:#06231b;text-decoration:none;font-weight:700;
        font-size:14px;padding:11px 22px;border-radius:12px;border:0;cursor:pointer}
+  .hint{font-size:13px;color:#475569;margin:14px 0 0}
+  .hint a{color:#0A8C79;font-weight:700;text-decoration:underline}
   .brand{margin-top:22px;font-size:12px;color:#94a3b8;letter-spacing:.02em}
   .brand b{color:#0F1B2D}.brand b span{color:#06D6A0}
 </style>
@@ -26,7 +28,8 @@
     <div class="badge" id="badge"></div>
     <h1 id="title"></h1>
     <p id="msg"></p>
-    <button class="btn" onclick="window.close()">Close</button>
+    <button class="btn" id="closeBtn">Close</button>
+    <p class="hint" id="hint" hidden>On the ConnecTradie app this page closes by itself — if it hasn't, switch back to ConnecTradie from your recent apps. On the web, <a href="/calendar-import">go back to ConnecTradie</a>.</p>
     <div class="brand"><b>Connec<span>Tradie</span></b></div>
   </div>
 <script>
@@ -49,6 +52,23 @@
   badge.style.color = accent;
   document.getElementById('title').textContent = s.title;
   document.getElementById('msg').textContent = s.msg;
+
+  // window.close() only works on a window that script opened — the desktop
+  // dashboard popup. In a Chrome Custom Tab (the Android app) and on a
+  // full-page redirect (mobile web) it is a silent no-op, which stranded
+  // people here with a button that did nothing. Try it, and when the page is
+  // demonstrably still open a beat later, own up and show the real ways back
+  // instead. (On the app, ConnecTradie also closes this tab by itself as soon
+  // as it sees the connection land — this is the fallback, not the plan.)
+  var closeBtn = document.getElementById('closeBtn');
+  var hint = document.getElementById('hint');
+  closeBtn.addEventListener('click', function () {
+    window.close();
+    setTimeout(function () {
+      closeBtn.hidden = true;
+      hint.hidden = false;
+    }, 300);
+  });
 </script>
 </body>
 </html>

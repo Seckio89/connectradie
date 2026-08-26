@@ -6,8 +6,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, Loader2, CheckCircle2, RefreshCw, Users } from 'lucide-react';
-import { Capacitor } from '@capacitor/core';
-import { Browser } from '@capacitor/browser';
+import { isNativeApp, openGoogleConsentNative } from '../lib/calendarConnect';
 import DashboardLayout from '../components/DashboardLayout';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -97,18 +96,18 @@ export default function CalendarImport() {
       if (!data.authUrl) { setError(data.error || 'Could not start Google sign-in.'); return; }
 
       // On the native app the WebView is an embedded user agent, which Google
-      // blocks for OAuth (Error 403: disallowed_useragent). Open Google's consent
-      // page in the system browser (Chrome Custom Tab / SFSafariViewController),
-      // which Google accepts. The callback binds the tokens server-side via the
-      // signed state, so we don't need the redirect to re-enter the app — the
-      // user just returns and taps "Load my calendars". Re-check the connection
-      // when the in-app browser closes so the status flips to "connected".
-      if (Capacitor.isNativePlatform()) {
-        const sub = await Browser.addListener('browserFinished', async () => {
-          await sub.remove();
-          await refreshConnected();
+      // blocks for OAuth (Error 403: disallowed_useragent), so consent opens in
+      // the system browser. The helper then PULLS the user back: it watches for
+      // the server-side callback landing and closes the Custom Tab itself.
+      // The previous code waited for the user to dismiss the tab — but the
+      // confirmation page's Close button is window.close(), a no-op in a Custom
+      // Tab, so they were stranded on it. See src/lib/calendarConnect.ts.
+      if (isNativeApp() && user) {
+        await openGoogleConsentNative({
+          authUrl: data.authUrl,
+          tradieId: user.id,
+          onSettled: refreshConnected,
         });
-        await Browser.open({ url: data.authUrl });
       } else {
         window.location.href = data.authUrl;
       }
