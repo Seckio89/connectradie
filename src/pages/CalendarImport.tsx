@@ -89,7 +89,11 @@ export default function CalendarImport() {
     setError('');
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/google-calendar-oauth?action=initiate`, {
+      // platform=app rides into the HMAC-signed OAuth state, so the confirmation
+      // page knows it may fire the intent back into the app. The Custom Tab runs
+      // Chrome's UA, so the page cannot work this out on its own.
+      const initiateUrl = `${SUPABASE_URL}/functions/v1/google-calendar-oauth?action=initiate${isNativeApp() ? '&platform=app' : ''}`;
+      const res = await fetch(initiateUrl, {
         headers: { Authorization: `Bearer ${session?.access_token}`, apikey: ANON },
       });
       const data = await res.json();

@@ -23,8 +23,16 @@ interface TokenResponse {
 // redirect to a static confirmation page on our own domain (Vercel serves it as
 // real HTML), which renders correctly and needs no auth.
 const APP_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://connectradie.com";
-function resultRedirect(status: "ok" | "expired" | "failed" | "noconsent"): Response {
-  return Response.redirect(`${APP_ORIGIN}/calendar-connected?status=${status}`, 302);
+function resultRedirect(
+  status: "ok" | "expired" | "failed" | "noconsent",
+  isApp = false,
+): Response {
+  // `app=1` tells the confirmation page it may offer (and auto-attempt) the
+  // Android intent back into the app. It comes out of the HMAC-signed state,
+  // never from anything the browser could tamper with, so a mobile-web user can
+  // never be yanked into an app they may not have.
+  const suffix = isApp ? "&app=1" : "";
+  return Response.redirect(`${APP_ORIGIN}/calendar-connected?status=${status}${suffix}`, 302);
 }
 
 // ── Signed OAuth state ───────────────────────────────────────────────────────
@@ -51,26 +59,39 @@ async function stateHmacKey(usages: KeyUsage[]): Promise<CryptoKey> {
   );
 }
 
-async function signState(userId: string): Promise<string> {
-  const payload = `${userId}.${Date.now() + STATE_TTL_MS}`;
+async function signState(userId: string, platform?: "app"): Promise<string> {
+  // The platform marker rides INSIDE the signed payload: the Custom Tab runs
+  // Chrome's UA (appendUserAgent only affects the WebView), so the confirmation
+  // page cannot tell the app from mobile web on its own, and an unsigned query
+  // param could be forged. state = "userId.exp[.app].hmac".
+  const payload = platform
+    ? `${userId}.${Date.now() + STATE_TTL_MS}.${platform}`
+    : `${userId}.${Date.now() + STATE_TTL_MS}`;
   const key = await stateHmacKey(["sign"]);
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
   const sigHex = Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
   return `${payload}.${sigHex}`;
 }
 
-// Returns the userId when the state is authentic and unexpired, else null.
-async function verifyState(state: string): Promise<string | null> {
+// Returns the verified identity when the state is authentic and unexpired,
+// else null. Accepts both payload shapes — "userId.exp" (legacy, still valid
+// through its 10-minute TTL across this deploy) and "userId.exp.app" — with the
+// HMAC always covering the whole payload.
+async function verifyState(state: string): Promise<{ userId: string; isApp: boolean } | null> {
   const parts = state.split(".");
-  if (parts.length !== 3) return null;
-  const [userId, expStr, sigHex] = parts;
+  if (parts.length !== 3 && parts.length !== 4) return null;
+  const sigHex = parts[parts.length - 1];
+  const payloadParts = parts.slice(0, -1);
+  const [userId, expStr, platform] = payloadParts;
   const exp = Number(expStr);
   if (!userId || !Number.isFinite(exp) || Date.now() > exp) return null;
+  if (platform !== undefined && platform !== "app") return null;
   if (!/^[0-9a-f]+$/.test(sigHex) || sigHex.length % 2 !== 0) return null;
   const sig = new Uint8Array(sigHex.match(/.{2}/g)!.map((h) => parseInt(h, 16)));
   const key = await stateHmacKey(["verify"]);
-  const ok = await crypto.subtle.verify("HMAC", key, sig, new TextEncoder().encode(`${userId}.${exp}`));
-  return ok ? userId : null;
+  const payload = platform ? `${userId}.${exp}.${platform}` : `${userId}.${exp}`;
+  const ok = await crypto.subtle.verify("HMAC", key, sig, new TextEncoder().encode(payload));
+  return ok ? { userId, isApp: platform === "app" } : null;
 }
 
 Deno.serve(async (req: Request) => {
@@ -95,14 +116,17 @@ Deno.serve(async (req: Request) => {
     // OAuth callback from Google — no auth header (browser redirect with ?code=)
     // User identity comes from the SIGNED state param, verified below.
     let callbackUserId: string | null = null;
+    let callbackIsApp = false;
     let authedUser: { id: string; email?: string } | null = null;
     if (code && state) {
       // Callback path: the state must be authentic (HMAC) and unexpired —
       // otherwise anyone could bind their Google account to another tradie.
-      callbackUserId = await verifyState(state);
-      if (!callbackUserId) {
+      const verified = await verifyState(state);
+      if (!verified) {
         return resultRedirect("expired");
       }
+      callbackUserId = verified.userId;
+      callbackIsApp = verified.isApp;
     } else {
       // All other requests (initiation, disconnect) require auth
       const authHeader = req.headers.get("Authorization");
@@ -176,7 +200,9 @@ Deno.serve(async (req: Request) => {
       // Carry forward anything the tradie has already granted, so a re-consent
       // cannot come back NARROWER than the grant it replaces.
       authUrl.searchParams.set("include_granted_scopes", "true");
-      authUrl.searchParams.set("state", await signState(user!.id));
+      // Allowlist exactly "app" — anything else signs the legacy payload.
+      const platform = url.searchParams.get("platform") === "app" ? "app" as const : undefined;
+      authUrl.searchParams.set("state", await signState(user!.id, platform));
 
       return new Response(
         JSON.stringify({ authUrl: authUrl.toString() }),
@@ -305,7 +331,7 @@ Deno.serve(async (req: Request) => {
         code,
         detail
       );
-      return resultRedirect("failed");
+      return resultRedirect("failed", callbackIsApp);
     }
 
     const tokens: TokenResponse = await tokenResponse.json();
@@ -325,7 +351,7 @@ Deno.serve(async (req: Request) => {
     // Google credentials, and a null here would upsert it onto nobody.
     if (!callbackUserId) {
       console.error("OAuth callback reached the token exchange with no verified user");
-      return resultRedirect("failed");
+      return resultRedirect("failed", callbackIsApp);
     }
 
     // ⚠️ THE REFRESH TOKEN IS THE WHOLE INTEGRATION. Without one, this row is
@@ -372,17 +398,17 @@ Deno.serve(async (req: Request) => {
 
     if (dbError) {
       console.error("Failed to store calendar integration", dbError.message);
-      return resultRedirect("failed");
+      return resultRedirect("failed", callbackIsApp);
     }
 
     if (!haveRefreshToken) {
       console.error(
         `Google consent for ${callbackUserId} returned no refresh token and none was stored — the connection cannot be renewed`,
       );
-      return resultRedirect("noconsent");
+      return resultRedirect("noconsent", callbackIsApp);
     }
 
-    return resultRedirect("ok");
+    return resultRedirect("ok", callbackIsApp);
   } catch (error) {
     return new Response(
       JSON.stringify({

@@ -131,3 +131,28 @@ describe('pollForConnection', () => {
     ).resolves.toBe('timeout');
   });
 });
+
+describe('resolveOutcome', () => {
+  it('upgrades a cancelled watch whose row changed into connected', async () => {
+    // The intent-return destroys the tab → browserFinished → the poll reads as
+    // cancelled, on a connect that SUCCEEDED. The final re-read catches it.
+    const { resolveOutcome } = await import('../calendarConnect');
+    expect(
+      resolveOutcome('cancelled', BEFORE, { id: 'int-2', updated_at: '2026-08-26T02:51:48.000Z' }),
+    ).toBe('connected');
+  });
+
+  it('keeps a cancelled watch cancelled when nothing landed', async () => {
+    const { resolveOutcome } = await import('../calendarConnect');
+    expect(resolveOutcome('cancelled', BEFORE, { ...BEFORE })).toBe('cancelled');
+    expect(resolveOutcome('cancelled', BEFORE, null)).toBe('cancelled');
+  });
+
+  it('never rewrites connected or timeout', async () => {
+    const { resolveOutcome } = await import('../calendarConnect');
+    expect(resolveOutcome('connected', BEFORE, { ...BEFORE })).toBe('connected');
+    expect(
+      resolveOutcome('timeout', BEFORE, { id: 'int-2', updated_at: '2026-08-26T02:51:48.000Z' }),
+    ).toBe('timeout');
+  });
+});
