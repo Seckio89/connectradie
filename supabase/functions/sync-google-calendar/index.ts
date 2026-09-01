@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { checkRateLimit } from "../_shared/rateLimiter.ts";
-import { planConflictChanges } from "../_shared/calendarConflicts.ts";
+import { jobEventWindow, planConflictChanges } from "../_shared/calendarConflicts.ts";
 import { getGoogleAccessToken, type IntegrationPatch } from "../_shared/googleToken.ts";
 import { createGoogleSession, GoogleAuthExpired } from "../_shared/googleApi.ts";
 
@@ -629,13 +629,9 @@ Deno.serve(async (req: Request) => {
         try {
           const category = job.description?.match(/^\[([^\]]+)\]/)?.[1]?.replace(/_/g, " ") || "";
           const summary = job.title || category || "ConnecTradie Job";
-          const jobDate = job.scheduled_date;
-          const startHour = job.start_time ? job.start_time.split(":")[0] : "09";
-          const startMin = job.start_time ? job.start_time.split(":")[1] : "00";
-
-          const startDateTime = `${jobDate}T${startHour.padStart(2, "0")}:${startMin.padStart(2, "0")}:00+10:00`;
-          const endHour = String(Number(startHour) + 2).padStart(2, "0");
-          const endDateTime = `${jobDate}T${endHour}:${startMin.padStart(2, "0")}:00+10:00`;
+          // Shared with the dashboard's "you have a job booked then" label,
+          // which rebuilds this window to attribute a blocked slot to the job.
+          const { startDateTime, endDateTime } = jobEventWindow(job.scheduled_date, job.start_time);
 
           if (existingStarts.job.has(new Date(startDateTime).toISOString())) { jobsSkipped++; continue; }
 

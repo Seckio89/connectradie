@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar,
@@ -46,6 +46,7 @@ import { checkLicenseExpired, formatDate } from '../lib/utils';
 import { extractSuburb } from '../lib/contactGating';
 import type { AvailabilitySlot, Job } from '../types/database';
 import { isNativeApp, openGoogleConsentNative } from '../lib/calendarConnect';
+import { selfBookedConflictSlotIds } from '../lib/jobConflicts';
 import DashboardLayout from '../components/DashboardLayout';
 import PayoutSummaryCard from '../components/PayoutSummaryCard';
 import BulkAvailabilityModal from '../components/BulkAvailabilityModal';
@@ -214,11 +215,20 @@ function describeSyncResult(result: CalendarSyncResult): string {
  * `external_conflict_at`, and only the second one will clear itself once the
  * Google event goes away — so saying "blocked" for both leaves the tradie with
  * no way to tell why their availability disappeared.
+ *
+ * The calendar case splits again: the "busy" Google event may be the tradie's
+ * own booked job, which the sync exported as an opaque event. FreeBusy can't
+ * say (intervals only, no titles), so `jobBooked` — a client-side overlap
+ * against the tradie's booked jobs, see selfBookedConflictSlotIds — decides
+ * whether the block reads as their job or as a personal Google entry.
  */
-function slotLabel(slot: AvailabilitySlot, short = false): string {
+function slotLabel(slot: AvailabilitySlot, short = false, jobBooked = false): string {
   if (slot.status === 'available') return short ? 'Avail' : 'Available';
   if (slot.status === 'booked') return short ? 'Bkd' : 'Booked';
-  if (slot.external_conflict_at) return short ? 'Busy' : 'Busy in Google Calendar';
+  if (slot.external_conflict_at) {
+    if (jobBooked) return short ? 'Job' : 'You have a job booked then';
+    return short ? 'Busy' : 'Busy in Google Calendar';
+  }
   return short ? 'Blkd' : 'Blocked';
 }
 
@@ -520,6 +530,11 @@ export default function TradieDashboard() {
 
   // Calendar computed values
   const { daysInMonth, startingDay } = getDaysInMonth(currentDate);
+
+  // Calendar-blocked slots whose "busy" is the tradie's own booked job — the
+  // export pushed the job into Google as an opaque event, FreeBusy read it back
+  // and blocked the overlapping slots. These get their own label; see slotLabel.
+  const jobConflictSlotIds = useMemo(() => selfBookedConflictSlotIds(slots, jobs), [slots, jobs]);
 
   // ─── Handlers (declared before effects that use them) ─────
 
@@ -2323,7 +2338,7 @@ export default function TradieDashboard() {
                               <div className="flex-1 flex gap-1 p-1">
                                 {slotsInHour.map(s => (
                                   <div key={s.id} className={`flex-1 rounded-ct-xs px-2 py-1 text-xs font-medium ${s.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal border border-ct-teal/30' : s.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose border border-ct-rose/[0.34]' : 'bg-ct-surface-2 text-ct-mute-2 border border-ct-line'}`}>
-                                    {slotLabel(s)}
+                                    {slotLabel(s, false, jobConflictSlotIds.has(s.id))}
                                   </div>
                                 ))}
                               </div>
@@ -2391,7 +2406,7 @@ export default function TradieDashboard() {
                                       <div key={d.toISOString()} className="border-r border-ct-line-soft last:border-r-0 p-0.5 min-h-[32px]">
                                         {slotsInHour.map(s => (
                                           <div key={s.id} className={`rounded-ct-xs px-1 py-0.5 text-xs font-medium truncate ${s.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal' : s.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
-                                            {slotLabel(s, true)}
+                                            {slotLabel(s, true, jobConflictSlotIds.has(s.id))}
                                           </div>
                                         ))}
                                       </div>
@@ -2553,7 +2568,7 @@ export default function TradieDashboard() {
                       )}
                     </div>
                     <span className={`mt-2 inline-block text-xs px-3 py-1 rounded-full font-medium ${slot.status === 'available' ? 'bg-ct-teal/[0.14] text-ct-teal' : slot.status === 'booked' ? 'bg-ct-rose/[0.13] text-ct-rose' : 'bg-ct-surface-2 text-ct-mute-2'}`}>
-                      {slotLabel(slot)}
+                      {slotLabel(slot, false, jobConflictSlotIds.has(slot.id))}
                     </span>
                   </div>
                 ))}

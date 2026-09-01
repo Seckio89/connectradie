@@ -56,6 +56,43 @@ export function overlapsBusy(startMs: number, endMs: number, busy: readonly Busy
   return busy.some((b) => b.start < endMs && b.end > startMs);
 }
 
+/** The window a job occupies in Google Calendar, as the export synthesises it. */
+export interface JobEventWindow {
+  /** RFC3339 strings the export sends to Google, hardcoded +10:00. */
+  startDateTime: string;
+  endDateTime: string;
+  /** The same window as epoch ms. NaN when the inputs do not parse — callers
+   *  comparing intervals must skip NaN; the export sends the strings regardless
+   *  and lets Google refuse them, exactly as it did before this helper. */
+  startMs: number;
+  endMs: number;
+}
+
+/**
+ * Synthesise the busy window of an exported job event from the job row.
+ *
+ * A job has no end time in Google terms: the export invents one — start plus
+ * two hours, at a fixed +10:00 offset — and that invention is what FreeBusy
+ * later reads back as a busy interval that blocks the tradie's own slots. The
+ * dashboard labels such a block "you have a job booked then" by rebuilding this
+ * exact window and testing overlap, so the synthesis lives here, shared,
+ * where the exporter and the label cannot drift apart.
+ */
+export function jobEventWindow(scheduledDate: string, startTime: string | null): JobEventWindow {
+  const [rawHour = '09', rawMin = '00'] = startTime ? startTime.split(':') : [];
+  const startHour = rawHour.padStart(2, '0');
+  const startMin = rawMin.padStart(2, '0');
+  const startDateTime = `${scheduledDate}T${startHour}:${startMin}:00+10:00`;
+  const endHour = String(Number(startHour) + 2).padStart(2, '0');
+  const endDateTime = `${scheduledDate}T${endHour}:${startMin}:00+10:00`;
+  return {
+    startDateTime,
+    endDateTime,
+    startMs: new Date(startDateTime).getTime(),
+    endMs: new Date(endDateTime).getTime(),
+  };
+}
+
 /**
  * Work out what each slot's clash state means, without changing anything.
  *
