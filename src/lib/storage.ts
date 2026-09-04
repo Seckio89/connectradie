@@ -9,7 +9,7 @@
 
 import { supabase } from './supabase';
 
-export type StorageBucket = 'documents' | 'job-attachments' | 'verification-documents' | 'avatars' | 'cover-photos' | 'job-images' | 'job-photos' | 'portfolio-images' | 'worker-credentials';
+export type StorageBucket = 'documents' | 'job-attachments' | 'verification-documents' | 'avatars' | 'cover-photos' | 'job-images' | 'job-photos' | 'portfolio-images' | 'worker-credentials' | 'licence-uploads';
 
 const DEFAULT_EXPIRES_SECONDS = 60 * 60; // 1 hour — long enough for a session, short enough that leaked URLs go stale fast
 

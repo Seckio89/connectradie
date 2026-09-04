@@ -58,4 +58,13 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <!-- Camera: "To photograph your trade licence for verification." Requested
+         at point of use only — the licence step's <input capture="environment">
+         triggers the runtime prompt; nothing asks for it at launch. Declared
+         as not required so phones without a rear camera can still install
+         (the tradie can choose a photo or type the details instead). See
+         docs/compliance/store-declarations.md. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>

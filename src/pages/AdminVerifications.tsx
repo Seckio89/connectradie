@@ -23,6 +23,8 @@ import DashboardLayout from '../components/DashboardLayout';
 import Breadcrumbs from '../components/Breadcrumbs';
 import type { Profile } from '../types/database';
 import { getSignedUrl } from '../lib/storage';
+import LicenceReviewQueue from '../components/verification/LicenceReviewQueue';
+import { ScanLine } from 'lucide-react';
 
 interface PendingUser extends Profile {
   expanded?: boolean;
@@ -34,14 +36,31 @@ export default function AdminVerifications() {
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({});
   const [showRejectInput, setShowRejectInput] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'declined'>('pending');
+  const [activeTab, setActiveTab] = useState<'licences' | 'pending' | 'approved' | 'declined'>('licences');
+  const [licenceQueueCount, setLicenceQueueCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [allUsers, setAllUsers] = useState<PendingUser[]>([]);
   const [fetchError, setFetchError] = useState('');
 
   useEffect(() => {
     fetchUsers();
+    fetchLicenceQueueCount();
   }, []);
+
+  // Count only — the queue itself lives in LicenceReviewQueue. RLS lets an admin
+  // see every licence_verifications row; anyone else gets zero.
+  const fetchLicenceQueueCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('licence_verifications')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'awaiting_review');
+      if (error) throw error;
+      setLicenceQueueCount(count ?? 0);
+    } catch {
+      setLicenceQueueCount(0);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -217,6 +236,32 @@ export default function AdminVerifications() {
           <div className="border-b border-ct-line overflow-x-auto scrollbar-hide scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
             <div className="flex min-w-max">
               <button
+                onClick={() => setActiveTab('licences')}
+                className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
+                  activeTab === 'licences'
+                    ? 'text-ct-teal bg-ct-teal/[0.14]'
+                    : 'text-ct-mute-2 hover:text-ct-paper hover:bg-ct-surface-2'
+                }`}
+              >
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                  <ScanLine className="w-4 h-4 flex-shrink-0" />
+                  <span>Licence photos</span>
+                  {licenceQueueCount > 0 && (
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                      activeTab === 'licences'
+                        ? 'bg-ct-teal/[0.14] text-ct-teal'
+                        : 'bg-ct-line text-ct-mute-2'
+                    }`}>
+                      {licenceQueueCount}
+                    </span>
+                  )}
+                </div>
+                {activeTab === 'licences' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-ct-teal"></div>
+                )}
+              </button>
+
+              <button
                 onClick={() => setActiveTab('pending')}
                 className={`flex-1 px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold transition-all relative whitespace-nowrap ${
                   activeTab === 'pending'
@@ -296,6 +341,10 @@ export default function AdminVerifications() {
             </div>
           </div>
 
+          {activeTab === 'licences' ? (
+            <LicenceReviewQueue />
+          ) : (
+          <>
           {/* Search Bar */}
           <div className="p-4 border-b border-ct-line-soft">
             <div className="relative">
@@ -538,6 +587,8 @@ export default function AdminVerifications() {
                 );
               })}
             </div>
+          )}
+          </>
           )}
         </div>
       </div>

@@ -469,6 +469,66 @@ export type Database = {
           },
         ]
       }
+      business_verifications: {
+        Row: {
+          abn: string
+          abn_status: string
+          abr_postcode: string | null
+          abr_state: string | null
+          admin_notes: string | null
+          business_names: string[]
+          checked_at: string
+          claimed_business_name: string
+          created_at: string
+          entity_name: string | null
+          entity_type: string | null
+          gst_registered: boolean
+          id: string
+          name_match: boolean
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          abn: string
+          abn_status: string
+          abr_postcode?: string | null
+          abr_state?: string | null
+          admin_notes?: string | null
+          business_names?: string[]
+          checked_at?: string
+          claimed_business_name: string
+          created_at?: string
+          entity_name?: string | null
+          entity_type?: string | null
+          gst_registered?: boolean
+          id?: string
+          name_match?: boolean
+          status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          abn?: string
+          abn_status?: string
+          abr_postcode?: string | null
+          abr_state?: string | null
+          admin_notes?: string | null
+          business_names?: string[]
+          checked_at?: string
+          claimed_business_name?: string
+          created_at?: string
+          entity_name?: string | null
+          entity_type?: string | null
+          gst_registered?: boolean
+          id?: string
+          name_match?: boolean
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       calendar_integrations: {
         Row: {
           access_token: string
@@ -787,6 +847,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      consent_records: {
+        Row: {
+          consent_text_version: string
+          created_at: string
+          granted: boolean
+          id: string
+          ip_hash: string | null
+          purpose: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          consent_text_version: string
+          created_at?: string
+          granted: boolean
+          id?: string
+          ip_hash?: string | null
+          purpose: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          consent_text_version?: string
+          created_at?: string
+          granted?: boolean
+          id?: string
+          ip_hash?: string | null
+          purpose?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       contact_messages: {
         Row: {
@@ -2377,6 +2470,119 @@ export type Database = {
             columns: ["tradie_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      licence_registers: {
+        Row: {
+          created_at: string
+          id: string
+          lookup_url_template: string
+          notes: string | null
+          register_name: string
+          state_code: string
+          trade_categories: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lookup_url_template: string
+          notes?: string | null
+          register_name: string
+          state_code: string
+          trade_categories: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lookup_url_template?: string
+          notes?: string | null
+          register_name?: string
+          state_code?: string
+          trade_categories?: string[]
+        }
+        Relationships: []
+      }
+      licence_verifications: {
+        Row: {
+          created_at: string
+          expiry_date: string | null
+          id: string
+          licence_class: string | null
+          licence_holder_name: string | null
+          licence_number: string | null
+          ocr_confidence: number | null
+          ocr_provider: string | null
+          photo_deleted_at: string | null
+          precheck_class_match: boolean | null
+          precheck_expiry_ok: boolean | null
+          precheck_name_match: boolean | null
+          register_id: string | null
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          state_code: string
+          status: string
+          storage_path: string | null
+          trade_category: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          licence_class?: string | null
+          licence_holder_name?: string | null
+          licence_number?: string | null
+          ocr_confidence?: number | null
+          ocr_provider?: string | null
+          photo_deleted_at?: string | null
+          precheck_class_match?: boolean | null
+          precheck_expiry_ok?: boolean | null
+          precheck_name_match?: boolean | null
+          register_id?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          state_code: string
+          status?: string
+          storage_path?: string | null
+          trade_category: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          licence_class?: string | null
+          licence_holder_name?: string | null
+          licence_number?: string | null
+          ocr_confidence?: number | null
+          ocr_provider?: string | null
+          photo_deleted_at?: string | null
+          precheck_class_match?: boolean | null
+          precheck_expiry_ok?: boolean | null
+          precheck_name_match?: boolean | null
+          register_id?: string | null
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          state_code?: string
+          status?: string
+          storage_path?: string | null
+          trade_category?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "licence_verifications_register_id_fkey"
+            columns: ["register_id"]
+            isOneToOne: false
+            referencedRelation: "licence_registers"
             referencedColumns: ["id"]
           },
         ]
@@ -5407,18 +5613,21 @@ export type Database = {
           created_at: string
           default_reminder_months: number
           id: string
+          licence_required: boolean
           name: string
         }
         Insert: {
           created_at?: string
           default_reminder_months?: number
           id?: string
+          licence_required?: boolean
           name: string
         }
         Update: {
           created_at?: string
           default_reminder_months?: number
           id?: string
+          licence_required?: boolean
           name?: string
         }
         Relationships: []
@@ -6277,6 +6486,16 @@ export type Database = {
           sample_size: number
         }[]
       }
+      get_tradie_verification_badges: {
+        Args: { p_tradie_id: string }
+        Returns: {
+          abn_verified: boolean
+          gst_registered: boolean
+          licence_verified: boolean
+          licence_state: string
+          licence_expiry_month: string
+        }[]
+      }
       get_daily_profile_view_count: {
         Args: { viewer_uuid: string }
         Returns: number
@@ -6414,6 +6633,29 @@ export type Database = {
         }[]
       }
       notify_approaching_reminders: { Args: never; Returns: undefined }
+      record_consent: {
+        Args: {
+          p_purpose: string
+          p_consent_text_version: string
+          p_granted: boolean
+        }
+        Returns: {
+          consent_text_version: string
+          created_at: string
+          granted: boolean
+          id: string
+          ip_hash: string | null
+          purpose: string
+          user_agent: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "consent_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       refresh_open_vacancy_employer_snapshot: {
         Args: { p_employer: string }
         Returns: undefined

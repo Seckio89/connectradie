@@ -43,9 +43,9 @@ export default function Privacy() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ct-mute bg-ct-surface-2 px-2.5 py-1 rounded-full">
                   <FileTextIcon className="w-3 h-3" />
-                  Version 1.4
+                  Version 1.5
                 </span>
-                <span className="text-xs text-ct-mute">Last Updated: July 2026</span>
+                <span className="text-xs text-ct-mute">Last Updated: September 2026</span>
                 <span className="text-xs text-ct-mute">ConnecTradie Pty Ltd</span>
                 <span className="text-xs text-ct-mute">ABN: 75 655 516 546</span>
               </div>
@@ -125,7 +125,7 @@ export default function Privacy() {
                     <ul className="space-y-2">
                       <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
-                        <span><strong className="text-ct-paper">Australian Business Number (ABN):</strong> verified against the Australian Business Register</span>
+                        <span><strong className="text-ct-paper">Australian Business Number (ABN):</strong> you enter your ABN and business name; we send the ABN to the Australian Business Register (ABR) lookup service run by the Australian Taxation Office and receive back its status, the registered entity and business names, entity type, GST registration and the state and postcode on the register. We keep that response and whether the name you entered matched it. This is public register information, and a "GST registered" badge may appear on your public profile because GST status is public on the ABR.</span>
                       </li>
                       <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
                         <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
@@ -228,6 +228,46 @@ export default function Privacy() {
                       </p>
                     </div>
                   </div>
+
+                  <div id="licence-verification">
+                    <h3 className="text-[0.9375rem] font-semibold text-ct-paper mb-2">2.8 Trade Licence Photo &amp; Automated Reading (Tradies with a licensed trade, optional)</h3>
+                    <p className="text-[0.9375rem] text-ct-mute-2 leading-relaxed mb-3">
+                      If your trade requires a state licence, you can photograph your licence card so we can pre-fill the licence number, the name on the licence, the licence class and the expiry date.
+                    </p>
+                    <ul className="space-y-2">
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
+                        <span><strong className="text-ct-paper">What is collected:</strong> the photo you take or choose, and the four fields read from it, which you can correct before submitting.</span>
+                      </li>
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
+                        <span><strong className="text-ct-paper">Purpose:</strong> to confirm you hold a current licence for the trade you offer and to show a "Licence verified" badge to clients. Nothing else.</span>
+                      </li>
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
+                        <span><strong className="text-ct-paper">Third-party processing:</strong> the photo is transmitted to <strong className="text-ct-paper">Hugging Face, Inc.</strong> (hosted inference API, United States), which runs an image-to-text model on it and returns the printed text. Hugging Face receives the image only, with no name, email, account ID or other identifier.</span>
+                      </li>
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
+                        <span><strong className="text-ct-paper">Consent:</strong> this only happens after you tap "Agree and continue" on a dedicated screen. Choosing "Type the details myself instead" sends nothing to any third party. We record each consent decision (purpose, the version of the wording you saw, time, a one-way hash of your IP address and your browser or app identifier).</span>
+                      </li>
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
+                        <span><strong className="text-ct-paper">Human check:</strong> a ConnecTradie administrator compares the details with the relevant public state licensing register (for example NSW Fair Trading, QBCC or the Victorian Building Authority). We do not scrape or automate those registers.</span>
+                      </li>
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
+                        <span><strong className="text-ct-paper">Retention of the photo:</strong> deleted from our storage the moment the administrator records a decision, usually within a few days, and in every case within 30 days of upload by a scheduled job. We do not keep copies.</span>
+                      </li>
+                      <li className="flex items-start gap-3 text-[0.9375rem] text-ct-mute-2">
+                        <span className="w-1.5 h-1.5 bg-ct-surface-2 rounded-full flex-shrink-0 mt-2" />
+                        <span><strong className="text-ct-paper">What we retain afterwards:</strong> the outcome (verified, not verified or expired), the licence details you confirmed, the state, the register consulted, the three automated checks and who decided and when. Your public profile shows only the state and the expiry month, never the licence number.</span>
+                      </li>
+                    </ul>
+                    <p className="text-sm text-ct-mute italic mt-3">
+                      To have the extracted licence details and the ABR response deleted, email admin@connectradie.com with the subject "Delete my verification data". Consent records and the fact that a verification occurred are retained as a compliance log.
+                    </p>
+                  </div>
                 </div>
               </section>
 
@@ -311,6 +351,11 @@ export default function Privacy() {
                             <td className="px-4 py-2.5">Australia</td>
                           </tr>
                           <tr className="border-t border-ct-line-soft">
+                            <td className="px-4 py-2.5 font-medium text-ct-paper">Hugging Face, Inc.</td>
+                            <td className="px-4 py-2.5">Reading text from trade licence photos (optional, consent-gated; see 2.8)</td>
+                            <td className="px-4 py-2.5">United States</td>
+                          </tr>
+                          <tr className="border-t border-ct-line-soft bg-ct-surface-2">
                             <td className="px-4 py-2.5 font-medium text-ct-paper">Cloud Infrastructure</td>
                             <td className="px-4 py-2.5">Hosting & storage</td>
                             <td className="px-4 py-2.5">United States / Australia</td>
@@ -464,9 +509,14 @@ export default function Privacy() {
                         <td className="px-4 py-2.5">Taxation & corporate law</td>
                       </tr>
                       <tr className="border-t border-ct-line-soft">
-                        <td className="px-4 py-2.5 font-medium text-ct-paper">Verification documents (Tradies)</td>
+                        <td className="px-4 py-2.5 font-medium text-ct-paper">Verification outcomes (Tradies)</td>
                         <td className="px-4 py-2.5">Duration + 2 years</td>
                         <td className="px-4 py-2.5">Risk & compliance</td>
+                      </tr>
+                      <tr className="border-t border-ct-line-soft bg-ct-surface-2">
+                        <td className="px-4 py-2.5 font-medium text-ct-paper">Trade licence photos (Tradies)</td>
+                        <td className="px-4 py-2.5">Until the admin decision, or 30 days after upload, whichever is first</td>
+                        <td className="px-4 py-2.5">Data minimisation (APP 11.2) — see 2.8</td>
                       </tr>
                       <tr className="border-t border-ct-line-soft bg-ct-surface-2">
                         <td className="px-4 py-2.5 font-medium text-ct-paper">Support & dispute records</td>

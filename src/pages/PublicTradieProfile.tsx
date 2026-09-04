@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import VerificationBadges from '../components/verification/VerificationBadges';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -338,6 +339,9 @@ export default function PublicTradieProfile() {
                         Licensed
                       </span>
                     )}
+                    {/* Register-checked licence + GST, from get_tradie_verification_badges():
+                        booleans, state and expiry month only — never the number. */}
+                    {id && <VerificationBadges tradieId={id} className="contents" />}
                     {tradie.is_emergency_available && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-ct-rose/[0.13] text-ct-rose text-xs font-semibold rounded-full border border-ct-rose/[0.34]">
                         <Zap className="w-3.5 h-3.5" />

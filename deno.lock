@@ -18,9 +18,9 @@
     "npm:@codetrix-studio/capacitor-google-auth@^3.4.0-rc.4": "3.4.0-rc.4_@capacitor+core@8.4.2",
     "npm:@eslint/js@^9.9.1": "9.39.5",
     "npm:@playwright/test@~1.61.1": "1.61.1",
-    "npm:@react-google-maps/api@^2.20.8": "2.20.8_react@18.3.1_react-dom@18.3.1__react@18.3.1",
+    "npm:@react-google-maps/api@^2.20.8": "2.20.8_react@18.3.1_react-dom@18.3.1",
     "npm:@sentry/react@^10.40.0": "10.67.0_react@18.3.1",
-    "npm:@stripe/react-stripe-js@^6.1.0": "6.8.0_@stripe+stripe-js@8.11.0_react@18.3.1_react-dom@18.3.1__react@18.3.1",
+    "npm:@stripe/react-stripe-js@^6.1.0": "6.8.0_@stripe+stripe-js@8.11.0_react@18.3.1_react-dom@18.3.1",
     "npm:@stripe/stripe-js@^8.7.0": "8.11.0",
     "npm:@supabase/supabase-js@2": "2.57.4",
     "npm:@supabase/supabase-js@2.49.1": "2.49.1",
@@ -28,7 +28,7 @@
     "npm:@supabase/supabase-js@^2.57.4": "2.57.4",
     "npm:@testing-library/dom@^10.4.1": "10.4.1",
     "npm:@testing-library/jest-dom@^6.9.1": "6.10.0_@testing-library+dom@10.4.1",
-    "npm:@testing-library/react@^16.3.2": "16.3.2_@testing-library+dom@10.4.1_@types+react@18.3.31_@types+react-dom@18.3.7__@types+react@18.3.31_react@18.3.1_react-dom@18.3.1__react@18.3.1",
+    "npm:@testing-library/react@^16.3.2": "16.3.2_@testing-library+dom@10.4.1_@types+react@18.3.31_@types+react-dom@18.3.7_react@18.3.1_react-dom@18.3.1",
     "npm:@testing-library/user-event@^14.6.1": "14.6.1_@testing-library+dom@10.4.1",
     "npm:@transistorsoft/capacitor-background-fetch@^8.1.3": "8.1.3_@capacitor+core@8.4.2",
     "npm:@transistorsoft/capacitor-background-geolocation@^9.2.0": "9.2.0_@capacitor+core@8.4.2",
@@ -47,7 +47,7 @@
     "npm:pdf-parse@1.1.1": "1.1.1",
     "npm:postcss@^8.4.35": "8.5.21",
     "npm:react-dom@^18.3.1": "18.3.1_react@18.3.1",
-    "npm:react-router-dom@^6.30.4": "6.30.4_react@18.3.1_react-dom@18.3.1__react@18.3.1",
+    "npm:react-router-dom@^6.30.4": "6.30.4_react@18.3.1_react-dom@18.3.1",
     "npm:react@^18.3.1": "18.3.1",
     "npm:stripe@14": "14.21.0",
     "npm:stripe@14.21.0": "14.21.0",
@@ -355,14 +355,14 @@
     "@csstools/color-helpers@6.1.0": {
       "integrity": "sha512-064IFJdjTfUqnjpCVpMOdbr8FLQBhinbZj6yRv2An2E41O/pLEXqfFRWqGq/SxlE5PEUYTlvWsG2r8MswAVvkg=="
     },
-    "@csstools/css-calc@3.2.1_@csstools+css-parser-algorithms@4.0.0__@csstools+css-tokenizer@4.0.0_@csstools+css-tokenizer@4.0.0": {
+    "@csstools/css-calc@3.2.1_@csstools+css-parser-algorithms@4.0.0_@csstools+css-tokenizer@4.0.0": {
       "integrity": "sha512-DtdHlgXh5ZkA43cwBcAm+huzgJiwx3ZTWVjBs94kwz2xKqSimDA3lBgCjphYgwgVUMWatSM0pDd8TILB1yrVVg==",
       "dependencies": [
         "@csstools/css-parser-algorithms",
         "@csstools/css-tokenizer"
       ]
     },
-    "@csstools/css-color-parser@4.1.9_@csstools+css-parser-algorithms@4.0.0__@csstools+css-tokenizer@4.0.0_@csstools+css-tokenizer@4.0.0": {
+    "@csstools/css-color-parser@4.1.9_@csstools+css-parser-algorithms@4.0.0_@csstools+css-tokenizer@4.0.0": {
       "integrity": "sha512-paQcIaOO53Rk5+YrBaBjm/SgrV4INImjo2BT1DtQRYr+XeTRbeAYlS+jxXp9drqvKmtFnWRJKIalDLhZZDu42A==",
       "dependencies": [
         "@csstools/color-helpers",
@@ -778,7 +778,7 @@
       ],
       "bin": true
     },
-    "@react-google-maps/api@2.20.8_react@18.3.1_react-dom@18.3.1__react@18.3.1": {
+    "@react-google-maps/api@2.20.8_react@18.3.1_react-dom@18.3.1": {
       "integrity": "sha512-wtLYFtCGXK3qbIz1H5to3JxbosPnKsvjDKhqGylXUb859EskhzR7OpuNt0LqdLarXUtZCJTKzPn3BNaekNIahg==",
       "dependencies": [
         "@googlemaps/js-api-loader",
@@ -987,7 +987,7 @@
     "@standard-schema/spec@1.1.0": {
       "integrity": "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="
     },
-    "@stripe/react-stripe-js@6.8.0_@stripe+stripe-js@8.11.0_react@18.3.1_react-dom@18.3.1__react@18.3.1": {
+    "@stripe/react-stripe-js@6.8.0_@stripe+stripe-js@8.11.0_react@18.3.1_react-dom@18.3.1": {
       "integrity": "sha512-nRrPkos00CmUeqXHxtJkXmSbl9/6ybGI4jVebzsiA6QaE5A4iw9dn1C4hUx2tBmQQV2e6pm2aLkPYov4hdta2w==",
       "dependencies": [
         "@stripe/stripe-js",
@@ -1159,7 +1159,7 @@
       ],
       "deprecated": true
     },
-    "@testing-library/react@16.3.2_@testing-library+dom@10.4.1_@types+react@18.3.31_@types+react-dom@18.3.7__@types+react@18.3.31_react@18.3.1_react-dom@18.3.1__react@18.3.1": {
+    "@testing-library/react@16.3.2_@testing-library+dom@10.4.1_@types+react@18.3.31_@types+react-dom@18.3.7_react@18.3.1_react-dom@18.3.1": {
       "integrity": "sha512-XU5/SytQM+ykqMnAnvB2umaJNIOsLF3PVv//1Ew4CTcpz0/BRyy/af40qqrt7SjKpDdT1saBMc42CUok5gaw+g==",
       "dependencies": [
         "@babel/runtime",
@@ -1308,7 +1308,7 @@
         "@types/node"
       ]
     },
-    "@typescript-eslint/eslint-plugin@8.65.0_@typescript-eslint+parser@8.65.0__eslint@9.39.5__typescript@5.9.3_eslint@9.39.5_typescript@5.9.3": {
+    "@typescript-eslint/eslint-plugin@8.65.0_@typescript-eslint+parser@8.65.0_eslint@9.39.5_typescript@5.9.3": {
       "integrity": "sha512-IEgob78X12rHpUmtcwFsXhZdVGJtwTVP8FiCLZkR6GlYVrl2PcuB+KhCE5BlVC/eQpQnu8WXRtkHZuPar+gCRA==",
       "dependencies": [
         "@eslint-community/regexpp",
@@ -1475,7 +1475,8 @@
       ]
     },
     "@xmldom/xmldom@0.9.10": {
-      "integrity": "sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw=="
+      "integrity": "sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw==",
+      "deprecated": true
     },
     "abbrev@1.1.1": {
       "integrity": "sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q=="
@@ -2038,6 +2039,7 @@
         "natural-compare",
         "optionator"
       ],
+      "deprecated": true,
       "bin": true
     },
     "espree@10.4.0": {
@@ -3029,7 +3031,7 @@
     "react-refresh@0.17.0": {
       "integrity": "sha512-z6F7K9bV85EfseRCp2bzrpyQ0Gkw1uLoCel9XBVWPg/TjRj94SkJzUTGfOa4bs7iJvBWtQG0Wq7wnI0syw3EBQ=="
     },
-    "react-router-dom@6.30.4_react@18.3.1_react-dom@18.3.1__react@18.3.1": {
+    "react-router-dom@6.30.4_react@18.3.1_react-dom@18.3.1": {
       "integrity": "sha512-q4HvNl+mmDdkS0g+MqiBZNteQJCuimWoOyHMy4T/RQLAn9Z29+E91QXRaxOujeMl2HTzRSS0KFPd7lxX3PjV0Q==",
       "dependencies": [
         "@remix-run/router",
@@ -3773,7 +3775,7 @@
       "overrides": {
         "jspdf": "4.2.1",
         "dompurify": "3.4.13",
-        "nanoid": "3.3.17"
+        "nanoid": "3.3.18"
       }
     }
   }

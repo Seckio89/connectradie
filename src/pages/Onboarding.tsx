@@ -8,8 +8,15 @@ import { supabase } from '../lib/supabase';
 import { saveBaseCoords } from '../lib/profilePrivate';
 import { CONSTRUCTION_CATEGORIES, HOSPITALITY_CATEGORIES } from '../lib/tradeCategories';
 import { employmentTypeForRosterRole } from '../lib/compliance';
+import { tradeRequiresLicense } from '../lib/tradeCategories';
+import AbnVerifyField, { type AbnFieldOutcome } from '../components/verification/AbnVerifyField';
+import LicenceVerificationStep from '../components/verification/LicenceVerificationStep';
 
-type Step = 'role' | 'trade-type' | 'employment' | 'business-search' | 'employment-role' | 'details';
+type Step = 'role' | 'trade-type' | 'employment' | 'business-search' | 'employment-role' | 'details' | 'licence';
+
+/** Onboarding stores the lower-cased label ('air conditioning'); the licence
+ *  tables and TRADE_CATEGORIES use the slug ('air-conditioning'). */
+const toTradeSlug = (value: string) => value.trim().toLowerCase().replace(/\s*&\s*/g, '-').replace(/\s+/g, '-');
 
 type EmploymentRole = 'employee' | 'subcontractor' | null;
 
@@ -28,6 +35,7 @@ export default function Onboarding() {
   const [addressDetails, setAddressDetails] = useState<AddressDetails | null>(null);
   const [businessName, setBusinessName] = useState('');
   const [tradeCategory, setTradeCategory] = useState('');
+  const [abnOutcome, setAbnOutcome] = useState<AbnFieldOutcome | null>(null);
   const [employmentType, setEmploymentType] = useState<'own' | 'employed' | null>(null);
   const [businessSearch, setBusinessSearch] = useState('');
   const [businessResults, setBusinessResults] = useState<BusinessResult[]>([]);
@@ -221,6 +229,13 @@ export default function Onboarding() {
       }
 
       resetWelcomeFlags();
+      // Licensed trades get one more step — the licence photo — now that the
+      // profile and business details exist for it to attach to. It is skippable;
+      // onboarding never blocks on a licence check.
+      if (selectedRole === 'tradie' && tradeRequiresLicense(toTradeSlug(tradeCategory))) {
+        setStep('licence');
+        return;
+      }
       navigate(selectedRole === 'tradie' ? '/dashboard?onboarded=tradie' : '/dashboard?onboarded=client');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Couldn\'t finish setting up your account — try again in a moment.');
@@ -229,10 +244,13 @@ export default function Onboarding() {
     }
   };
 
+  const licenceRequired = selectedRole === 'tradie' && employmentType === 'own' && tradeRequiresLicense(toTradeSlug(tradeCategory));
   const steps: Step[] = selectedRole === 'tradie'
     ? employmentType === 'employed'
       ? ['role', 'trade-type', 'employment', 'business-search', 'employment-role']
-      : ['role', 'trade-type', 'employment', 'details']
+      : licenceRequired
+        ? ['role', 'trade-type', 'employment', 'details', 'licence']
+        : ['role', 'trade-type', 'employment', 'details']
     : ['role', 'details'];
 
   const currentStepIndex = steps.indexOf(step);
@@ -685,6 +703,18 @@ export default function Onboarding() {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-ct-mute-2 mb-2">ABN <span className="text-ct-mute font-normal">(optional now, required before you quote)</span></label>
+                  <AbnVerifyField
+                    claimedBusinessName={businessName}
+                    onVerified={setAbnOutcome}
+                    size="lg"
+                  />
+                  {!abnOutcome && (
+                    <p className="text-xs text-ct-mute mt-2">Checked live against the Australian Business Register. You can do this later from Settings → Get verified.</p>
+                  )}
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-ct-mute-2 mb-2">Service area</label>
                   <AddressAutocomplete
                     value={address}
@@ -708,7 +738,22 @@ export default function Onboarding() {
             </>
           )}
 
-          {step !== 'role' && (
+          {step === 'licence' && selectedRole === 'tradie' && (
+            <>
+              <h2 className="text-2xl font-bold text-ct-paper text-center mb-2">Your trade licence</h2>
+              <p className="text-ct-mute-2 text-center mb-8">
+                {tradeCategory ? tradeCategory.charAt(0).toUpperCase() + tradeCategory.slice(1) : 'This trade'} needs a state licence. Clients see a "Licence verified" badge once an admin has checked it.
+              </p>
+              <LicenceVerificationStep
+                tradeCategory={toTradeSlug(tradeCategory)}
+                defaultState={addressDetails?.state ?? null}
+                allowSkip
+                onFinished={() => navigate('/dashboard?onboarded=tradie')}
+              />
+            </>
+          )}
+
+          {step !== 'role' && step !== 'licence' && (
             <button
               onClick={() => {
                 if (step === 'details' && selectedRole === 'tradie') setStep('employment');

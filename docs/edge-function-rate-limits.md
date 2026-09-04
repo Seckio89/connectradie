@@ -1,6 +1,6 @@
 # Edge Function rate limiting — inventory
 
-Built 2026-07-30 to close audit finding #4. Covers all 74 functions in
+Built 2026-07-30 to close audit finding #4. Covers all 81 functions in
 `supabase/functions/`. If you add a function, add a row.
 
 ## How it works, and how we know it works
@@ -123,6 +123,16 @@ Added 2026-07-30 (the eleven gaps this inventory found):
 | `mark-invoice-paid` | user id | 20 | State change, no spend |
 | ⚠ `public-quote` | quote token **and** hashed IP | 20 / 60 | **No caller identity** — public by design. Two limits; see below |
 | ⚠ `geofence-event` | device token | 120 | Generous ceiling, not a throttle — crossings are bursty and `batchSync` posts a backlog after signal returns |
+
+Added 2026-09-04 (tradie verification):
+
+| Function | Key | Ceiling | Rationale |
+|---|---|---|---|
+| `verify-abn` | user id | 5 / **hour** | Each call hits the government ABR lookup with our GUID; the brief's ceiling. Was 15/min and marked the ABN verified on checksum alone when the GUID was missing — no longer |
+| `extract-licence` | user id | 10 / **hour** | Each call sends an image to the paid OCR provider |
+| `submit-licence` | — | none | Owner-only state change on a row that must be in `extracted`; the optimistic lock makes a burst a no-op |
+| `review-licence` | — | none | Admin-only (`profiles.role = 'admin'` or `is_admin`), and each call deletes a storage object once |
+| `expire-licences` | — | cron | Service-role probe (`hasServiceRole`) or admin; see "The cron functions" |
 
 ### ⚠ The two without a user identity
 
