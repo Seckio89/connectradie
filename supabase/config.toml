@@ -470,6 +470,31 @@ verify_jwt = true
 [functions.credential-expiry-sweep]
 verify_jwt = true
 
+# ── Tradie verification (ABN + trade licence) ───────────────────────────────
+# verify-abn, extract-licence, submit-licence and review-licence act for a
+# signed-in person: each resolves the caller with auth.getUser() and
+# review-licence additionally requires profiles.role = 'admin' or
+# profiles.is_admin. verify_jwt = true is correct for all four.
+#
+# expire-licences is the daily licence sweep, driven by pg_cron presenting the
+# service-role key as a normal Bearer token (20260904233145) — so it satisfies
+# verify_jwt = true and must NOT be flipped to false; hasServiceRole probes the
+# presented key in-function, and a signed-in admin may also run it by hand.
+[functions.verify-abn]
+verify_jwt = true
+
+[functions.extract-licence]
+verify_jwt = true
+
+[functions.submit-licence]
+verify_jwt = true
+
+[functions.review-licence]
+verify_jwt = true
+
+[functions.expire-licences]
+verify_jwt = true
+
 # refresh-calendar-tokens is the six-hourly Google Calendar credential
 # heartbeat, driven by pg_cron presenting the service-role key as a normal
 # Bearer token — so it satisfies verify_jwt = true and must NOT be flipped to

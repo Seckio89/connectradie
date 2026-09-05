@@ -24,6 +24,25 @@ with the date.
 
 ## Decided
 
+- **D8 — Store verification outcomes, not identity evidence: APPROVED
+  2026-09-04 via the tradie-verification brief.** Architectural rule for
+  every verification feature (ABN, trade licence, and anything after):
+  the platform keeps the *result* of a check and the public-register facts
+  that support it, never the document that proved it. Concretely: a licence
+  photo lives in the private `licence-uploads` bucket only until an admin
+  decides, `review-licence` deletes it in the same call, and
+  `expire-licences` deletes anything older than 30 days as a backstop.
+  `licence_verifications` keeps status, expiry, the register consulted and
+  the three pre-check results; the public profile shows state + expiry month
+  only. `business_verifications` holds the ABR response, which is public
+  data. `consent_records` is append-only. Why: a store of identity documents
+  is a breach liability with no product upside — the badge needs the
+  outcome, not the scan — and it is the same rule `worker_credentials`
+  adopted on 2026-07-28. Deviations from the brief made under this rule:
+  admins decide licences only through `review-licence` (no direct UPDATE
+  policy), because a direct row update cannot delete the photo.
+
+
 - **D6 — Tighten publicly readable tables: APPROVED 2026-08-01, applied to
   production the same day** (migration 20260801100807, repo record in
   PR #213). Investigation first: `tradie_details` was never anon-readable

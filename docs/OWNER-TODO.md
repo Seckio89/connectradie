@@ -84,7 +84,40 @@ Open `docs/android-release-checklist.md` for exact values. In short:
    this, Google login fails in the Android app.
 5. Submit for review; expect a few days.
 
-## 6. Your weekly routine once live (~10 minutes, Mondays)
+## 6. Tradie verification — four things only you can do (before the licence step goes live)
+
+The ABN check and the licence-photo review flow are built (PR
+`claude/tradie-verification-lbq1k0`). They switch on when these are done.
+
+1. **ABR GUID (free, ~10 minutes, needed for ABN checks to run at all).** Go to
+   **abr.business.gov.au → Tools → Web services → Register**, fill in the form
+   with ConnecTradie Pty Ltd's details, and you get a GUID by email. Put it in
+   **Supabase → Project settings → Edge Functions → Secrets** as `ABR_GUID`.
+   Until then "Verify ABN" answers "ABN lookup isn't configured yet" — it never
+   marks anything verified on a guess.
+2. **Hugging Face token (free tier is fine to start).** **huggingface.co →
+   Settings → Access Tokens → New token** (read). Add to Supabase secrets as
+   `HF_API_TOKEN`, plus `OCR_PROVIDER=huggingface`. Without it the licence step
+   still works — the photo is skipped and the tradie types the details.
+3. **Open each state register URL once.** The list is
+   `supabase/seed/licence_registers.sql` (14 rows). The network Claude wrote
+   this on could not reach any state government site, so every URL is the best
+   known search landing page marked "manual search" and none is confirmed.
+   Open each, check it is the licence-search page, and tell Claude which ones
+   accept a licence number in the address bar so they can become one-click
+   deep links. Wrong ones: tell Claude the right address.
+4. **Read the privacy wording.** `docs/legal/privacy.md` is a plain-text copy of
+   the new sections (2.8 licence photos, the Hugging Face row, retention). The
+   live page is `/privacy`. If any sentence is not something you are happy to
+   stand behind, say so before the Android/iOS submissions —
+   `docs/compliance/store-declarations.md` has the copy-paste answers for both
+   stores and assumes this wording.
+
+After `supabase db push` for this branch's migrations, also run the type
+regeneration command in CLAUDE.md (`npx supabase gen types …`) — the generated
+types for the four new tables were written by hand to match the migrations.
+
+## 7. Your weekly routine once live (~10 minutes, Mondays)
 
 1. Read the top of **`docs/growth/RECOMMENDATIONS.md`** — the Monday scan
    puts its 3 best ideas in your notification and the full list there.

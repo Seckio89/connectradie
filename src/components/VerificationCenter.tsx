@@ -1,15 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   BadgeCheck,
   Shield,
   FileText,
-  Upload,
   Loader2,
   CheckCircle2,
   XCircle,
   AlertTriangle,
   Hash,
-  Calendar,
   ChevronRight,
   Clock,
   Award,
@@ -22,20 +20,15 @@ import { createIdentityVerification } from '../lib/stripe';
 import LicenseCard from './LicenseCard';
 import LicenseCertificate from './LicenseCertificate';
 import { isTradeExempt, normalizeTradeName } from '../lib/licensingRequirements';
+import AbnVerifyField, { type AbnFieldOutcome } from './verification/AbnVerifyField';
+import LicenceVerificationStep from './verification/LicenceVerificationStep';
+import { fetchOwnBusinessVerification, fetchOwnLicenceVerifications, type LicenceVerification } from '../lib/verification';
 
 type StepStatus = 'incomplete' | 'checking' | 'valid' | 'invalid';
 
 interface AbnResult {
   status: StepStatus;
   businessName: string;
-}
-
-interface LicenseResult {
-  status: StepStatus;
-  licenseType: string;
-  apiVerified: boolean;
-  holderName: string | null;
-  licenseClass: string | null;
 }
 
 export default function VerificationCenter() {
@@ -46,15 +39,39 @@ export default function VerificationCenter() {
   const primaryTrade = profile?.declared_trades?.[0] || '';
   const tradeIsExempt = isTradeExempt(primaryTrade);
 
-  const [abnInput, setAbnInput] = useState(profile?.abn_number || '');
-  const [abnResult, setAbnResult] = useState<AbnResult>({ status: 'incomplete', businessName: '' });
+  // ABN: a previously verified ABN (profiles.abn_verified is kept in step with
+  // business_verifications by trigger) counts as done on load.
+  const [abnResult, setAbnResult] = useState<AbnResult>(
+    profile?.abn_verified ? { status: 'valid', businessName: profile.abn_entity_name || '' } : { status: 'incomplete', businessName: '' },
+  );
+  const [abnInitial, setAbnInitial] = useState<AbnFieldOutcome | null>(null);
+  const handleAbnOutcome = (o: AbnFieldOutcome) => {
+    // 'review' still lets the tradie continue — an admin resolves the name
+    // mismatch; 'failed' does not.
+    setAbnResult({ status: o.status === 'failed' ? 'invalid' : 'valid', businessName: o.entity_name || o.business_names[0] || '' });
+  };
 
-  const [licenseInput, setLicenseInput] = useState(profile?.license_number || '');
-  const [licenseState, setLicenseState] = useState(profile?.license_state || 'NSW');
-  const [licenseExpiry, setLicenseExpiry] = useState(profile?.license_expiry || '');
-  const [licenseResult, setLicenseResult] = useState<LicenseResult>({ status: 'incomplete', licenseType: '', apiVerified: false, holderName: null, licenseClass: null });
-  const [licenseFile, setLicenseFile] = useState<File | null>(null);
-  const licenseFileRef = useRef<HTMLInputElement>(null);
+  // Licence: the new photo → OCR → review flow (LicenceVerificationStep) owns
+  // its own state; this only needs to know whether a licence for the primary
+  // trade has been submitted or verified, for the checklist and the submit.
+  const [licenceRow, setLicenceRow] = useState<LicenceVerification | null>(null);
+  const licenceSubmitted = !!licenceRow && (licenceRow.status === 'awaiting_review' || licenceRow.status === 'verified');
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const [bv, rows] = await Promise.all([fetchOwnBusinessVerification(user.id), fetchOwnLicenceVerifications(user.id)]);
+      if (cancelled) return;
+      if (bv) {
+        setAbnInitial({ status: bv.status as AbnFieldOutcome['status'], entity_name: bv.entity_name, business_names: bv.business_names, gst_registered: bv.gst_registered, abn_status: bv.abn_status });
+        if (bv.status !== 'failed') setAbnResult({ status: 'valid', businessName: bv.entity_name || bv.business_names[0] || '' });
+      }
+      const live = rows.find((r) => r.trade_category === primaryTrade && (r.status === 'awaiting_review' || r.status === 'verified'));
+      setLicenceRow(live ?? null);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id, primaryTrade]);
 
   const [licenseTrades, setLicenseTrades] = useState<string[]>(profile?.license_trades || []);
 
@@ -155,126 +172,6 @@ export default function VerificationCenter() {
     setSelfApproving(false);
   };
 
-  const handleVerifyABN = async () => {
-    const cleaned = abnInput.replace(/\s/g, '');
-    if (cleaned.length !== 11) return;
-
-    setAbnResult({ status: 'checking', businessName: '' });
-
-    try {
-      // First try to refresh the session to ensure we have a valid token
-      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
-
-      if (sessionError) {
-        setAbnResult({ status: 'invalid', businessName: 'Session error. Please log out and log in again.' });
-        return;
-      }
-
-      if (!session) {
-        setAbnResult({ status: 'invalid', businessName: 'Not logged in. Please log in first.' });
-        return;
-      }
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const functionUrl = `${supabaseUrl}/functions/v1/verify-abn`;
-
-      const res = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ abn: cleaned }),
-      });
-
-      const result = await res.json();
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          const errorMsg = result.details || result.error || 'Session expired';
-          setAbnResult({ status: 'invalid', businessName: `Auth Error: ${errorMsg}. Please refresh the page.` });
-        } else if (result.error) {
-          setAbnResult({ status: 'invalid', businessName: result.error });
-        } else {
-          setAbnResult({ status: 'invalid', businessName: 'Verification failed' });
-        }
-        return;
-      }
-
-      if (result.valid) {
-        setAbnResult({
-          status: 'valid',
-          businessName: result.entityName || 'Registered business',
-        });
-      } else {
-        setAbnResult({
-          status: 'invalid',
-          businessName: result.message || 'Invalid ABN',
-        });
-      }
-    } catch {
-      setAbnResult({ status: 'invalid', businessName: 'Network error. Please try again.' });
-    }
-  };
-
-  const handleVerifyLicense = async () => {
-    if (!licenseInput.trim() || !licenseExpiry) return;
-
-    setLicenseResult({ status: 'checking', licenseType: '', apiVerified: false, holderName: null, licenseClass: null });
-
-    try {
-      const { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
-
-      if (sessionError || !session) {
-        setLicenseResult({ status: 'invalid', licenseType: 'Session error. Please refresh the page.', apiVerified: false, holderName: null, licenseClass: null });
-        return;
-      }
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const functionUrl = `${supabaseUrl}/functions/v1/verify-license`;
-
-      const res = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          licenseNumber: licenseInput.trim(),
-          licenseState: licenseState,
-          expiryDate: licenseExpiry,
-        }),
-      });
-
-      const result = await res.json();
-
-      if (!res.ok) {
-        setLicenseResult({ status: 'invalid', licenseType: result.error || 'Verification failed', apiVerified: false, holderName: null, licenseClass: null });
-        return;
-      }
-
-      if (result.valid) {
-        setLicenseResult({
-          status: 'valid',
-          licenseType: result.message || 'License verified',
-          apiVerified: result.apiVerified || false,
-          holderName: result.holderName || null,
-          licenseClass: result.licenseClass || null,
-        });
-      } else {
-        setLicenseResult({
-          status: 'invalid',
-          licenseType: result.message || 'Invalid license',
-          apiVerified: result.apiVerified || false,
-          holderName: result.holderName || null,
-          licenseClass: result.licenseClass || null,
-        });
-      }
-    } catch {
-      setLicenseResult({ status: 'invalid', licenseType: 'Network error. Please try again.', apiVerified: false, holderName: null, licenseClass: null });
-    }
-  };
-
   const handleSubmitForReview = async () => {
     if (!user) return;
 
@@ -282,27 +179,16 @@ export default function VerificationCenter() {
     setSubmitError('');
 
     try {
-      const documentUrls: string[] = [];
-
-      if (!tradeIsExempt && licenseFile) {
-        const ext = licenseFile.name.split('.').pop();
-        const path = `${user.id}/license-${Date.now()}.${ext}`;
-        const { error: uploadErr } = await supabase.storage
-          .from('documents')
-          .upload(path, licenseFile, { upsert: true });
-        if (uploadErr) throw uploadErr;
-        // Store the bucket path so the file remains accessible after the
-        // bucket is flipped to private and signed URLs are required.
-        documentUrls.push(path);
-      }
-
+      // The licence photo no longer goes into `documents`: it lives in the
+      // private licence-uploads bucket for exactly as long as the review takes,
+      // and review-licence deletes it. Only the outcome is kept.
+      //
       // Annotated, not `Record<string, unknown>`: the annotation is what makes
       // every key below column-checked. See the note on `Update` in
       // types/database.ts.
       const updatePayload: Update<'profiles'> = {
-        abn_number: abnInput.replace(/\s/g, ''),
         verification_status: 'pending',
-        documents_url: documentUrls.length > 0 ? documentUrls : null,
+        documents_url: null,
         rejection_reason: null,
       };
 
@@ -312,9 +198,9 @@ export default function VerificationCenter() {
         updatePayload.license_expiry = null;
         updatePayload.license_trades = [];
       } else {
-        updatePayload.license_number = licenseInput.trim();
-        updatePayload.license_state = licenseState.toUpperCase();
-        updatePayload.license_expiry = licenseExpiry || null;
+        updatePayload.license_number = licenceRow?.licence_number ?? null;
+        updatePayload.license_state = licenceRow?.state_code ?? null;
+        updatePayload.license_expiry = licenceRow?.expiry_date ?? null;
         updatePayload.license_trades = licenseTrades;
       }
 
@@ -337,8 +223,7 @@ export default function VerificationCenter() {
   const allStepsComplete = tradeIsExempt
     ? abnResult.status === 'valid' && identityStatus === 'verified'
     : abnResult.status === 'valid' &&
-      licenseResult.status === 'valid' &&
-      licenseExpiry &&
+      licenceSubmitted &&
       licenseTrades.length > 0 &&
       identityStatus === 'verified';
 
@@ -501,49 +386,13 @@ export default function VerificationCenter() {
           </div>
         </div>
         <div className="p-5">
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
-              <input
-                type="text"
-                value={abnInput}
-                onChange={(e) => {
-                  setAbnInput(e.target.value.replace(/[^\d\s]/g, '').slice(0, 14));
-                  setAbnResult({ status: 'incomplete', businessName: '' });
-                }}
-                placeholder="e.g., 10 824 753 556"
-                className="w-full pl-10 pr-4 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
-                disabled={abnResult.status === 'valid'}
-              />
-            </div>
-            <button
-              onClick={handleVerifyABN}
-              disabled={!user || abnInput.replace(/\s/g, '').length !== 11 || abnResult.status === 'checking' || abnResult.status === 'valid'}
-              className="px-5 py-2.5 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-            >
-              {abnResult.status === 'checking' ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Checking...</>
-              ) : abnResult.status === 'valid' ? (
-                <><CheckCircle2 className="w-4 h-4" /> Verified</>
-              ) : (
-                'Verify ABN'
-              )}
-            </button>
-          </div>
-          {abnResult.status === 'valid' && (
-            <div className="mt-3 p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-ct-teal flex-shrink-0" />
-              <p className="text-sm text-ct-teal">Active -- {abnResult.businessName}</p>
-            </div>
-          )}
-          {abnResult.status === 'invalid' && (
-            <div className="mt-3 p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm flex items-center gap-2">
-              <XCircle className="w-4 h-4 text-ct-rose flex-shrink-0" />
-              <p className="text-sm text-ct-rose">
-                {abnResult.businessName || 'Invalid ABN. Please check the number and try again.'}
-              </p>
-            </div>
-          )}
+          <AbnVerifyField
+            claimedBusinessName={tradieDetails?.business_name || profile?.full_name || ''}
+            initialAbn={profile?.abn_number}
+            initialOutcome={abnInitial}
+            onVerified={handleAbnOutcome}
+            disabled={!user}
+          />
         </div>
       </div>
 
@@ -580,143 +429,31 @@ export default function VerificationCenter() {
           <div className="p-5 border-b border-ct-line-soft">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-ct-sm flex items-center justify-center ${
-                licenseResult.status === 'valid' ? 'bg-ct-teal/[0.14]' : 'bg-ct-surface-2'
+                licenceSubmitted ? 'bg-ct-teal/[0.14]' : 'bg-ct-surface-2'
               }`}>
-                <span className={`text-sm font-bold ${licenseResult.status === 'valid' ? 'text-ct-teal' : 'text-ct-mute'}`}>B</span>
+                <span className={`text-sm font-bold ${licenceSubmitted ? 'text-ct-teal' : 'text-ct-mute'}`}>B</span>
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold text-ct-paper">License check</h4>
-                <p className="text-sm text-ct-mute">Verify your trade license number and upload a photo</p>
+                <p className="text-sm text-ct-mute">Photograph your licence card — we read the details, an admin checks the register</p>
               </div>
-              {licenseResult.status === 'valid' && licenseExpiry && licenseFile && (
+              {licenceSubmitted && (
                 <CheckCircle2 className="w-5 h-5 text-ct-teal" />
               )}
             </div>
           </div>
           <div className="p-5 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">License number</label>
-                <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
-                  <input
-                    type="text"
-                    value={licenseInput}
-                    onChange={(e) => {
-                      setLicenseInput(e.target.value);
-                      setLicenseResult({ status: 'incomplete', licenseType: '', apiVerified: false, holderName: null, licenseClass: null });
-                    }}
-                    placeholder="e.g., ABC123456"
-                    className="w-full pl-10 pr-4 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">State</label>
-                <select
-                  value={licenseState}
-                  onChange={(e) => {
-                    setLicenseState(e.target.value);
-                    setLicenseResult({ status: 'incomplete', licenseType: '', apiVerified: false, holderName: null, licenseClass: null });
-                  }}
-                  className="w-full px-4 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
-                >
-                  <option value="NSW">NSW</option>
-                  <option value="VIC">VIC</option>
-                  <option value="QLD">QLD</option>
-                  <option value="SA">SA</option>
-                  <option value="WA">WA</option>
-                  <option value="TAS">TAS</option>
-                  <option value="NT">NT</option>
-                  <option value="ACT">ACT</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Expiry date</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ct-mute" />
-                  <input
-                    type="date"
-                    value={licenseExpiry}
-                    onChange={(e) => setLicenseExpiry(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border border-ct-line rounded-ct-sm focus:outline-none focus:ring-2 focus:ring-ct-teal text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={handleVerifyLicense}
-              disabled={!licenseInput.trim() || !licenseExpiry || licenseResult.status === 'checking' || licenseResult.status === 'valid'}
-              className="px-5 py-2.5 bg-ct-teal text-ct-ink text-sm font-medium rounded-ct-sm hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-            >
-              {licenseResult.status === 'checking' ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Checking...</>
-              ) : licenseResult.status === 'valid' ? (
-                <><CheckCircle2 className="w-4 h-4" /> Verified</>
-              ) : (
-                'Verify license'
-              )}
-            </button>
-
-            {licenseResult.status === 'valid' && (
-              <div className="p-3 bg-ct-teal/[0.14] border border-ct-teal/30 rounded-ct-sm flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-ct-teal flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-ct-teal">{licenseResult.licenseType}</p>
-                    {licenseResult.apiVerified && (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-ct-surface-2 text-ct-mute-2 text-xs font-medium rounded-full">
-                        <BadgeCheck className="w-3 h-3" />
-                        Authority Verified
-                      </span>
-                    )}
-                  </div>
-                  {licenseResult.holderName && (
-                    <p className="text-xs text-ct-teal mt-1">Holder: {licenseResult.holderName}</p>
-                  )}
-                  {licenseResult.licenseClass && (
-                    <p className="text-xs text-ct-teal mt-0.5">Class: {licenseResult.licenseClass}</p>
-                  )}
-                  {!licenseResult.apiVerified && (
-                    <p className="text-xs text-ct-teal mt-1">Format validation only. Real-time verification with licensing authority not available.</p>
-                  )}
-                </div>
-              </div>
-            )}
-            {licenseResult.status === 'invalid' && (
-              <div className="p-3 bg-ct-rose/[0.13] border border-ct-rose/[0.34] rounded-ct-sm flex items-center gap-2">
-                <XCircle className="w-4 h-4 text-ct-rose flex-shrink-0" />
-                <p className="text-sm text-ct-rose">{licenseResult.licenseType}</p>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-ct-mute-2 mb-1.5">Photo of license card</label>
-              <input
-                ref={licenseFileRef}
-                type="file"
-                accept="image/*,.pdf"
-                onChange={(e) => setLicenseFile(e.target.files?.[0] || null)}
-                className="hidden"
-              />
-              <button
-                onClick={() => licenseFileRef.current?.click()}
-                className="w-full border-2 border-dashed border-ct-line rounded-ct-sm p-4 text-center hover:border-ct-teal/30 hover:bg-ct-surface-2/30 transition-colors"
-              >
-                {licenseFile ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-ct-teal" />
-                    <span className="text-sm font-medium text-ct-mute-2">{licenseFile.name}</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center">
-                    <Upload className="w-6 h-6 text-ct-mute mb-1" />
-                    <span className="text-sm text-ct-mute">Click to upload license photo</span>
-                  </div>
-                )}
-              </button>
-            </div>
+            <LicenceVerificationStep
+              tradeCategory={primaryTrade}
+              defaultState={profile?.license_state}
+              onFinished={(outcome) => {
+                if (outcome === 'submitted' && user) {
+                  fetchOwnLicenceVerifications(user.id).then((rows) => {
+                    setLicenceRow(rows.find((r) => r.trade_category === primaryTrade && (r.status === 'awaiting_review' || r.status === 'verified')) ?? null);
+                  });
+                }
+              }}
+            />
 
             <div>
               <label className="block text-sm font-medium text-ct-mute-2 mb-2">
@@ -851,10 +588,8 @@ export default function VerificationCenter() {
             ...(tradeIsExempt
               ? [{ done: true, label: `License not required for ${normalizeTradeName(primaryTrade)}` }]
               : [
-                  { done: licenseResult.status === 'valid', label: 'License number verified' },
-                  { done: !!licenseExpiry, label: 'License expiry date provided' },
-                  { done: !!licenseFile, label: 'License card photo uploaded' },
-                  { done: licenseTrades.length > 0, label: 'Trades covered by license selected' },
+                  { done: licenceSubmitted, label: licenceRow?.status === 'verified' ? 'Licence verified' : 'Licence submitted for review' },
+                  { done: licenseTrades.length > 0, label: 'Trades covered by licence selected' },
                 ]),
             { done: identityStatus === 'verified', label: 'Identity verified' },
           ].map((item) => (
