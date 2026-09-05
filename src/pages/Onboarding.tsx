@@ -229,10 +229,12 @@ export default function Onboarding() {
       }
 
       resetWelcomeFlags();
-      // Licensed trades get one more step — the licence photo — now that the
-      // profile and business details exist for it to attach to. It is skippable;
+      // Licensed trades running their OWN business get one more step — the
+      // licence photo — now that the profile and business details exist for it
+      // to attach to. Same predicate as the `steps` array below, so the progress
+      // indicator and the redirect can never disagree. It is skippable;
       // onboarding never blocks on a licence check.
-      if (selectedRole === 'tradie' && tradeRequiresLicense(toTradeSlug(tradeCategory))) {
+      if (selectedRole === 'tradie' && employmentType === 'own' && tradeRequiresLicense(toTradeSlug(tradeCategory))) {
         setStep('licence');
         return;
       }
