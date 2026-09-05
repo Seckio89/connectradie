@@ -1,7 +1,6 @@
 {
   "advisories": [
-    "js-yaml::https://github.com/advisories/GHSA-5p4m-2wfm-xmqj",
-    "react-router-dom::https://github.com/advisories/GHSA-jjmj-jmhj-qwj2",
+    "react-router-dom::transitive",
     "react-router::https://github.com/advisories/GHSA-337j-9hxr-rhxg",
     "react-router::https://github.com/advisories/GHSA-wrjc-x8rr-h8h6"
   ]
